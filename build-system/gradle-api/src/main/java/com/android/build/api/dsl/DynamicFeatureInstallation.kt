@@ -21,5 +21,4 @@ package com.android.build.api.dsl
  *
  * This is accessed via [DynamicFeatureExtension.installation]
  */
-interface DynamicFeatureInstallation : Installation {
-}
+interface DynamicFeatureInstallation : Installation {}

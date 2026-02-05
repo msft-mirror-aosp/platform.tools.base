@@ -26,7 +26,6 @@ import com.android.adblib.withLineCollector
 import com.android.adblib.withTextCollector
 import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -43,20 +42,16 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.hasGlassesCompanionApp(): Boolean {
     var hasCompanion = false
     var hasCore = false
-    session.deviceServices
-      .shellCommand(selector, "pm list packages $GLASSES_PKG")
-      .withLineCollector()
-      .execute()
-      .collect {
-        when (it) {
-          is ShellCommandOutputElement.StdoutLine ->
-            when (it.contents) {
-              "package:$COMPANION_PKG" -> hasCompanion = true
-              "package:$CORE_PKG" -> hasCore = true
-            }
-          else -> {}
-        }
+    session.deviceServices.shellCommand(selector, "pm list packages $GLASSES_PKG").withLineCollector().execute().collect {
+      when (it) {
+        is ShellCommandOutputElement.StdoutLine ->
+          when (it.contents) {
+            "package:$COMPANION_PKG" -> hasCompanion = true
+            "package:$CORE_PKG" -> hasCore = true
+          }
+        else -> {}
       }
+    }
     return hasCompanion && hasCore
   }
 
@@ -88,8 +83,7 @@ class AiGlassesPairing(val session: AdbSession) {
 
   private suspend fun ConnectedDevice.grantPermission(pkg: String, permission: String) {
     val command = "pm grant $pkg $permission"
-    val output =
-      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    val output = session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
 
     if (output.exitCode != 0) {
       throw ShellCommandException("Failed to execute \"$command\": ${output.stderr}")
@@ -104,16 +98,15 @@ class AiGlassesPairing(val session: AdbSession) {
   private suspend fun ConnectedDevice.clearPackage(pkg: String) {
     val command = "pm clear $pkg"
     logger.info { "Executing on $serialNumber: $command" }
-    val output =
-      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    val output = session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
     if (output.exitCode != 0) {
       throw ShellCommandException("Failed to execute \"$command\": ${output.stderr}")
     }
   }
 
   /**
-   * Clears the state of the Glasses companion app and GlassesCore. This ensures that any polling of
-   * the pairing process does not return the state of a prior pairing operation.
+   * Clears the state of the Glasses companion app and GlassesCore. This ensures that any polling of the pairing process does not return the
+   * state of a prior pairing operation.
    */
   suspend fun ConnectedDevice.clearGlassesPackages() {
     clearPackage(COMPANION_PKG)
@@ -121,8 +114,8 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
-   * Returns the number of paired bluetooth devices, by parsing the output of "dumpsys
-   * bluetooth_manager", or null if we fail to find the number in the output.
+   * Returns the number of paired bluetooth devices, by parsing the output of "dumpsys bluetooth_manager", or null if we fail to find the
+   * number in the output.
    */
   suspend fun ConnectedDevice.getPairedBluetoothDeviceCount(): Int? {
     val command = "dumpsys bluetooth_manager | grep 'Bonded devices:'"
@@ -130,9 +123,7 @@ class AiGlassesPairing(val session: AdbSession) {
     session.deviceServices.shellCommand(selector, command).withLineCollector().execute().collect {
       when (it) {
         is ShellCommandOutputElement.StdoutLine ->
-          "Bonded devices:\\s+(\\d+)".toRegex().find(it.contents)?.let {
-            deviceCount = it.groupValues[1].toIntOrNull()
-          }
+          "Bonded devices:\\s+(\\d+)".toRegex().find(it.contents)?.let { deviceCount = it.groupValues[1].toIntOrNull() }
         is ShellCommandOutputElement.StderrLine ->
           if (it.contents.isNotBlank()) {
             logger.warn("dumpsys bluetooth_manager error output: ${it.contents}")
@@ -146,25 +137,18 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.getBluetoothAddress(): String? {
     val command = "settings get secure bluetooth_address"
     logger.info { "Executing on $serialNumber: $command" }
-    val result =
-      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    val result = session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
     if (result.stderr.isNotEmpty()) {
       logger.warn("Get Bluetooth address command error output: ${result.stderr}")
     }
-    return result.stdout.trim().takeIf {
-      it.matches("([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})".toRegex())
-    }
+    return result.stdout.trim().takeIf { it.matches("([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})".toRegex()) }
   }
 
-  private suspend fun ConnectedDevice.sendPairingCommand(
-    glassesBluetoothAddress: String,
-    useCdm: Boolean,
-  ) {
+  private suspend fun ConnectedDevice.sendPairingCommand(glassesBluetoothAddress: String, useCdm: Boolean) {
     val command =
       """am broadcast -a $COMPANION_PKG.ASSISTED_PAIR --es "address" "$glassesBluetoothAddress" --ez "auto_cdm" $useCdm -p $COMPANION_PKG"""
     logger.info { "Executing on $serialNumber: $command" }
-    val output =
-      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    val output = session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
     logger.debug { output.stdout }
     if (output.stderr.isNotEmpty()) {
       logger.warn("Pairing command error output: ${output.stderr}")
@@ -177,8 +161,7 @@ class AiGlassesPairing(val session: AdbSession) {
 
   suspend fun ConnectedDevice.sendUnpairCommand() {
     val command = "am broadcast -a $COMPANION_PKG.UNPAIR -p $COMPANION_PKG"
-    val output =
-      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    val output = session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
     logger.debug { output.stdout }
     if (output.stderr.isNotEmpty()) {
       logger.warn("Unpair command error output: ${output.stderr}")
@@ -192,11 +175,10 @@ class AiGlassesPairing(val session: AdbSession) {
   /**
    * Polls the pairing state until it returns a non-null value or the [POLLING_TIMEOUT] expires.
    *
-   * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE",
-   *   "WORKER_STARTED", "WORKER_BONDING", "UI_CDM_SCANNING", "UI_CDM_ASSOCIATING",
-   *   "UI_CDM_ASSOCIATION_FAILED", "UI_WAITING_FOR_WORKER", "WORKER_CONNECTING",
-   *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED",
-   *   "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED", "WORKER_CANCELLED", "ERROR".
+   * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE", "WORKER_STARTED", "WORKER_BONDING",
+   *   "UI_CDM_SCANNING", "UI_CDM_ASSOCIATING", "UI_CDM_ASSOCIATION_FAILED", "UI_WAITING_FOR_WORKER", "WORKER_CONNECTING",
+   *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED", "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED",
+   *   "WORKER_CANCELLED", "ERROR".
    */
   private suspend fun ConnectedDevice.waitForPairingState(): String? {
     val start = TimeSource.Monotonic.markNow()
@@ -210,10 +192,7 @@ class AiGlassesPairing(val session: AdbSession) {
     return null
   }
 
-  fun ConnectedDevice.pairToGlasses(
-    glassesBluetoothAddress: String,
-    useCdm: Boolean,
-  ): Flow<String> =
+  fun ConnectedDevice.pairToGlasses(glassesBluetoothAddress: String, useCdm: Boolean): Flow<String> =
     flow {
         grantPermission(COMPANION_PKG, "android.permission.NEARBY_WIFI_DEVICES")
         grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
@@ -258,14 +237,16 @@ class AiGlassesPairing(val session: AdbSession) {
     // Max time to retry polling if it fails (returns null) continuously
     private val POLLING_TIMEOUT = 30.seconds
 
+    // All possible terminal states for the pairing process
     val TERMINAL_STATES =
       setOf(
         "ERROR",
         "PAIRED",
         "POLLING_FAILED",
-        "UI_CDM_FAILED",
+        "UI_CDM_ASSOCIATION_FAILED",
         "WORKER_BOND_FAILED",
         "WORKER_CONNECTION_FAILED",
+        "WORKER_GLASSES_CORE_CONNECTION_FAILED",
         "WORKER_CANCELLED",
       )
   }

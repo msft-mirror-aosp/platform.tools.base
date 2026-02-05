@@ -39,7 +39,6 @@ public class LintFixTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintKotlin")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Test

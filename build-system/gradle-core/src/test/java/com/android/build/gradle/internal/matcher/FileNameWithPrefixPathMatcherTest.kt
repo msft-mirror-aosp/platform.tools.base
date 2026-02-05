@@ -17,41 +17,40 @@
 package com.android.build.gradle.internal.matcher
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
 open class FileNameWithPrefixPathMatcherTest {
 
-    @Test
-    fun testPattern() {
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*").matches()).isTrue()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/.*").matches()).isTrue()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/some_prefix*").matches()).isTrue()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*/**").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*/").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("_*/").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("/_*/").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("*/_*/").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("/_*/*").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("a/_*/*").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("a/_*/b").matches()).isFalse()
-        assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("_*/b").matches()).isFalse()
-    }
+  @Test
+  fun testPattern() {
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*").matches()).isTrue()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/.*").matches()).isTrue()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/some_prefix*").matches()).isTrue()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*/**").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*/").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("_*/").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("/_*/").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("*/_*/").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("/_*/*").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("a/_*/*").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("a/_*/b").matches()).isFalse()
+    assertThat(FileNameWithPrefixPathMatcher.factory().pattern().matcher("_*/b").matches()).isFalse()
+  }
 
-    @Test
-    fun testMatching() {
-        val pathMatcher =
-            FileNameWithPrefixPathMatcher(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*"))
-        assertThat(pathMatcher.matches(Paths.get("a/_b"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("ab/_b"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("a/b/_b"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("a/b/c/_b"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("_b"))).isTrue()
+  @Test
+  fun testMatching() {
+    val pathMatcher = FileNameWithPrefixPathMatcher(FileNameWithPrefixPathMatcher.factory().pattern().matcher("**/_*"))
+    assertThat(pathMatcher.matches(Paths.get("a/_b"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("ab/_b"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("a/b/_b"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("a/b/c/_b"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("_b"))).isTrue()
 
-        assertThat(pathMatcher.matches(Paths.get("_b/c"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("_b/c"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("a_b"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("p/aa_b"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("p/aa_"))).isFalse()
-    }
+    assertThat(pathMatcher.matches(Paths.get("_b/c"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("_b/c"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("a_b"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("p/aa_b"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("p/aa_"))).isFalse()
+  }
 }

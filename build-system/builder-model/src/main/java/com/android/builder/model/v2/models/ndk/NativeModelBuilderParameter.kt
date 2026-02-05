@@ -22,13 +22,11 @@ import java.io.Serializable
 interface NativeModelBuilderParameter : Serializable {
 
   /**
-   * Variants for which the build information should be generated. Unrecognized variants are
-   * ignored.
+   * Variants for which the build information should be generated. Unrecognized variants are ignored.
    *
    * If null, it means the build information should be generated for all variants.
    *
    * Build information includes the following:
-   *
    * - compile_commands.json
    * - build_file_index.txt
    * - symbol_folder_index.txt
@@ -38,11 +36,9 @@ interface NativeModelBuilderParameter : Serializable {
   /**
    * ABIs for which the build information should be generated.
    *
-   * If null, it means the build information should be generated for all ABIs. Unrecognized ABIs are
-   * ignored.
+   * If null, it means the build information should be generated for all ABIs. Unrecognized ABIs are ignored.
    *
    * Build information includes the following:
-   *
    * - compile_commands.json
    * - build_file_index.txt
    * - symbol_folder_index.txt

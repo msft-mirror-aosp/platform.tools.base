@@ -201,19 +201,13 @@ class MemoryLeakTest {
     // code coverage (and thus a better chance at catching a leak).
     doAnalysis()
 
-    assertTrue(
-      "Utility function `countLiveInstancesOf()` appears to be broken.",
-      countLiveInstancesOf(Object::class.java.name) > 0,
-    )
+    assertTrue("Utility function `countLiveInstancesOf()` appears to be broken.", countLiveInstancesOf(Object::class.java.name) > 0)
 
     assertTrue(
       "Detected Lint memory leak; KotlinCoreEnvironment is reachable",
       countLiveInstancesOf(KotlinCoreEnvironment::class.java.name) == 0,
     )
 
-    assertTrue(
-      "Detected Lint memory leak; PsiWhiteSpaceImpl is reachable",
-      countLiveInstancesOf(PsiWhiteSpaceImpl::class.java.name) == 0,
-    )
+    assertTrue("Detected Lint memory leak; PsiWhiteSpaceImpl is reachable", countLiveInstancesOf(PsiWhiteSpaceImpl::class.java.name) == 0)
   }
 }

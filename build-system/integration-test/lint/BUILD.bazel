@@ -91,6 +91,10 @@ PRIVACY_SANDBOX_SDK_TESTS = [
     "src/test/java/com/android/build/gradle/integration/lint/PrivacySandboxSdkLintTest.kt",
 ]
 
+LINT_DETECTOR_DETECTOR_STANDALONE_TEST = [
+    "src/test/java/com/android/build/gradle/integration/lint/LintDetectorDetectorStandaloneTest.kt",
+]
+
 # create a bazel target for some long-running tests
 gradle_integration_test(
     name = "long-running-tests",
@@ -170,6 +174,19 @@ gradle_integration_test(
 )
 
 gradle_integration_test(
+    name = "LintDetectorDetectorStandaloneTest",
+    srcs = glob(
+        include = LINT_DETECTOR_DETECTOR_STANDALONE_TEST,
+    ),
+    data = DATA + [
+        "//tools/base/build-system/integration-test:test-projects/lintStandaloneCustomRules",
+    ],
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = MAVEN_REPOS,
+    deps = DEPS,
+)
+
+gradle_integration_test(
     name = "tests",
     timeout = "long",
     srcs = glob(
@@ -177,7 +194,7 @@ gradle_integration_test(
             "src/test/java/**/*.java",
             "src/test/java/**/*.kt",
         ],
-        exclude = LONG_RUNNING_TESTS + KOTLIN_MULTIPLATFORM_TESTS + PRIVACY_SANDBOX_SDK_TESTS + LINT_DYNAMIC_FEATURE_TEST + LINT_ALIGN_UAST_TEST + LINT_CLASSLOADER_TEST + LINT_ANALYSIS_CACHEABILITY_TEST + UTILS,
+        exclude = LONG_RUNNING_TESTS + KOTLIN_MULTIPLATFORM_TESTS + PRIVACY_SANDBOX_SDK_TESTS + LINT_DYNAMIC_FEATURE_TEST + LINT_ALIGN_UAST_TEST + LINT_CLASSLOADER_TEST + LINT_ANALYSIS_CACHEABILITY_TEST + LINT_DETECTOR_DETECTOR_STANDALONE_TEST + UTILS,
     ),
     data = DATA + [
         "//tools/base/build-system/integration-test:test-projects/lintBaseline",

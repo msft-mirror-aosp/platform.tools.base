@@ -71,14 +71,9 @@ import org.jetbrains.uast.tryResolve
 class SdkIntDetector : Detector(), SourceCodeScanner {
   override fun getApplicableReferenceNames(): List<String> = listOf(SDK_INT, SDK_INT_FULL)
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf("getBuildSdkInt", "getExtensionVersion")
+  override fun getApplicableMethodNames(): List<String> = listOf("getBuildSdkInt", "getExtensionVersion")
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     // Make sure it's android.os.Build.VERSION.SDK_INT, though that's highly likely
     val evaluator = context.evaluator
     if (evaluator.isMemberInClass(referenced as? PsiField, "android.os.Build.VERSION")) {
@@ -109,11 +104,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
     private fun isLambdaType(context: JavaContext, type: PsiType?): Boolean {
       val rawType = (type as? PsiClassType)?.rawType() ?: return false
       val fqn = rawType.canonicalText
-      if (
-        fqn == "java.lang.Runnable" ||
-          fqn == "java.util.function.Function" ||
-          fqn.startsWith("kotlin.jvm.functions.Function")
-      ) {
+      if (fqn == "java.lang.Runnable" || fqn == "java.util.function.Function" || fqn.startsWith("kotlin.jvm.functions.Function")) {
         return true
       }
       val clz = rawType.resolve() ?: return false
@@ -146,12 +137,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
-    fun checkAnnotation(
-      context: JavaContext,
-      sdkInt: UElement,
-      sdkId: Int = ANDROID_SDK_ID,
-      isFull: Boolean,
-    ) {
+    fun checkAnnotation(context: JavaContext, sdkInt: UElement, sdkId: Int = ANDROID_SDK_ID, isFull: Boolean) {
       // In app module analysis we always have source access to the
       // check method bodies; don't nag users to annotate these.
       val project = context.project
@@ -171,33 +157,19 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       }
 
       val tokenType = comparison.operator
-      if (
-        tokenType !== UastBinaryOperator.GREATER &&
-          tokenType !== UastBinaryOperator.GREATER_OR_EQUALS
-      ) {
+      if (tokenType !== UastBinaryOperator.GREATER && tokenType !== UastBinaryOperator.GREATER_OR_EQUALS) {
         return
       }
       val isGreaterOrEquals = tokenType === UastBinaryOperator.GREATER_OR_EQUALS
       var parent = skipParenthesizedExprUp(comparison.uastParent)
-      if (
-        sdkId != ANDROID_SDK_ID &&
-          parent != null &&
-          isRhsInSdkIntComparison(context, comparison, parent)
-      ) {
+      if (sdkId != ANDROID_SDK_ID && parent != null && isRhsInSdkIntComparison(context, comparison, parent)) {
         // Allow SDK_INT > R && getExtensionVersion(...) combination, since getExtensionVersion
         // requires R.
         parent = skipParenthesizedExprUp(parent.uastParent)
-      } else if (
-        sdkId == ANDROID_SDK_ID &&
-          parent is UBinaryExpression &&
-          parent.operator == UastBinaryOperator.LOGICAL_AND
-      ) {
+      } else if (sdkId == ANDROID_SDK_ID && parent is UBinaryExpression && parent.operator == UastBinaryOperator.LOGICAL_AND) {
         val left = parent.leftOperand.skipParenthesizedExprDown()
         val right = parent.rightOperand.skipParenthesizedExprDown()
-        if (
-          left === comparison &&
-            parent.rightOperand.sourcePsi?.text?.contains("SDK_INT_FULL") == true
-        ) {
+        if (left === comparison && parent.rightOperand.sourcePsi?.text?.contains("SDK_INT_FULL") == true) {
           return
         } else if (right === comparison) {
           // Allow SDK_INT > 36 && SDK_INT_FULL >= combination, since SDK_INT_FULL requires 36.
@@ -216,22 +188,12 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
           val size = parentParent.expressions.size
           if (size == 1) {
             val method = parentParent.uastParent as UMethod
-            checkMethod(
-              comparison,
-              context,
-              isGreaterOrEquals,
-              method,
-              sdkId = sdkId,
-              isFull = isFull,
-            )
+            checkMethod(comparison, context, isGreaterOrEquals, method, sdkId = sdkId, isFull = isFull)
           }
         }
       } else if (parent is UIfExpression) {
         val then =
-          (parent.thenExpression as? UBlockExpression)
-            ?.expressions
-            ?.firstOrNull()
-            ?.skipParenthesizedExprDown()
+          (parent.thenExpression as? UBlockExpression)?.expressions?.firstOrNull()?.skipParenthesizedExprDown()
             ?: parent.thenExpression?.skipParenthesizedExprDown()
             ?: return
         val receiver =
@@ -266,14 +228,10 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * For a given binary operator node, checks whether it's on the right hand side of another
-     * binary operator, &&, with the left hand side being an SDK_INT check.
+     * For a given binary operator node, checks whether it's on the right hand side of another binary operator, &&, with the left hand side
+     * being an SDK_INT check.
      */
-    private fun isRhsInSdkIntComparison(
-      context: JavaContext,
-      comparison: UBinaryExpression,
-      parent: UElement,
-    ): Boolean {
+    private fun isRhsInSdkIntComparison(context: JavaContext, comparison: UBinaryExpression, parent: UElement): Boolean {
       val outer = parent as? UBinaryExpression ?: return false
       if (outer.operator != UastBinaryOperator.LOGICAL_AND) return false
       if (parent.rightOperand.skipParenthesizedExprDown() !== comparison) return false
@@ -296,19 +254,11 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
     ) {
       val method: UMethod =
         if (parentParent is UReturnExpression) {
-          parentParent.uastParent as? UMethod
-            ?: parentParent.uastParent?.uastParent as? UMethod
-            ?: return
+          parentParent.uastParent as? UMethod ?: parentParent.uastParent?.uastParent as? UMethod ?: return
         } else if (parentParent is UBlockExpression && parentParent.uastParent is UMethod) {
           val expressions = parentParent.expressions
-          if (
-            expressions.size == 1 ||
-              expressions.size == 2 &&
-                expressions[1].skipParenthesizedExprDown() is UReturnExpression
-          ) {
-            parentParent.uastParent as? UMethod
-              ?: parentParent.uastParent?.uastParent as? UMethod
-              ?: return
+          if (expressions.size == 1 || expressions.size == 2 && expressions[1].skipParenthesizedExprDown() is UReturnExpression) {
+            parentParent.uastParent as? UMethod ?: parentParent.uastParent?.uastParent as? UMethod ?: return
           } else {
             return
           }
@@ -358,8 +308,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       if (api != null) {
         val apiAtLeast = if (isGreaterOrEquals) api else api + 1
         if (!checkAnnotated(context, method, apiAtLeast)) {
-          val buildCode =
-            getBuildCode(apiAtLeast, sdkId, if (isGreaterOrEquals) apiOperand else null)
+          val buildCode = getBuildCode(apiAtLeast, sdkId, if (isGreaterOrEquals) apiOperand else null)
           val location = context.getNameLocation(method).withOriginalSource(method)
           val args =
             "api=$buildCode${if (lambda != -1) ", lambda=$lambda" else ""}${if (sdkId != ANDROID_SDK_ID)", extension=${getSdkConstant(context, sdkId)}" else ""}"
@@ -411,21 +360,11 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun createAnnotationFix(
-      context: JavaContext,
-      element: UElement,
-      args: String,
-    ): LintFix? {
+    private fun createAnnotationFix(context: JavaContext, element: UElement, args: String): LintFix? {
       // if not on classpath (older annotation library) don't suggest annotating
       if (context.evaluator.findClass(CHECKS_SDK_INT_AT_LEAST_ANNOTATION) == null) return null
 
-      return LintFix.create()
-        .annotate(
-          "$CHECKS_SDK_INT_AT_LEAST_ANNOTATION($args)",
-          context = context,
-          element = element.sourcePsi,
-        )
-        .build()
+      return LintFix.create().annotate("$CHECKS_SDK_INT_AT_LEAST_ANNOTATION($args)", context = context, element = element.sourcePsi).build()
     }
 
     private fun getSdkConstant(context: JavaContext, sdkId: Int): String {
@@ -443,13 +382,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       return getAndroidVersionField(api, true)
     }
 
-    private fun checkField(
-      comparison: UBinaryExpression,
-      context: JavaContext,
-      isGreaterOrEquals: Boolean,
-      field: UField,
-      sdkId: Int,
-    ) {
+    private fun checkField(comparison: UBinaryExpression, context: JavaContext, isGreaterOrEquals: Boolean, field: UField, sdkId: Int) {
       if (!context.evaluator.isPublic(field)) {
         return
       }
@@ -459,8 +392,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       val atLeast = if (isGreaterOrEquals) api else api + 1
       if (!checkAnnotated(context, field, atLeast)) {
         val buildCode = getBuildCode(atLeast, sdkId, if (isGreaterOrEquals) apiOperand else null)
-        val args =
-          "api=$buildCode${if (sdkId != ANDROID_SDK_ID)", extension=${getSdkConstant(context, sdkId)}" else ""}"
+        val args = "api=$buildCode${if (sdkId != ANDROID_SDK_ID)", extension=${getSdkConstant(context, sdkId)}" else ""}"
         val message = "This field should be annotated with `ChecksSdkIntAtLeast($args)`"
         val location = context.getNameLocation(field).withOriginalSource(field)
         val fix = createAnnotationFix(context, field, args)
@@ -470,10 +402,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
           // Store data for VersionChecks used by for example ApiDetector
           val fieldDesc = getFieldKey(context.evaluator, field)
           val map = context.getPartialResults(SDK_INT_VERSION_DATA).map()
-          map.put(
-            fieldDesc,
-            "api=$atLeast${if (sdkId != ANDROID_SDK_ID)", extension=$sdkId" else ""}",
-          )
+          map.put(fieldDesc, "api=$atLeast${if (sdkId != ANDROID_SDK_ID)", extension=$sdkId" else ""}")
         }
       }
     }
@@ -496,18 +425,12 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Checks whether a given UAnnotated element (method, field, etc.) has the
-     * `@ChecksSdkIntAtLeast` annotation and optionally checks if the annotated API level matches
-     * the expected minimum API level.
+     * Checks whether a given UAnnotated element (method, field, etc.) has the `@ChecksSdkIntAtLeast` annotation and optionally checks if
+     * the annotated API level matches the expected minimum API level.
      *
      * @return true if the element is annotated, false otherwise.
      */
-    private fun checkAnnotated(
-      context: JavaContext,
-      annotated: UAnnotated,
-      apiAtLeast: Int,
-      warn: Boolean = true,
-    ): Boolean {
+    private fun checkAnnotated(context: JavaContext, annotated: UAnnotated, apiAtLeast: Int, warn: Boolean = true): Boolean {
       val annotations = context.evaluator.getAllAnnotations(annotated, false)
       for (annotation in annotations) {
         if (annotation.qualifiedName == CHECKS_SDK_INT_AT_LEAST_ANNOTATION) {

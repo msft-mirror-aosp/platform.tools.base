@@ -21,24 +21,22 @@ import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 /** See {@link com.android.build.api.dsl.NdkBuild} */
-abstract class NdkBuildOptions @Inject constructor(private val dslServices: DslServices)
-    : CoreNdkBuildOptions, com.android.build.api.dsl.NdkBuild {
+abstract class NdkBuildOptions @Inject constructor(private val dslServices: DslServices) :
+  CoreNdkBuildOptions, com.android.build.api.dsl.NdkBuild {
 
-    override fun path(any: Any) {
-        this.path = dslServices.file(any)
-    }
+  override fun path(any: Any) {
+    this.path = dslServices.file(any)
+  }
 
-    fun setPath(path: Any) {
-        path(path)
-    }
+  fun setPath(path: Any) {
+    path(path)
+  }
 
-    override fun buildStagingDirectory(any: Any) {
-        this.buildStagingDirectory = dslServices.file(any)
-    }
+  override fun buildStagingDirectory(any: Any) {
+    this.buildStagingDirectory = dslServices.file(any)
+  }
 
-    fun setBuildStagingDirectory(buildStagingDirectory: Any?) {
-        this.buildStagingDirectory = buildStagingDirectory?.let {
-            dslServices.file(buildStagingDirectory)
-        }
-    }
+  fun setBuildStagingDirectory(buildStagingDirectory: Any?) {
+    this.buildStagingDirectory = buildStagingDirectory?.let { dslServices.file(buildStagingDirectory) }
+  }
 }

@@ -22,104 +22,93 @@ import com.android.build.gradle.internal.cxx.gradle.generator.CxxConfigurationPa
 import java.io.File
 import java.util.Locale
 
-/**
- * Construct a [CxxVariantModel]
- */
-fun createCxxVariantModel(
-    configurationParameters: CxxConfigurationParameters,
-    module: CxxModuleModel) : CxxVariantModel {
-    val validAbiList =
-        AbiConfigurator(
-                AbiConfigurationKey(
-                        module.ndkMetaAbiList,
-                        module.ndkSupportedAbiList.toSet(),
-                        module.ndkDefaultAbiList.toSet(),
-                        configurationParameters.nativeVariantConfig.externalNativeBuildAbiFilters,
-                        configurationParameters.nativeVariantConfig.ndkAbiFilters,
-                        configurationParameters.splitsAbiFilterSet,
-                        module.project.isBuildOnlyTargetAbiEnabled,
-                        module.project.ideBuildTargetAbi
-                )
-        ).validAbis.toList()
-
-    with(module) {
-        val arguments = configurationParameters.nativeVariantConfig.arguments
-        val isDebuggable = configurationParameters.isDebuggable
-        val variantName = configurationParameters.variantName
-
-        return CxxVariantModel(
-                buildTargetSet = configurationParameters.nativeVariantConfig.targets,
-                implicitBuildTargetSet = configurationParameters.implicitBuildTargetSet,
-                module = this,
-                buildSystemArgumentList = arguments,
-                cFlagsList = configurationParameters.nativeVariantConfig.cFlags,
-                cppFlagsList = configurationParameters.nativeVariantConfig.cppFlags,
-                variantName = variantName,
-                // TODO remove this after configuration has been added to DSL
-                // If CMakeSettings.json has a configuration with this exact name then
-                // it will be used. The point is to delay adding 'configuration' to the
-                // DSL.
-                cmakeSettingsConfiguration = "android-gradle-plugin-predetermined-name",
-                isDebuggableEnabled = isDebuggable,
-                validAbiList = validAbiList,
-                prefabClassPaths = configurationParameters.prefabClassPath,
-                prefabPackages = configurationParameters.prefabPackageDirectoryList,
-                prefabPackageConfigurations = configurationParameters.prefabPackageConfigurationList,
-                stlType = determineUsedStl(arguments).argumentName,
-                verboseMakefile = null,
-                optimizationTag = run {
-                    /**
-                     * Choose the optimization level to use when the user hasn't specified one
-                     * in build.gradle arguments.
-                     *
-                     * If possible, the name of the variant is used directly. For example, if it
-                     * contains "debug" then the optimization level is Debug and so on.
-                     *
-                     * There is one caveat that variants containing "release" result in
-                     * RelWithDebInfo rather than Release. The reason is that, in CMake, Release
-                     * means that no -g flag is passed to the C++ toolchain and so no symbols would
-                     * be generated. We want to keep those symbols for debug-ability. Symbols are
-                     * stripped by AGP before packaging into the APK so RelWithDebInfo is
-                     * equivalent to Release for packaging purposes.
-                     *
-                     * If the user truly wants Release then they can use
-                     * -DCMAKE_RELEASE_TYPE=Release in build.gradle to override the default chosen
-                     * here.
-                     */
-                    val lower = variantName.lowercase(Locale.ROOT)
-                    when {
-                        lower.endsWith("release") -> "RelWithDebInfo"
-                        lower.endsWith("debug") -> "Debug"
-                        lower.endsWith("relwithdebinfo") -> "RelWithDebInfo"
-                        lower.endsWith("minsizerel") -> "MinSizeRel"
-                        lower.contains("release") -> "RelWithDebInfo"
-                        lower.contains("debug") -> "Debug"
-                        lower.contains("relwithdebinfo") -> "RelWithDebInfo"
-                        lower.contains("minsizerel") -> "MinSizeRel"
-                        else ->
-                            if (isDebuggable) {
-                                "Debug"
-                            } else {
-                                "RelWithDebInfo"
-                            }
-                    }
-                }
+/** Construct a [CxxVariantModel] */
+fun createCxxVariantModel(configurationParameters: CxxConfigurationParameters, module: CxxModuleModel): CxxVariantModel {
+  val validAbiList =
+    AbiConfigurator(
+        AbiConfigurationKey(
+          module.ndkMetaAbiList,
+          module.ndkSupportedAbiList.toSet(),
+          module.ndkDefaultAbiList.toSet(),
+          configurationParameters.nativeVariantConfig.externalNativeBuildAbiFilters,
+          configurationParameters.nativeVariantConfig.ndkAbiFilters,
+          configurationParameters.splitsAbiFilterSet,
+          module.project.isBuildOnlyTargetAbiEnabled,
+          module.project.ideBuildTargetAbi,
         )
-    }
+      )
+      .validAbis
+      .toList()
+
+  with(module) {
+    val arguments = configurationParameters.nativeVariantConfig.arguments
+    val isDebuggable = configurationParameters.isDebuggable
+    val variantName = configurationParameters.variantName
+
+    return CxxVariantModel(
+      buildTargetSet = configurationParameters.nativeVariantConfig.targets,
+      implicitBuildTargetSet = configurationParameters.implicitBuildTargetSet,
+      module = this,
+      buildSystemArgumentList = arguments,
+      cFlagsList = configurationParameters.nativeVariantConfig.cFlags,
+      cppFlagsList = configurationParameters.nativeVariantConfig.cppFlags,
+      variantName = variantName,
+      // TODO remove this after configuration has been added to DSL
+      // If CMakeSettings.json has a configuration with this exact name then
+      // it will be used. The point is to delay adding 'configuration' to the
+      // DSL.
+      cmakeSettingsConfiguration = "android-gradle-plugin-predetermined-name",
+      isDebuggableEnabled = isDebuggable,
+      validAbiList = validAbiList,
+      prefabClassPaths = configurationParameters.prefabClassPath,
+      prefabPackages = configurationParameters.prefabPackageDirectoryList,
+      prefabPackageConfigurations = configurationParameters.prefabPackageConfigurationList,
+      stlType = determineUsedStl(arguments).argumentName,
+      verboseMakefile = null,
+      optimizationTag =
+        run {
+          /**
+           * Choose the optimization level to use when the user hasn't specified one in build.gradle arguments.
+           *
+           * If possible, the name of the variant is used directly. For example, if it contains "debug" then the optimization level is Debug
+           * and so on.
+           *
+           * There is one caveat that variants containing "release" result in RelWithDebInfo rather than Release. The reason is that, in
+           * CMake, Release means that no -g flag is passed to the C++ toolchain and so no symbols would be generated. We want to keep those
+           * symbols for debug-ability. Symbols are stripped by AGP before packaging into the APK so RelWithDebInfo is equivalent to Release
+           * for packaging purposes.
+           *
+           * If the user truly wants Release then they can use -DCMAKE_RELEASE_TYPE=Release in build.gradle to override the default chosen
+           * here.
+           */
+          val lower = variantName.lowercase(Locale.ROOT)
+          when {
+            lower.endsWith("release") -> "RelWithDebInfo"
+            lower.endsWith("debug") -> "Debug"
+            lower.endsWith("relwithdebinfo") -> "RelWithDebInfo"
+            lower.endsWith("minsizerel") -> "MinSizeRel"
+            lower.contains("release") -> "RelWithDebInfo"
+            lower.contains("debug") -> "Debug"
+            lower.contains("relwithdebinfo") -> "RelWithDebInfo"
+            lower.contains("minsizerel") -> "MinSizeRel"
+            else ->
+              if (isDebuggable) {
+                "Debug"
+              } else {
+                "RelWithDebInfo"
+              }
+          }
+        },
+    )
+  }
 }
 
-val CxxVariantModel.prefabClassPath : File?
-    get() = prefabClassPaths?.singleFile
+val CxxVariantModel.prefabClassPath: File?
+  get() = prefabClassPaths?.singleFile
 
-val CxxVariantModel.prefabPackageDirectoryList : List<File>
-    get() = prefabPackages?.toList()?:listOf()
+val CxxVariantModel.prefabPackageDirectoryList: List<File>
+  get() = prefabPackages?.toList() ?: listOf()
 
-/**
- * List of prefab_publication.json from Prefab sources such as AAR or module-to-module reference.
- */
-val CxxVariantModel.prefabPackageConfigurationList : List<File>
-    get() = (prefabPackageConfigurations?.toList()?:listOf())
-
-
-
-
+/** List of prefab_publication.json from Prefab sources such as AAR or module-to-module reference. */
+val CxxVariantModel.prefabPackageConfigurationList: List<File>
+  get() = (prefabPackageConfigurations?.toList() ?: listOf())

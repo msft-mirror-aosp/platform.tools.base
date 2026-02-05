@@ -15,19 +15,15 @@
  */
 package com.android.adblib
 
-/**
- * An mDNS service as returned by ADB
- */
+/** An mDNS service as returned by ADB */
 data class MdnsServiceInfo(
-    /** The service instance name */
-    val instanceName: String,
-    /** The service type */
-    val serviceName: String,
-    /** The [DeviceAddress] of the service */
-    val deviceAddress: DeviceAddress
+  /** The service instance name */
+  val instanceName: String,
+  /** The service type */
+  val serviceName: String,
+  /** The [DeviceAddress] of the service */
+  val deviceAddress: DeviceAddress,
 )
 
-/**
- * A list of [MdnsServiceInfo], see [AdbHostServices.mdnsServices].
- */
+/** A list of [MdnsServiceInfo], see [AdbHostServices.mdnsServices]. */
 typealias MdnsServiceList = ListWithErrors<MdnsServiceInfo>

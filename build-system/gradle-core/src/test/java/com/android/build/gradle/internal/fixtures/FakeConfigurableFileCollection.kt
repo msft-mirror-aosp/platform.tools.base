@@ -19,74 +19,71 @@ package com.android.build.gradle.internal.fixtures
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.SupportsConvention
 
-/**
- * A fake [ConfigurableFileCollection] that can be created without [Project].
- */
-class FakeConfigurableFileCollection(vararg files : Any?)
-    : FakeFileCollection(*files), ConfigurableFileCollection {
-    override fun finalizeValueOnRead() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+/** A fake [ConfigurableFileCollection] that can be created without [Project]. */
+class FakeConfigurableFileCollection(vararg files: Any?) : FakeFileCollection(*files), ConfigurableFileCollection {
+  override fun finalizeValueOnRead() {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    private var _builtBy = mutableSetOf<Any?>()
+  private var _builtBy = mutableSetOf<Any?>()
 
-    override fun from(vararg collection: Any?): ConfigurableFileCollection {
-        rawFiles.addAll(collection)
-        resolved = false
-        return this
-    }
+  override fun from(vararg collection: Any?): ConfigurableFileCollection {
+    rawFiles.addAll(collection)
+    resolved = false
+    return this
+  }
 
-    override fun getFrom(): MutableSet<Any> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun getFrom(): MutableSet<Any> {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun setFrom(p0: MutableIterable<*>?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun setFrom(p0: MutableIterable<*>?) {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun setFrom(vararg p0: Any?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun setFrom(vararg p0: Any?) {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun convention(paths: MutableIterable<*>): ConfigurableFileCollection {
-        TODO("Not yet implemented")
-    }
+  override fun convention(paths: MutableIterable<*>): ConfigurableFileCollection {
+    TODO("Not yet implemented")
+  }
 
-    override fun convention(vararg paths: Any?): ConfigurableFileCollection {
-        TODO("Not yet implemented")
-    }
+  override fun convention(vararg paths: Any?): ConfigurableFileCollection {
+    TODO("Not yet implemented")
+  }
 
-    override fun builtBy(vararg tasks: Any?): ConfigurableFileCollection {
-        tasks.forEach { _builtBy.add(it) }
-        return this
-    }
+  override fun builtBy(vararg tasks: Any?): ConfigurableFileCollection {
+    tasks.forEach { _builtBy.add(it) }
+    return this
+  }
 
-    override fun getBuiltBy(): MutableSet<Any?> {
-        return _builtBy
-    }
+  override fun getBuiltBy(): MutableSet<Any?> {
+    return _builtBy
+  }
 
-    override fun setBuiltBy(tasks: MutableIterable<*>?): ConfigurableFileCollection {
-        _builtBy = tasks!!.toMutableSet()
-        return this
-    }
+  override fun setBuiltBy(tasks: MutableIterable<*>?): ConfigurableFileCollection {
+    _builtBy = tasks!!.toMutableSet()
+    return this
+  }
 
-    override fun disallowChanges() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun disallowChanges() {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun finalizeValue() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun finalizeValue() {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun disallowUnsafeRead() {
-        TODO("Not yet implemented")
-    }
+  override fun disallowUnsafeRead() {
+    TODO("Not yet implemented")
+  }
 
-    override fun unset(): SupportsConvention {
-        TODO("Not yet implemented")
-    }
+  override fun unset(): SupportsConvention {
+    TODO("Not yet implemented")
+  }
 
-    override fun unsetConvention(): SupportsConvention {
-        TODO("Not yet implemented")
-    }
+  override fun unsetConvention(): SupportsConvention {
+    TODO("Not yet implemented")
+  }
 }

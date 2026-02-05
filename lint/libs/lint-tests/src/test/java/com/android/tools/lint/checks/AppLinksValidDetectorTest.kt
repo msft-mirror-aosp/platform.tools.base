@@ -2352,22 +2352,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         whenever(driver).thenReturn(mock())
         whenever(project).thenReturn(mock())
       }
-    val infos =
-      XmlUtils.getSubTagsByName(activity, TAG_INTENT_FILTER).map {
-        getIntentFilterData(ElementWrapper(it, mockContext))
-      }
+    val infos = XmlUtils.getSubTagsByName(activity, TAG_INTENT_FILTER).map { getIntentFilterData(ElementWrapper(it, mockContext)) }
 
-    fun testElement(testUrl: URL, infos: List<IntentFilterData>): String? =
-      detector.checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
+    fun testElement(testUrl: URL, infos: List<IntentFilterData>): String? = detector.checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
 
     assertThat(testElement(URL("http://example.com/literal/path"), infos)).isNull() // success
     assertThat(testElement(URL("http://example.com/gizmos/foo/bar"), infos)).isNull() // success
-    assertThat(testElement(URL("https://example.com/gizmos/foo/bar"), infos))
-      .isEqualTo("Test URL did not match scheme http")
+    assertThat(testElement(URL("https://example.com/gizmos/foo/bar"), infos)).isEqualTo("Test URL did not match scheme http")
     assertThat(testElement(URL("http://example.com/notmatch/foo/bar"), infos))
       .isEqualTo("Test URL did not match path prefix /gizmos, path literal /literal/path")
-    assertThat(testElement(URL("http://notmatch.com/gizmos/foo/bar"), infos))
-      .isEqualTo("Test URL did not match host example.com")
+    assertThat(testElement(URL("http://notmatch.com/gizmos/foo/bar"), infos)).isEqualTo("Test URL did not match host example.com")
   }
 
   fun testAutoVerifyMissingAttributes() {
@@ -3256,11 +3250,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
   }
 
   fun testSameMessage() {
-    assertThat(
-        AppLinksValidDetector()
-          .sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")
-      )
-      .isTrue()
+    assertThat(AppLinksValidDetector().sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")).isTrue()
 
     assertThat(
         AppLinksValidDetector()
@@ -3275,8 +3265,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         AppLinksValidDetector()
           .sameMessage(
             VALIDATION,
-            new =
-              "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
+            new = "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
             old = "Missing required elements/attributes for Android App Links",
           )
       )
@@ -3285,8 +3274,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         AppLinksValidDetector()
           .sameMessage(
             VALIDATION,
-            new =
-              "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
+            new = "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
             old = "Missing required elements/attributes for Android App Links",
           )
       )

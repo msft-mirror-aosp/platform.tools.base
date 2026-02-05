@@ -15,19 +15,17 @@
  */
 package com.android.fakeadbserver.statechangehubs
 
-/**
- * Base factory interface that defines handler results.
- */
+/** Base factory interface that defines handler results. */
 interface StateChangeHandlerFactory {
 
-    class HandlerResult(shouldContinue: Boolean) {
+  class HandlerResult(shouldContinue: Boolean) {
 
-        // Decide if the executing thread should terminate the connection and exit the handler
-        // task.
-        var mShouldContinue = true
+    // Decide if the executing thread should terminate the connection and exit the handler
+    // task.
+    var mShouldContinue = true
 
-        init {
-            mShouldContinue = shouldContinue
-        }
+    init {
+      mShouldContinue = shouldContinue
     }
+  }
 }

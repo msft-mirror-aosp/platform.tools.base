@@ -22,39 +22,34 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.SyncIssue
 import com.google.common.base.Throwables.getRootCause
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class MissingSdkTest {
 
-    @Rule
-    @JvmField
-    val testProject =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).withSdk(false)
-            .create()
+  @Rule
+  @JvmField
+  val testProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).withSdk(false).create()
 
-    @Test
-    fun missingSdkSyncIssueCreated() {
-        val localPropertiesPath = File(testProject.projectDir, FN_LOCAL_PROPERTIES).absolutePath
-        val exception = testProject.executeExpectingFailure("assembleDebug")
-        val rootCause = getRootCause(exception)
-        assertThat(rootCause.message).isEqualTo(
-            "SDK location not found. Define a valid SDK location with an ANDROID_HOME " +
-                    "environment variable or by setting the sdk.dir path in " +
-                    "your project's local properties file at '$localPropertiesPath'."
-        )
+  @Test
+  fun missingSdkSyncIssueCreated() {
+    val localPropertiesPath = File(testProject.projectDir, FN_LOCAL_PROPERTIES).absolutePath
+    val exception = testProject.executeExpectingFailure("assembleDebug")
+    val rootCause = getRootCause(exception)
+    assertThat(rootCause.message)
+      .isEqualTo(
+        "SDK location not found. Define a valid SDK location with an ANDROID_HOME " +
+          "environment variable or by setting the sdk.dir path in " +
+          "your project's local properties file at '$localPropertiesPath'."
+      )
 
-        val syncIssues =
-            testProject.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels().container.getProject().issues?.syncIssues!!
+    val syncIssues = testProject.modelV2().ignoreSyncIssues().fetchModels().container.getProject().issues?.syncIssues!!
 
-        assertThat(syncIssues.size).isEqualTo(1)
-        val syncIssue = syncIssues.first()
-        assertThat(syncIssue.type).isEqualTo(SyncIssue.TYPE_SDK_NOT_SET)
-        assertThat(syncIssue.data).isEqualTo(localPropertiesPath)
-        assertThat(syncIssue.severity).isEqualTo(SyncIssue.SEVERITY_ERROR)
-    }
+    assertThat(syncIssues.size).isEqualTo(1)
+    val syncIssue = syncIssues.first()
+    assertThat(syncIssue.type).isEqualTo(SyncIssue.TYPE_SDK_NOT_SET)
+    assertThat(syncIssue.data).isEqualTo(localPropertiesPath)
+    assertThat(syncIssue.severity).isEqualTo(SyncIssue.SEVERITY_ERROR)
+  }
 }

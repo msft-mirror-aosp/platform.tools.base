@@ -26,54 +26,49 @@ import org.junit.Before
 import org.junit.Test
 
 class ProductFlavorTest {
-    private lateinit var project: Project
-    private val dslServices = createDslServices()
+  private lateinit var project: Project
+  private val dslServices = createDslServices()
 
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-        project = ProjectBuilder.builder().build()
-        TestProjects.prepareProject(project, ImmutableMap.of())
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
+    project = ProjectBuilder.builder().build()
+    TestProjects.prepareProject(project, ImmutableMap.of())
+  }
+
+  @Test
+  fun testInitWith() {
+    CopyOfTester.assertAllGettersCalled(
+      ProductFlavor::class.java,
+      dslServices.newDecoratedInstance(ProductFlavor::class.java, "original", dslServices),
+      listOf(
+        // isDefault is not copied
+        "isDefault",
+        "getIsDefault",
+        // Extensions are not copied as AGP doesn't manage them
+        "getExtensions",
+        "getGeneratedDensities\$annotations",
+        // I sort of feel that some of these should be copied
+        "getExternalNativeBuild",
+        "getExternalNativeBuildOptions",
+        "getJavaCompileOptions",
+        "getOptimization",
+        "getMaxSdk",
+        "getInternalDimensionDefault\$gradle_core",
+        "getTargetSdkPreview",
+        "getAarMetadata",
+        "getNdkConfig",
+        "getNdk",
+        "getShaders",
+        "getMinSdkPreview",
+        "getTargetSdk",
+        "getMinSdk",
+        "getGeneratedDensities",
+        "getApplicationId",
+      ),
+    ) { original: ProductFlavor ->
+      val copy = dslServices.newDecoratedInstance(ProductFlavor::class.java, original.name, dslServices)
+      copy.initWith(original)
     }
-
-    @Test
-    fun testInitWith() {
-        CopyOfTester.assertAllGettersCalled(
-                ProductFlavor::class.java,
-                dslServices.newDecoratedInstance(ProductFlavor::class.java,
-                        "original",
-                        dslServices),
-                listOf(
-                        // isDefault is not copied
-                        "isDefault",
-                        "getIsDefault",
-                        // Extensions are not copied as AGP doesn't manage them
-                        "getExtensions",
-                        "getGeneratedDensities\$annotations",
-                        // I sort of feel that some of these should be copied
-                        "getExternalNativeBuild",
-                        "getExternalNativeBuildOptions",
-                        "getJavaCompileOptions",
-                        "getOptimization",
-                        "getMaxSdk",
-                        "getInternalDimensionDefault\$gradle_core",
-                        "getTargetSdkPreview",
-                        "getAarMetadata",
-                        "getNdkConfig",
-                        "getNdk",
-                        "getShaders",
-                        "getMinSdkPreview",
-                        "getTargetSdk",
-                        "getMinSdk",
-                        "getGeneratedDensities",
-                        "getApplicationId",
-                )
-        ) { original: ProductFlavor ->
-            val copy = dslServices.newDecoratedInstance(ProductFlavor::class.java,
-                    original.name,
-                    dslServices)
-            copy.initWith(original)
-        }
-    }
-
+  }
 }

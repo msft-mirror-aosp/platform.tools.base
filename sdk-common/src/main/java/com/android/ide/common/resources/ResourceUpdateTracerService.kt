@@ -19,10 +19,10 @@ import java.util.ServiceLoader
 
 // Indirection so that `ResourceUpdateTracer` can be invoked from Lint
 abstract class ResourceUpdateTracerService {
-    companion object {
-        fun getInstance(): ResourceUpdateTracerService? =
-            ServiceLoader.load(ResourceUpdateTracerService::class.java, this::class.java.classLoader)
-                .firstOrNull()
-    }
-    abstract fun dumpTrace(message: String?)
+  companion object {
+    fun getInstance(): ResourceUpdateTracerService? =
+      ServiceLoader.load(ResourceUpdateTracerService::class.java, this::class.java.classLoader).firstOrNull()
+  }
+
+  abstract fun dumpTrace(message: String?)
 }

@@ -22,7 +22,6 @@ import org.gradle.api.Incubating
 @Incubating
 @Deprecated("Renamed to TestCoverage", replaceWith = ReplaceWith("TestCoverage"))
 interface JacocoOptions : TestCoverage {
-    /** The version of JaCoCo to use. */
-    @Deprecated("Renamed to testCoverage.jacocoVersion", replaceWith = ReplaceWith("jacocoVersion"))
-    var version: String
+  /** The version of JaCoCo to use. */
+  @Deprecated("Renamed to testCoverage.jacocoVersion", replaceWith = ReplaceWith("jacocoVersion")) var version: String
 }

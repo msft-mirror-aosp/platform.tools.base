@@ -34,27 +34,28 @@ import com.android.build.gradle.internal.cxx.settings.EnvironmentVariable
 import com.android.testutils.AssumeUtil
 import com.android.utils.FileUtils
 import com.android.utils.FileUtils.join
+import java.io.File
+import java.io.IOException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import java.io.IOException
 
 class NdkBuildBuildSettingsTest {
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldJniApp.builder().build())
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
-        .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().build())
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
+      .create()
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
                 android {
                     namespace = "com.example.hellojni"
@@ -80,42 +81,33 @@ class NdkBuildBuildSettingsTest {
                 android.packagingOptions {
                     doNotStrip "*/armeabi-v7a/libhello-jni.so"
                 }
-           """.trimIndent()
-        )
-    }
+           """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `uses empty BuildSettingsConfiguration if JSON file does not exist`() {
-        project.execute("clean", "assembleDebug")
+  @Test
+  fun `uses empty BuildSettingsConfiguration if JSON file does not exist`() {
+    project.execute("clean", "assembleDebug")
 
-        // No BuildSettings.json, should have empty BuildSettingsConfiguration
-        project.recoverExistingCxxAbiModels()
-            .map { it.buildSettings }
-            .forEach {
-                assertThat(it).isEqualTo(BuildSettingsConfiguration())
-            }
-    }
+    // No BuildSettings.json, should have empty BuildSettingsConfiguration
+    project.recoverExistingCxxAbiModels().map { it.buildSettings }.forEach { assertThat(it).isEqualTo(BuildSettingsConfiguration()) }
+  }
 
-    @Test
-    fun `externalNativeBuild task exists`() {
-        project.execute("externalNativeBuildDebug")
-    }
+  @Test
+  fun `externalNativeBuild task exists`() {
+    project.execute("externalNativeBuildDebug")
+  }
 
-    @Test
-    fun `uses BuildSettings environment variables during the build`() {
-        AssumeUtil.assumeNotWindows()
-        val launcher = setupTestLauncher()
+  @Test
+  fun `uses BuildSettings environment variables during the build`() {
+    AssumeUtil.assumeNotWindows()
+    val launcher = setupTestLauncher()
 
-        // NDK_CCACHE sets a launcher for ndk-build
-        TestFileUtils.appendToFile(
-            join(
-                project.buildFile.parentFile,
-                "src",
-                "main",
-                "jni",
-                "BuildSettings.json"
-            ),
-            """
+    // NDK_CCACHE sets a launcher for ndk-build
+    TestFileUtils.appendToFile(
+      join(project.buildFile.parentFile, "src", "main", "jni", "BuildSettings.json"),
+      """
             {
                 "environmentVariables": [
                     {
@@ -123,49 +115,51 @@ class NdkBuildBuildSettingsTest {
                       "value": "${launcher.path}"
                     }
                 ]
-            }""".trimIndent()
-        )
-        project.execute("clean", "assembleDebug")
+            }"""
+        .trimIndent(),
+    )
+    project.execute("clean", "assembleDebug")
 
-        // Verify that environment variables should be set in BuildSettings
-        project.recoverExistingCxxAbiModels()
-            .map { it.buildSettings }
-            .forEach {
-                assertThat(it.environmentVariables).isEqualTo(
-                    listOf(
-                        EnvironmentVariable("NDK_CCACHE", launcher.path)
-                    )
-                )
-            }
+    // Verify that environment variables should be set in BuildSettings
+    project
+      .recoverExistingCxxAbiModels()
+      .map { it.buildSettings }
+      .forEach { assertThat(it.environmentVariables).isEqualTo(listOf(EnvironmentVariable("NDK_CCACHE", launcher.path))) }
 
-        // Verify that environment variables was used during the build to set the launcher
-        val launcherOutput = FileUtils.join(project.buildFile.parentFile, "launcher_output.txt")
-        assertThat(launcherOutput.readText().trim()).isEqualTo("output to launcher_output.txt")
-    }
+    // Verify that environment variables was used during the build to set the launcher
+    val launcherOutput = FileUtils.join(project.buildFile.parentFile, "launcher_output.txt")
+    assertThat(launcherOutput.readText().trim()).isEqualTo("output to launcher_output.txt")
+  }
 
-    @Test
-    fun `build product golden locations`() {
-        project.execute("assembleDebug")
-        val golden = project.goldenBuildProducts()
-        assertThat(golden).isEqualTo("""
-            {PROJECT}/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/armeabi-v7a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/arm64-v8a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/{DEBUG}/obj/local/arm64-v8a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/{DEBUG}/obj/local/arm64-v8a/objs-debug/hello-jni/hello-jni.o{F}
-            {PROJECT}/build/intermediates/{DEBUG}/obj/local/armeabi-v7a/libhello-jni.so{F}
-            {PROJECT}/build/intermediates/{DEBUG}/obj/local/armeabi-v7a/objs-debug/hello-jni/hello-jni.o{F}
-        """.trimIndent())
-    }
+  @Test
+  fun `build product golden locations`() {
+    project.execute("assembleDebug")
+    val golden = project.goldenBuildProducts()
+    assertThat(golden)
+      .isEqualTo(
+        """
+        {PROJECT}/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/armeabi-v7a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/arm64-v8a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/{DEBUG}/obj/local/arm64-v8a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/{DEBUG}/obj/local/arm64-v8a/objs-debug/hello-jni/hello-jni.o{F}
+        {PROJECT}/build/intermediates/{DEBUG}/obj/local/armeabi-v7a/libhello-jni.so{F}
+        {PROJECT}/build/intermediates/{DEBUG}/obj/local/armeabi-v7a/objs-debug/hello-jni/hello-jni.o{F}
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `configuration build command golden flags`() {
-        val golden = project.goldenConfigurationFlags(Abi.ARMEABI_V7A)
-        val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
-        val minPlatform = abi.variant.module.ndkMinPlatform
-        println(golden)
-        assertThat(golden).isEqualTo("""
+  @Test
+  fun `configuration build command golden flags`() {
+    val golden = project.goldenConfigurationFlags(Abi.ARMEABI_V7A)
+    val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
+    val minPlatform = abi.variant.module.ndkMinPlatform
+    println(golden)
+    assertThat(golden)
+      .isEqualTo(
+        """
             -B
             -n
             APP_ABI=armeabi-v7a
@@ -178,43 +172,48 @@ class NdkBuildBuildSettingsTest {
             NDK_LIBS_OUT={PROJECT}/build/intermediates/{DEBUG}/lib
             NDK_OUT={PROJECT}/build/intermediates/{DEBUG}/obj
             NDK_PROJECT_PATH=null
-        """.trimIndent())
-    }
+        """
+          .trimIndent()
+      )
+  }
 
-    private fun setupTestLauncher(): File {
-        // Launcher that prints output to launcher_output.txt to launcher_output.txt then runs ndk-build
-        val wrapper = if(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS){
-            setupWindowsLauncher()
-        } else {
-            setupLinuxLauncher()
-        }
-        wrapper.setReadable(true)
-        wrapper.setExecutable(true)
-        return wrapper
-    }
+  private fun setupTestLauncher(): File {
+    // Launcher that prints output to launcher_output.txt to launcher_output.txt then runs ndk-build
+    val wrapper =
+      if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+        setupWindowsLauncher()
+      } else {
+        setupLinuxLauncher()
+      }
+    wrapper.setReadable(true)
+    wrapper.setExecutable(true)
+    return wrapper
+  }
 
-    private fun setupLinuxLauncher(): File {
-        val wrapper = FileUtils.join(project.buildFile.parentFile, "wrapper.sh")
-        TestFileUtils.appendToFile(
-            wrapper,
-            """
+  private fun setupLinuxLauncher(): File {
+    val wrapper = FileUtils.join(project.buildFile.parentFile, "wrapper.sh")
+    TestFileUtils.appendToFile(
+      wrapper,
+      """
                 #!/bin/bash
                 echo "output to launcher_output.txt" > ${FileUtils.join(project.buildFile.parentFile, "launcher_output.txt")}
                 $*
-            """.trimIndent()
-        )
-        return wrapper
-    }
-
-    private fun setupWindowsLauncher(): File {
-        val wrapper = FileUtils.join(project.buildFile.parentFile, "wrapper.cmd")
-        TestFileUtils.appendToFile(
-            wrapper,
             """
+        .trimIndent(),
+    )
+    return wrapper
+  }
+
+  private fun setupWindowsLauncher(): File {
+    val wrapper = FileUtils.join(project.buildFile.parentFile, "wrapper.cmd")
+    TestFileUtils.appendToFile(
+      wrapper,
+      """
                 echo "output to launcher_output.txt" > ${FileUtils.join(project.buildFile.parentFile, "launcher_output.txt")}
                 %*
-            """.trimIndent()
-        )
-        return wrapper
-    }
+            """
+        .trimIndent(),
+    )
+    return wrapper
+  }
 }

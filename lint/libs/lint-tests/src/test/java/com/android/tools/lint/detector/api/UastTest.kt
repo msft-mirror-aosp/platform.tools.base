@@ -115,12 +115,7 @@ class UastTest : TestCase() {
     kotlinLanguageLevel: LanguageVersionSettings? = null,
     check: (UFile) -> Unit,
   ) {
-    check(
-      sources = arrayOf(source),
-      javaLanguageLevel = javaLanguageLevel,
-      kotlinLanguageLevel = kotlinLanguageLevel,
-      check = check,
-    )
+    check(sources = arrayOf(source), javaLanguageLevel = javaLanguageLevel, kotlinLanguageLevel = kotlinLanguageLevel, check = check)
   }
 
   private fun check(
@@ -150,9 +145,7 @@ class UastTest : TestCase() {
           try {
             element.toUElement()
           } catch (e: Throwable) {
-            System.err.println(
-              "Converting element " + element + " of class " + element.javaClass + ":"
-            )
+            System.err.println("Converting element " + element + " of class " + element.javaClass + ":")
             throw e
           }
           super.visitElement(element)
@@ -618,10 +611,7 @@ class UastTest : TestCase() {
 
             val contractBody = node.valueArguments.single()
             val t = contractBody.getExpressionType()
-            assertEquals(
-              "kotlin.jvm.functions.Function1<? super kotlin.contracts.ContractBuilder,? extends kotlin.Unit>",
-              t?.canonicalText,
-            )
+            assertEquals("kotlin.jvm.functions.Function1<? super kotlin.contracts.ContractBuilder,? extends kotlin.Unit>", t?.canonicalText)
             return super.visitCallExpression(node)
           }
         }
@@ -1081,10 +1071,8 @@ class UastTest : TestCase() {
       )
 
       fun isUParameterNamedThis(element: UElement) =
-        element is UParameter &&
-          element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
-      fun isUClassNamedHello(element: UElement) =
-        element is UClass && element.nameFromSource == "Hello"
+        element is UParameter && element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
+      fun isUClassNamedHello(element: UElement) = element is UClass && element.nameFromSource == "Hello"
 
       // Each `this` expression from the code above (numbered 0, 1, 2, etc.) should resolve to
       // either the UClass named `Hello` or the UParameter named `<this>` from the parent lambda
@@ -1138,72 +1126,72 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                public final class BaseKt {
-                    public static final fun createBase(@org.jetbrains.annotations.NotNull i: int) : Base {
-                        return BaseImpl(i)
-                    }
-                }
+        public final class BaseKt {
+            public static final fun createBase(@org.jetbrains.annotations.NotNull i: int) : Base {
+                return BaseImpl(i)
+            }
+        }
 
-                public abstract interface Base {
-                    public abstract fun print() : void = UastEmptyExpression
-                }
+        public abstract interface Base {
+            public abstract fun print() : void = UastEmptyExpression
+        }
 
-                public final class BaseImpl : Base {
-                    @org.jetbrains.annotations.NotNull private final var x: int
-                    public fun print() : void {
-                        println(x)
-                    }
-                    public final fun getX() : int = UastEmptyExpression
-                    public fun BaseImpl(@org.jetbrains.annotations.NotNull x: int) = UastEmptyExpression
-                }
+        public final class BaseImpl : Base {
+            @org.jetbrains.annotations.NotNull private final var x: int
+            public fun print() : void {
+                println(x)
+            }
+            public final fun getX() : int = UastEmptyExpression
+            public fun BaseImpl(@org.jetbrains.annotations.NotNull x: int) = UastEmptyExpression
+        }
 
-                public final class Derived : Base {
-                    public fun Derived(@org.jetbrains.annotations.NotNull b: Base) = UastEmptyExpression
-                }
+        public final class Derived : Base {
+            public fun Derived(@org.jetbrains.annotations.NotNull b: Base) = UastEmptyExpression
+        }
 
-                """
+        """
           .trimIndent(),
         file.asSourceString().dos2unix(),
       )
 
       assertEquals(
         """
-                UFile (package = ) [public final class BaseKt {...]
-                    UClass (name = BaseKt) [public final class BaseKt {...}]
-                        UMethod (name = createBase) [public static final fun createBase(@org.jetbrains.annotations.NotNull i: int) : Base {...}] : PsiType:Base
-                            UParameter (name = i) [@org.jetbrains.annotations.NotNull var i: int] : PsiType:int
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            UBlockExpression [{...}] : PsiType:Void
-                                UReturnExpression [return BaseImpl(i)] : PsiType:Void
-                                    UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [BaseImpl(i)] : PsiType:BaseImpl
-                                        UIdentifier (Identifier (BaseImpl)) [UIdentifier (Identifier (BaseImpl))]
-                                        USimpleNameReferenceExpression (identifier = BaseImpl, resolvesTo = PsiClass: BaseImpl) [BaseImpl]
-                                        USimpleNameReferenceExpression (identifier = i) [i] : PsiType:int
-                    UClass (name = Base) [public abstract interface Base {...}]
-                        UMethod (name = print) [public abstract fun print() : void = UastEmptyExpression] : PsiType:void
-                    UClass (name = BaseImpl) [public final class BaseImpl : Base {...}]
-                        UField (name = x) [@org.jetbrains.annotations.NotNull private final var x: int] : PsiType:int
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                        UMethod (name = print) [public fun print() : void {...}] : PsiType:void
-                            UBlockExpression [{...}] : PsiType:void
-                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(x)] : PsiType:Unit
-                                    UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                    USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
-                        UMethod (name = getX) [public final fun getX() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = BaseImpl) [public fun BaseImpl(@org.jetbrains.annotations.NotNull x: int) = UastEmptyExpression]
-                            UParameter (name = x) [@org.jetbrains.annotations.NotNull var x: int] : PsiType:int
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                    UClass (name = Derived) [public final class Derived : Base {...}]
-                        UExpressionList (super_delegation) [super_delegation Base : createBase(10)]
-                            UTypeReferenceExpression (name = Base) [Base]
-                            UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [createBase(10)] : PsiType:Base
-                                UIdentifier (Identifier (createBase)) [UIdentifier (Identifier (createBase))]
-                                ULiteralExpression (value = 10) [10] : PsiType:int
-                        UMethod (name = Derived) [public fun Derived(@org.jetbrains.annotations.NotNull b: Base) = UastEmptyExpression]
-                            UParameter (name = b) [@org.jetbrains.annotations.NotNull var b: Base] : PsiType:Base
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+        UFile (package = ) [public final class BaseKt {...]
+            UClass (name = BaseKt) [public final class BaseKt {...}]
+                UMethod (name = createBase) [public static final fun createBase(@org.jetbrains.annotations.NotNull i: int) : Base {...}] : PsiType:Base
+                    UParameter (name = i) [@org.jetbrains.annotations.NotNull var i: int] : PsiType:int
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    UBlockExpression [{...}] : PsiType:Void
+                        UReturnExpression [return BaseImpl(i)] : PsiType:Void
+                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [BaseImpl(i)] : PsiType:BaseImpl
+                                UIdentifier (Identifier (BaseImpl)) [UIdentifier (Identifier (BaseImpl))]
+                                USimpleNameReferenceExpression (identifier = BaseImpl, resolvesTo = PsiClass: BaseImpl) [BaseImpl]
+                                USimpleNameReferenceExpression (identifier = i) [i] : PsiType:int
+            UClass (name = Base) [public abstract interface Base {...}]
+                UMethod (name = print) [public abstract fun print() : void = UastEmptyExpression] : PsiType:void
+            UClass (name = BaseImpl) [public final class BaseImpl : Base {...}]
+                UField (name = x) [@org.jetbrains.annotations.NotNull private final var x: int] : PsiType:int
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                UMethod (name = print) [public fun print() : void {...}] : PsiType:void
+                    UBlockExpression [{...}] : PsiType:void
+                        UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(x)] : PsiType:Unit
+                            UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                            USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
+                UMethod (name = getX) [public final fun getX() : int = UastEmptyExpression] : PsiType:int
+                UMethod (name = BaseImpl) [public fun BaseImpl(@org.jetbrains.annotations.NotNull x: int) = UastEmptyExpression]
+                    UParameter (name = x) [@org.jetbrains.annotations.NotNull var x: int] : PsiType:int
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+            UClass (name = Derived) [public final class Derived : Base {...}]
+                UExpressionList (super_delegation) [super_delegation Base : createBase(10)]
+                    UTypeReferenceExpression (name = Base) [Base]
+                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [createBase(10)] : PsiType:Base
+                        UIdentifier (Identifier (createBase)) [UIdentifier (Identifier (createBase))]
+                        ULiteralExpression (value = 10) [10] : PsiType:int
+                UMethod (name = Derived) [public fun Derived(@org.jetbrains.annotations.NotNull b: Base) = UastEmptyExpression]
+                    UParameter (name = b) [@org.jetbrains.annotations.NotNull var b: Base] : PsiType:Base
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
 
-                """
+        """
           .trimIndent(),
         file.asLogTypes(),
       )
@@ -1456,42 +1444,42 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                package test.pkg
+        package test.pkg
 
-                import android.widget.TextView
+        import android.widget.TextView
 
-                public final class Test : android.app.Activity {
-                    private final fun setUi(@org.jetbrains.annotations.NotNull x: int, @org.jetbrains.annotations.NotNull y: int, ${'$'}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>) : java.lang.Object {
-                        var z: int = x + y
-                    }
-                    public fun Test() = UastEmptyExpression
-                }
+        public final class Test : android.app.Activity {
+            private final fun setUi(@org.jetbrains.annotations.NotNull x: int, @org.jetbrains.annotations.NotNull y: int, ${'$'}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>) : java.lang.Object {
+                var z: int = x + y
+            }
+            public fun Test() = UastEmptyExpression
+        }
 
-                """
+        """
           .trimIndent(),
         file.asSourceString().dos2unix(),
       )
 
       assertEquals(
         """
-                UFile (package = test.pkg) [package test.pkg...]
-                    UImportStatement (isOnDemand = false) [import android.widget.TextView]
-                    UClass (name = Test) [public final class Test : android.app.Activity {...}]
-                        UMethod (name = setUi) [private final fun setUi(@org.jetbrains.annotations.NotNull x: int, @org.jetbrains.annotations.NotNull y: int, ${"$"}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>) : java.lang.Object {...}] : PsiType:Object
-                            UParameter (name = x) [@org.jetbrains.annotations.NotNull var x: int] : PsiType:int
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            UParameter (name = y) [@org.jetbrains.annotations.NotNull var y: int] : PsiType:int
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            UParameter (name = ${"$"}completion) [var ${"$"}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>] : PsiType:Continuation<? super Unit>
-                            UBlockExpression [{...}] : PsiType:void
-                                UDeclarationsExpression [var z: int = x + y]
-                                    ULocalVariable (name = z) [var z: int = x + y] : PsiType:int
-                                        UBinaryExpression (operator = +) [x + y] : PsiType:int
-                                            USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
-                                            USimpleNameReferenceExpression (identifier = y) [y] : PsiType:int
-                        UMethod (name = Test) [public fun Test() = UastEmptyExpression]
+        UFile (package = test.pkg) [package test.pkg...]
+            UImportStatement (isOnDemand = false) [import android.widget.TextView]
+            UClass (name = Test) [public final class Test : android.app.Activity {...}]
+                UMethod (name = setUi) [private final fun setUi(@org.jetbrains.annotations.NotNull x: int, @org.jetbrains.annotations.NotNull y: int, ${"$"}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>) : java.lang.Object {...}] : PsiType:Object
+                    UParameter (name = x) [@org.jetbrains.annotations.NotNull var x: int] : PsiType:int
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    UParameter (name = y) [@org.jetbrains.annotations.NotNull var y: int] : PsiType:int
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    UParameter (name = ${"$"}completion) [var ${"$"}completion: kotlin.coroutines.Continuation<? super kotlin.Unit>] : PsiType:Continuation<? super Unit>
+                    UBlockExpression [{...}] : PsiType:void
+                        UDeclarationsExpression [var z: int = x + y]
+                            ULocalVariable (name = z) [var z: int = x + y] : PsiType:int
+                                UBinaryExpression (operator = +) [x + y] : PsiType:int
+                                    USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
+                                    USimpleNameReferenceExpression (identifier = y) [y] : PsiType:int
+                UMethod (name = Test) [public fun Test() = UastEmptyExpression]
 
-                """
+        """
           .trimIndent(),
         file.asLogTypes(),
       )
@@ -1638,10 +1626,7 @@ class UastTest : TestCase() {
       // but can't yet because they're relying on some patches only available
       // in the kotlin-compiler fork (i.e. KotlinLightTypeParameterBuilder).
 
-      fun hasTypeParameterKeyword(
-        element: PsiTypeParameter?,
-        keyword: KtModifierKeywordToken,
-      ): Boolean {
+      fun hasTypeParameterKeyword(element: PsiTypeParameter?, keyword: KtModifierKeywordToken): Boolean {
         val ktOrigin =
           when (element) {
             is KotlinLightTypeParameterBuilder -> element.origin
@@ -1993,22 +1978,22 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                package test.pkg
+        package test.pkg
 
-                public final class TryCatchKotlin {
-                    @java.lang.SuppressWarnings(value = "Something")
-                    public final fun catches() : void {
-                        try {
-                            catches()
-                        }
-                        catch (@org.jetbrains.annotations.NotNull @java.lang.SuppressWarnings(value = "Something") var e: java.lang.Throwable) {
-                        }
-                    }
-                    public final fun throws() : void {
-                    }
-                    public fun TryCatchKotlin() = UastEmptyExpression
+        public final class TryCatchKotlin {
+            @java.lang.SuppressWarnings(value = "Something")
+            public final fun catches() : void {
+                try {
+                    catches()
                 }
-                """
+                catch (@org.jetbrains.annotations.NotNull @java.lang.SuppressWarnings(value = "Something") var e: java.lang.Throwable) {
+                }
+            }
+            public final fun throws() : void {
+            }
+            public fun TryCatchKotlin() = UastEmptyExpression
+        }
+        """
           .trimIndent()
           .trim(),
         file.asSourceString().dos2unix().trim().replace("\n        \n", "\n"),
@@ -2041,19 +2026,19 @@ class UastTest : TestCase() {
         // However, in pretty printing catch clause parameters are not
         // visited, as described in https://youtrack.jetbrains.com/issue/KT-35803
         """
-                public class TryCatchJava {
-                    @java.lang.SuppressWarnings(null = "Something")
-                    public fun test() : void {
-                        try {
-                            canThrow()
-                        }
-                        catch (@java.lang.SuppressWarnings(null = "Something") var t: java.lang.Throwable) {
-                        }
-                    }
-                    public fun canThrow() : void {
-                    }
+        public class TryCatchJava {
+            @java.lang.SuppressWarnings(null = "Something")
+            public fun test() : void {
+                try {
+                    canThrow()
                 }
-                """
+                catch (@java.lang.SuppressWarnings(null = "Something") var t: java.lang.Throwable) {
+                }
+            }
+            public fun canThrow() : void {
+            }
+        }
+        """
           .trimIndent()
           .trim(),
         file.asSourceString().dos2unix().trim().replace("\n        \n", "\n"),
@@ -2175,10 +2160,7 @@ class UastTest : TestCase() {
         )
         fail("Expected unresolved error: see KT-28272")
       } catch (failure: IllegalStateException) {
-        assertEquals(
-          "Could not resolve this call: Runnable { println(\"hello\") }",
-          failure.message,
-        )
+        assertEquals("Could not resolve this call: Runnable { println(\"hello\") }", failure.message)
       }
     }
   }
@@ -2221,50 +2203,50 @@ class UastTest : TestCase() {
       check = { file ->
         assertEquals(
           """
-                    UFile (package = test.pkg) [package test.pkg...]
-                      UImportStatement (isOnDemand = false) [import java.util.function.IntFunction]
-                      UClass (name = Java11Test) [public class Java11Test {...}]
-                        UField (name = doubler) [var doubler: java.util.function.IntFunction<java.lang.Integer> = { var x: int ->...}] : PsiType:IntFunction<Integer>
-                          ULambdaExpression [{ var x: int ->...}] : PsiType:<lambda expression>
-                            UParameter (name = x) [var x: int] : PsiType:int
-                            UBlockExpression [{...}]
-                              UReturnExpression [return x * 2]
-                                UBinaryExpression (operator = *) [x * 2] : PsiType:int
-                                  USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
-                                  ULiteralExpression (value = 2) [2] : PsiType:int
-                        UMethod (name = varStuff) [public fun varStuff() : void {...}] : PsiType:void
-                          UBlockExpression [{...}]
-                            UDeclarationsExpression [var name: java.lang.String = "Name"]
-                              ULocalVariable (name = name) [var name: java.lang.String = "Name"] : PsiType:String
-                                ULiteralExpression (value = "Name") ["Name"] : PsiType:String
-                            UDeclarationsExpression [var meaning: int = 42]
-                              ULocalVariable (name = meaning) [var meaning: int = 42] : PsiType:int
-                                ULiteralExpression (value = 42) [42] : PsiType:int
-                            UForEachExpression [for (line : name.split("\n")) {...}]
-                              UQualifiedReferenceExpression [name.split("\n")] : PsiType:String[]
-                                USimpleNameReferenceExpression (identifier = name) [name] : PsiType:String
-                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [split("\n")] : PsiType:String[]
-                                  UIdentifier (Identifier (split)) [UIdentifier (Identifier (split))]
-                                  ULiteralExpression (value = "\n") ["\n"] : PsiType:String
-                              UBlockExpression [{...}]
-                                UQualifiedReferenceExpression [System.out.println(line)] : PsiType:void
-                                  UQualifiedReferenceExpression [System.out] : PsiType:PrintStream
-                                    USimpleNameReferenceExpression (identifier = System) [System]
-                                    USimpleNameReferenceExpression (identifier = out) [out]
-                                  UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(line)] : PsiType:void
-                                    UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                    USimpleNameReferenceExpression (identifier = line) [line] : PsiType:String
-                        UClass (name = MyInterface) [public static abstract interface MyInterface {...}]
-                          UMethod (name = getHello) [private fun getHello() : java.lang.String {...}] : PsiType:String
-                            UBlockExpression [{...}]
-                              UReturnExpression [return "hello"]
-                                ULiteralExpression (value = "hello") ["hello"] : PsiType:String
-                          UMethod (name = getMessage) [public default fun getMessage() : java.lang.String {...}] : PsiType:String
-                            UBlockExpression [{...}]
-                              UReturnExpression [return getHello()]
-                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [getHello()] : PsiType:String
-                                  UIdentifier (Identifier (getHello)) [UIdentifier (Identifier (getHello))]
-                    """
+          UFile (package = test.pkg) [package test.pkg...]
+            UImportStatement (isOnDemand = false) [import java.util.function.IntFunction]
+            UClass (name = Java11Test) [public class Java11Test {...}]
+              UField (name = doubler) [var doubler: java.util.function.IntFunction<java.lang.Integer> = { var x: int ->...}] : PsiType:IntFunction<Integer>
+                ULambdaExpression [{ var x: int ->...}] : PsiType:<lambda expression>
+                  UParameter (name = x) [var x: int] : PsiType:int
+                  UBlockExpression [{...}]
+                    UReturnExpression [return x * 2]
+                      UBinaryExpression (operator = *) [x * 2] : PsiType:int
+                        USimpleNameReferenceExpression (identifier = x) [x] : PsiType:int
+                        ULiteralExpression (value = 2) [2] : PsiType:int
+              UMethod (name = varStuff) [public fun varStuff() : void {...}] : PsiType:void
+                UBlockExpression [{...}]
+                  UDeclarationsExpression [var name: java.lang.String = "Name"]
+                    ULocalVariable (name = name) [var name: java.lang.String = "Name"] : PsiType:String
+                      ULiteralExpression (value = "Name") ["Name"] : PsiType:String
+                  UDeclarationsExpression [var meaning: int = 42]
+                    ULocalVariable (name = meaning) [var meaning: int = 42] : PsiType:int
+                      ULiteralExpression (value = 42) [42] : PsiType:int
+                  UForEachExpression [for (line : name.split("\n")) {...}]
+                    UQualifiedReferenceExpression [name.split("\n")] : PsiType:String[]
+                      USimpleNameReferenceExpression (identifier = name) [name] : PsiType:String
+                      UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [split("\n")] : PsiType:String[]
+                        UIdentifier (Identifier (split)) [UIdentifier (Identifier (split))]
+                        ULiteralExpression (value = "\n") ["\n"] : PsiType:String
+                    UBlockExpression [{...}]
+                      UQualifiedReferenceExpression [System.out.println(line)] : PsiType:void
+                        UQualifiedReferenceExpression [System.out] : PsiType:PrintStream
+                          USimpleNameReferenceExpression (identifier = System) [System]
+                          USimpleNameReferenceExpression (identifier = out) [out]
+                        UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(line)] : PsiType:void
+                          UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                          USimpleNameReferenceExpression (identifier = line) [line] : PsiType:String
+              UClass (name = MyInterface) [public static abstract interface MyInterface {...}]
+                UMethod (name = getHello) [private fun getHello() : java.lang.String {...}] : PsiType:String
+                  UBlockExpression [{...}]
+                    UReturnExpression [return "hello"]
+                      ULiteralExpression (value = "hello") ["hello"] : PsiType:String
+                UMethod (name = getMessage) [public default fun getMessage() : java.lang.String {...}] : PsiType:String
+                  UBlockExpression [{...}]
+                    UReturnExpression [return getHello()]
+                      UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [getHello()] : PsiType:String
+                        UIdentifier (Identifier (getHello)) [UIdentifier (Identifier (getHello))]
+          """
             .trimIndent(),
           file.asLogTypes(indent = "  ").trim(),
         )
@@ -2370,10 +2352,7 @@ class UastTest : TestCase() {
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
-            assertEquals(
-              "com.example.Handler.Callback",
-              node.functionalInterfaceType?.canonicalText,
-            )
+            assertEquals("com.example.Handler.Callback", node.functionalInterfaceType?.canonicalText)
             return super.visitLambdaExpression(node)
           }
         }
@@ -2490,9 +2469,7 @@ class UastTest : TestCase() {
               }
 
               // Intentionally calling UMethod.annotations to mimic g3 usage
-              @Suppress("UElementAsPsi")
-              val attributeNames =
-                node.annotations.flatMap { anno -> anno.attributes.map { it.attributeName } }
+              @Suppress("UElementAsPsi") val attributeNames = node.annotations.flatMap { anno -> anno.attributes.map { it.attributeName } }
 
               // After https://youtrack.jetbrains.com/issue/KTIJ-34167
               // no more annotation on the accessor (due to annotation use-site)
@@ -2536,19 +2513,19 @@ class UastTest : TestCase() {
       check = { file ->
         assertEquals(
           """
-                package test.pkg
+          package test.pkg
 
-                public final class SimpleClass {
-                    @org.jetbrains.annotations.NotNull private var foo: int
-                    public final fun getFoo() : int = UastEmptyExpression
-                    public final fun setFoo(<set-?>: int) : void = UastEmptyExpression
-                    public fun SimpleClass() {
-                        {
-                            foo = android.R.layout.activity_list_item
-                        }
-                    }
-                }
-                    """
+          public final class SimpleClass {
+              @org.jetbrains.annotations.NotNull private var foo: int
+              public final fun getFoo() : int = UastEmptyExpression
+              public final fun setFoo(<set-?>: int) : void = UastEmptyExpression
+              public fun SimpleClass() {
+                  {
+                      foo = android.R.layout.activity_list_item
+                  }
+              }
+          }
+          """
             .trimIndent(),
           file.asSourceString().dos2unix().trim(),
         )
@@ -2583,8 +2560,7 @@ class UastTest : TestCase() {
             override fun visitLocalVariable(node: ULocalVariable): Boolean {
               val initializerType = node.uastInitializer?.getExpressionType()
               val interfaceType = node.typeFromPsi
-              @Suppress("UNUSED_VARIABLE")
-              val equals = initializerType == interfaceType // Stack overflow!
+              @Suppress("UNUSED_VARIABLE") val equals = initializerType == interfaceType // Stack overflow!
 
               return super.visitLocalVariable(node)
             }
@@ -2700,26 +2676,26 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                UFile (package = ) [public final class MyFieldAnnotationKt {...]
-                  UClass (name = MyFieldAnnotationKt) [public final class MyFieldAnnotationKt {...}]
-                    UField (name = myProperty) [@org.jetbrains.annotations.NotNull @MyFieldAnnotation(value = "SomeStringValue") private static var myProperty: int = 0] : PsiType:int
-                      UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                      UAnnotation (fqName = MyFieldAnnotation) [@MyFieldAnnotation(value = "SomeStringValue")]
-                        UNamedExpression (name = value) [value = "SomeStringValue"]
-                          UPolyadicExpression (operator = +) ["SomeStringValue"] : PsiType:String
-                            ULiteralExpression (value = "SomeStringValue") ["SomeStringValue"] : PsiType:String
-                      ULiteralExpression (value = 0) [0] : PsiType:int
-                    UMethod (name = getMyProperty) [public static final fun getMyProperty() : int = UastEmptyExpression] : PsiType:int
-                    UMethod (name = setMyProperty) [public static final fun setMyProperty(<set-?>: int) : void = UastEmptyExpression] : PsiType:void
-                      UParameter (name = <set-?>) [var <set-?>: int] : PsiType:int
-                  UClass (name = MyFieldAnnotation) [public abstract annotation MyFieldAnnotation {...}]
-                    UAnnotation (fqName = kotlin.annotation.Target) [@kotlin.annotation.Target(allowedTargets = AnnotationTarget.FIELD)]
-                      UNamedExpression (name = allowedTargets) [allowedTargets = AnnotationTarget.FIELD]
-                        UQualifiedReferenceExpression [AnnotationTarget.FIELD] : PsiType:AnnotationTarget
-                          USimpleNameReferenceExpression (identifier = AnnotationTarget) [AnnotationTarget]
-                          USimpleNameReferenceExpression (identifier = FIELD) [FIELD] : PsiType:AnnotationTarget
-                    UAnnotationMethod (name = value) [public abstract fun value() : java.lang.String = UastEmptyExpression] : PsiType:String
-                """
+        UFile (package = ) [public final class MyFieldAnnotationKt {...]
+          UClass (name = MyFieldAnnotationKt) [public final class MyFieldAnnotationKt {...}]
+            UField (name = myProperty) [@org.jetbrains.annotations.NotNull @MyFieldAnnotation(value = "SomeStringValue") private static var myProperty: int = 0] : PsiType:int
+              UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+              UAnnotation (fqName = MyFieldAnnotation) [@MyFieldAnnotation(value = "SomeStringValue")]
+                UNamedExpression (name = value) [value = "SomeStringValue"]
+                  UPolyadicExpression (operator = +) ["SomeStringValue"] : PsiType:String
+                    ULiteralExpression (value = "SomeStringValue") ["SomeStringValue"] : PsiType:String
+              ULiteralExpression (value = 0) [0] : PsiType:int
+            UMethod (name = getMyProperty) [public static final fun getMyProperty() : int = UastEmptyExpression] : PsiType:int
+            UMethod (name = setMyProperty) [public static final fun setMyProperty(<set-?>: int) : void = UastEmptyExpression] : PsiType:void
+              UParameter (name = <set-?>) [var <set-?>: int] : PsiType:int
+          UClass (name = MyFieldAnnotation) [public abstract annotation MyFieldAnnotation {...}]
+            UAnnotation (fqName = kotlin.annotation.Target) [@kotlin.annotation.Target(allowedTargets = AnnotationTarget.FIELD)]
+              UNamedExpression (name = allowedTargets) [allowedTargets = AnnotationTarget.FIELD]
+                UQualifiedReferenceExpression [AnnotationTarget.FIELD] : PsiType:AnnotationTarget
+                  USimpleNameReferenceExpression (identifier = AnnotationTarget) [AnnotationTarget]
+                  USimpleNameReferenceExpression (identifier = FIELD) [FIELD] : PsiType:AnnotationTarget
+            UAnnotationMethod (name = value) [public abstract fun value() : java.lang.String = UastEmptyExpression] : PsiType:String
+        """
           .trimIndent(),
         file.asLogTypes(indent = "  ").trim(),
       )
@@ -2790,10 +2766,7 @@ class UastTest : TestCase() {
             val argument = node.valueArguments.firstOrNull()
             (argument as? UReferenceExpression)?.let {
               val resolved = argument.resolve()
-              assertNotNull(
-                "Couldn't resolve `${argument.sourcePsi?.text ?: argument.asSourceString()}`",
-                resolved,
-              )
+              assertNotNull("Couldn't resolve `${argument.sourcePsi?.text ?: argument.asSourceString()}`", resolved)
             }
 
             return super.visitCallExpression(node)
@@ -3015,24 +2988,19 @@ class UastTest : TestCase() {
             val expectedTypes = if (useFirUast()) listOf("Boo", "Bar") else listOf("Boo")
             assertTrue(
               node.sourcePsi is KtConstructor<*> ||
-                (node.sourcePsi is KtClassOrObject &&
-                  node.uastParameters.isEmpty() &&
-                  node.name in expectedTypes)
+                (node.sourcePsi is KtClassOrObject && node.uastParameters.isEmpty() && node.name in expectedTypes)
             )
             return super.visitMethod(node)
           }
 
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
             val resolved = node.resolve()
             assertNotNull(resolved)
 
             // If a class doesn't have its own primary constructor,
             // the reference will be resolved to the class itself.
             assertTrue(
-              (resolved as? PsiMethod)?.isConstructor == true ||
-                (resolved as? PsiClass)?.constructors?.single()?.isPhysical == false
+              (resolved as? PsiMethod)?.isConstructor == true || (resolved as? PsiClass)?.constructors?.single()?.isPhysical == false
             )
 
             return super.visitCallableReferenceExpression(node)
@@ -3083,12 +3051,9 @@ class UastTest : TestCase() {
               val tailLambda = sourcePsi.valueArguments.lastOrNull() as? KtLambdaArgument
               val lambda = tailLambda?.getLambdaExpression()
               val lastExp = lambda?.bodyExpression?.statements?.lastOrNull()
-              val lastExpType =
-                lastExp?.let { it.toUElementOfType<UExpression>()?.getExpressionType() }
+              val lastExpType = lastExp?.let { it.toUElementOfType<UExpression>()?.getExpressionType() }
               // Since unresolved, the expression type will be actually `null`.
-              val isReallyUnit =
-                callExpressionType?.canonicalText == "kotlin.Unit" &&
-                  callExpressionType == lastExpType
+              val isReallyUnit = callExpressionType?.canonicalText == "kotlin.Unit" && callExpressionType == lastExpType
               assertFalse(isReallyUnit)
             }
 
@@ -3120,10 +3085,7 @@ class UastTest : TestCase() {
             when (val exp = node.iteratedValue.skipParenthesizedExprDown()) {
               is UBinaryExpression -> {
                 assertEquals("kotlin.ranges.IntProgression", exp.getExpressionType()?.canonicalText)
-                assertEquals(
-                  "kotlin.ranges.IntRange",
-                  exp.leftOperand.getExpressionType()?.canonicalText,
-                )
+                assertEquals("kotlin.ranges.IntRange", exp.leftOperand.getExpressionType()?.canonicalText)
               }
             }
 
@@ -3161,9 +3123,7 @@ class UastTest : TestCase() {
             assertFalse(node.hasAnnotation(jvmStatic))
             assertNull(node.findAnnotation(jvmStatic))
             // Workaround to retrieve @JvmStatic
-            val findAnnotation =
-              node.findAnnotation(jvmStatic)?.javaPsi
-                ?: node.javaPsi.modifierList.findAnnotation(jvmStatic)
+            val findAnnotation = node.findAnnotation(jvmStatic)?.javaPsi ?: node.javaPsi.modifierList.findAnnotation(jvmStatic)
             assertNotNull(findAnnotation)
             assertEquals(jvmStatic, findAnnotation!!.qualifiedName)
 
@@ -3269,11 +3229,8 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
-            if (node.resolvedName != "minValue")
-              return super.visitSimpleNameReferenceExpression(node)
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.resolvedName != "minValue") return super.visitSimpleNameReferenceExpression(node)
 
             val txt = node.sourcePsi?.text
             val resolved = node.resolve()
@@ -3326,9 +3283,7 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             if (node.identifier != "it") return super.visitSimpleNameReferenceExpression(node)
 
             // No source for implicit lambda parameter.
@@ -3406,15 +3361,11 @@ class UastTest : TestCase() {
           }
 
           // Copied from google3 utils
-          private fun getFunctionalInterfaceType(
-            ktExpression: KtExpression,
-            source: UExpression,
-          ): PsiClassType? {
+          private fun getFunctionalInterfaceType(ktExpression: KtExpression, source: UExpression): PsiClassType? {
             return analyze(ktExpression) {
               val samType = getSamType(ktExpression) ?: return null
               val psiTypeParent =
-                source.getParentOfType(UDeclaration::class.java, strict = false)?.javaPsi
-                  as? PsiModifierListOwner ?: ktExpression
+                source.getParentOfType(UDeclaration::class.java, strict = false)?.javaPsi as? PsiModifierListOwner ?: ktExpression
               try {
                 samType.asPsiType(psiTypeParent, allowErrorTypes = true) as? PsiClassType
               } catch (_: IllegalArgumentException) {
@@ -3428,9 +3379,7 @@ class UastTest : TestCase() {
           // Copied from google3 utils
           private fun KaSession.getSamType(ktExpression: KtExpression): KaType? {
             // E.g. `FunInterface(::method)` or `call(..., ::method, ...)`
-            return ktExpression.expectedType
-              ?.takeIf { it !is KaClassErrorType && it.isFunctionalInterface }
-              ?.lowerBoundIfFlexible()
+            return ktExpression.expectedType?.takeIf { it !is KaClassErrorType && it.isFunctionalInterface }?.lowerBoundIfFlexible()
           }
         }
       )
@@ -3736,15 +3685,12 @@ class UastTest : TestCase() {
             assertNotNull(txt, resolved)
             resolved!!
 
-            val facadeOrPart =
-              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
-              else "test.UtilKt__UtilKt"
+            val facadeOrPart = if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
             assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
 
             assertEquals(txt, 1, resolved.parameterList.parametersCount)
             val rcv = resolved.parameterList.parameters.single()
-            val rcvType =
-              if (!useFirUast() && resolved.name == "reifiedFun") "java.lang.Object" else "T"
+            val rcvType = if (!useFirUast() && resolved.name == "reifiedFun") "java.lang.Object" else "T"
             assertEquals(txt, rcvType, rcv.type.canonicalText)
 
             assertEquals(txt, 2, resolved.annotations.size)
@@ -3753,9 +3699,7 @@ class UastTest : TestCase() {
             return super.visitCallExpression(node)
           }
 
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
             // b/400512375
             // https://youtrack.jetbrains.com/issue/KTIJ-33333
             val txt = node.sourcePsi?.text
@@ -3763,9 +3707,7 @@ class UastTest : TestCase() {
             assertNotNull(txt, resolved)
             resolved!!
 
-            val facadeOrPart =
-              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
-              else "test.UtilKt__UtilKt"
+            val facadeOrPart = if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
             assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
 
             return super.visitCallableReferenceExpression(node)
@@ -4084,9 +4026,7 @@ class UastTest : TestCase() {
               // from AnalysisApiLintUtils.kt
               // val functionSymbol = getFunctionLikeSymbol(sourcePsi)
               val callInfo = sourcePsi.resolveToCall() ?: return super.visitCallExpression(node)
-              val functionSymbol =
-                callInfo.singleFunctionCallOrNull()?.symbol
-                  ?: return super.visitCallExpression(node)
+              val functionSymbol = callInfo.singleFunctionCallOrNull()?.symbol ?: return super.visitCallExpression(node)
               val psi = functionSymbol.psi
               assertEquals("fun localFun() {\n    println(\"hello\")\n  }", psi?.text)
             }
@@ -4134,10 +4074,7 @@ class UastTest : TestCase() {
 
     // function name -> (K1, K2)
     val expectedTypes =
-      mapOf(
-        "f" to ("test.pkg.A" to "kotlin.jvm.functions.Function0<? extends kotlin.Unit>"),
-        "g" to ("test.pkg.B" to "test.pkg.B"),
-      )
+      mapOf("f" to ("test.pkg.A" to "kotlin.jvm.functions.Function0<? extends kotlin.Unit>"), "g" to ("test.pkg.B" to "test.pkg.B"))
 
     var count = 0
     check(*testFiles) { file ->
@@ -4158,8 +4095,7 @@ class UastTest : TestCase() {
           override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
             count++
             val type = node.functionalInterfaceType ?: node.getExpressionType()
-            val expectedType =
-              expectedTypes[method!!.name]?.let { if (useFirUast()) it.second else it.first }
+            val expectedType = expectedTypes[method!!.name]?.let { if (useFirUast()) it.second else it.first }
             assertEquals(expectedType, type?.canonicalText)
             return super.visitLambdaExpression(node)
           }
@@ -4320,10 +4256,7 @@ class UastTest : TestCase() {
           override fun visitReturnExpression(node: UReturnExpression): Boolean {
             // Skip an implicit return for body expression, e.g.,
             //   suspend fun test...(): Unit = ...
-            if (
-              node.uastParent !is UBlockExpression ||
-                node.uastParent?.uastParent !is ULambdaExpression
-            )
+            if (node.uastParent !is UBlockExpression || node.uastParent?.uastParent !is ULambdaExpression)
               return super.visitReturnExpression(node)
 
             assertEquals(
@@ -4404,9 +4337,7 @@ class UastTest : TestCase() {
             return super.visitClassLiteralExpression(node)
           }
 
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
             count++
             assertEquals(expectedTypes[currentMethod], node.qualifierType?.canonicalText)
             return super.visitCallableReferenceExpression(node)
@@ -4459,20 +4390,14 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitQualifiedReferenceExpression(
-            node: UQualifiedReferenceExpression
-          ): Boolean {
+          override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression): Boolean {
             count++
-            val expressionType =
-              node.receiver.getExpressionType() as? PsiClassType
-                ?: return super.visitQualifiedReferenceExpression(node)
+            val expressionType = node.receiver.getExpressionType() as? PsiClassType ?: return super.visitQualifiedReferenceExpression(node)
             assertEquals("my.coroutines.Dispatchers", expressionType.resolve()?.qualifiedName)
             return super.visitQualifiedReferenceExpression(node)
           }
 
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
             count++
             assertEquals("my.coroutines.Dispatchers", node.qualifierType?.canonicalText)
             return super.visitCallableReferenceExpression(node)
@@ -4974,7 +4899,8 @@ class UastTest : TestCase() {
             val jAttr = uAnno.javaPsi!!.findAttributeValue("message")
             assertEquals("Somehow", (jAttr as? PsiLiteral)?.value)
 
-            // Intentionally calling previously unimplemented UastFakeLightMethodBase#getAnnotation
+            // Intentionally calling previously unimplemented
+            // UastFakeLightMethodBase#getAnnotation
             @Suppress("UElementAsPsi") val psiAnno = node.getAnnotation("MySuppress")
             assertNotNull(psiAnno)
             assertEquals("MySuppress", psiAnno!!.qualifiedName)
@@ -5483,9 +5409,7 @@ class UastTest : TestCase() {
             return super.visitBinaryExpression(node)
           }
 
-          override fun visitQualifiedReferenceExpression(
-            node: UQualifiedReferenceExpression
-          ): Boolean {
+          override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression): Boolean {
             val getOrSet =
               if (lastAssign?.leftOperand == node) {
                 setCount++
@@ -5605,9 +5529,7 @@ class UastTest : TestCase() {
             return super.visitCallExpression(node)
           }
 
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             val txt = node.sourcePsi?.text
             if (txt != "internalVal") {
               return super.visitSimpleNameReferenceExpression(node)
@@ -5837,10 +5759,7 @@ class UastTest : TestCase() {
             val route = parameters[0]
             assertEquals("T", route.type.canonicalText)
             val builder = parameters[1]
-            assertEquals(
-              "kotlin.jvm.functions.Function1<? super my.navigation.PopUpToBuilder,kotlin.Unit>",
-              builder.type.canonicalText,
-            )
+            assertEquals("kotlin.jvm.functions.Function1<? super my.navigation.PopUpToBuilder,kotlin.Unit>", builder.type.canonicalText)
             return super.visitCallExpression(node)
           }
         }
@@ -6004,8 +5923,10 @@ class UastTest : TestCase() {
             }
           """
         ),
-        // Borrowed from compose/lint/common-test/src/main/java/androidx/compose/lint/test/Stubs.kt
-        // Then replaced EffectsKt.class to include bytecode generated by @Compose compiler plugin
+        // Borrowed from
+        // compose/lint/common-test/src/main/java/androidx/compose/lint/test/Stubs.kt
+        // Then replaced EffectsKt.class to include bytecode generated by @Compose compiler
+        // plugin
         bytecode(
           "lib/compose-runtime.jar",
           kotlin(
@@ -6534,9 +6455,7 @@ class UastTest : TestCase() {
     check(source) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             if (node.sourcePsi?.text != "java") {
               return super.visitSimpleNameReferenceExpression(node)
             }
@@ -6641,7 +6560,8 @@ class UastTest : TestCase() {
                   // java.lang.Class<android.support.v4.app.Fragment>
                   // where we want to retrieve the type parameter on the reflective class
                   // For Kotlin, that class for the attribute is already retrieved, but
-                  // it can be either [PsiImmediateClassType] (with underlying resolved [PsiClass])
+                  // it can be either [PsiImmediateClassType] (with underlying resolved
+                  // [PsiClass])
                   // or (not-yet-resolved) [PsiClassReferenceType].
                   if (t.parameterCount == 1) t.parameters.first() else t
                 }
@@ -6776,9 +6696,7 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             if (node.sourcePsi?.text != "prop") {
               return super.visitSimpleNameReferenceExpression(node)
             }
@@ -6801,13 +6719,13 @@ class UastTest : TestCase() {
       arrayOf(
         kotlin(
           """
-            @MyAnnotation(
-              password = [
-                "nananananana, " +
-                  "batman"
-              ]
-            )
-            fun test() {}
+          @MyAnnotation(
+            password = [
+              "nananananana, " +
+                "batman"
+            ]
+          )
+          fun test() {}
           """
             .trimIndent()
         ),
@@ -6833,8 +6751,7 @@ class UastTest : TestCase() {
             val psiAnnotation = node.javaPsi.annotations.single()
             val attributeValue = psiAnnotation.findAttributeValue("password")
             assertNotNull(attributeValue)
-            val initializer =
-              (attributeValue as PsiArrayInitializerMemberValue).initializers.single()
+            val initializer = (attributeValue as PsiArrayInitializerMemberValue).initializers.single()
 
             val uExpression = initializer.toUElementOfType<UExpression>()
             val uEval = uExpression?.evaluate()
@@ -6875,9 +6792,7 @@ class UastTest : TestCase() {
     check(source) { file ->
       file.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             val eval = node.evaluate()
             assertTrue(node.sourcePsi?.text, eval in names)
             return super.visitSimpleNameReferenceExpression(node)
@@ -7362,8 +7277,7 @@ public object ProtoObjectKt {
             }
              */
 
-            val resolvedLHS =
-              (node.leftOperand as USimpleNameReferenceExpression).resolve() as? PsiMethod
+            val resolvedLHS = (node.leftOperand as USimpleNameReferenceExpression).resolve() as? PsiMethod
             assertNotNull(resolvedLHS)
             assertEquals("setProtoType", resolvedLHS!!.name)
             return super.visitBinaryExpression(node)

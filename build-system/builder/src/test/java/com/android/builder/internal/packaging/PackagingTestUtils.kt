@@ -26,17 +26,11 @@ import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 
 fun getPrivateKey(): PrivateKey {
-    val bytes =
-            Files.readAllBytes(TestResources.getFile("/testData/packaging/rsa-2048.pk8").toPath())
-    return KeyFactory.getInstance("rsa").generatePrivate(PKCS8EncodedKeySpec(bytes))
+  val bytes = Files.readAllBytes(TestResources.getFile("/testData/packaging/rsa-2048.pk8").toPath())
+  return KeyFactory.getInstance("rsa").generatePrivate(PKCS8EncodedKeySpec(bytes))
 }
 
 fun getCertificates(): List<X509Certificate> {
-    val bytes =
-            Files.readAllBytes(
-                    TestResources.getFile("/testData/packaging/rsa-2048.x509.pem").toPath()
-            )
-    return CertificateFactory.getInstance("X.509")
-            .generateCertificates(ByteArrayInputStream(bytes))
-            .map { it as X509Certificate }
+  val bytes = Files.readAllBytes(TestResources.getFile("/testData/packaging/rsa-2048.x509.pem").toPath())
+  return CertificateFactory.getInstance("X.509").generateCertificates(ByteArrayInputStream(bytes)).map { it as X509Certificate }
 }

@@ -18,14 +18,11 @@ package com.android.builder.model.v2.models.ndk
 
 import com.android.builder.model.v2.AndroidModel
 
-/**
- * Response returned by Gradle to Android Studio containing information about a variant in a native
- * module.
- */
-interface NativeVariant: AndroidModel {
-    /** Name of the variant. For example "debug", "release". */
-    val name: String
+/** Response returned by Gradle to Android Studio containing information about a variant in a native module. */
+interface NativeVariant : AndroidModel {
+  /** Name of the variant. For example "debug", "release". */
+  val name: String
 
-    /** ABIs in this variant. */
-    val abis: List<NativeAbi>
+  /** ABIs in this variant. */
+  val abis: List<NativeAbi>
 }

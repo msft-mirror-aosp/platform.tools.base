@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.appWidget.res.values
 
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 

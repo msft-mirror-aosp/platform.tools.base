@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.internal.component
 
-interface NestedComponentCreationConfig: ComponentCreationConfig {
+interface NestedComponentCreationConfig : ComponentCreationConfig {
 
-    /**
-     * Returns the main variant.
-     */
-    val mainVariant: VariantCreationConfig
+  /** Returns the main variant. */
+  val mainVariant: VariantCreationConfig
 }

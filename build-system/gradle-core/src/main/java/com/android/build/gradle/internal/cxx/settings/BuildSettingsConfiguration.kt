@@ -16,14 +16,7 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-/**
- * Content of a Build Settings JSON file.
- */
-data class BuildSettingsConfiguration(
-    val environmentVariables: List<EnvironmentVariable> = listOf()
-)
+/** Content of a Build Settings JSON file. */
+data class BuildSettingsConfiguration(val environmentVariables: List<EnvironmentVariable> = listOf())
 
-data class EnvironmentVariable(
-    val name: String,
-    val value: String?
-)
+data class EnvironmentVariable(val name: String, val value: String?)

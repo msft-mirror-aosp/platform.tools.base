@@ -37,8 +37,8 @@ import org.jetbrains.uast.getParentOfType
 /**
  * Reports calls to `View.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)`.
  *
- * Reports references to `AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED` from within overrides of
- * `View.dispatchPopulateAccessibilityEvent` and `View.onPopulateAccessibilityEvent`.
+ * Reports references to `AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED` from within overrides of `View.dispatchPopulateAccessibilityEvent`
+ * and `View.onPopulateAccessibilityEvent`.
  */
 class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
 
@@ -47,8 +47,7 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
 
     fun isViewMethod(methodName: String, vararg argumentTypes: String): Boolean =
-      method.name == methodName &&
-        context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
+      method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
 
     when {
       isViewMethod("sendAccessibilityEvent", TYPE_INT) -> checkSendAccessibilityEvent(context, node)
@@ -57,11 +56,7 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableReferenceNames() = listOf("TYPE_WINDOW_STATE_CHANGED")
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     checkTypeWindowStateChangedWithinOverride(context, reference, referenced)
   }
 
@@ -78,26 +73,17 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
     )
   }
 
-  private fun checkTypeWindowStateChangedWithinOverride(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  private fun checkTypeWindowStateChangedWithinOverride(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     // "referenced" must be AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED.
     val field = referenced as? PsiField ?: return
     if (field.name != "TYPE_WINDOW_STATE_CHANGED") return
-    if (!context.evaluator.isMemberInClass(field, "android.view.accessibility.AccessibilityEvent"))
-      return
+    if (!context.evaluator.isMemberInClass(field, "android.view.accessibility.AccessibilityEvent")) return
 
     // "reference" must be within a method that overrides View.dispatchPopulateAccessibilityEvent or
     // View.onPopulateAccessibilityEvent.
     val parentMethod = reference.getParentOfType<UMethod>() ?: return
 
-    if (
-      parentMethod.name !in
-        arrayOf("dispatchPopulateAccessibilityEvent", "onPopulateAccessibilityEvent")
-    )
-      return
+    if (parentMethod.name !in arrayOf("dispatchPopulateAccessibilityEvent", "onPopulateAccessibilityEvent")) return
 
     val containingClass = parentMethod.getContainingUClass() ?: return
     // Note: Do not warn about uses within the View class itself; hence, strict = true.
@@ -150,11 +136,7 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
         category = Category.A11Y,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            AccessibilityWindowStateChangedDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-          ),
+        implementation = Implementation(AccessibilityWindowStateChangedDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
   }

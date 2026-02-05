@@ -179,9 +179,7 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
 
-    val library =
-      project()
-        .files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", false))
+    val library = project().files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", false))
 
     val app =
       project()
@@ -205,9 +203,7 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
 
-    val library =
-      project()
-        .files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", true))
+    val library = project().files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", true))
 
     val app =
       project()
@@ -231,9 +227,7 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
 
-    val library =
-      project()
-        .files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", true))
+    val library = project().files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", true))
 
     val app =
       project()
@@ -257,9 +251,7 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
 
-    val library =
-      project()
-        .files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", false))
+    val library = project().files(xml("src/main/res/drawable/foo.xml", vector), getGradleTestFile("7.0.0", false))
 
     val app =
       project()
@@ -276,21 +268,21 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
   @Language("XML")
   private val vector =
     """
-        <vector xmlns:android="http://schemas.android.com/apk/res/android"
-                android:height="256dp"
-                android:width="256dp"
-                android:viewportWidth="32"
-                android:viewportHeight="32">
-            <path android:fillColor="#8fff"
-                  android:pathData="M20.5,9.5
-                                c-1.955,0,-3.83,1.268,-4.5,3
-                                c-0.67,-1.732,-2.547,-3,-4.5,-3
-                                C8.957,9.5,7,11.432,7,14
-                                c0,3.53,3.793,6.257,9,11.5
-                                c5.207,-5.242,9,-7.97,9,-11.5
-                                C25,11.432,23.043,9.5,20.5,9.5z" />
-        </vector>
-        """
+    <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:height="256dp"
+            android:width="256dp"
+            android:viewportWidth="32"
+            android:viewportHeight="32">
+        <path android:fillColor="#8fff"
+              android:pathData="M20.5,9.5
+                            c-1.955,0,-3.83,1.268,-4.5,3
+                            c-0.67,-1.732,-2.547,-3,-4.5,-3
+                            C8.957,9.5,7,11.432,7,14
+                            c0,3.53,3.793,6.257,9,11.5
+                            c5.207,-5.242,9,-7.97,9,-11.5
+                            C25,11.432,23.043,9.5,20.5,9.5z" />
+    </vector>
+    """
       .trimIndent()
 
   private fun getGradleTestFile(agpVersion: String, usingVectors: Boolean): TestFile {
@@ -310,21 +302,21 @@ class VectorDrawableCompatDetectorTest : AbstractCheckTest() {
   @Language("XML")
   private val layoutSrc =
     """
-        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android">
-            <ImageView android:src="@drawable/bitmap" />
-            <ImageView android:src="@drawable/foo" />
-        </RelativeLayout>
-        """
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android">
+        <ImageView android:src="@drawable/bitmap" />
+        <ImageView android:src="@drawable/foo" />
+    </RelativeLayout>
+    """
       .trimIndent()
 
   @Language("XML")
   private val layoutSrcCompat =
     """
-        <RelativeLayout
-                        xmlns:app="http://schemas.android.com/apk/res-auto">
-            <ImageView app:srcCompat="@drawable/foo" />
-            <ImageView app:srcCompat="@drawable/bitmap" />
-        </RelativeLayout>
-        """
+    <RelativeLayout
+                    xmlns:app="http://schemas.android.com/apk/res-auto">
+        <ImageView app:srcCompat="@drawable/foo" />
+        <ImageView app:srcCompat="@drawable/bitmap" />
+    </RelativeLayout>
+    """
       .trimIndent()
 }

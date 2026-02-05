@@ -20,6 +20,9 @@ import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth
+import java.io.File
+import javax.inject.Inject
+import kotlin.test.assertFailsWith
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
@@ -28,224 +31,179 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
-import java.io.File
-import javax.inject.Inject
-import kotlin.test.assertFailsWith
 
 internal class ProguardConfigurableTaskTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    lateinit var project: Project
-    lateinit var task: ProguardConfigurableTask
+  lateinit var project: Project
+  lateinit var task: ProguardConfigurableTask
 
-    abstract class ProguardTestTask @Inject constructor(
-        projectLayout: ProjectLayout
-    ) : ProguardConfigurableTask(projectLayout) {
-        override fun doTaskAction() {
-        }
-    }
+  abstract class ProguardTestTask @Inject constructor(projectLayout: ProjectLayout) : ProguardConfigurableTask(projectLayout) {
+    override fun doTaskAction() {}
+  }
 
-    @Before
-    fun setup() {
-        project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        task = project.tasks.register(
-            "proguardConfigurationTask",
-            ProguardTestTask::class.java,
-            project.layout
-        ).get()
-    }
+  @Before
+  fun setup() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    task = project.tasks.register("proguardConfigurationTask", ProguardTestTask::class.java, project.layout).get()
+  }
 
-    @Test
-    fun testEmptyProguardFilesReconciliation() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val folder = temporaryFolder.newFolder("proguard_files")
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        Truth.assertThat(
-            task.reconcileDefaultProguardFile(
-                fileCollection,
-                FakeGradleProvider(project.layout.projectDirectory.dir(
-                    folder.absolutePath)), false)
-        ).isEmpty()
-    }
-
-    @Test
-    fun testNonBaseModuleProguardFilesReconciliation() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val folder = temporaryFolder.newFolder("proguard_files")
-        val file1 = spy(File(folder, "android.txt"))
-        whenever(file1.isFile).thenReturn(true)
-        whenever(fileCollection.files).thenReturn(setOf(
-            file1
-        ))
-        task.componentType.set(ComponentTypeImpl.JAVA_LIBRARY)
-        val result = task.reconcileDefaultProguardFile(
-            fileCollection,
-            FakeGradleProvider(project.layout.projectDirectory.dir(
-                folder.absolutePath)), false)
-        Truth.assertThat(result).hasSize(1)
-        Truth.assertThat(result.single()).isEqualTo(
-            file1
+  @Test
+  fun testEmptyProguardFilesReconciliation() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val folder = temporaryFolder.newFolder("proguard_files")
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    Truth.assertThat(
+        task.reconcileDefaultProguardFile(
+          fileCollection,
+          FakeGradleProvider(project.layout.projectDirectory.dir(folder.absolutePath)),
+          false,
         )
+      )
+      .isEmpty()
+  }
+
+  @Test
+  fun testNonBaseModuleProguardFilesReconciliation() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val folder = temporaryFolder.newFolder("proguard_files")
+    val file1 = spy(File(folder, "android.txt"))
+    whenever(file1.isFile).thenReturn(true)
+    whenever(fileCollection.files).thenReturn(setOf(file1))
+    task.componentType.set(ComponentTypeImpl.JAVA_LIBRARY)
+    val result =
+      task.reconcileDefaultProguardFile(fileCollection, FakeGradleProvider(project.layout.projectDirectory.dir(folder.absolutePath)), false)
+    Truth.assertThat(result).hasSize(1)
+    Truth.assertThat(result.single()).isEqualTo(file1)
+  }
+
+  @Test
+  fun testSubstitution() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val srcFolder = temporaryFolder.newFolder("proguard_files")
+    val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+    val defaultFile = ProguardFiles.getDefaultProguardFile(ProguardFiles.ProguardFile.OPTIMIZE.fileName, project.layout.buildDirectory)
+    val file1 = spy(File(srcFolder, "user1.txt"))
+    whenever(file1.isFile).thenReturn(true)
+    val file2 = spy(File(srcFolder, "user2.txt"))
+    whenever(file2.isFile).thenReturn(true)
+
+    whenever(fileCollection.files).thenReturn(setOf(file1, file2, defaultFile))
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    val result =
+      task.reconcileDefaultProguardFile(
+        fileCollection,
+        FakeGradleProvider(project.layout.projectDirectory.dir(finalDefaultFolder.absolutePath)),
+        false,
+      )
+    Truth.assertThat(result).hasSize(3)
+    val substitutedFile = result.find { it.name.equals(defaultFile.name) }
+    Truth.assertThat(substitutedFile).isNotNull()
+    Truth.assertThat(substitutedFile!!.parentFile).isEqualTo(finalDefaultFolder)
+  }
+
+  @Test
+  fun testFilesWithDefaultFileNameInSourceFoldersAreNotSubstituted() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val srcFolder = temporaryFolder.newFolder("proguard_files")
+    val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+    val defaultFile = ProguardFiles.getDefaultProguardFile(ProguardFiles.ProguardFile.OPTIMIZE.fileName, project.layout.buildDirectory)
+    val file1 = spy(File(srcFolder, "user1.txt"))
+    whenever(file1.isFile).thenReturn(true)
+    val file2 = spy(File(srcFolder, "user2.txt"))
+    whenever(file2.isFile).thenReturn(true)
+    val file3 = spy(File(srcFolder, defaultFile.name))
+    whenever(file3.isFile).thenReturn(true)
+
+    whenever(fileCollection.files).thenReturn(setOf(file1, file2, file3))
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    val result =
+      task.reconcileDefaultProguardFile(
+        fileCollection,
+        FakeGradleProvider(project.layout.projectDirectory.dir(finalDefaultFolder.absolutePath)),
+        false,
+      )
+    Truth.assertThat(result).hasSize(3)
+    val substitutedFile = result.find { it.name.equals(defaultFile.name) }
+    Truth.assertThat(substitutedFile).isNotNull()
+    Truth.assertThat(substitutedFile!!.parentFile).isEqualTo(srcFolder)
+  }
+
+  @Test
+  fun `test files which do not exist are filtered out`() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val srcFolder = temporaryFolder.newFolder("proguard_files")
+    val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+    val file1 = spy(File(srcFolder, "user1.txt"))
+    whenever(file1.isFile).thenReturn(true)
+    val file2 = spy(File(srcFolder, "user2.txt"))
+    whenever(file2.isFile).thenReturn(false)
+
+    whenever(fileCollection.files).thenReturn(setOf(file1, file2))
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    val result =
+      task.reconcileDefaultProguardFile(
+        fileCollection,
+        FakeGradleProvider(project.layout.projectDirectory.dir(finalDefaultFolder.absolutePath)),
+        false,
+      )
+    Truth.assertThat(result).hasSize(1)
+    Truth.assertThat(result.find { it.name.equals("user1.txt") }).isNotNull()
+  }
+
+  @Test
+  fun `test missing file throws runtime exception`() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val srcFolder = temporaryFolder.newFolder("proguard_files")
+    val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+    val file1 = spy(File(srcFolder, "user1.txt"))
+    whenever(file1.isFile).thenReturn(false)
+
+    whenever(fileCollection.files).thenReturn(setOf(file1))
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    assertFailsWith<RuntimeException> {
+      task.reconcileDefaultProguardFile(
+        fileCollection,
+        FakeGradleProvider(project.layout.projectDirectory.dir(finalDefaultFolder.absolutePath)),
+        true,
+      )
     }
+  }
 
-    @Test
-    fun testSubstitution() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val srcFolder = temporaryFolder.newFolder("proguard_files")
-        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+  @Test
+  fun `test directory throws runtime exception`() {
+    Truth.assertThat(task).isNotNull()
+    val fileCollection = mock<FileCollection>()
+    val srcFolder = temporaryFolder.newFolder("proguard_files")
+    val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
 
-        val defaultFile = ProguardFiles.getDefaultProguardFile(
-            ProguardFiles.ProguardFile.OPTIMIZE.fileName,
-            project.layout.buildDirectory
-        )
-        val file1 = spy(File(srcFolder, "user1.txt"))
-        whenever(file1.isFile).thenReturn(true)
-        val file2 = spy(File(srcFolder, "user2.txt"))
-        whenever(file2.isFile).thenReturn(true)
-
-        whenever(fileCollection.files).thenReturn(setOf(
-                file1,
-                file2,
-                defaultFile
-        ))
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        val result = task.reconcileDefaultProguardFile(
-            fileCollection,
-            FakeGradleProvider(project.layout.projectDirectory.dir(
-                finalDefaultFolder.absolutePath)), false)
-        Truth.assertThat(result).hasSize(3)
-        val substitutedFile = result.find {
-            it.name.equals(defaultFile.name)
-        }
-        Truth.assertThat(substitutedFile).isNotNull()
-        Truth.assertThat(substitutedFile!!.parentFile).isEqualTo(finalDefaultFolder)
+    whenever(fileCollection.files).thenReturn(setOf(srcFolder))
+    task.componentType.set(ComponentTypeImpl.BASE_APK)
+    assertFailsWith<RuntimeException> {
+      task.reconcileDefaultProguardFile(
+        fileCollection,
+        FakeGradleProvider(project.layout.projectDirectory.dir(finalDefaultFolder.absolutePath)),
+        true,
+      )
     }
-
-    @Test
-    fun testFilesWithDefaultFileNameInSourceFoldersAreNotSubstituted() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val srcFolder = temporaryFolder.newFolder("proguard_files")
-        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
-
-        val defaultFile = ProguardFiles.getDefaultProguardFile(
-            ProguardFiles.ProguardFile.OPTIMIZE.fileName,
-            project.layout.buildDirectory
-        )
-        val file1 = spy(File(srcFolder, "user1.txt"))
-        whenever(file1.isFile).thenReturn(true)
-        val file2 = spy(File(srcFolder, "user2.txt"))
-        whenever(file2.isFile).thenReturn(true)
-        val file3 = spy(File(srcFolder, defaultFile.name))
-        whenever(file3.isFile).thenReturn(true)
-
-        whenever(fileCollection.files).thenReturn(setOf(
-                file1,
-                file2,
-                file3
-        ))
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        val result = task.reconcileDefaultProguardFile(
-            fileCollection,
-            FakeGradleProvider(project.layout.projectDirectory.dir(
-                finalDefaultFolder.absolutePath)), false)
-        Truth.assertThat(result).hasSize(3)
-        val substitutedFile = result.find {
-            it.name.equals(defaultFile.name)
-        }
-        Truth.assertThat(substitutedFile).isNotNull()
-        Truth.assertThat(substitutedFile!!.parentFile).isEqualTo(srcFolder)
-    }
-
-    @Test
-    fun `test files which do not exist are filtered out`() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val srcFolder = temporaryFolder.newFolder("proguard_files")
-        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
-
-        val file1 = spy(File(srcFolder, "user1.txt"))
-        whenever(file1.isFile).thenReturn(true)
-        val file2 = spy(File(srcFolder, "user2.txt"))
-        whenever(file2.isFile).thenReturn(false)
-
-        whenever(fileCollection.files).thenReturn(setOf(
-                file1,
-                file2,
-        ))
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        val result = task.reconcileDefaultProguardFile(
-                fileCollection,
-                FakeGradleProvider(project.layout.projectDirectory.dir(
-                        finalDefaultFolder.absolutePath)), false)
-        Truth.assertThat(result).hasSize(1)
-        Truth.assertThat(result.find { it.name.equals("user1.txt") }).isNotNull()
-    }
-
-    @Test
-    fun `test missing file throws runtime exception`() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val srcFolder = temporaryFolder.newFolder("proguard_files")
-        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
-
-        val file1 = spy(File(srcFolder, "user1.txt"))
-        whenever(file1.isFile).thenReturn(false)
-
-        whenever(fileCollection.files).thenReturn(
-            setOf(
-                file1,
-            )
-        )
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        assertFailsWith<RuntimeException> {
-            task.reconcileDefaultProguardFile(
-                fileCollection,
-                FakeGradleProvider(
-                    project.layout.projectDirectory.dir(
-                        finalDefaultFolder.absolutePath
-                    )
-                ), true
-            )
-        }
-    }
-
-    @Test
-    fun `test directory throws runtime exception`() {
-        Truth.assertThat(task).isNotNull()
-        val fileCollection = mock<FileCollection>()
-        val srcFolder = temporaryFolder.newFolder("proguard_files")
-        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
-
-        whenever(fileCollection.files).thenReturn(
-            setOf(
-                srcFolder,
-            )
-        )
-        task.componentType.set(ComponentTypeImpl.BASE_APK)
-        assertFailsWith<RuntimeException> {
-            task.reconcileDefaultProguardFile(
-                fileCollection,
-                FakeGradleProvider(
-                    project.layout.projectDirectory.dir(
-                        finalDefaultFolder.absolutePath
-                    )
-                ), true
-            )
-        }
-    }
+  }
 }

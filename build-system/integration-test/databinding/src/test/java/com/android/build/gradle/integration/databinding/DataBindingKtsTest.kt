@@ -24,25 +24,18 @@ import org.junit.Test
 /** Regression test for http://b/167583121. */
 class DataBindingKtsTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestProject("databinding")
-            .withPluginManagementBlock(true)
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("databinding").withPluginManagementBlock(true).create()
 
-    @Before
-    fun setUp() {
-        project.file("build.gradle").delete()
-        project.file("build.kotlindsl.gradle").copyTo(project.file("build.gradle.kts"))
+  @Before
+  fun setUp() {
+    project.file("build.gradle").delete()
+    project.file("build.kotlindsl.gradle").copyTo(project.file("build.gradle.kts"))
 
-        project.file("src/main/res/layout/activity_main.xml").readText().replace(
-                "<TextView ",
-                "<TextView android:id=\"@+id/a-b-c\""
-        )
-    }
+    project.file("src/main/res/layout/activity_main.xml").readText().replace("<TextView ", "<TextView android:id=\"@+id/a-b-c\"")
+  }
 
-    @Test
-    fun testBuild() {
-        project.executor().run("assembleDebug")
-    }
+  @Test
+  fun testBuild() {
+    project.executor().run("assembleDebug")
+  }
 }

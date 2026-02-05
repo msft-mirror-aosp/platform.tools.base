@@ -189,13 +189,13 @@ class UastEnvironmentSourceSetTest {
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
       """
-        src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
-            return foo(x);
-                   ~~~
-        src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
-            return foo(x);
-                   ~~~
-        2 errors
+      src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
+          return foo(x);
+                 ~~~
+      src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
+          return foo(x);
+                 ~~~
+      2 errors
       """
         .trimIndent(),
       "",

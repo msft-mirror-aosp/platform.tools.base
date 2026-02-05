@@ -27,61 +27,57 @@ import org.junit.Rule
 import org.junit.Test
 
 class JavaCompileTaskConfigurationTest {
-    @get:Rule
-    val rule = GradleRule.from {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.use"
+          defaultConfig.applicationId = "com.example.api.use"
+        }
+        pluginCallbacks += VariantApiCallback::class.java
+        pluginCallbacks += JavaComplierArgsCallback::class.java
+      }
+    }
+
+  @Test
+  fun `test setting java compiler options via Variant API`() {
+    val build =
+      rule.build {
         androidApplication {
-            android {
-                namespace = "com.example.api.use"
-                defaultConfig.applicationId = "com.example.api.use"
-            }
-            pluginCallbacks += VariantApiCallback::class.java
-            pluginCallbacks += JavaComplierArgsCallback::class.java
+          files.add(
+            "src/debug/java/Foo.java",
+            // language=kotlin
+            """
+            package com.example.api.use;
+            class Foo {}
+            """
+              .trimIndent(),
+          )
         }
-    }
+      }
+    val result = build.executor.run(":app:assembleDebug")
+    ScannerSubject.assertThat(result.stdout).contains("compilerArgs=[-XDstringConcat=inline, -Werror]")
+  }
 
-    @Test
-    fun `test setting java compiler options via Variant API`() {
-        val build = rule.build {
-            androidApplication {
-                files.add(
-                    "src/debug/java/Foo.java",
-                    //language=kotlin
-                    """
-                        package com.example.api.use;
-                        class Foo {}
-                    """.trimIndent()
-                )
-            }
-        }
-        val result = build.executor.run(":app:assembleDebug")
-        ScannerSubject.assertThat(result.stdout).contains("compilerArgs=[-XDstringConcat=inline, -Werror]")
+  class VariantApiCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, extension: ApplicationAndroidComponentsExtension) {
+      extension.onVariants { variant -> variant.configureJavaCompileTask { task -> task.options.compilerArgs.add("-Werror") } }
     }
+  }
 
-    class VariantApiCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: ApplicationAndroidComponentsExtension
-        ) {
-            extension.onVariants { variant ->
-                variant.configureJavaCompileTask { task ->
-                    task.options.compilerArgs.add("-Werror")
-                }
-            }
+  class JavaComplierArgsCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.afterEvaluate {
+        project.tasks.named("compileDebugJavaWithJavac") {
+          it.doLast { task ->
+            task as JavaCompile
+            val compilerArgs = task.options.compilerArgs
+            assert(compilerArgs.contains("-Werror"))
+            println("compilerArgs=$compilerArgs")
+          }
         }
+      }
     }
-
-    class JavaComplierArgsCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.afterEvaluate {
-                project.tasks.named("compileDebugJavaWithJavac") {
-                    it.doLast { task ->
-                        task as JavaCompile
-                        val compilerArgs = task.options.compilerArgs
-                        assert(compilerArgs.contains("-Werror"))
-                        println("compilerArgs=$compilerArgs")
-                    }
-                }
-            }
-        }
-    }
+  }
 }

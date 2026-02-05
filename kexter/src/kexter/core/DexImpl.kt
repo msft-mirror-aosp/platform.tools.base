@@ -20,8 +20,7 @@ import kexter.Dex
 import kexter.DexMethod
 import kexter.Logger
 
-internal class DexImpl(header: DexHeader, private val bytes: ByteArray, val logger: Logger) :
-  Dex() {
+internal class DexImpl(header: DexHeader, private val bytes: ByteArray, val logger: Logger) : Dex() {
 
   fun reader(position: UInt) = DexReader(bytes, position)
 

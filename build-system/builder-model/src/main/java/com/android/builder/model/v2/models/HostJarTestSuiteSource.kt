@@ -18,18 +18,18 @@ package com.android.builder.model.v2.models
 
 import java.io.File
 
-interface HostJarTestSuiteSource: TestSuiteSource {
+interface HostJarTestSuiteSource : TestSuiteSource {
 
-    override val type: SourceType
-        get() = SourceType.HOST_JAR
+  override val type: SourceType
+    get() = SourceType.HOST_JAR
 
-    val defaultTopLevel: File
+  val defaultTopLevel: File
 
-    val java: Collection<File>
+  val java: Collection<File>
 
-    val kotlin: Collection<File>
+  val kotlin: Collection<File>
 
-    val resources: Collection<File>
+  val resources: Collection<File>
 
-    val manifestFile: File?
+  val manifestFile: File?
 }

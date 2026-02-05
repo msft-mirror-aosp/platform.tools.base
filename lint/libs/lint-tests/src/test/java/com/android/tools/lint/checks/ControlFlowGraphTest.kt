@@ -11,7 +11,6 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.parseFirst
 import com.android.tools.lint.detector.api.JavaContext
-import com.android.tools.lint.useFirUast
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Segment
 import com.intellij.psi.PsiMethod
@@ -53,8 +52,7 @@ import org.objectweb.asm.tree.TypeInsnNode
 import org.objectweb.asm.tree.VarInsnNode
 
 private const val SHOW_DOT_ON_FAILURE = false
-@Suppress("RedundantNullableReturnType", "RedundantSuppression")
-private val UPDATE_IN_PLACE: String? = null
+@Suppress("RedundantNullableReturnType", "RedundantSuppression") private val UPDATE_IN_PLACE: String? = null
 
 // Ignore warnings in test files
 @Suppress(
@@ -111,9 +109,7 @@ class ControlFlowGraphTest {
         )
         .indented(),
       expectedCfg,
-      useGraph = { graph, start ->
-        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
-      },
+      useGraph = { graph, start -> checkPaths(graph, start, expectedPaths, followExceptionalFlow = false) },
     )
   }
 
@@ -152,9 +148,7 @@ class ControlFlowGraphTest {
         )
         .indented(),
       expectedCfg,
-      useGraph = { graph, start ->
-        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
-      },
+      useGraph = { graph, start -> checkPaths(graph, start, expectedPaths, followExceptionalFlow = false) },
     )
   }
 
@@ -1230,17 +1224,13 @@ class ControlFlowGraphTest {
         checkGraphPath(
           graph,
           start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "before"
-          },
+          targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "before" },
           expected = "try → before()",
         )
         checkGraphPath(
           graph,
           start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "secondFinally2"
-          },
+          targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "secondFinally2" },
           expected =
             "try → before() → try → blockingCall() → finally → firstFinally1() → firstFinally2() → after() → finally → secondFinally1() → secondFinally2()",
         )
@@ -1562,9 +1552,7 @@ class ControlFlowGraphTest {
         checkGraphPath(
           graph,
           start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "printStackTrace"
-          },
+          targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "printStackTrace" },
           expected = "try → + → = → ! → in → catch → printStackTrace()",
         )
       },
@@ -1721,17 +1709,10 @@ class ControlFlowGraphTest {
         checkGraphPath(
           graph,
           start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "print"
-          },
+          targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "print" },
           expected = "for → < → if → === → % → then → break → print()",
         )
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { node -> node is UBreakExpression },
-          expected = "for → < → if → === → % → then → break",
-        )
+        checkGraphPath(graph, start, targetNode = { node -> node is UBreakExpression }, expected = "for → < → if → === → % → then → break")
       },
     )
   }
@@ -1995,9 +1976,7 @@ class ControlFlowGraphTest {
         checkGraphPath(
           graph,
           start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "println"
-          },
+          targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "println" },
           expected = "when → println()",
         )
       },
@@ -2713,10 +2692,7 @@ class ControlFlowGraphTest {
                   FuncCall: ╰→╰→╭─ next()
                                 ╰→ *exit*
       """,
-      canThrow = { _, method ->
-        if (method.name == "println" || method.name == "clear" || method.name == "next") false
-        else null
-      },
+      canThrow = { _, method -> if (method.name == "println" || method.name == "clear" || method.name == "next") false else null },
     )
   }
 
@@ -2762,8 +2738,7 @@ class ControlFlowGraphTest {
       """,
       canThrow = { _, method ->
         val name = method.name
-        if (name == "println" || name == "clear" || name == "next" || name == "print") false
-        else null
+        if (name == "println" || name == "clear" || name == "next" || name == "print") false else null
       },
     )
   }
@@ -3434,45 +3409,45 @@ class ControlFlowGraphTest {
     checkCompiledGraph(
       testFile as BytecodeTestFile,
       """
-            ╭─ LABEL1
-          ╭─╰→ LINE 10
-          ╰→╭─ ALOAD: Var 0
-          ╭─╰→ LDC: Load constant 'power'
-          ╰→╭─ INVOKEVIRTUAL: Call WakelockActivity6.getSystemService()
-          ╭─╰→ CHECKCAST: Type PowerManager
-          ╰→╭─ ASTORE: Var 1
-          ╭─╰→ LABEL2
-          ╰→╭─ LINE 11
-          ╭─╰→ ALOAD: Var 1
-          ╰→╭─ ICONST_1 (InsnNode)
-          ╭─╰→ LDC: Load constant 'Test'
-          ╰→╭─ LABEL3
-          ╭─╰→ LINE 12
-          ╰→╭─ INVOKEVIRTUAL: Call PowerManager.newWakeLock()
-          ╭─╰→ ASTORE: Var 2
-          ╰→╭─ LABEL4
-          ╭─╰→ LINE 13
-          ╰→╭─ ALOAD: Var 2
-          ╭─╰→ INVOKEVIRTUAL: Call PowerManager${"$"}WakeLock.acquire()
-          ╰→╭─ LABEL5
-          ╭─╰→ LINE 14
-          ╰→╭─ ALOAD: Var 0
-          ╭─╰→ INVOKEVIRTUAL: Call WakelockActivity6.getTaskId()
-          ╰→╭─ BIPUSH (IntInsnNode)
-        ╭─╭─╰→ IF_ICMPNE (JumpInsnNode)
-        │ ╰→╭─ LABEL6
-        │ ╭─╰→ LINE 15
-        │ ╰→╭─ INVOKESTATIC: Call WakelockActivity6.randomCall()
-        │ ╭─╰→ GOTO (JumpInsnNode)
-        ╰→│ ╭─ LABEL7
-        ╭─│ ╰→ LINE 17
-        ╰→│ ╭─ F_NEW (FrameNode)
-        ╭─│ ╰→ ALOAD: Var 2
-        ╰→│ ╭─ INVOKEVIRTUAL: Call PowerManager${"$"}WakeLock.release()
-        ╭─╰→╰→ LABEL8
-        ╰→  ╭─ LINE 19
-          ╭─╰→ F_NEW (FrameNode)
-          ╰→   RETURN (InsnNode)
+          ╭─ LABEL1
+        ╭─╰→ LINE 10
+        ╰→╭─ ALOAD: Var 0
+        ╭─╰→ LDC: Load constant 'power'
+        ╰→╭─ INVOKEVIRTUAL: Call WakelockActivity6.getSystemService()
+        ╭─╰→ CHECKCAST: Type PowerManager
+        ╰→╭─ ASTORE: Var 1
+        ╭─╰→ LABEL2
+        ╰→╭─ LINE 11
+        ╭─╰→ ALOAD: Var 1
+        ╰→╭─ ICONST_1 (InsnNode)
+        ╭─╰→ LDC: Load constant 'Test'
+        ╰→╭─ LABEL3
+        ╭─╰→ LINE 12
+        ╰→╭─ INVOKEVIRTUAL: Call PowerManager.newWakeLock()
+        ╭─╰→ ASTORE: Var 2
+        ╰→╭─ LABEL4
+        ╭─╰→ LINE 13
+        ╰→╭─ ALOAD: Var 2
+        ╭─╰→ INVOKEVIRTUAL: Call PowerManager${"$"}WakeLock.acquire()
+        ╰→╭─ LABEL5
+        ╭─╰→ LINE 14
+        ╰→╭─ ALOAD: Var 0
+        ╭─╰→ INVOKEVIRTUAL: Call WakelockActivity6.getTaskId()
+        ╰→╭─ BIPUSH (IntInsnNode)
+      ╭─╭─╰→ IF_ICMPNE (JumpInsnNode)
+      │ ╰→╭─ LABEL6
+      │ ╭─╰→ LINE 15
+      │ ╰→╭─ INVOKESTATIC: Call WakelockActivity6.randomCall()
+      │ ╭─╰→ GOTO (JumpInsnNode)
+      ╰→│ ╭─ LABEL7
+      ╭─│ ╰→ LINE 17
+      ╰→│ ╭─ F_NEW (FrameNode)
+      ╭─│ ╰→ ALOAD: Var 2
+      ╰→│ ╭─ INVOKEVIRTUAL: Call PowerManager${"$"}WakeLock.release()
+      ╭─╰→╰→ LABEL8
+      ╰→  ╭─ LINE 19
+        ╭─╰→ F_NEW (FrameNode)
+        ╰→   RETURN (InsnNode)
       """
         .trimIndent(),
       methodName = "wrongFlow1",
@@ -3483,11 +3458,7 @@ class ControlFlowGraphTest {
   // Unit test infrastructure below this point
   // --------------------------------------------------------------------------
 
-  private fun checkCompiledGraph(
-    testFile: BytecodeTestFile,
-    expected: String,
-    methodName: String = "target",
-  ) {
+  private fun checkCompiledGraph(testFile: BytecodeTestFile, expected: String, methodName: String = "target") {
     fun getOpcodeString(opcode: Int): String? {
       try {
         val c = Class.forName("org.objectweb.asm.Opcodes")
@@ -3504,11 +3475,7 @@ class ControlFlowGraphTest {
       return null
     }
 
-    fun AbstractInsnNode.describe(
-      method: MethodNode? = null,
-      source: String? = null,
-      labelKeys: Map<Label, String>? = null,
-    ): String {
+    fun AbstractInsnNode.describe(method: MethodNode? = null, source: String? = null, labelKeys: Map<Label, String>? = null): String {
       val opcode = getOpcodeString(opcode) ?: "OPCODE $opcode"
       return when (this) {
         is MethodInsnNode -> "$opcode: Call ${owner.substringAfterLast('/')}.${name}()"
@@ -3573,9 +3540,7 @@ class ControlFlowGraphTest {
             graph
               .prettyPrintGraph(
                 method.instructions.get(0),
-                nodeTypeString = { node ->
-                  node.instruction.describe(method, labelKeys = labelKeys)
-                },
+                nodeTypeString = { node -> node.instruction.describe(method, labelKeys = labelKeys) },
                 sourceString = { null },
                 method.instructions.mapNotNull { graph.getNode(it) },
                 filter = { true },
@@ -3600,13 +3565,9 @@ class ControlFlowGraphTest {
   private fun checkAstGraph(
     testFile: TestFile,
     expected: String,
-    printGraph:
-      (
-        JavaContext, ControlFlowGraph<UElement>, UMethod, List<ControlFlowGraph.Node<UElement>>,
-      ) -> String? =
-      { _, _, _, _ ->
-        null
-      },
+    printGraph: (JavaContext, ControlFlowGraph<UElement>, UMethod, List<ControlFlowGraph.Node<UElement>>) -> String? = { _, _, _, _ ->
+      null
+    },
     canThrow: ((UElement, PsiMethod) -> Boolean?)? = null,
     checkBranchPaths: ((conditional: UExpression) -> ControlFlowGraph.FollowBranch)? = null,
     strict: Boolean = false,
@@ -3617,11 +3578,7 @@ class ControlFlowGraphTest {
     dfsOrder: Boolean = false,
   ) {
     val (context, disposable) =
-      parseFirst(
-        temporaryFolder = temporaryFolder,
-        sdkHome = TestUtils.getSdk().toFile(),
-        testFiles = arrayOf(testFile),
-      )
+      parseFirst(temporaryFolder = temporaryFolder, sdkHome = TestUtils.getSdk().toFile(), testFiles = arrayOf(testFile))
 
     fun JavaContext.findTarget(): UMethod {
       var method: UMethod? = null
@@ -3639,31 +3596,24 @@ class ControlFlowGraphTest {
     }
 
     val renderNode: (ControlFlowGraph.Node<UElement>) -> String = { node ->
-      if (node.isExit()) "exit"
-      else ("${node.typeString()}\n${node.sourceString().trimMiddle(30)}").trim()
+      if (node.isExit()) "exit" else ("${node.typeString()}\n${node.sourceString().trimMiddle(30)}").trim()
     }
-    val renderEdge:
-      (ControlFlowGraph.Node<UElement>, ControlFlowGraph.Edge<UElement>, Int) -> String =
-      { from, edge, index ->
-        if (edge.label != null) {
-          edge.label!!
-        } else if (from.isLinear()) {
-          "then"
-        } else {
-          "s$index"
-        }
+    val renderEdge: (ControlFlowGraph.Node<UElement>, ControlFlowGraph.Edge<UElement>, Int) -> String = { from, edge, index ->
+      if (edge.label != null) {
+        edge.label!!
+      } else if (from.isLinear()) {
+        "then"
+      } else {
+        "s$index"
       }
+    }
     val method = context.findTarget()
     val graph =
       ControlFlowGraph.create(
         method,
         builder =
           object :
-            ControlFlowGraph.Companion.Builder(
-              strict = strict,
-              trackCallThrows = true,
-              callLambdaParameters = callLambdaParameters,
-            ) {
+            ControlFlowGraph.Companion.Builder(strict = strict, trackCallThrows = true, callLambdaParameters = callLambdaParameters) {
             override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
               return checkBranchPaths?.invoke(conditional) ?: super.checkBranchPaths(conditional)
             }
@@ -3720,12 +3670,8 @@ class ControlFlowGraphTest {
                   if (nextMethod != -1 && nextMethod < startOffset) {
                     error("Unexpectedly start was in next method")
                   }
-                  val newStringContents =
-                    actual.replace("\$", "\${\"\$\"}").split("\n").joinToString("\n") {
-                      "      $it"
-                    }
-                  val newSource =
-                    text.substring(0, startOffset) + newStringContents + text.substring(endOffset)
+                  val newStringContents = actual.replace("\$", "\${\"\$\"}").split("\n").joinToString("\n") { "      $it" }
+                  val newSource = text.substring(0, startOffset) + newStringContents + text.substring(endOffset)
                   sourceFile.writeText(newSource)
                 }
               }
@@ -3742,11 +3688,7 @@ class ControlFlowGraphTest {
     if (expectedDotGraph != null) {
       assertEquals(
         expectedDotGraph.trimIndent().trimEnd(),
-        graph
-          .toDot(start, renderNode = renderNode, renderEdge = renderEdge)
-          .split("\n")
-          .joinToString("\n") { it.trimEnd() }
-          .trimEnd(),
+        graph.toDot(start, renderNode = renderNode, renderEdge = renderEdge).split("\n").joinToString("\n") { it.trimEnd() }.trimEnd(),
       )
     }
 
@@ -3755,12 +3697,7 @@ class ControlFlowGraphTest {
     Disposer.dispose(disposable)
   }
 
-  private fun checkGraphPath(
-    graph: ControlFlowGraph<UElement>,
-    start: UExpression,
-    targetNode: (UElement) -> Boolean,
-    expected: String,
-  ) {
+  private fun checkGraphPath(graph: ControlFlowGraph<UElement>, start: UExpression, targetNode: (UElement) -> Boolean, expected: String) {
     var foundPath: List<ControlFlowGraph.Edge<UElement>> = emptyList()
 
     val startNode = graph.getNode(start)!!
@@ -3792,18 +3729,13 @@ class ControlFlowGraphTest {
     method: UMethod,
   ): List<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>> {
     val entryPoints = graph.getEntryPoints()
-    val clusters =
-      mutableListOf<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>>()
+    val clusters = mutableListOf<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>>()
     for (entry in entryPoints) {
       val reaches = mutableListOf<ControlFlowGraph.Node<UElement>>()
       graph.dfs(
         ControlFlowGraph.UnitDomain,
         object : ControlFlowGraph.DfsRequest<UElement, Unit>(entry) {
-          override fun visitNode(
-            node: ControlFlowGraph.Node<UElement>,
-            path: List<ControlFlowGraph.Edge<UElement>>,
-            status: Unit,
-          ) {
+          override fun visitNode(node: ControlFlowGraph.Node<UElement>, path: List<ControlFlowGraph.Edge<UElement>>, status: Unit) {
             reaches.add(node)
           }
         },
@@ -3815,10 +3747,9 @@ class ControlFlowGraphTest {
   }
 
   /**
-   * Returns the nodes in suitable instruction order. This is generally the program order (unless
-   * [dfsOrder] is set to true, in which it's the depth-first-search traversal order starting from
-   * [start]) but is tweaked a bit to for example generally follow the flow order for instructions
-   * on the same line, etc.
+   * Returns the nodes in suitable instruction order. This is generally the program order (unless [dfsOrder] is set to true, in which it's
+   * the depth-first-search traversal order starting from [start]) but is tweaked a bit to for example generally follow the flow order for
+   * instructions on the same line, etc.
    */
   private fun getInstructionOrder(
     graph: ControlFlowGraph<UElement>,
@@ -3832,10 +3763,7 @@ class ControlFlowGraphTest {
         val visited = mutableSetOf<ControlFlowGraph.Node<UElement>>()
         val result = mutableListOf<ControlFlowGraph.Node<UElement>>()
 
-        fun dfs(
-          node: ControlFlowGraph.Node<UElement>,
-          visited: MutableSet<ControlFlowGraph.Node<UElement>>,
-        ) {
+        fun dfs(node: ControlFlowGraph.Node<UElement>, visited: MutableSet<ControlFlowGraph.Node<UElement>>) {
           if (!visited.add(node)) {
             return
           }
@@ -3866,9 +3794,7 @@ class ControlFlowGraphTest {
 
     method.accept(
       object : AbstractUastVisitor() {
-        override fun visitElement(
-          @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") element: UElement
-        ): Boolean {
+        override fun visitElement(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") element: UElement): Boolean {
           val node = graph.getNode(element) ?: nodeMap[element]
           if (node != null) {
             nodeOrder[node] = next++
@@ -3900,10 +3826,7 @@ class ControlFlowGraphTest {
 
     /** Are these two nodes fully on the same source code line? */
     val source = method.sourcePsi!!.containingFile.text
-    fun sameLine(
-      o1: ControlFlowGraph.Node<UElement>,
-      o2: ControlFlowGraph.Node<UElement>,
-    ): Boolean {
+    fun sameLine(o1: ControlFlowGraph.Node<UElement>, o2: ControlFlowGraph.Node<UElement>): Boolean {
       val source1 = sourceOffsets[o1]
       val source2 = sourceOffsets[o2]
       if (source1 != null && source2 != null) {
@@ -3923,10 +3846,7 @@ class ControlFlowGraphTest {
     Collections.sort(
       instructionOrder,
       object : Comparator<ControlFlowGraph.Node<UElement>> {
-        override fun compare(
-          o1: ControlFlowGraph.Node<UElement>,
-          o2: ControlFlowGraph.Node<UElement>,
-        ): Int {
+        override fun compare(o1: ControlFlowGraph.Node<UElement>, o2: ControlFlowGraph.Node<UElement>): Int {
           val segment1 = sourceOffsets[o1]
           val segment2 = sourceOffsets[o2]
           if (segment1 != null && segment2 != null) {
@@ -3973,23 +3893,14 @@ class ControlFlowGraphTest {
 
   // Test the DFS methods to print out all exit paths here -- both with and
   // without followExceptionalFlow enabled.
-  fun checkPaths(
-    graph: ControlFlowGraph<UElement>,
-    start: UExpression,
-    expected: String,
-    followExceptionalFlow: Boolean,
-  ) {
+  fun checkPaths(graph: ControlFlowGraph<UElement>, start: UExpression, expected: String, followExceptionalFlow: Boolean) {
     val matches = mutableListOf<List<ControlFlowGraph.Edge<UElement>>>()
 
     val startNode = graph.getNode(start)!!
     graph.dfs(
       ControlFlowGraph.UnitDomain,
       object : ControlFlowGraph.DfsRequest<UElement, Unit>(startNode) {
-        override fun visitNode(
-          node: ControlFlowGraph.Node<UElement>,
-          path: List<ControlFlowGraph.Edge<UElement>>,
-          status: Unit,
-        ) {
+        override fun visitNode(node: ControlFlowGraph.Node<UElement>, path: List<ControlFlowGraph.Edge<UElement>>, status: Unit) {
           if (node.isExit()) matches.add(path)
           node.visit = 0
         }
@@ -4004,10 +3915,7 @@ class ControlFlowGraphTest {
       },
     )
 
-    assertEquals(
-      expected.trimIndent().trim(),
-      matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim(),
-    )
+    assertEquals(expected.trimIndent().trim(), matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim())
   }
 }
 
@@ -4021,10 +3929,7 @@ fun <T : Any> ControlFlowGraph<T>.show(
   // use different graphviz algorithms.
   algorithm: String = "dot",
   renderNode: (ControlFlowGraph.Node<T>) -> String = { node -> node.instruction.toString() },
-  renderEdge: (ControlFlowGraph.Node<T>, ControlFlowGraph.Edge<T>, Int) -> String =
-    { _, edge, index ->
-      edge.label ?: "s${index}"
-    },
+  renderEdge: (ControlFlowGraph.Node<T>, ControlFlowGraph.Edge<T>, Int) -> String = { _, edge, index -> edge.label ?: "s${index}" },
 ) {
   val dotPath = "/opt/homebrew/bin/dot"
   if (!File(dotPath).isFile) {
@@ -4048,9 +3953,7 @@ fun <T : Any> ControlFlowGraph<T>.show(
 
   val dot = toDot(start, end, renderNode = renderNode, renderEdge = renderEdge)
   dotFile.writeText(dot)
-  Runtime.getRuntime()
-    .exec("$dotPath -K$algorithm -Tpng -o${pngFile.path} ${dotFile.path}")
-    .waitFor()
+  Runtime.getRuntime().exec("$dotPath -K$algorithm -Tpng -o${pngFile.path} ${dotFile.path}").waitFor()
   Runtime.getRuntime().exec("/usr/bin/open ${pngFile.path}").waitFor()
   dotFile.delete()
 }
@@ -4073,10 +3976,7 @@ fun ControlFlowGraph.Node<UElement>.typeString(): String {
     "" -> {
       // Anonymous inner class
       val inner = element.javaClass.name.substringAfterLast('.')
-      if (
-        inner.startsWith("JavaUSwitchEntry\$body\$") ||
-          inner.startsWith("KotlinUSwitchEntry\$body\$")
-      ) {
+      if (inner.startsWith("JavaUSwitchEntry\$body\$") || inner.startsWith("KotlinUSwitchEntry\$body\$")) {
         return "SwitchEntryBody"
       } else if (inner.startsWith("ElvisExpressionKt\$createNotEqWithNullExpression\$")) {
         return "ElvisNullCheck"
@@ -4174,9 +4074,9 @@ fun ControlFlowGraph.Node<UElement>.sourceString(): String {
 /**
  * Print out the flow control graph in ASCII.
  *
- * This isn't as nice as a dot-representation, but the goal is to have it in a pretty compact yet
- * readable format such that it can be used in unit tests (to more directly test the operation of
- * the control flow graph construction than testing it indirectly via detector behaviors).
+ * This isn't as nice as a dot-representation, but the goal is to have it in a pretty compact yet readable format such that it can be used
+ * in unit tests (to more directly test the operation of the control flow graph construction than testing it indirectly via detector
+ * behaviors).
  */
 fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
   start: T,
@@ -4211,8 +4111,7 @@ fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
 
   // Compute edge data
   val entries = ids.entries
-  val sortedNodes: List<MutableMap.MutableEntry<ControlFlowGraph.Node<T>, String>> =
-    entries.sortedBy { ids[it.key]!! }
+  val sortedNodes: List<MutableMap.MutableEntry<ControlFlowGraph.Node<T>, String>> = entries.sortedBy { ids[it.key]!! }
 
   fun indexOf(target: ControlFlowGraph.Node<T>): Int {
     for (i in sortedNodes.indices) {
@@ -4292,25 +4191,12 @@ fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
 private class Arrows(val size: Int) {
   private val spacing = 2 // Distance between each arrow column
   private val padding = 30 // extra space for labels etc
-  private val display: Array<StringBuilder> =
-    Array(size) { StringBuilder(" ".repeat(spacing * size + padding)) }
+  private val display: Array<StringBuilder> = Array(size) { StringBuilder(" ".repeat(spacing * size + padding)) }
 
-  fun drawEdge(
-    fromIndex: Int,
-    toIndex: Int,
-    forward: Boolean = true,
-    dashed: Boolean = false,
-    rhs: Boolean = true,
-  ) {
+  fun drawEdge(fromIndex: Int, toIndex: Int, forward: Boolean = true, dashed: Boolean = false, rhs: Boolean = true) {
     if (fromIndex > toIndex) {
       // Swap from/to such that we always draw downwards, but flip arrow directions too
-      drawEdge(
-        fromIndex = toIndex,
-        toIndex = fromIndex,
-        forward = !forward,
-        dashed = dashed,
-        rhs = rhs,
-      )
+      drawEdge(fromIndex = toIndex, toIndex = fromIndex, forward = !forward, dashed = dashed, rhs = rhs)
       return
     }
     val increment = if (rhs) spacing else -spacing

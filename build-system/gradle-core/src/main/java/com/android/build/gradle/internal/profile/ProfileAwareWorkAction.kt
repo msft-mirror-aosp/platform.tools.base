@@ -27,54 +27,45 @@ import org.gradle.workers.WorkParameters
 /** A work action for AGP worker action to allow better reporting. */
 abstract class ProfileAwareWorkAction<T : ProfileAwareWorkAction.Parameters> : WorkAction<T> {
 
-    abstract class Parameters : WorkParameters {
-        abstract val projectPath: Property<String>
-        abstract val taskOwner: Property<String>
-        abstract val workerKey: Property<String>
-        abstract val analyticsService: Property<AnalyticsService>
-        fun initializeFromBaseTask(task: BaseTask) {
-            initializeWith(task.projectPath, task.path, task.analyticsService)
-        }
-        fun initializeWith(
-            projectPath: Provider<String>,
-            taskOwner:  String,
-            analyticsService: Provider<AnalyticsService>
-        ) {
-            val workerKeyString = "$taskOwner{${this.javaClass.name}${this.hashCode()}"
-            initAllProperties(projectPath, taskOwner, workerKeyString, analyticsService)
-        }
-        fun initializeFromProfileAwareWorkAction(workAction: Parameters) {
-            val workerKeyString = "${workAction.workerKey.get()}${this.hashCode()}"
-            initAllProperties(
-                workAction.projectPath,
-                workAction.taskOwner.get(),
-                workerKeyString,
-                workAction.analyticsService
-            )
-        }
-        private fun initAllProperties(
-            projectPath: Provider<String>,
-            taskOwner: String,
-            workerKey: String,
-            analyticsService: Provider<AnalyticsService>
-        ) {
-            this.projectPath.setDisallowChanges(projectPath)
-            this.taskOwner.setDisallowChanges(taskOwner)
-            this.workerKey.setDisallowChanges(workerKey)
-            this.analyticsService.setDisallowChanges(analyticsService)
-            this.analyticsService.get()
-                .getTaskRecord(taskOwner)
-                ?.addWorker(workerKey, GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION)
-        }
+  abstract class Parameters : WorkParameters {
+    abstract val projectPath: Property<String>
+    abstract val taskOwner: Property<String>
+    abstract val workerKey: Property<String>
+    abstract val analyticsService: Property<AnalyticsService>
+
+    fun initializeFromBaseTask(task: BaseTask) {
+      initializeWith(task.projectPath, task.path, task.analyticsService)
     }
 
-    final override fun execute() {
-        parameters.analyticsService.get()
-            .workerStarted(parameters.taskOwner.get(), parameters.workerKey.get())
-        run()
-        parameters.analyticsService.get()
-            .workerFinished(parameters.taskOwner.get(), parameters.workerKey.get())
+    fun initializeWith(projectPath: Provider<String>, taskOwner: String, analyticsService: Provider<AnalyticsService>) {
+      val workerKeyString = "$taskOwner{${this.javaClass.name}${this.hashCode()}"
+      initAllProperties(projectPath, taskOwner, workerKeyString, analyticsService)
     }
 
-    abstract fun run()
+    fun initializeFromProfileAwareWorkAction(workAction: Parameters) {
+      val workerKeyString = "${workAction.workerKey.get()}${this.hashCode()}"
+      initAllProperties(workAction.projectPath, workAction.taskOwner.get(), workerKeyString, workAction.analyticsService)
+    }
+
+    private fun initAllProperties(
+      projectPath: Provider<String>,
+      taskOwner: String,
+      workerKey: String,
+      analyticsService: Provider<AnalyticsService>,
+    ) {
+      this.projectPath.setDisallowChanges(projectPath)
+      this.taskOwner.setDisallowChanges(taskOwner)
+      this.workerKey.setDisallowChanges(workerKey)
+      this.analyticsService.setDisallowChanges(analyticsService)
+      this.analyticsService.get().getTaskRecord(taskOwner)?.addWorker(workerKey, GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION)
+    }
+  }
+
+  final override fun execute() {
+    parameters.analyticsService.get().workerStarted(parameters.taskOwner.get(), parameters.workerKey.get())
+    run()
+    parameters.analyticsService.get().workerFinished(parameters.taskOwner.get(), parameters.workerKey.get())
+  }
+
+  abstract fun run()
 }

@@ -17,78 +17,58 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
-import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionContainer
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Smoke tests for the flag to enable new DSL implementations
- */
+/** Smoke tests for the flag to enable new DSL implementations */
 class NewDslImplementationSmokeTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication { }
-        androidLibrary { }
-        androidFeature { }
-        androidTest {
-            android {
-                targetProjectPath = ":app"
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {}
+      androidLibrary {}
+      androidFeature {}
+      androidTest { android { targetProjectPath = ":app" } }
     }
 
-
-    @Test
-    fun smokeTest() {
-        rule.build.executor
-            .run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
-    }
+  @Test
+  fun smokeTest() {
+    rule.build.executor.run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
+  }
 }
 
-class CheckDslAccessibility: GenericCallback {
-    override fun handleProject(
-        project: Project,
-    ) {
-        project.extensions.getByType(LibraryExtension::class.java)
-        project.extensions.checkNotRegistered(com.android.build.gradle.LibraryExtension::class.java)
-        project.extensions.checkNotRegistered(com.android.build.gradle.BaseExtension::class.java)
-        println("CheckDslAccessibility checks done")
-    }
+class CheckDslAccessibility : GenericCallback {
+  override fun handleProject(project: Project) {
+    project.extensions.getByType(LibraryExtension::class.java)
+    project.extensions.checkNotRegistered(com.android.build.gradle.LibraryExtension::class.java)
+    project.extensions.checkNotRegistered(com.android.build.gradle.BaseExtension::class.java)
+    println("CheckDslAccessibility checks done")
+  }
 
-    private fun ExtensionContainer.checkNotRegistered(type: Class<*>) {
-        var failure: Throwable? = null
-        try {
-            getByType(type)
-        } catch (e: Throwable) {
-            failure = e
-        }
-        checkNotNull(failure) { "${type.name} should not be registered" }
+  private fun ExtensionContainer.checkNotRegistered(type: Class<*>) {
+    var failure: Throwable? = null
+    try {
+      getByType(type)
+    } catch (e: Throwable) {
+      failure = e
     }
+    checkNotNull(failure) { "${type.name} should not be registered" }
+  }
 }
 
-/**
- * Smoke tests that the previous DSL interfaces are not exposed.
- */
+/** Smoke tests that the previous DSL interfaces are not exposed. */
 class OldDslNotRegisteredTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            pluginCallbacks += CheckDslAccessibility::class.java
-        }
-    }
+  @get:Rule val rule = GradleRule.from { androidLibrary { pluginCallbacks += CheckDslAccessibility::class.java } }
 
-    @Test
-    fun smokeTest() {
-        val result = rule.build.executor
-            .run(":lib:tasks")
-        result.assertOutputContains("CheckDslAccessibility checks done")
-    }
+  @Test
+  fun smokeTest() {
+    val result = rule.build.executor.run(":lib:tasks")
+    result.assertOutputContains("CheckDslAccessibility checks done")
+  }
 }

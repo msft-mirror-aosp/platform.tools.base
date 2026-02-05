@@ -19,33 +19,21 @@ package com.android.build.api.variant
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 
-/**
- * Build-time properties for [Component] that produce test APKs.
- */
-interface GeneratesTestApk: GeneratesApk {
+/** Build-time properties for [Component] that produce test APKs. */
+interface GeneratesTestApk : GeneratesApk {
 
-    /**
-     * The instrumentationRunner to use to run the tests.
-     */
-    val instrumentationRunner: Property<String>
+  /** The instrumentationRunner to use to run the tests. */
+  val instrumentationRunner: Property<String>
 
-    /**
-     * The instrumentationRunnerArguments to use to run the tests.
-     */
-    val instrumentationRunnerArguments: MapProperty<String, String>
+  /** The instrumentationRunnerArguments to use to run the tests. */
+  val instrumentationRunnerArguments: MapProperty<String, String>
 
-    /**
-     * The handleProfiling value to use to run the tests.
-     */
-    val handleProfiling: Property<Boolean>
+  /** The handleProfiling value to use to run the tests. */
+  val handleProfiling: Property<Boolean>
 
-    /**
-     * The functionalTest value to use to run the tests.
-     */
-    val functionalTest: Property<Boolean>
+  /** The functionalTest value to use to run the tests. */
+  val functionalTest: Property<Boolean>
 
-    /**
-     * The test label, or "" if none defined.
-     */
-    val testLabel: Property<String>
+  /** The test label, or "" if none defined. */
+  val testLabel: Property<String>
 }

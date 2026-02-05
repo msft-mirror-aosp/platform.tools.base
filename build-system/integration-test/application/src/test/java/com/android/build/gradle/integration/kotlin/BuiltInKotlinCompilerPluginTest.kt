@@ -29,61 +29,63 @@ import org.junit.runners.Parameterized
 
 /** Tests that built-in Kotlin support works when Kotlin compiler Gradle plugins are used. */
 @RunWith(Parameterized::class)
-class BuiltInKotlinCompilerPluginTest(
-    private val builtInKotlin: Boolean,
-    private val disallowKotlinSourceSets: Boolean
-) {
+class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, private val disallowKotlinSourceSets: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "builtInKotlin={0},disallowKotlinSourceSets={1}")
-        @JvmStatic
-        fun parameters() = listOf(
-            // disallowKotlinSourceSets takes effect only when builtInKotlin=true
-            arrayOf(false, BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.defaultValue),
-            arrayOf(true, false),
-            arrayOf(true, true)
-        )
+    @Parameterized.Parameters(name = "builtInKotlin={0},disallowKotlinSourceSets={1}")
+    @JvmStatic
+    fun parameters() =
+      listOf(
+        // disallowKotlinSourceSets takes effect only when builtInKotlin=true
+        arrayOf(false, BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.defaultValue),
+        arrayOf(true, false),
+        arrayOf(true, true),
+      )
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      buildFileType = BuildFileType.KTS
+      androidApplication {
+        @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
+        android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+        if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+        add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
+        add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+      }
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        buildFileType = BuildFileType.KTS
-        androidApplication {
-            @Suppress("DEPRECATION")
-            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
-            android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
-        }
-        gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-            if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
-            add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
-            add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-        }
-    }
+  @Test
+  fun `test Kotlin compiler Gradle plugin is invoked`() {
+    val build = rule.build
+    build.addKotlinCompilerGradlePlugin()
 
-    @Test
-    fun `test Kotlin compiler Gradle plugin is invoked`() {
-        val build = rule.build
-        build.addKotlinCompilerGradlePlugin()
+    // Check Kotlin compiler Gradle plugin is invoked
+    val result = build.executor.run(":app:help")
+    result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
 
-        // Check Kotlin compiler Gradle plugin is invoked
-        val result = build.executor.run(":app:help")
-        result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
-
-        // Also check KotlinCompilation details
-        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest]")
-        val expectedDefaultSourceSetForDebug = when {
-            builtInKotlin && disallowKotlinSourceSets -> "[]"
-            builtInKotlin && !disallowKotlinSourceSets -> "[src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]"
-            else -> "[src/debug/kotlin,src/debug/java]"
-        }
-        val expectedKotlinSourceSetsForDebug = when {
-            builtInKotlin -> "[$expectedDefaultSourceSetForDebug]"
-            else -> "[$expectedDefaultSourceSetForDebug,[src/main/kotlin,src/main/java]]"
-        }
-        result.assertOutputContains(
-            """
+    // Also check KotlinCompilation details
+    result.assertOutputContains(
+      "KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest]"
+    )
+    val expectedDefaultSourceSetForDebug =
+      when {
+        builtInKotlin && disallowKotlinSourceSets -> "[]"
+        builtInKotlin && !disallowKotlinSourceSets -> "[src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]"
+        else -> "[src/debug/kotlin,src/debug/java]"
+      }
+    val expectedKotlinSourceSetsForDebug =
+      when {
+        builtInKotlin -> "[$expectedDefaultSourceSetForDebug]"
+        else -> "[$expectedDefaultSourceSetForDebug,[src/main/kotlin,src/main/java]]"
+      }
+    result.assertOutputContains(
+      """
             Details of KotlinCompilation 'debug':
             allAssociatedCompilations = []
             allKotlinSourceSets = $expectedKotlinSourceSetsForDebug
@@ -117,25 +119,29 @@ class BuiltInKotlinCompilerPluginTest(
             runtimeOnlyConfigurationName = debugCompilationRuntimeOnly
             target = target  (androidJvm)
             toString = compilation 'debug' (target  (androidJvm))
-            """.trimIndent()
-        )
-        // Check KotlinCompilation 'debugUnitTest' too to ensure the default directory added by KGP
-        // (`src/debugUnitTest/kotlin`) is overwritten by AGP when `builtInKotlin=true`
-        val expectedDefaultSourceSetForDebugUnitTest = when {
-            builtInKotlin && disallowKotlinSourceSets -> "[]"
-            builtInKotlin && !disallowKotlinSourceSets -> "[src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]"
-            else -> "[src/debugUnitTest/kotlin]"
-        }
-        val expectedKotlinSourceSetsForDebugUnitTest = when {
-            builtInKotlin -> "[$expectedDefaultSourceSetForDebugUnitTest]"
-            else -> "[$expectedDefaultSourceSetForDebugUnitTest,[src/test/kotlin,src/test/java],[src/testDebug/kotlin,src/testDebug/java]]"
-        }
-        val associatedCompilationsForDebugUnitTest = when {
-            builtInKotlin -> "[]"
-            else -> "[compilation 'debug' (target  (androidJvm))]"
-        }
-        result.assertOutputContains(
             """
+        .trimIndent()
+    )
+    // Check KotlinCompilation 'debugUnitTest' too to ensure the default directory added by KGP
+    // (`src/debugUnitTest/kotlin`) is overwritten by AGP when `builtInKotlin=true`
+    val expectedDefaultSourceSetForDebugUnitTest =
+      when {
+        builtInKotlin && disallowKotlinSourceSets -> "[]"
+        builtInKotlin && !disallowKotlinSourceSets -> "[src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]"
+        else -> "[src/debugUnitTest/kotlin]"
+      }
+    val expectedKotlinSourceSetsForDebugUnitTest =
+      when {
+        builtInKotlin -> "[$expectedDefaultSourceSetForDebugUnitTest]"
+        else -> "[$expectedDefaultSourceSetForDebugUnitTest,[src/test/kotlin,src/test/java],[src/testDebug/kotlin,src/testDebug/java]]"
+      }
+    val associatedCompilationsForDebugUnitTest =
+      when {
+        builtInKotlin -> "[]"
+        else -> "[compilation 'debug' (target  (androidJvm))]"
+      }
+    result.assertOutputContains(
+      """
             Details of KotlinCompilation 'debugUnitTest':
             allAssociatedCompilations = $associatedCompilationsForDebugUnitTest
             allKotlinSourceSets = $expectedKotlinSourceSetsForDebugUnitTest
@@ -169,18 +175,21 @@ class BuiltInKotlinCompilerPluginTest(
             runtimeOnlyConfigurationName = debugUnitTestCompilationRuntimeOnly
             target = target  (androidJvm)
             toString = compilation 'debugUnitTest' (target  (androidJvm))
-            """.trimIndent()
-        )
-        // Check KotlinCompilation 'debugScreenshotTest' too as screenshot-test / test-fixture
-        // components make use of built-in Kotlin support even when built-in Kotlin is disabled
-        val expectedDefaultSourceSetForDebugScreenshotTest = when {
-            builtInKotlin && disallowKotlinSourceSets -> "[]"
-            builtInKotlin && !disallowKotlinSourceSets -> "[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]"
-            else -> "[src/screenshotTest/kotlin,src/screenshotTest/java,src/screenshotTestDebug/kotlin,src/screenshotTestDebug/java]"
-        }
-        val expectedKotlinSourceSetsForDebugScreenshotTest = "[$expectedDefaultSourceSetForDebugScreenshotTest]"
-        result.assertOutputContains(
             """
+        .trimIndent()
+    )
+    // Check KotlinCompilation 'debugScreenshotTest' too as screenshot-test / test-fixture
+    // components make use of built-in Kotlin support even when built-in Kotlin is disabled
+    val expectedDefaultSourceSetForDebugScreenshotTest =
+      when {
+        builtInKotlin && disallowKotlinSourceSets -> "[]"
+        builtInKotlin && !disallowKotlinSourceSets ->
+          "[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]"
+        else -> "[src/screenshotTest/kotlin,src/screenshotTest/java,src/screenshotTestDebug/kotlin,src/screenshotTestDebug/java]"
+      }
+    val expectedKotlinSourceSetsForDebugScreenshotTest = "[$expectedDefaultSourceSetForDebugScreenshotTest]"
+    result.assertOutputContains(
+      """
             Details of KotlinCompilation 'debugScreenshotTest':
             allAssociatedCompilations = []
             allKotlinSourceSets = $expectedKotlinSourceSetsForDebugScreenshotTest
@@ -214,70 +223,76 @@ class BuiltInKotlinCompilerPluginTest(
             runtimeOnlyConfigurationName = debugScreenshotTestCompilationRuntimeOnly
             target = target  (androidJvm)
             toString = compilation 'debugScreenshotTest' (target  (androidJvm))
-            """.trimIndent()
-        )
-    }
-
-    private fun GradleBuild.addKotlinCompilerGradlePlugin() {
-        val exampleKotlinCompilerGradlePlugin =
-            // language=kotlin
             """
-            class ExampleKotlinCompilerGradlePlugin : org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin {
+        .trimIndent()
+    )
+  }
 
-                override fun isApplicable(kotlinCompilation: org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<*>): Boolean = true
+  private fun GradleBuild.addKotlinCompilerGradlePlugin() {
+    val exampleKotlinCompilerGradlePlugin =
+      // language=kotlin
+      """
+      class ExampleKotlinCompilerGradlePlugin : org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin {
 
-                override fun applyToCompilation(
-                    kotlinCompilation: org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<*>
-                ): Provider<List<org.jetbrains.kotlin.gradle.plugin.SubpluginOption>> {
-                    println("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation '${'$'}{kotlinCompilation.name}'")
-                    println("Details of KotlinCompilation '${'$'}{kotlinCompilation.name}':")
+          override fun isApplicable(kotlinCompilation: org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<*>): Boolean = true
 
-                    fun <T> printValue(value: T): String {
-                        return when (value) {
-                            is File -> value.relativeTo(kotlinCompilation.project.projectDir).invariantSeparatorsPath
-                            is Iterable<*> -> value.joinToString(",", prefix = "[", postfix = "]") { printValue(it) }
-                            is org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet -> printValue(value.kotlin.sourceDirectories)
-                            else -> value.toString().replaceAfter("@", "<hash-code>")
-                        }
-                    }
+          override fun applyToCompilation(
+              kotlinCompilation: org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<*>
+          ): Provider<List<org.jetbrains.kotlin.gradle.plugin.SubpluginOption>> {
+              println("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation '${'$'}{kotlinCompilation.name}'")
+              println("Details of KotlinCompilation '${'$'}{kotlinCompilation.name}':")
 
-                    org.jetbrains.kotlin.gradle.plugin.KotlinCompilation::class.members.sortedBy { it.name }.forEach { member ->
-                        if (member.visibility!!.name != "PUBLIC") return@forEach
-                        if (member.parameters.size != 1) return@forEach
-                        if (member.name == "hashCode") return@forEach
+              fun <T> printValue(value: T): String {
+                  return when (value) {
+                      is File -> value.relativeTo(kotlinCompilation.project.projectDir).invariantSeparatorsPath
+                      is Iterable<*> -> value.joinToString(",", prefix = "[", postfix = "]") { printValue(it) }
+                      is org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet -> printValue(value.kotlin.sourceDirectories)
+                      else -> value.toString().replaceAfter("@", "<hash-code>")
+                  }
+              }
 
-                        val value = when (member.name) {
-                            "compileDependencyFiles", "runtimeDependencyFiles" -> "<can't resolve at this point as it is too early>"
-                            else -> member.call(kotlinCompilation)
-                        }
-                        println(member.name + " = " + printValue(value))
-                    }
+              org.jetbrains.kotlin.gradle.plugin.KotlinCompilation::class.members.sortedBy { it.name }.forEach { member ->
+                  if (member.visibility!!.name != "PUBLIC") return@forEach
+                  if (member.parameters.size != 1) return@forEach
+                  if (member.name == "hashCode") return@forEach
 
-                    return kotlinCompilation.target.project.provider {
-                        listOf(org.jetbrains.kotlin.gradle.plugin.SubpluginOption("exampleKey", "exampleValue"))
-                    }
-                }
+                  val value = when (member.name) {
+                      "compileDependencyFiles", "runtimeDependencyFiles" -> "<can't resolve at this point as it is too early>"
+                      else -> member.call(kotlinCompilation)
+                  }
+                  println(member.name + " = " + printValue(value))
+              }
 
-                override fun getCompilerPluginId(): String = "com.example.example-kotlin-compiler-gradle-plugin"
+              return kotlinCompilation.target.project.provider {
+                  listOf(org.jetbrains.kotlin.gradle.plugin.SubpluginOption("exampleKey", "exampleValue"))
+              }
+          }
 
-                // Setting up an example Kotlin compiler plugin is a bit cumbersome, so this method
-                // returns the Compose compiler plugin instead. This is okay because we are testing
-                // the Kotlin compiler *Gradle plugin*, not the Kotlin compiler plugin.
-                override fun getPluginArtifact(): org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact =
-                    org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact(groupId = "org.jetbrains.kotlin", artifactId = "kotlin-compose-compiler-plugin-embeddable")
-            }
-            """.trimIndent()
+          override fun getCompilerPluginId(): String = "com.example.example-kotlin-compiler-gradle-plugin"
 
-        androidApplication().files.update("build.gradle.kts").append(
-            exampleKotlinCompilerGradlePlugin + "\n\n" +
-            """
-            apply<ExampleKotlinCompilerGradlePlugin>()
+          // Setting up an example Kotlin compiler plugin is a bit cumbersome, so this method
+          // returns the Compose compiler plugin instead. This is okay because we are testing
+          // the Kotlin compiler *Gradle plugin*, not the Kotlin compiler plugin.
+          override fun getPluginArtifact(): org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact =
+              org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact(groupId = "org.jetbrains.kotlin", artifactId = "kotlin-compose-compiler-plugin-embeddable")
+      }
+      """
+        .trimIndent()
 
-            afterEvaluate {
-                println("KotlinAndroidTarget.compilations = " + kotlin.target.compilations.map { it.name })
-            }
-            """.trimIndent()
-        )
-    }
+    androidApplication()
+      .files
+      .update("build.gradle.kts")
+      .append(
+        exampleKotlinCompilerGradlePlugin +
+          "\n\n" +
+          """
+          apply<ExampleKotlinCompilerGradlePlugin>()
 
+          afterEvaluate {
+              println("KotlinAndroidTarget.compilations = " + kotlin.target.compilations.map { it.name })
+          }
+          """
+            .trimIndent()
+      )
+  }
 }

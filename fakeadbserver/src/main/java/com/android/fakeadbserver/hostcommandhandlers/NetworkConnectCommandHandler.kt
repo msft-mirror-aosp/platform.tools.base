@@ -21,16 +21,11 @@ import java.net.Socket
 import java.util.concurrent.ExecutionException
 
 /**
- * "host:connect:<addr>" implementation: Simulates connecting to device over the network.
- * Devices should be registered with FakeAdbServerProvider.registerNetworkDevice(...)
+ * "host:connect:<addr>" implementation: Simulates connecting to device over the network. Devices should be registered with
+ * FakeAdbServerProvider.registerNetworkDevice(...)
  */
 class NetworkConnectCommandHandler : SimpleHostCommandHandler("connect") {
-  override fun invoke(
-    fakeAdbServer: FakeAdbServer,
-    responseSocket: Socket,
-    device: DeviceState?,
-    args: String
-  ): Boolean {
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
     val stream = responseSocket.getOutputStream()
     try {
       val state = fakeAdbServer.connectNetworkDevice(args).get()
@@ -43,5 +38,4 @@ class NetworkConnectCommandHandler : SimpleHostCommandHandler("connect") {
     writeOkay(stream)
     return false
   }
-
 }

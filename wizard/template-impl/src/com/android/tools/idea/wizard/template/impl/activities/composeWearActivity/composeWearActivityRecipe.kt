@@ -47,8 +47,7 @@ private fun RecipeExecutor.commonComposeRecipe(
   addComposeDependencies(moduleData, composeBomVersion)
 
   // Add Compose Wear dependencies; the Compose BOM doesn't include Wear.
-  val wearComposeVersionVarName =
-    getDependencyVarName("androidx.wear.compose:compose-material3", "wear_compose_version")
+  val wearComposeVersionVarName = getDependencyVarName("androidx.wear.compose:compose-material3", "wear_compose_version")
   val wearComposeVersion = getExtVar(wearComposeVersionVarName, "1.5.6")
   addDependency(mavenCoordinate = "androidx.wear.compose:compose-material3:$wearComposeVersion")
   addDependency(mavenCoordinate = "androidx.wear.compose:compose-foundation:$wearComposeVersion")
@@ -74,10 +73,7 @@ private fun RecipeExecutor.commonComposeRecipe(
 
   val (_, srcOut, resOut, manifestOut) = moduleData
   val useWearSdkLibrary = moduleData.apis.buildApi.androidApiLevel.majorVersion >= 36
-  mergeXml(
-    androidManifestWearOsAdditions(useWearSdkLibrary),
-    manifestOut.resolve("AndroidManifest.xml"),
-  )
+  mergeXml(androidManifestWearOsAdditions(useWearSdkLibrary), manifestOut.resolve("AndroidManifest.xml"))
   if (useWearSdkLibrary) {
     useLibrary("wear-sdk")
   }
@@ -115,22 +111,12 @@ fun RecipeExecutor.composeWearActivityRecipe(
   wearAppName: String,
   defaultPreview: String,
 ) {
-  commonComposeRecipe(
-    moduleData,
-    activityClass,
-    packageName,
-    isLauncher,
-    wearAppName,
-    defaultPreview,
-  )
+  commonComposeRecipe(moduleData, activityClass, packageName, isLauncher, wearAppName, defaultPreview)
 
   val (_, srcOut, resOut, _) = moduleData
   open(srcOut.resolve("${activityClass}.kt"))
 
-  copy(
-    File("wear-app").resolve("drawable/splash_icon.xml"),
-    resOut.resolve("drawable/splash_icon.xml"),
-  )
+  copy(File("wear-app").resolve("drawable/splash_icon.xml"), resOut.resolve("drawable/splash_icon.xml"))
 }
 
 fun RecipeExecutor.composeWearActivityWithTileAndComplicationRecipe(
@@ -144,71 +130,36 @@ fun RecipeExecutor.composeWearActivityWithTileAndComplicationRecipe(
   wearAppName: String,
   defaultPreview: String,
 ) {
-  commonComposeRecipe(
-    moduleData,
-    activityClass,
-    packageName,
-    isLauncher,
-    wearAppName,
-    defaultPreview,
-    composeBomVersion = "2025.12.00",
-  )
+  commonComposeRecipe(moduleData, activityClass, packageName, isLauncher, wearAppName, defaultPreview, composeBomVersion = "2025.12.00")
 
-  val wearTilesVersionVarName =
-    getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_version")
+  val wearTilesVersionVarName = getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_version")
   val wearTilesVersion = getExtVar(wearTilesVersionVarName, "1.5.0")
   addDependency(mavenCoordinate = "androidx.wear.tiles:tiles:$wearTilesVersion")
-  addDependency(
-    mavenCoordinate = "androidx.wear.tiles:tiles-renderer:$wearTilesVersion",
-    configuration = "debugImplementation",
-  )
+  addDependency(mavenCoordinate = "androidx.wear.tiles:tiles-renderer:$wearTilesVersion", configuration = "debugImplementation")
 
-  val protolayoutVersionVarName =
-    getDependencyVarName("androidx.wear.protolayout:protolayout", "protolayout_version")
+  val protolayoutVersionVarName = getDependencyVarName("androidx.wear.protolayout:protolayout", "protolayout_version")
   val protolayoutVersion = getExtVar(protolayoutVersionVarName, "1.3.0")
   addDependency(mavenCoordinate = "androidx.wear.protolayout:protolayout:$protolayoutVersion")
-  addDependency(
-    mavenCoordinate = "androidx.wear.protolayout:protolayout-material3:$protolayoutVersion"
-  )
+  addDependency(mavenCoordinate = "androidx.wear.protolayout:protolayout-material3:$protolayoutVersion")
 
   val guavaVersionVarName = getDependencyVarName("com.google.guava:guava", "guava_version")
   val guavaVersion = getExtVar(guavaVersionVarName, "33.2.1-android")
   addDependency(mavenCoordinate = "com.google.guava:guava:$guavaVersion")
 
-  val wearTilesPreviewVersionVarName =
-    getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_preview_version")
+  val wearTilesPreviewVersionVarName = getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_preview_version")
   val wearTilesPreviewVersion = getExtVar(wearTilesPreviewVersionVarName, "1.5.0")
-  addDependency(
-    mavenCoordinate = "androidx.wear.tiles:tiles-tooling:$wearTilesPreviewVersion",
-    configuration = "debugImplementation",
-  )
-  addDependency(
-    mavenCoordinate = "androidx.wear.tiles:tiles-tooling-preview:$wearTilesPreviewVersion"
-  )
+  addDependency(mavenCoordinate = "androidx.wear.tiles:tiles-tooling:$wearTilesPreviewVersion", configuration = "debugImplementation")
+  addDependency(mavenCoordinate = "androidx.wear.tiles:tiles-tooling-preview:$wearTilesPreviewVersion")
 
-  addDependency(
-    mavenCoordinate = "androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1"
-  )
+  addDependency(mavenCoordinate = "androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
 
   val (_, srcOut, resOut, manifestOut) = moduleData
-  save(
-    tileServiceKt(tileServiceClass, tilePreviewName, packageName),
-    srcOut.resolve("tile/${tileServiceClass}.kt"),
-  )
+  save(tileServiceKt(tileServiceClass, tilePreviewName, packageName), srcOut.resolve("tile/${tileServiceClass}.kt"))
   mergeXml(tileStringsXml(), resOut.resolve("values/strings.xml"))
-  mergeXml(
-    tileServiceManifestXml(tileServiceClass, packageName),
-    manifestOut.resolve("AndroidManifest.xml"),
-  )
+  mergeXml(tileServiceManifestXml(tileServiceClass, packageName), manifestOut.resolve("AndroidManifest.xml"))
   copy(File("wear-app").resolve("drawable"), resOut.resolve("drawable"))
 
-  save(
-    complicationServiceKt(complicationServiceClass, packageName),
-    srcOut.resolve("complication/${complicationServiceClass}.kt"),
-  )
+  save(complicationServiceKt(complicationServiceClass, packageName), srcOut.resolve("complication/${complicationServiceClass}.kt"))
   mergeXml(complicationStringsXml(), resOut.resolve("values/strings.xml"))
-  mergeXml(
-    complicationServiceManifestXml(complicationServiceClass, packageName),
-    manifestOut.resolve("AndroidManifest.xml"),
-  )
+  mergeXml(complicationServiceManifestXml(complicationServiceClass, packageName), manifestOut.resolve("AndroidManifest.xml"))
 }

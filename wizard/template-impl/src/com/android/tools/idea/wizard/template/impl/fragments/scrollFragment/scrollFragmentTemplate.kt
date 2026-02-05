@@ -64,12 +64,7 @@ val scrollFragmentTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(fragmentClass),
-      TextFieldWidget(layoutName),
-      PackageNameWidget(packageName),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(fragmentClass), TextFieldWidget(layoutName), PackageNameWidget(packageName), LanguageWidget())
 
     thumb { File("scrolling-fragment").resolve("template_scroll_fragment.png") }
 

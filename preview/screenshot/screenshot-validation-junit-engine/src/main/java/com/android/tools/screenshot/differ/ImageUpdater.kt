@@ -20,34 +20,32 @@ import java.io.File
 import java.io.FileNotFoundException
 import javax.imageio.ImageIO
 
-/**
- * Update reference image if there is difference.
- */
+/** Update reference image if there is difference. */
 class ImageUpdater(private val imageDiffer: ImageDiffer) {
-    fun updateIfDifferent(newImagePath: String, referenceImagePath: String) {
-        val newImageFile = File(newImagePath)
-        if (!newImageFile.exists()) {
-            throw FileNotFoundException("Preview image file does not exist ($newImagePath).")
-        }
-
-        val refImageFile = File(referenceImagePath)
-        if (!refImageFile.exists()) {
-            newImageFile.copyTo(refImageFile, overwrite = true)
-            return
-        }
-
-        val actual = ImageIO.read(newImageFile)
-        val reference = ImageIO.read(refImageFile)
-
-        if (actual.width != reference.width || actual.height != reference.height) {
-            newImageFile.copyTo(refImageFile, overwrite = true)
-            return
-        }
-
-        val diff = imageDiffer.diff(actual, reference)
-        if (diff is ImageDiffer.DiffResult.Different) {
-            newImageFile.copyTo(refImageFile, overwrite = true)
-            return
-        }
+  fun updateIfDifferent(newImagePath: String, referenceImagePath: String) {
+    val newImageFile = File(newImagePath)
+    if (!newImageFile.exists()) {
+      throw FileNotFoundException("Preview image file does not exist ($newImagePath).")
     }
+
+    val refImageFile = File(referenceImagePath)
+    if (!refImageFile.exists()) {
+      newImageFile.copyTo(refImageFile, overwrite = true)
+      return
+    }
+
+    val actual = ImageIO.read(newImageFile)
+    val reference = ImageIO.read(refImageFile)
+
+    if (actual.width != reference.width || actual.height != reference.height) {
+      newImageFile.copyTo(refImageFile, overwrite = true)
+      return
+    }
+
+    val diff = imageDiffer.diff(actual, reference)
+    if (diff is ImageDiffer.DiffResult.Different) {
+      newImageFile.copyTo(refImageFile, overwrite = true)
+      return
+    }
+  }
 }

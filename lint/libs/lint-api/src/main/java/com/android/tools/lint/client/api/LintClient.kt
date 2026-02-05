@@ -28,7 +28,6 @@ import com.android.SdkConstants.FD_DATA
 import com.android.SdkConstants.FD_GRADLE
 import com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import com.android.SdkConstants.GEN_FOLDER
-import com.android.SdkConstants.KEEP_RULES_FOLDER
 import com.android.SdkConstants.LIBS_FOLDER
 import com.android.SdkConstants.PLATFORM_LINUX
 import com.android.SdkConstants.RES_FOLDER
@@ -98,8 +97,8 @@ import org.w3c.dom.Node
 import org.xmlpull.v1.XmlPullParser
 
 /**
- * Information about the tool embedding the lint analyzer. IDEs and other tools implementing lint
- * support will extend this to integrate logging, displaying errors, etc.
+ * Information about the tool embedding the lint analyzer. IDEs and other tools implementing lint support will extend this to integrate
+ * logging, displaying errors, etc.
  */
 abstract class LintClient {
 
@@ -112,12 +111,11 @@ abstract class LintClient {
   }
 
   /** Configurations referenced by this client. */
-  @Suppress("LeakingThis")
-  open val configurations: ConfigurationHierarchy = ConfigurationHierarchy(this)
+  @Suppress("LeakingThis") open val configurations: ConfigurationHierarchy = ConfigurationHierarchy(this)
 
   /**
-   * Returns a configuration for use by the given project. The configuration provides information
-   * about which issues are enabled, any customizations to the severity of an issue, etc.
+   * Returns a configuration for use by the given project. The configuration provides information about which issues are enabled, any
+   * customizations to the severity of an issue, etc.
    *
    * By default this method returns a [LintXmlConfiguration].
    *
@@ -125,8 +123,7 @@ abstract class LintClient {
    * @param driver the current driver, if any
    * @return a configuration, never null.
    */
-  open fun getConfiguration(project: Project, driver: LintDriver?): Configuration =
-    configurations.getConfigurationForProject(project)
+  open fun getConfiguration(project: Project, driver: LintDriver?): Configuration = configurations.getConfigurationForProject(project)
 
   /**
    * Returns a configuration for use for the given file.
@@ -134,13 +131,11 @@ abstract class LintClient {
    * @param file the source file to obtain a configuration for
    * @return a configuration, or null if no configuration is found
    */
-  open fun getConfiguration(file: File): Configuration? =
-    configurations.getConfigurationForFolder(file.parentFile)
+  open fun getConfiguration(file: File): Configuration? = configurations.getConfigurationForFolder(file.parentFile)
 
   /**
-   * Report the given issue. This method will only be called if the configuration provided by
-   * [getConfiguration] has reported the corresponding issue as enabled and has not filtered out the
-   * issue with its [Configuration.ignore] method.
+   * Report the given issue. This method will only be called if the configuration provided by [getConfiguration] has reported the
+   * corresponding issue as enabled and has not filtered out the issue with its [Configuration.ignore] method.
    *
    * @param context the context used by the detector when the issue was found
    * @param issue the issue that was found
@@ -148,28 +143,16 @@ abstract class LintClient {
    * @param location the location of the issue
    * @param message the associated user message
    * @param format the format of the description and location descriptions
-   * @param fix an optional set of extra data provided by the detector for this issue; this is
-   *   intended to pass metadata to the IDE to help construct quickfixes without having to parse
-   *   error messages (which is brittle) or worse having to include information in the error message
-   *   (for later parsing) which is required by the quickfix but not really helpful in the error
-   *   message itself (such as the maxVersion for a permission tag to be added to the
+   * @param fix an optional set of extra data provided by the detector for this issue; this is intended to pass metadata to the IDE to help
+   *   construct quickfixes without having to parse error messages (which is brittle) or worse having to include information in the error
+   *   message (for later parsing) which is required by the quickfix but not really helpful in the error message itself (such as the
+   *   maxVersion for a permission tag to be added to the
    */
   @Deprecated(
     "Use the new report(Incident) method instead",
-    ReplaceWith(
-      "report(context, Incident(issue, message, location, fix), format)",
-      "com.android.tools.lint.detector.api.Incident",
-    ),
+    ReplaceWith("report(context, Incident(issue, message, location, fix), format)", "com.android.tools.lint.detector.api.Incident"),
   )
-  fun report(
-    context: Context,
-    issue: Issue,
-    severity: Severity,
-    location: Location,
-    message: String,
-    format: TextFormat,
-    fix: LintFix?,
-  ) {
+  fun report(context: Context, issue: Issue, severity: Severity, location: Location, message: String, format: TextFormat, fix: LintFix?) {
     val incident = Incident(issue, message, location, fix)
     incident.severity = severity
     report(context, incident, format)
@@ -179,43 +162,37 @@ abstract class LintClient {
   abstract fun report(context: Context, incident: Incident, format: TextFormat = TextFormat.RAW)
 
   /**
-   * Reports the given incident to lint as a conditional incident, meaning that it is not yet
-   * conclusive. The [constraint] specifies a condition to check in the reporting project's context.
-   * For example, using [com.android.tools.lint.detector.api.minSdkAtLeast](23) will only report
-   * this incident in consuming projects where the minSdkVersion is 23 or higher.
+   * Reports the given incident to lint as a conditional incident, meaning that it is not yet conclusive. The [constraint] specifies a
+   * condition to check in the reporting project's context. For example, using [com.android.tools.lint.detector.api.minSdkAtLeast](23) will
+   * only report this incident in consuming projects where the minSdkVersion is 23 or higher.
    */
   open fun report(context: Context, incident: Incident, constraint: Constraint) {}
 
   /**
-   * Reports the given incident to lint as a provisional incident, meaning that it is not yet
-   * conclusive. Lint will later call back to the detector (corresponding to the reported incident)
-   * and ask it via the [Detector.filterIncident] method to decide whether the incident should
-   * really be reported or not, and optionally to customize the incident such as updating the
-   * message.
+   * Reports the given incident to lint as a provisional incident, meaning that it is not yet conclusive. Lint will later call back to the
+   * detector (corresponding to the reported incident) and ask it via the [Detector.filterIncident] method to decide whether the incident
+   * should really be reported or not, and optionally to customize the incident such as updating the message.
    *
-   * The purpose of this is to allow lint to process source files in libraries once (and report
-   * potential errors via this method), and then later, when generating reports in downstream
-   * modules such as the app module, quickly consider (in [Detector.filterIncident]) all the
-   * potential methods and simply filter them by the local environment, such as the real app
-   * minSdkVersion.
+   * The purpose of this is to allow lint to process source files in libraries once (and report potential errors via this method), and then
+   * later, when generating reports in downstream modules such as the app module, quickly consider (in [Detector.filterIncident]) all the
+   * potential methods and simply filter them by the local environment, such as the real app minSdkVersion.
    *
-   * This allows lint to only analyze the library once, and then reuse those results multiple times,
-   * for each transitive usage of the library.
+   * This allows lint to only analyze the library once, and then reuse those results multiple times, for each transitive usage of the
+   * library.
    */
   open fun report(context: Context, incident: Incident, map: LintMap) {}
 
   /**
-   * Returns a [PartialResult] where a [Detector] can write state about the current project, and/or
-   * read state about dependent projects. See [supportsPartialAnalysis]. [Detector]s should only
-   * write state for the current project being analyzed; any changes made to other project's state
-   * will not be persisted. Instead of this method, [Detector]s should call
-   * [Context.getPartialResults], which ensures the correct [project] parameter is passed.
+   * Returns a [PartialResult] where a [Detector] can write state about the current project, and/or read state about dependent projects. See
+   * [supportsPartialAnalysis]. [Detector]s should only write state for the current project being analyzed; any changes made to other
+   * project's state will not be persisted. Instead of this method, [Detector]s should call [Context.getPartialResults], which ensures the
+   * correct [project] parameter is passed.
    *
-   * The [project] parameter is used to load state from dependent projects, and so should always be
-   * the current project that is being analyzed.
+   * The [project] parameter is used to load state from dependent projects, and so should always be the current project that is being
+   * analyzed.
    *
-   * The returned [PartialResult] contains a reference to the requested [project] so that
-   * [PartialResult.map] returns the [LintMap] for [project].
+   * The returned [PartialResult] contains a reference to the requested [project] so that [PartialResult.map] returns the [LintMap] for
+   * [project].
    */
   open fun getPartialResults(project: Project, issue: Issue): PartialResult {
     // the default client does not support partial analysis
@@ -223,29 +200,24 @@ abstract class LintClient {
   }
 
   /**
-   * Whether this client supports the "partial analysis" mechanism. When this is true, a module is
-   * analyzed by lint in isolation, so [Detector]s cannot see the sources, resources, nor manifests
-   * of other modules. [Detector]s _can_ retrieve [PartialResult] objects from dependent modules
-   * that were already analyzed via Context.getPartialResults(ISSUE).map() and can process the
-   * partial results from all modules in the final reporting phase via
-   * [Detector.checkPartialResults]. [Detector]s can also report issues **provisionally** (via
-   * [Context.report] with either a [Constraint] or [LintMap]). Lint will store these issues, and,
-   * later, when the app module report is generated, load the provisional errors and give the
-   * detectors a chance to (cheaply) filter their previously provisionally reported incidents given
-   * (for example) the actual minSdkVersion, merged manifest, etc., of the final app. For
-   * conditions, this is handled automatically; for manual logic via [LintMap], override
-   * [Detector.filterIncident] which returns the persisted map with state to consider.
+   * Whether this client supports the "partial analysis" mechanism. When this is true, a module is analyzed by lint in isolation, so
+   * [Detector]s cannot see the sources, resources, nor manifests of other modules. [Detector]s _can_ retrieve [PartialResult] objects from
+   * dependent modules that were already analyzed via Context.getPartialResults(ISSUE).map() and can process the partial results from all
+   * modules in the final reporting phase via [Detector.checkPartialResults]. [Detector]s can also report issues **provisionally** (via
+   * [Context.report] with either a [Constraint] or [LintMap]). Lint will store these issues, and, later, when the app module report is
+   * generated, load the provisional errors and give the detectors a chance to (cheaply) filter their previously provisionally reported
+   * incidents given (for example) the actual minSdkVersion, merged manifest, etc., of the final app. For conditions, this is handled
+   * automatically; for manual logic via [LintMap], override [Detector.filterIncident] which returns the persisted map with state to
+   * consider.
    *
-   * In the IDE, for example, where we always have access to all project metadata, this returns
-   * false. When this returns false, all provisionally reported issues are directly passed over to
-   * the conditions or [Detector.filterIncident] for immediate filtering and reporting. This lets
-   * detectors handle both scenarios in a single way.
+   * In the IDE, for example, where we always have access to all project metadata, this returns false. When this returns false, all
+   * provisionally reported issues are directly passed over to the conditions or [Detector.filterIncident] for immediate filtering and
+   * reporting. This lets detectors handle both scenarios in a single way.
    */
   open fun supportsPartialAnalysis(): Boolean = false
 
   /**
-   * After partial analysis has completed, lint will call this method to store the (partial)
-   * results.
+   * After partial analysis has completed, lint will call this method to store the (partial) results.
    *
    * How and where the incidents are stored is left up to the client.
    *
@@ -256,8 +228,8 @@ abstract class LintClient {
   }
 
   /**
-   * After partial analysis has completed for all dependencies, lint will call this method during
-   * error reporting to merge and validate the partial results. Only intended for lint's own usage.
+   * After partial analysis has completed for all dependencies, lint will call this method during error reporting to merge and validate the
+   * partial results. Only intended for lint's own usage.
    */
   open fun mergeState(roots: Collection<Project>, driver: LintDriver) {
     error("This client does not support partial lint analysis.")
@@ -267,20 +239,19 @@ abstract class LintClient {
    * Send an exception or error message (with warning severity) to the log
    *
    * @param exception the exception, possibly null
-   * @param format the error message using [java.lang.String.format] syntax, possibly null (though
-   *   in that case the exception should not be null)
+   * @param format the error message using [java.lang.String.format] syntax, possibly null (though in that case the exception should not be
+   *   null)
    * @param args any arguments for the format string
    */
-  open fun log(exception: Throwable?, format: String?, vararg args: Any) =
-    log(Severity.WARNING, exception, format, *args)
+  open fun log(exception: Throwable?, format: String?, vararg args: Any) = log(Severity.WARNING, exception, format, *args)
 
   /**
    * Send an exception or error message to the log
    *
    * @param severity the severity of the warning
    * @param exception the exception, possibly null
-   * @param format the error message using [java.lang.String.format] syntax, possibly null (though
-   *   in that case the exception should not be null)
+   * @param format the error message using [java.lang.String.format] syntax, possibly null (though in that case the exception should not be
+   *   null)
    * @param args any arguments for the format string
    */
   abstract fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any)
@@ -293,9 +264,8 @@ abstract class LintClient {
   abstract val xmlParser: XmlParser
 
   /**
-   * Reads the given [file] (or in the IDE, fetches the possibly edited editor contents
-   * corresponding to the given file) ad parses it into an XML document. This is a convenience
-   * wrapper around [xmlParser] but allows the client to do some caching. If the optional [contents]
+   * Reads the given [file] (or in the IDE, fetches the possibly edited editor contents corresponding to the given file) ad parses it into
+   * an XML document. This is a convenience wrapper around [xmlParser] but allows the client to do some caching. If the optional [contents]
    * parameter is non null, it will be taken to be the content of the file.
    */
   open fun getXmlDocument(file: File, contents: CharSequence? = null): Document? {
@@ -306,13 +276,11 @@ abstract class LintClient {
         xmlParser.parseXml(file)
       }
     } catch (exception: Exception) {
-      val message =
-        exception.message ?: "${exception.javaClass.simpleName} attempting to read and parse $file"
+      val message = exception.message ?: "${exception.javaClass.simpleName} attempting to read and parse $file"
       report(
         client = this,
         issue = IssueRegistry.LINT_ERROR,
-        message =
-          TextFormat.TEXT.convertTo(message, TextFormat.RAW), // ensure \ paths are escaped etc
+        message = TextFormat.TEXT.convertTo(message, TextFormat.RAW), // ensure \ paths are escaped etc
         file = file,
       )
       null
@@ -322,9 +290,8 @@ abstract class LintClient {
   /**
    * Returns a [UastParser] to use to parse Java
    *
-   * @param project the project to parse, if known (this can be used to look up the class path for
-   *   type attribution etc, and it can also be used to more efficiently process a set of files, for
-   *   example to perform type attribution for multiple units in a single pass)
+   * @param project the project to parse, if known (this can be used to look up the class path for type attribution etc, and it can also be
+   *   used to more efficiently process a set of files, for example to perform type attribution for multiple units in a single pass)
    * @return a new [UastParser]
    */
   abstract fun getUastParser(project: Project?): UastParser
@@ -346,11 +313,7 @@ abstract class LintClient {
   /** Returns whether the given file exists */
   open fun fileExists(file: File): Boolean = file.isFile()
 
-  open fun fileExists(
-    file: File,
-    requireFile: Boolean = false,
-    requireDirectory: Boolean = false,
-  ): Boolean {
+  open fun fileExists(file: File, requireFile: Boolean = false, requireDirectory: Boolean = false): Boolean {
     return when {
       requireFile -> file.isFile
       requireDirectory -> file.isDirectory
@@ -359,9 +322,8 @@ abstract class LintClient {
   }
 
   /**
-   * Reads the given binary file and returns the content as a byte array. By default this method
-   * will read the bytes from the file directly, but this can be customized by a client if for
-   * example I/O could be held in memory and not flushed to disk yet.
+   * Reads the given binary file and returns the content as a byte array. By default this method will read the bytes from the file directly,
+   * but this can be customized by a client if for example I/O could be held in memory and not flushed to disk yet.
    *
    * @param file the file to read
    * @return the bytes in the file, never null
@@ -384,17 +346,12 @@ abstract class LintClient {
   }
 
   /**
-   * Returns whether the given [file] has been edited since the last save, or recently saved (within
-   * the last [savedSinceMsAgo] milliseconds, which defaults to 5 minutes; if -1 it will not
-   * consider unmodified files.)
+   * Returns whether the given [file] has been edited since the last save, or recently saved (within the last [savedSinceMsAgo]
+   * milliseconds, which defaults to 5 minutes; if -1 it will not consider unmodified files.)
    *
    * If unknown or unsupported by this [LintClient], returns [returnIfUnknown].
    */
-  open fun isEdited(
-    file: File,
-    returnIfUnknown: Boolean = true,
-    savedSinceMsAgo: Long = 5 * 60 * 1000L,
-  ): Boolean {
+  open fun isEdited(file: File, returnIfUnknown: Boolean = true, savedSinceMsAgo: Long = 5 * 60 * 1000L): Boolean {
     return returnIfUnknown
   }
 
@@ -412,8 +369,7 @@ abstract class LintClient {
    * @param project the project to look up generated source file locations for
    * @return a list of generated source folders to search for source files
    */
-  open fun getGeneratedSourceFolders(project: Project): List<File> =
-    getClassPath(project).generatedFolders
+  open fun getGeneratedSourceFolders(project: Project): List<File> = getClassPath(project).generatedFolders
 
   /**
    * Returns the list of output folders for class files
@@ -437,13 +393,11 @@ abstract class LintClient {
    * Returns the list of Java libraries
    *
    * @param project the project to look up jar dependencies for
-   * @param includeProvided If true, included provided libraries too (libraries that are not
-   *   packaged with the app, but are provided for compilation purposes and are assumed to be
-   *   present in the running environment)
+   * @param includeProvided If true, included provided libraries too (libraries that are not packaged with the app, but are provided for
+   *   compilation purposes and are assumed to be present in the running environment)
    * @return a list of jar dependencies containing .class files
    */
-  open fun getJavaLibraries(project: Project, includeProvided: Boolean): List<File> =
-    getClassPath(project).getLibraries(includeProvided)
+  open fun getJavaLibraries(project: Project, includeProvided: Boolean): List<File> = getClassPath(project).getLibraries(includeProvided)
 
   /** Returns ths list of klibs */
   open fun getKlibs(project: Project): List<File> = getClassPath(project).klibs
@@ -454,15 +408,13 @@ abstract class LintClient {
    * @param project the project to look up test source file locations for
    * @return a list of source folders to search for .java files
    */
-  open fun getTestSourceFolders(project: Project): List<File> =
-    getClassPath(project).testSourceFolders
+  open fun getTestSourceFolders(project: Project): List<File> = getClassPath(project).testSourceFolders
 
   /**
    * Returns the list of libraries needed to compile the test source files
    *
    * @param project the project to look up test source file locations for
-   * @return a list of jar files to add to the regular project dependencies when compiling the test
-   *   sources
+   * @return a list of jar files to add to the regular project dependencies when compiling the test sources
    */
   open fun getTestLibraries(project: Project): List<File> = getClassPath(project).testLibraries
 
@@ -516,26 +468,23 @@ abstract class LintClient {
   DefaultSdkInfo()
 
   /**
-   * Returns a suitable location for storing cache files of a given named type. The named type is
-   * typically created as a directory within the shared cache directory. For example, from the
-   * command line, lint will typically store its cache files in ~/.android/cache/. In order to avoid
-   * files colliding, caches that create a lot of files should provide a specific name such that the
-   * cache is isolated to a sub directory.
+   * Returns a suitable location for storing cache files of a given named type. The named type is typically created as a directory within
+   * the shared cache directory. For example, from the command line, lint will typically store its cache files in ~/.android/cache/. In
+   * order to avoid files colliding, caches that create a lot of files should provide a specific name such that the cache is isolated to a
+   * sub directory.
    *
-   * Note that in some cases lint may interpret that name to provide an alternate cache. For
-   * example, when lint runs in the IDE it normally uses the same cache as lint on the command line
-   * (~/.android/cache), but specifically for the cache for maven.google.com repository versions, it
-   * will instead point to the same cache directory as the IDE is already using for non-lint
-   * purposes, in order to share data that may already exist there.
+   * Note that in some cases lint may interpret that name to provide an alternate cache. For example, when lint runs in the IDE it normally
+   * uses the same cache as lint on the command line (~/.android/cache), but specifically for the cache for maven.google.com repository
+   * versions, it will instead point to the same cache directory as the IDE is already using for non-lint purposes, in order to share data
+   * that may already exist there.
    *
-   * Note that the cache directory may not exist. You can override the default location using
-   * `$ANDROID_SDK_CACHE_DIR` (though note that specific lint integrations may not honor that
-   * environment variable; for example, in Gradle the cache directory will **always** be
+   * Note that the cache directory may not exist. You can override the default location using `$ANDROID_SDK_CACHE_DIR` (though note that
+   * specific lint integrations may not honor that environment variable; for example, in Gradle the cache directory will **always** be
    * build/intermediates/lint-cache/.)
    *
    * @param create if true, attempt to create the cache dir if it does not exist
-   * @return a suitable location for storing cache files, which may be null if the create flag was
-   *   false, or if for some reason the directory could not be created
+   * @return a suitable location for storing cache files, which may be null if the create flag was false, or if for some reason the
+   *   directory could not be created
    */
   open fun getCacheDir(name: String?, create: Boolean): File? {
     var path: String? = System.getenv("ANDROID_SDK_CACHE_DIR")
@@ -567,8 +516,8 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the File pointing to the user's SDK install area. This is generally the root directory
-   * containing the lint tool (but also platforms/ etc).
+   * Returns the File pointing to the user's SDK install area. This is generally the root directory containing the lint tool (but also
+   * platforms/ etc).
    *
    * @return a file pointing to the user's Android SDK install area
    */
@@ -582,8 +531,7 @@ abstract class LintClient {
     }
 
     @Suppress("DEPRECATION")
-    return getFileFromEnvVar(SdkConstants.ANDROID_SDK_ROOT_ENV)
-      ?: getFileFromEnvVar(SdkConstants.ANDROID_HOME_ENV)
+    return getFileFromEnvVar(SdkConstants.ANDROID_SDK_ROOT_ENV) ?: getFileFromEnvVar(SdkConstants.ANDROID_HOME_ENV)
   }
 
   /** Returns the JDK to use when analyzing non-Android code for the given project. */
@@ -617,10 +565,7 @@ abstract class LintClient {
     return file
   }
 
-  /**
-   * Returns the most recent platform (e.g. something like the target for
-   * $ANDROID_HOME/platforms/android-31)
-   */
+  /** Returns the most recent platform (e.g. something like the target for $ANDROID_HOME/platforms/android-31) */
   open fun getLatestSdkTarget(minApi: Int = 1, includePreviews: Boolean = true): IAndroidTarget? {
     return getPlatformLookup()?.getLatestSdkTarget(minApi, includePreviews)
   }
@@ -628,8 +573,7 @@ abstract class LintClient {
   /**
    * Locates an SDK resource (relative to the SDK root directory).
    *
-   * @param relativePath A relative path (using [File.separator] to separate path components) to the
-   *   given resource
+   * @param relativePath A relative path (using [File.separator] to separate path components) to the given resource
    * @return a [File] pointing to the resource, or null if it does not exist
    *
    * TODO: Consider switching to a [URL] return type instead.
@@ -665,8 +609,7 @@ abstract class LintClient {
       }
 
       // Fallback to looking in the old location: platform-tools/api/<name> under the SDK
-      val file =
-        File(top, "platform-tools" + File.separator + "api" + File.separator + relativePath)
+      val file = File(top, "platform-tools" + File.separator + "api" + File.separator + relativePath)
       if (file.exists()) {
         return file
       }
@@ -721,10 +664,7 @@ abstract class LintClient {
     return false
   }
 
-  /**
-   * Information about class paths (sources, class files and libraries) usually associated with a
-   * project.
-   */
+  /** Information about class paths (sources, class files and libraries) usually associated with a project. */
   class ClassPathInfo(
     val sourceFolders: List<File>,
     val classFolders: List<File>,
@@ -736,16 +676,15 @@ abstract class LintClient {
     val klibs: List<File> = listOf(),
   ) {
 
-    fun getLibraries(includeProvided: Boolean): List<File> =
-      if (includeProvided) libraries else nonProvidedLibraries
+    fun getLibraries(includeProvided: Boolean): List<File> = if (includeProvided) libraries else nonProvidedLibraries
   }
 
   /**
-   * Considers the given project as an Eclipse project and returns class path information for the
-   * project - the source folder(s), the output folder and any libraries.
+   * Considers the given project as an Eclipse project and returns class path information for the project - the source folder(s), the output
+   * folder and any libraries.
    *
-   * Callers will not cache calls to this method, so if it's expensive to compute the classpath
-   * info, this method should perform its own caching.
+   * Callers will not cache calls to this method, so if it's expensive to compute the classpath info, this method should perform its own
+   * caching.
    *
    * @param project the project to look up class path info for
    * @return a class path info object, never null
@@ -836,11 +775,7 @@ abstract class LintClient {
                 }
               }
 
-              val gen =
-                File(
-                  projectDir,
-                  "target" + File.separator + "generated-sources" + File.separator + "r",
-                )
+              val gen = File(projectDir, "target" + File.separator + "generated-sources" + File.separator + "r")
               if (gen.exists()) {
                 generated.add(gen)
               }
@@ -861,8 +796,7 @@ abstract class LintClient {
         }
       }
 
-      info =
-        ClassPathInfo(sources, classes, libraries, libraries, tests, emptyList(), generated, klibs)
+      info = ClassPathInfo(sources, classes, libraries, libraries, tests, emptyList(), generated, klibs)
       projectInfo[project] = info
     }
 
@@ -870,24 +804,18 @@ abstract class LintClient {
   }
 
   /**
-   * A map from directory to existing projects. Usually, each directory will map to exactly one
-   * project. However, in some build systems (e.g. Bazel), multiple projects can have the same root
-   * directory. In this case, the directory will map to the _first_ registered project with this
-   * directory. While this may not seem particularly useful, this map is generally only used when
-   * the build system is known to have one project per directory (e.g. Gradle) or as a heuristic to
-   * associate source files with the nearest project.
+   * A map from directory to existing projects. Usually, each directory will map to exactly one project. However, in some build systems
+   * (e.g. Bazel), multiple projects can have the same root directory. In this case, the directory will map to the _first_ registered
+   * project with this directory. While this may not seem particularly useful, this map is generally only used when the build system is
+   * known to have one project per directory (e.g. Gradle) or as a heuristic to associate source files with the nearest project.
    */
   protected val dirToProject: MutableMap<File, Project> = HashMap()
 
-  /**
-   * Used for [knownProjects]. We cannot use [dirToProject] because there can be multiple projects
-   * per dir.
-   */
+  /** Used for [knownProjects]. We cannot use [dirToProject] because there can be multiple projects per dir. */
   private val projects: MutableList<Project> = ArrayList()
 
   /**
-   * Returns a project for the given directory. This should return the same project for the same
-   * directory if called repeatedly.
+   * Returns a project for the given directory. This should return the same project for the same directory if called repeatedly.
    *
    * @param dir the directory containing the project
    * @param referenceDir See [Project.getReferenceDir].
@@ -953,8 +881,7 @@ abstract class LintClient {
   private var _pathVariables: PathVariables? = null // backing field for [pathVariables]
 
   /**
-   * Registers the given project for the given directory. This can be used when projects are
-   * initialized outside the client itself.
+   * Registers the given project for the given directory. This can be used when projects are initialized outside the client itself.
    *
    * @param dir the directory of the project, which might not be unique
    * @param project the project
@@ -988,26 +915,21 @@ abstract class LintClient {
    */
   protected open fun createProject(dir: File, referenceDir: File): Project {
     if (projectDirs.contains(dir)) {
-      throw CircularDependencyException(
-        "Circular library dependencies; check your project.properties files carefully"
-      )
+      throw CircularDependencyException("Circular library dependencies; check your project.properties files carefully")
     }
     projectDirs.add(dir)
     return Project.create(this, dir, referenceDir)
   }
 
   /**
-   * Perform any startup initialization of the full set of projects that lint will be run on, if
-   * necessary.
+   * Perform any startup initialization of the full set of projects that lint will be run on, if necessary.
    *
    * @param knownProjects the list of projects
    */
-  protected open fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) =
-    Unit
+  protected open fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) = Unit
 
   /**
-   * Perform any post-analysis cleanup of the full set of projects that lint was run on, if
-   * necessary.
+   * Perform any post-analysis cleanup of the full set of projects that lint was run on, if necessary.
    *
    * @param knownProjects the list of projects
    */
@@ -1017,12 +939,10 @@ abstract class LintClient {
   internal fun performGetClassPath(project: Project): ClassPathInfo = getClassPath(project)
 
   /** Trampoline method to let [LintDriver] access protected method. */
-  internal fun performInitializeProjects(driver: LintDriver, knownProjects: Collection<Project>) =
-    initializeProjects(driver, knownProjects)
+  internal fun performInitializeProjects(driver: LintDriver, knownProjects: Collection<Project>) = initializeProjects(driver, knownProjects)
 
   /** Trampoline method to let [LintDriver] access protected method. */
-  internal fun performDisposeProjects(knownProjects: Collection<Project>) =
-    disposeProjects(knownProjects)
+  internal fun performDisposeProjects(knownProjects: Collection<Project>) = disposeProjects(knownProjects)
 
   /**
    * Returns the name of the given project
@@ -1043,8 +963,8 @@ abstract class LintClient {
   private var platformLookup: PlatformLookup? = null
 
   /**
-   * Returns a service to look up [IAndroidTarget] instances by criteria like specific API levels,
-   * compileSdkVersions, hash strings and "most recent"
+   * Returns a service to look up [IAndroidTarget] instances by criteria like specific API levels, compileSdkVersions, hash strings and
+   * "most recent"
    */
   open fun getPlatformLookup(): PlatformLookup? {
     // Use cheaper implementation than the full AndroidSdkHandler
@@ -1064,9 +984,8 @@ abstract class LintClient {
   /** Represents a result of a CompileSdk lookup */
   class CompileSdkResult(
     /**
-     * true if he obtained [target] was calculated from the [Project]'s specification false if the
-     * obtained [target] was calculated from the highest compilation target that is currently
-     * installed.
+     * true if he obtained [target] was calculated from the [Project]'s specification false if the obtained [target] was calculated from the
+     * highest compilation target that is currently installed.
      *
      * This typically happens with plain java projects
      */
@@ -1079,8 +998,8 @@ abstract class LintClient {
    * Returns the compile target to use for the given project
    *
    * @param project the project in question
-   * @return the compile target to use to build the given project and whether it was explicitly
-   *   specified or obtained from the list of installed platforms.
+   * @return the compile target to use to build the given project and whether it was explicitly specified or obtained from the list of
+   *   installed platforms.
    */
   open fun getCompileSdkResult(project: Project): CompileSdkResult {
     if (!project.isAndroidProject) {
@@ -1161,14 +1080,12 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the super class for the given class name, which should be in VM format (e.g.
-   * java/lang/Integer, not java.lang.Integer, and using $ rather than . for inner classes). If the
-   * super class is not known, returns null.
+   * Returns the super class for the given class name, which should be in VM format (e.g. java/lang/Integer, not java.lang.Integer, and
+   * using $ rather than . for inner classes). If the super class is not known, returns null.
    *
-   * This is typically not necessary, since lint analyzes all the available classes. However, if
-   * this lint client is invoking lint in an incremental context (for example, an IDE offering
-   * incremental analysis of a single source file), then lint may not see all the classes, and the
-   * client can provide its own super class lookup.
+   * This is typically not necessary, since lint analyzes all the available classes. However, if this lint client is invoking lint in an
+   * incremental context (for example, an IDE offering incremental analysis of a single source file), then lint may not see all the classes,
+   * and the client can provide its own super class lookup.
    *
    * @param project the project containing the class
    * @param name the fully qualified class name
@@ -1197,12 +1114,11 @@ abstract class LintClient {
   }
 
   /**
-   * Creates a super class map for the given project. The map maps from internal class name (e.g.
-   * java/lang/Integer, not java.lang.Integer) to its corresponding super class name. The root
-   * class, java/lang/Object, is not in the map.
+   * Creates a super class map for the given project. The map maps from internal class name (e.g. java/lang/Integer, not java.lang.Integer)
+   * to its corresponding super class name. The root class, java/lang/Object, is not in the map.
    *
-   * @param project the project to initialize the super class with; this will include local classes
-   *   as well as any local .jar libraries; not transitive dependencies
+   * @param project the project to initialize the super class with; this will include local classes as well as any local .jar libraries; not
+   *   transitive dependencies
    * @return a map from class to its corresponding super class; never null
    */
   open fun createSuperClassMap(project: Project): Map<String, String> {
@@ -1217,12 +1133,11 @@ abstract class LintClient {
   }
 
   /**
-   * Checks whether the given name is a subclass of the given super class. If the method does not
-   * know, it should return null, and otherwise return [java.lang.Boolean.TRUE] or
-   * [java.lang.Boolean.FALSE].
+   * Checks whether the given name is a subclass of the given super class. If the method does not know, it should return null, and otherwise
+   * return [java.lang.Boolean.TRUE] or [java.lang.Boolean.FALSE].
    *
-   * Note that the class names are in internal VM format (java/lang/Integer, not java.lang.Integer,
-   * and using $ rather than . for inner classes).
+   * Note that the class names are in internal VM format (java/lang/Integer, not java.lang.Integer, and using $ rather than . for inner
+   * classes).
    *
    * @param project the project context to look up the class in
    * @param name the name of the class to be checked
@@ -1296,21 +1211,17 @@ abstract class LintClient {
   }
 
   /**
-   * Recursively add all lint jars found recursively from the given collection of
-   * [LintModelAndroidLibrary] instances into the given [lintJars] list.
+   * Recursively add all lint jars found recursively from the given collection of [LintModelAndroidLibrary] instances into the given
+   * [lintJars] list.
    */
-  private fun addLintJarsFromDependencies(
-    lintJars: MutableList<File>,
-    libraries: Collection<LintModelLibrary>,
-  ) {
+  private fun addLintJarsFromDependencies(lintJars: MutableList<File>, libraries: Collection<LintModelLibrary>) {
     for (library in libraries) {
       addLintJarsFromDependency(lintJars, library)
     }
   }
 
   /**
-   * Recursively add all lint jars found from the given [LintModelAndroidLibrary] **or its
-   * dependencies** into the given [lintJars] list.
+   * Recursively add all lint jars found from the given [LintModelAndroidLibrary] **or its dependencies** into the given [lintJars] list.
    */
   private fun addLintJarsFromDependency(lintJars: MutableList<File>, library: LintModelLibrary) {
     val lintJar = library.lintJar
@@ -1331,8 +1242,7 @@ abstract class LintClient {
    * @return a [URLConnection] or null
    * @throws IOException if any kind of IO exception occurs
    */
-  @Throws(IOException::class)
-  open fun openConnection(url: URL): URLConnection? = openConnection(url, 0)
+  @Throws(IOException::class) open fun openConnection(url: URL): URLConnection? = openConnection(url, 0)
 
   /**
    * Opens a URL connection.
@@ -1360,35 +1270,27 @@ abstract class LintClient {
   }
 
   /**
-   * Returns true if the given directory is a lint project directory. By default, a project
-   * directory is the directory containing a manifest file, but in Gradle projects for example it's
-   * the root gradle directory.
+   * Returns true if the given directory is a lint project directory. By default, a project directory is the directory containing a manifest
+   * file, but in Gradle projects for example it's the root gradle directory.
    *
    * @param dir the directory to check
    * @return true if the directory represents a lint project
    */
-  open fun isProjectDirectory(dir: File): Boolean =
-    isManifestFolder(dir) || findGradleBuildFile(dir).exists()
+  open fun isProjectDirectory(dir: File): Boolean = isManifestFolder(dir) || findGradleBuildFile(dir).exists()
 
   /**
-   * Returns whether lint should look for suppress comments. Tools that already do this on their own
-   * can return false here to avoid doing unnecessary work.
+   * Returns whether lint should look for suppress comments. Tools that already do this on their own can return false here to avoid doing
+   * unnecessary work.
    */
   open fun checkForSuppressComments(): Boolean = true
 
   /**
-   * Adds in any custom lint rules and returns the result as a new issue registry, or the same one
-   * if no custom rules were found
+   * Adds in any custom lint rules and returns the result as a new issue registry, or the same one if no custom rules were found
    *
    * @param registry the main registry to add rules to
-   * @return a new registry containing the passed in rules plus any custom rules, or the original
-   *   registry if no custom rules were found
+   * @return a new registry containing the passed in rules plus any custom rules, or the original registry if no custom rules were found
    */
-  open fun addCustomLintRules(
-    registry: IssueRegistry,
-    driver: LintDriver?,
-    warnDeprecated: Boolean,
-  ): IssueRegistry {
+  open fun addCustomLintRules(registry: IssueRegistry, driver: LintDriver?, warnDeprecated: Boolean): IssueRegistry {
     val jarFiles = findGlobalRuleJars(driver, warnDeprecated)
     if (jarFiles.isNotEmpty()) {
       val extraRegistries = JarFileIssueRegistry.get(this, jarFiles, null, driver)
@@ -1410,8 +1312,7 @@ abstract class LintClient {
    */
   @Suppress("DeprecatedCallableAddReplaceWith")
   @Deprecated("Use the List<File> version")
-  open fun createUrlClassLoader(urls: Array<URL>, parent: ClassLoader): ClassLoader =
-    URLClassLoader(urls, parent)
+  open fun createUrlClassLoader(urls: Array<URL>, parent: ClassLoader): ClassLoader = URLClassLoader(urls, parent)
 
   /**
    * Creates a [ClassLoader] which can load in a set of Jar files.
@@ -1424,9 +1325,8 @@ abstract class LintClient {
     URLClassLoader(files.mapNotNull { SdkUtils.fileToUrl(it) }.toTypedArray(), parent)
 
   /**
-   * Returns the merged manifest of the given project. This may return null if not called on the
-   * main project. Note that the file reference in the merged manifest isn't accurate; the merged
-   * manifest accumulates information from a wide variety of locations.
+   * Returns the merged manifest of the given project. This may return null if not called on the main project. Note that the file reference
+   * in the merged manifest isn't accurate; the merged manifest accumulates information from a wide variety of locations.
    *
    * @return The merged manifest, if available.
    */
@@ -1448,8 +1348,8 @@ abstract class LintClient {
   }
 
   /**
-   * Record that the given document corresponds to a merged manifest file; locations from this
-   * document should attempt to resolve back to the original source location
+   * Record that the given document corresponds to a merged manifest file; locations from this document should attempt to resolve back to
+   * the original source location
    *
    * @param mergedManifest the document for the merged manifest
    * @param reportFile the manifest merger report file, or the report itself
@@ -1459,27 +1359,22 @@ abstract class LintClient {
   }
 
   /**
-   * Returns true if the given node is part of a merged manifest document (already configured via
-   * [resolveMergeManifestSources])
+   * Returns true if the given node is part of a merged manifest document (already configured via [resolveMergeManifestSources])
    *
    * @param node the node to look up
    * @return true if this node is part of a merged manifest document
    */
-  fun isMergeManifestNode(node: Node): Boolean =
-    node.ownerDocument?.getUserData(MERGED_MANIFEST) != null
+  fun isMergeManifestNode(node: Node): Boolean = node.ownerDocument?.getUserData(MERGED_MANIFEST) != null
+
+  /** Cache used by [findManifestSourceNode] */
+  @Suppress("MemberVisibilityCanBePrivate") protected val reportFileCache: MutableMap<Any, BlameFile> = Maps.newHashMap<Any, BlameFile>()
 
   /** Cache used by [findManifestSourceNode] */
   @Suppress("MemberVisibilityCanBePrivate")
-  protected val reportFileCache: MutableMap<Any, BlameFile> = Maps.newHashMap<Any, BlameFile>()
-
-  /** Cache used by [findManifestSourceNode] */
-  @Suppress("MemberVisibilityCanBePrivate")
-  protected val sourceNodeCache: MutableMap<Node, Pair<File, out Node>> =
-    Maps.newIdentityHashMap<Node, Pair<File, out Node>>()
+  protected val sourceNodeCache: MutableMap<Node, Pair<File, out Node>> = Maps.newIdentityHashMap<Node, Pair<File, out Node>>()
 
   /**
-   * For the given node from a merged manifest, find the corresponding source manifest node, if
-   * possible
+   * For the given node from a merged manifest, find the corresponding source manifest node, if possible
    *
    * @param mergedNode the node from the merged manifest
    * @return the corresponding manifest node in one of the source files, if possible
@@ -1539,8 +1434,8 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the location for a given node from a merged manifest file. Convenience wrapper around
-   * [findManifestSourceNode] and [XmlParser.getLocation].
+   * Returns the location for a given node from a merged manifest file. Convenience wrapper around [findManifestSourceNode] and
+   * [XmlParser.getLocation].
    */
   open fun findManifestSourceLocation(mergedNode: Node): Location? {
     val source = findManifestSourceNode(mergedNode)
@@ -1556,15 +1451,10 @@ abstract class LintClient {
    *
    * @param file the path to compute a display name for
    * @param project the associated project, if any
-   * @param format the message format to format as; defaults to [TextFormat.RAW], e.g. with
-   *   backslashes and asterisks in the path escaped
+   * @param format the message format to format as; defaults to [TextFormat.RAW], e.g. with backslashes and asterisks in the path escaped
    * @return a path formatted for user display
    */
-  open fun getDisplayPath(
-    file: File,
-    project: Project? = null,
-    format: TextFormat = TextFormat.TEXT,
-  ): String {
+  open fun getDisplayPath(file: File, project: Project? = null, format: TextFormat = TextFormat.TEXT): String {
     val base = project?.referenceDir ?: getRootDir()
     if (base != null) {
       val basePath = base.path
@@ -1583,9 +1473,8 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the display path of a given resource item. This is just the path relative to the
-   * resource folder; not to the project. This is typically used in error messages to for example
-   * reference other variations (as in "also seen in values-fr/strings.xml"). Note that like
+   * Returns the display path of a given resource item. This is just the path relative to the resource folder; not to the project. This is
+   * typically used in error messages to for example reference other variations (as in "also seen in values-fr/strings.xml"). Note that like
    * [getFileNameWithParent] we deliberately use Unix file separators.
    */
   open fun getDisplayPath(item: ResourceItem, format: TextFormat = TextFormat.TEXT): String {
@@ -1597,8 +1486,7 @@ abstract class LintClient {
         return getFileNameWithParent(this, source)
       } else {
         val configuration: FolderConfiguration = item.configuration
-        val folder =
-          FolderTypeRelationship.getRelatedFolders(item.type).firstOrNull()?.getName() ?: return ""
+        val folder = FolderTypeRelationship.getRelatedFolders(item.type).firstOrNull()?.getName() ?: return ""
         val folderName = if (configuration.isDefault) folder else "$folder-$configuration"
         return folderName + '/' + item.type.getName() + "s" + DOT_XML
       }
@@ -1640,8 +1528,7 @@ abstract class LintClient {
   }
 
   /**
-   * Is there an embedded parent path in the given path? Should return true for "foo/bar/../baz" and
-   * "..\\foo\\bar" but not "../../foo/bar".
+   * Is there an embedded parent path in the given path? Should return true for "foo/bar/../baz" and "..\\foo\\bar" but not "../../foo/bar".
    */
   private fun containsEmbeddedParentRef(path: String): Boolean {
     var index = 0
@@ -1663,13 +1550,9 @@ abstract class LintClient {
     return false
   }
 
-  /**
-   * Is the string at the given [index] in the given [path] a parent reference, e.g. "../" or "..\"
-   * ?
-   */
+  /** Is the string at the given [index] in the given [path] a parent reference, e.g. "../" or "..\" ? */
   private fun isParentRef(path: String, index: Int): Boolean {
-    return path.startsWith("..", index) &&
-      (index == path.length - 2 || path[index + 2] == '/' || path[index + 2] == '\\')
+    return path.startsWith("..", index) && (index == path.length - 2 || path[index + 2] == '/' || path[index + 2] == '\\')
   }
 
   /** Obsolete; here for backwards compatibility. */
@@ -1680,19 +1563,11 @@ abstract class LintClient {
    * Returns the project resources, if available
    *
    * @param includeModuleDependencies if true, include merged view of all module dependencies
-   * @param includeLibraries if true, include merged view of all library dependencies (this also
-   *   requires all module dependencies)
+   * @param includeLibraries if true, include merged view of all library dependencies (this also requires all module dependencies)
    * @return the project resources, or null if not available
    */
-  @Deprecated(
-    "Use getResources(project, scope) instead",
-    replaceWith = ReplaceWith("getResources(project, scope"),
-  )
-  fun getResourceRepository(
-    project: Project,
-    includeModuleDependencies: Boolean,
-    includeLibraries: Boolean,
-  ): ResourceRepository {
+  @Deprecated("Use getResources(project, scope) instead", replaceWith = ReplaceWith("getResources(project, scope"))
+  fun getResourceRepository(project: Project, includeModuleDependencies: Boolean, includeLibraries: Boolean): ResourceRepository {
     val scope =
       when {
         includeLibraries -> ResourceRepositoryScope.ALL_DEPENDENCIES
@@ -1707,17 +1582,13 @@ abstract class LintClient {
   abstract fun getResources(project: Project, scope: ResourceRepositoryScope): ResourceRepository
 
   /**
-   * For a lint client which supports resource items (via [supportsProjectResources]) return a
-   * handle for a resource item.
+   * For a lint client which supports resource items (via [supportsProjectResources]) return a handle for a resource item.
    *
    * @param item the resource item to look up a location handle for
    * @return a corresponding handle
    */
-  open fun createResourceItemHandle(
-    item: ResourceItem,
-    nameOnly: Boolean = false,
-    valueOnly: Boolean = true,
-  ): Location.ResourceItemHandle = Location.ResourceItemHandle(this, item, nameOnly, valueOnly)
+  open fun createResourceItemHandle(item: ResourceItem, nameOnly: Boolean = false, valueOnly: Boolean = true): Location.ResourceItemHandle =
+    Location.ResourceItemHandle(this, item, nameOnly, valueOnly)
 
   /**
    * Creates a [XmlPullParser] for the given XML file resource.
@@ -1758,9 +1629,8 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the version number of this lint client, if known. This is the one meant to be displayed
-   * to users; e.g. for Studio, client revision may be "3.4.0.0" and display revision might be "3.4
-   * Canary 1".
+   * Returns the version number of this lint client, if known. This is the one meant to be displayed to users; e.g. for Studio, client
+   * revision may be "3.4.0.0" and display revision might be "3.4 Canary 1".
    */
   open fun getClientDisplayRevision(): String? = getClientRevision()
 
@@ -1835,9 +1705,7 @@ abstract class LintClient {
 
     // TODO: Make this return null if we go all the way to the root!
 
-    basePath =
-      if (!basePath.isEmpty() && basePath[basePath.length - 1] == separatorChar) basePath
-      else basePath + separatorChar
+    basePath = if (!basePath.isEmpty() && basePath[basePath.length - 1] == separatorChar) basePath else basePath + separatorChar
 
     // Whether filesystem is case sensitive. Technically on OSX you could create a
     // sensitive one, but it's not the default.
@@ -1847,11 +1715,7 @@ abstract class LintClient {
     val filePathToCompare = if (caseSensitive) filePath else filePath.lowercase(l)
     if (
       basePathToCompare ==
-        (if (
-          !filePathToCompare.isEmpty() &&
-            filePathToCompare[filePathToCompare.length - 1] == separatorChar
-        )
-          filePathToCompare
+        (if (!filePathToCompare.isEmpty() && filePathToCompare[filePathToCompare.length - 1] == separatorChar) filePathToCompare
         else filePathToCompare + separatorChar)
     ) {
       return "."
@@ -1859,11 +1723,7 @@ abstract class LintClient {
     var len = 0
     var lastSeparatorIndex = 0
 
-    while (
-      len < filePath.length &&
-        len < basePath.length &&
-        filePathToCompare[len] == basePathToCompare[len]
-    ) {
+    while (len < filePath.length && len < basePath.length && filePathToCompare[len] == basePathToCompare[len]) {
       if (basePath[len] == separatorChar) {
         lastSeparatorIndex = len
       }
@@ -1885,8 +1745,7 @@ abstract class LintClient {
   }
 
   /**
-   * Returns the root directory for analysis, if known. The actual source projects can be below this
-   * directory, not necessarily directly.
+   * Returns the root directory for analysis, if known. The actual source projects can be below this directory, not necessarily directly.
    */
   open fun getRootDir(): File? {
     var root: File? = null
@@ -1932,10 +1791,7 @@ abstract class LintClient {
       add("ANDROID_PREFS", AndroidLocationsSingleton.prefsLocation.toFile(), false)
       getSdkHome()?.let { add("ANDROID_HOME", it, false) }
       // See org.gradle.wrapper.GradleUserHomeLookup
-      val gradleUserHome =
-        System.getProperty("gradle.user.home")
-          ?: System.getenv("GRADLE_USER_HOME")
-          ?: "$userHome/.gradle"
+      val gradleUserHome = System.getProperty("gradle.user.home") ?: System.getenv("GRADLE_USER_HOME") ?: "$userHome/.gradle"
       add("GRADLE_USER_HOME", File(gradleUserHome), false)
       add("HOME", File(userHome), false)
       sort()
@@ -1946,9 +1802,8 @@ abstract class LintClient {
     @JvmStatic private val PROP_BIN_DIR = "com.android.tools.lint.bindir"
 
     /**
-     * Returns the File corresponding to the system property or the environment variable for
-     * [PROP_BIN_DIR]. This property is typically set by the SDK/cmdline-tools/latest/bin/lint
-     * wrapper. It denotes the path of the wrapper on disk.
+     * Returns the File corresponding to the system property or the environment variable for [PROP_BIN_DIR]. This property is typically set
+     * by the SDK/cmdline-tools/latest/bin/lint wrapper. It denotes the path of the wrapper on disk.
      *
      * @return A new File corresponding to [LintClient.PROP_BIN_DIR] or null.
      */
@@ -1972,16 +1827,15 @@ abstract class LintClient {
     /**
      * Database moved from platform-tools to SDK in API level 26.
      *
-     * This duplicates the constant in [LintClient] but that constant is not public (because it's in
-     * the API package and I don't want this part of the API surface; it's an implementation
-     * optimization.)
+     * This duplicates the constant in [LintClient] but that constant is not public (because it's in the API package and I don't want this
+     * part of the API surface; it's an implementation optimization.)
      */
     private const val SDK_DATABASE_MIN_VERSION = 26
 
     /**
-     * Key stashed as user data on merged manifest documents such that we can quickly determine if a
-     * node is originally from a merged manifest (this is used to automatically resolve reported
-     * errors on the merged manifest back to the corresponding source locations, when possible.)
+     * Key stashed as user data on merged manifest documents such that we can quickly determine if a node is originally from a merged
+     * manifest (this is used to automatically resolve reported errors on the merged manifest back to the corresponding source locations,
+     * when possible.)
      */
     const val MERGED_MANIFEST = "lint-merged-manifest"
 
@@ -1993,10 +1847,7 @@ abstract class LintClient {
     /** The client name returned by [clientName] when running in Gradle. */
     const val CLIENT_GRADLE = "gradle"
 
-    /**
-     * The client name returned by [clientName] when running in the CLI (command line interface)
-     * version of lint, `lint`.
-     */
+    /** The client name returned by [clientName] when running in the CLI (command line interface) version of lint, `lint`. */
     const val CLIENT_CLI = "cli"
 
     /** The client name returned by [clientName] when running in unit tests. */
@@ -2006,23 +1857,21 @@ abstract class LintClient {
     @Suppress("MemberVisibilityCanBePrivate") const val CLIENT_UNKNOWN = "unknown"
 
     /**
-     * The name of the embedding client. It could be not just [CLIENT_STUDIO], [CLIENT_GRADLE],
-     * [CLIENT_CLI] etc but other values too as lint is integrated in other embedding contexts.
+     * The name of the embedding client. It could be not just [CLIENT_STUDIO], [CLIENT_GRADLE], [CLIENT_CLI] etc but other values too as
+     * lint is integrated in other embedding contexts.
      *
      * This is only intended to be set by the lint infrastructure.
      *
-     * Note that if you are getting an [UninitializedPropertyAccessException] here, you're accessing
-     * code which should only be run after the lint client name has been initialized. This should be
-     * performed early in the initialization of each integration of lint in a tool such as Gradle,
-     * Android Studio, etc.
+     * Note that if you are getting an [UninitializedPropertyAccessException] here, you're accessing code which should only be run after the
+     * lint client name has been initialized. This should be performed early in the initialization of each integration of lint in a tool
+     * such as Gradle, Android Studio, etc.
      *
      * @return the name of the embedding client
      */
     @JvmStatic lateinit var clientName: String
 
     /**
-     * Returns true if the embedding client currently running lint is Android Studio (or IntelliJ
-     * IDEA)
+     * Returns true if the embedding client currently running lint is Android Studio (or IntelliJ IDEA)
      *
      * @return true if running in Android Studio / IntelliJ IDEA
      */
@@ -2065,15 +1914,11 @@ abstract class LintClient {
     }
 
     /**
-     * Returns the desugaring operations that the Gradle plugin will use for a given version of
-     * Gradle and a given configured language source level.
+     * Returns the desugaring operations that the Gradle plugin will use for a given version of Gradle and a given configured language
+     * source level.
      */
     @JvmStatic
-    fun getGradleDesugaring(
-      version: AgpVersion,
-      languageLevel: LanguageLevel?,
-      coreLibraryDesugaringEnabled: Boolean,
-    ): Set<Desugaring> {
+    fun getGradleDesugaring(version: AgpVersion, languageLevel: LanguageLevel?, coreLibraryDesugaringEnabled: Boolean): Set<Desugaring> {
       // Desugar runs if the Gradle plugin is 2.4.0 alpha 8 or higher...
       if (!version.isAtLeast(2, 4, 0, "alpha", 8, true)) {
         return Desugaring.NONE
@@ -2090,14 +1935,12 @@ abstract class LintClient {
     }
 
     /**
-     * Reports an issue where we don't (necessarily) have a [Context] or [Project]. Detectors should
-     * generally not use this facility; it's primarily used to report issues that happen outside of
-     * a normal lint analysis, e.g. issues with the project setup itself, or loading custom check
-     * jar files, etc.
+     * Reports an issue where we don't (necessarily) have a [Context] or [Project]. Detectors should generally not use this facility; it's
+     * primarily used to report issues that happen outside of a normal lint analysis, e.g. issues with the project setup itself, or loading
+     * custom check jar files, etc.
      *
-     * Even though this method takes a [LintClient] instance, it's here on the companion object
-     * instead because we don't want this report method to be surfaced along with the normal report
-     * methods people access via code completion.
+     * Even though this method takes a [LintClient] instance, it's here on the companion object instead because we don't want this report
+     * method to be surfaced along with the normal report methods people access via code completion.
      */
     fun report(
       client: LintClient,
@@ -2135,8 +1978,7 @@ abstract class LintClient {
           project != null -> project
           context != null -> context.project
           else -> {
-            val dir =
-              if (realFile.isDirectory) realFile else realFile.parentFile ?: File("").absoluteFile
+            val dir = if (realFile.isDirectory) realFile else realFile.parentFile ?: File("").absoluteFile
             var curr = dir
             var projectDir: File? = null
             // Look through existing projects containing this path
@@ -2167,9 +2009,8 @@ abstract class LintClient {
           configuration != null -> configuration.getSeverity(issue)
           context != null -> context.configuration.getSeverity(issue)
           file != null ->
-            client.configurations
-              .getConfigurationForFolder(if (file.isFile) file.parentFile else file)
-              ?.getSeverity(issue) ?: issue.defaultSeverity
+            client.configurations.getConfigurationForFolder(if (file.isFile) file.parentFile else file)?.getSeverity(issue)
+              ?: issue.defaultSeverity
           project != null && driver != null -> project.getConfiguration(driver).getSeverity(issue)
           else -> issue.defaultSeverity
         }
@@ -2194,13 +2035,7 @@ abstract class LintClient {
                 )
               }
 
-            Context(
-              realDriver,
-              realProject,
-              mainProject ?: realProject,
-              realFile,
-              if (realFile.isDirectory) "" else null,
-            )
+            Context(realDriver, realProject, mainProject ?: realProject, realFile, if (realFile.isDirectory) "" else null)
           }
         }
 
@@ -2210,10 +2045,7 @@ abstract class LintClient {
       reportingClient.report(realContext, incident, format)
     }
 
-    /**
-     * Convenience helper for Java calls into the above reporting method, since Java does not have
-     * default parameters.
-     */
+    /** Convenience helper for Java calls into the above reporting method, since Java does not have default parameters. */
     fun report(client: LintClient, issue: Issue, message: String, file: File, project: Project?) {
       report(
         client = client,
@@ -2226,10 +2058,7 @@ abstract class LintClient {
       )
     }
 
-    /**
-     * Convenience helper for Java calls into the above reporting method, since Java does not have
-     * default parameters.
-     */
+    /** Convenience helper for Java calls into the above reporting method, since Java does not have default parameters. */
     fun report(
       client: LintClient,
       issue: Issue,

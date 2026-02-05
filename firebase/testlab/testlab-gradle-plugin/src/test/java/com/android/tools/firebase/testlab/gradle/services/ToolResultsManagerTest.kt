@@ -81,8 +81,7 @@ class ToolResultsManagerTest {
 
   lateinit var manager: ToolResultsManager
 
-  private fun requestInfo() =
-    ToolResultsManager.RequestInfo("project_id", "history_id", "execution_id", "step_id")
+  private fun requestInfo() = ToolResultsManager.RequestInfo("project_id", "history_id", "execution_id", "step_id")
 
   @Before
   fun setup() {
@@ -91,10 +90,7 @@ class ToolResultsManagerTest {
       `when`(thumbnails()).thenReturn(mockThumbnails)
       `when`(get(any(), any(), any(), any())).thenReturn(mockStepsGet)
     }
-    val mockExecutions =
-      mock<ToolResults.Projects.Histories.Executions>().apply {
-        `when`(steps()).thenReturn(mockSteps)
-      }
+    val mockExecutions = mock<ToolResults.Projects.Histories.Executions>().apply { `when`(steps()).thenReturn(mockSteps) }
     mockHistories.apply {
       `when`(executions()).thenReturn(mockExecutions)
       `when`(list(any())).thenReturn(mockHistoryList)
@@ -127,8 +123,7 @@ class ToolResultsManagerTest {
   @Test
   fun test_getOrCreateHistory_returnExistingHistory() {
     val mockResult = mock<History>().apply { `when`(historyId).thenReturn("history id") }
-    val mockListResponse =
-      mock<ListHistoriesResponse>().apply { `when`(histories).thenReturn(listOf(mockResult)) }
+    val mockListResponse = mock<ListHistoriesResponse>().apply { `when`(histories).thenReturn(listOf(mockResult)) }
     mockHistoryList.apply { `when`(execute()).thenReturn(mockListResponse) }
 
     val result = manager.getOrCreateHistory("this_project", "test_history")
@@ -148,8 +143,7 @@ class ToolResultsManagerTest {
 
   @Test
   fun test_getOrCreateHistory_createHistoryWhenNoneExist() {
-    val mockListResponse =
-      mock<ListHistoriesResponse>().apply { `when`(histories).thenReturn(listOf()) }
+    val mockListResponse = mock<ListHistoriesResponse>().apply { `when`(histories).thenReturn(listOf()) }
     mockHistoryList.apply { `when`(execute()).thenReturn(mockListResponse) }
 
     val mockResponse = mock<History>().apply { `when`(historyId).thenReturn("other history id") }
@@ -161,9 +155,7 @@ class ToolResultsManagerTest {
 
     inOrder(mockHistories).also {
       it.verify(mockHistories).list("my_project")
-      it
-        .verify(mockHistories)
-        .create(eq("my_project"), argThat { name == "my_other_history" && displayName == name })
+      it.verify(mockHistories).create(eq("my_project"), argThat { name == "my_other_history" && displayName == name })
     }
 
     inOrder(mockHistoryList).also {
@@ -216,8 +208,7 @@ class ToolResultsManagerTest {
   @Test
   fun test_requestTestCases() {
     val testCases = mock<ToolResultsManager.TestCases>()
-    `when`(objectParser.parseAndClose<ToolResultsManager.TestCases>(any(), any(), any()))
-      .thenReturn(testCases)
+    `when`(objectParser.parseAndClose<ToolResultsManager.TestCases>(any(), any(), any())).thenReturn(testCases)
 
     val file = temporaryFolderRule.newFile()
     val inputStream = FileInputStream(file)

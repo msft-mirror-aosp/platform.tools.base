@@ -36,8 +36,7 @@ import java.io.File
 /** Looks for problems with transitive libraries not being properly 16 KB aligned. */
 class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlignmentIssue>() {
   /** Represents a specific problematic global option at a specified file */
-  class PageAlignmentIssue(val coordinates: LintModelMavenName, val sharedLibrary: File) :
-    DependencyIssue() {
+  class PageAlignmentIssue(val coordinates: LintModelMavenName, val sharedLibrary: File) : DependencyIssue() {
     override fun toLintIncident(): Incident {
       val location = Location.create(sharedLibrary)
       val libraryName = "${sharedLibrary.parentFile?.name}/${sharedLibrary.name}"
@@ -48,20 +47,17 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
   }
 
   /**
-   * Returns whether the given group+artifact+version Google maven artifact is known to be safe
-   * (e.g. does not have a 16 KB alignment problem).
+   * Returns whether the given group+artifact+version Google maven artifact is known to be safe (e.g. does not have a 16 KB alignment
+   * problem).
    *
-   * This is based on scanning all libraries on gmaven across all versions and looking for alignment
-   * problems.
+   * This is based on scanning all libraries on gmaven across all versions and looking for alignment problems.
    *
-   * This of course only knows about the libraries up until the time of scanning, but the assumption
-   * is that as of now, all future libraries are correctly compiled, so this just avoids doing a lot
-   * of unnecessary I/O on packages in the gmaven names space unless they're for known older
-   * versions.
+   * This of course only knows about the libraries up until the time of scanning, but the assumption is that as of now, all future libraries
+   * are correctly compiled, so this just avoids doing a lot of unnecessary I/O on packages in the gmaven names space unless they're for
+   * known older versions.
    *
-   * Note that this method returning false doesn't mean that the library is known to be
-   * incompatible; in that case, the lint check should look. (For example, the incompatibility could
-   * be in one of the ABIs that are filtered out by this app --
+   * Note that this method returning false doesn't mean that the library is known to be incompatible; in that case, the lint check should
+   * look. (For example, the incompatibility could be in one of the ABIs that are filtered out by this app --
    * https://developer.android.com/build/configure-apk-splits#configure-abi-split
    */
   override fun isDependencyKnownSafe(group: String, artifact: String, version: String): Boolean {
@@ -168,9 +164,7 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
   override val dependencyIssueCache: HashMap<LintModelMavenName, List<DependencyIssue>>
     get() = _dependencyIssueCache
 
-  override fun getIncidentsFromAndroidLibrary(
-    library: LintModelAndroidLibrary
-  ): List<DependencyIssue> {
+  override fun getIncidentsFromAndroidLibrary(library: LintModelAndroidLibrary): List<DependencyIssue> {
     val folder = library.folder
     val jniFolder = File(folder, FD_JNI)
     if (jniFolder.isDirectory) {
@@ -181,14 +175,9 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
             input.use {
               if (hasElfMagicNumber(input)) {
                 val alignmentProblems = readElfAlignmentProblems(input)
-                if (
-                  alignmentProblems != null &&
-                    alignmentProblems.any { it is AlignmentProblem.LoadSectionNotAligned }
-                ) {
+                if (alignmentProblems != null && alignmentProblems.any { it is AlignmentProblem.LoadSectionNotAligned }) {
                   // TODO: consider reporting multiple
-                  return listOf(
-                    PageAlignmentIssue(library.resolvedCoordinates, sharedLibrary = sharedLibrary)
-                  )
+                  return listOf(PageAlignmentIssue(library.resolvedCoordinates, sharedLibrary = sharedLibrary))
                 }
               }
             }
@@ -237,13 +226,7 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
         category = Category.CORRECTNESS,
         priority = 2,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            PageAlignmentDetector::class.java,
-            GRADLE_AND_TOML_SCOPE,
-            GRADLE_SCOPE,
-            TOML_SCOPE,
-          ),
+        implementation = Implementation(PageAlignmentDetector::class.java, GRADLE_AND_TOML_SCOPE, GRADLE_SCOPE, TOML_SCOPE),
         androidSpecific = true,
         moreInfo = "https://developer.android.com/guide/practices/page-sizes",
       )

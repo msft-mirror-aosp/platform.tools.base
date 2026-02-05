@@ -90,12 +90,7 @@ class LintFixPerformerTest {
           after = contents
         }
 
-        override fun printStatistics(
-          writer: PrintWriter,
-          editMap: MutableMap<String, Int>,
-          appliedEditCount: Int,
-          editedFileCount: Int,
-        ) {
+        override fun printStatistics(writer: PrintWriter, editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
           val stringWriter = StringWriter()
           val collector = PrintWriter(stringWriter)
           super.printStatistics(collector, editMap, appliedEditCount, editedFileCount)
@@ -183,8 +178,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
-    val fix =
-      fix().replace().text("line").range(range).with("sentence").repeatedly().autoFix().build()
+    val fix = fix().replace().text("line").range(range).with("sentence").repeatedly().autoFix().build()
     check(
       file,
       source,
@@ -209,15 +203,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
-    val fix =
-      fix()
-        .replace()
-        .pattern("(\\b(.+) (line)(.))")
-        .range(range)
-        .with("\\k<3>: \\k<2>!")
-        .repeatedly()
-        .autoFix()
-        .build()
+    val fix = fix().replace().pattern("(\\b(.+) (line)(.))").range(range).with("\\k<3>: \\k<2>!").repeatedly().autoFix().build()
     check(
       file,
       source,
@@ -337,15 +323,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
-    val fix =
-      fix()
-        .replace()
-        .text("Test")
-        .range(range)
-        .with("MainActivity")
-        .imports("java.util.List")
-        .autoFix()
-        .build()
+    val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List").autoFix().build()
     check(
       file,
       source,
@@ -375,15 +353,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
-    val fix =
-      fix()
-        .replace()
-        .text("Test")
-        .range(range)
-        .with("MainActivity")
-        .imports("java.util.List")
-        .autoFix()
-        .build()
+    val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List").autoFix().build()
     check(
       file,
       source,
@@ -421,15 +391,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val (file, range) = getFileAndRange("Test.kt", source)
-    val fix =
-      fix()
-        .replace()
-        .text("Test")
-        .range(range)
-        .with("MainActivity")
-        .imports("java.util.List.delete")
-        .autoFix()
-        .build()
+    val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List.delete").autoFix().build()
     check(
       file,
       source,
@@ -645,8 +607,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("Test.java", source, source.indexOf("public void callHiddenMethod"))
+    val (file, range) = getFileAndRange("Test.java", source, source.indexOf("public void callHiddenMethod"))
     val fix =
       fix()
         .annotate(
@@ -746,8 +707,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val startOffset = source.indexOf("public")
-    val (file, range) =
-      getFileAndRange("Test.java", source, startOffset, startOffset + "public".length)
+    val (file, range) = getFileAndRange("Test.java", source, startOffset, startOffset + "public".length)
     val fix = fix().replace().range(range).with("").autoFix().build()
     check(
       file,
@@ -811,8 +771,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
     val fix = fix().set(ANDROID_URI, "new_attribute", "new value").range(range).autoFix().build()
     check(
       file,
@@ -841,15 +800,8 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
-    val fix =
-      fix()
-        .set(ANDROID_URI, "new_attribute", "a < b & c > d")
-        .selectAll()
-        .range(range)
-        .autoFix()
-        .build()
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
+    val fix = fix().set(ANDROID_URI, "new_attribute", "a < b & c > d").selectAll().range(range).autoFix().build()
     check(
       file,
       source,
@@ -877,8 +829,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("attribute2"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute2"), source.length)
     val fix = fix().set(null, "attribute2", "value2").range(range).autoFix().build()
     check(
       file,
@@ -907,8 +858,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     val fix = fix().set(ANDROID_URI, "layout_height", "wrap_content").range(range).autoFix().build()
     check(
       file,
@@ -935,8 +885,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     val fix = fix().set(ANDROID_URI, "id", "@+id/my_id").range(range).autoFix().build()
     check(
       file,
@@ -963,8 +912,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     // When we insert multiple attributes ensure that they're sorted relative to each other too,
     // not just relative to the existing attributes
     val fix =
@@ -1001,8 +949,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(null, "attribute2").range(range).autoFix().build()
     check(
       file,
@@ -1031,8 +978,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(ANDROID_URI, "attribute1").range(range).autoFix().build()
     check(
       file,
@@ -1061,8 +1007,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(ANDROID_URI, "attribute1").range(range).autoFix().build()
     check(
       file,
@@ -1091,14 +1036,8 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
-    val fix =
-      fix()
-        .replaceAttribute(ANDROID_URI, "attribute1", "value1", AUTO_URI)
-        .range(range)
-        .autoFix()
-        .build()
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
+    val fix = fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", AUTO_URI).range(range).autoFix().build()
     assertEquals("Update to `app:attribute1`", fix.getDisplayName())
     check(
       file,
@@ -1116,15 +1055,9 @@ class LintFixPerformerTest {
 
     assertEquals(
       "Update to `attribute2`",
-      fix()
-        .replaceAttribute(ANDROID_URI, "attribute1", "value1", null, "attribute2")
-        .build()
-        .getDisplayName(),
+      fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null, "attribute2").build().getDisplayName(),
     )
-    assertEquals(
-      "Drop namespace prefix",
-      fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null).build().getDisplayName(),
-    )
+    assertEquals("Drop namespace prefix", fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null).build().getDisplayName())
   }
 
   @Test
@@ -1138,14 +1071,8 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
-    val fix =
-      fix()
-        .replaceAttribute(null, "attribute1", "value1", null, "attribute2")
-        .range(range)
-        .autoFix()
-        .build()
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
+    val fix = fix().replaceAttribute(null, "attribute1", "value1", null, "attribute2").range(range).autoFix().build()
     assertEquals("Update to `attribute2`", fix.getDisplayName())
     check(
       file,
@@ -1173,8 +1100,7 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
+    val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
     val unsetFix = fix().unset(null, "attribute1").range(range).build()
     val setFix = fix().set(ANDROID_URI, "new_attribute", "new value").range(range).build()
 
@@ -1239,13 +1165,7 @@ class LintFixPerformerTest {
         .name("Update to app:layout_column")
         .composite(
           fix().set().attribute("layout_column").value("1").namespace(AUTO_URI).autoFix().build(),
-          fix()
-            .set()
-            .attribute("layout_column")
-            .value(null)
-            .namespace(ANDROID_URI)
-            .autoFix()
-            .build(),
+          fix().set().attribute("layout_column").value(null).namespace(ANDROID_URI).autoFix().build(),
         )
     check(
       file,
@@ -1265,10 +1185,7 @@ class LintFixPerformerTest {
           "        android:text=\"2\" app:layout_column=\"1\" />\n" +
           "\n" +
           "</android.support.v7.widget.GridLayout>\n",
-      expectedOutput =
-        "Applied 5 edits across 1 files\n" +
-          "2: Set layout_column=\"1\"\n" +
-          "3: Delete layout_column",
+      expectedOutput = "Applied 5 edits across 1 files\n" + "2: Set layout_column=\"1\"\n" + "3: Delete layout_column",
       location = range,
     )
   }
@@ -1342,12 +1259,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val (file, range) =
-      getFileAndRange(
-        "test.xml",
-        source,
-        source.indexOf("<element1"),
-        source.indexOf("</element1>") + "</element1>".length,
-      )
+      getFileAndRange("test.xml", source, source.indexOf("<element1"), source.indexOf("</element1>") + "</element1>".length)
     val fix = fix().renameTag("element1", "newElement", range).autoFix().build()
     check(
       file,
@@ -1433,10 +1345,8 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("Test.java", source, source.indexOf("/** Comment"), source.length)
-    val fix =
-      fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
+    val (file, range) = getFileAndRange("Test.java", source, source.indexOf("/** Comment"), source.length)
+    val fix = fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
     check(
       file,
       source,
@@ -1468,12 +1378,7 @@ class LintFixPerformerTest {
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("/**"))
 
-    val fix =
-      fix()
-        .annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, false)
-        .range(range)
-        .select("Some(.*)2")
-        .build()
+    val fix = fix().annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, false).range(range).select("Some(.*)2").build()
     check(
       file,
       source,
@@ -1509,12 +1414,7 @@ class LintFixPerformerTest {
     val fix =
       fix()
         .name("Add annotations")
-        .composite(
-          fix()
-            .annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, true)
-            .range(range)
-            .build()
-        )
+        .composite(fix().annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, true).range(range).build())
     check(
       file,
       source,
@@ -1544,12 +1444,7 @@ class LintFixPerformerTest {
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("/**"))
 
-    val fix =
-      fix()
-        .name("Add annotations")
-        .annotate("@file:Suppress(\"SomeInspection2\")", null, null, true)
-        .range(range)
-        .build()
+    val fix = fix().name("Add annotations").annotate("@file:Suppress(\"SomeInspection2\")", null, null, true).range(range).build()
     check(
       file,
       source,
@@ -1576,15 +1471,9 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.kt", source, startOffset = source.indexOf("const val"))
+    val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("const val"))
 
-    val fix =
-      fix()
-        .name("Add annotations")
-        .annotate("@Suppress(\"SomeInspection1\")", null, null, true)
-        .range(range)
-        .build()
+    val fix = fix().name("Add annotations").annotate("@Suppress(\"SomeInspection1\")", null, null, true).range(range).build()
     check(
       file,
       source,
@@ -1623,10 +1512,8 @@ class LintFixPerformerTest {
       """
         .trimIndent()
 
-    val (file, range) =
-      getFileAndRange("test.kt", source, source.indexOf("/** Comment"), source.length)
-    val fix =
-      fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
+    val (file, range) = getFileAndRange("test.kt", source, source.indexOf("/** Comment"), source.length)
+    val fix = fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
     check(
       file,
       source,
@@ -1697,15 +1584,7 @@ class LintFixPerformerTest {
         .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
-    val fix =
-      fix()
-        .name("Remove comment")
-        .replace()
-        .text("// comment")
-        .range(range)
-        .with("")
-        .autoFix()
-        .build()
+    val fix = fix().name("Remove comment").replace().text("// comment").range(range).with("").autoFix().build()
     check(
       file,
       source,
@@ -1769,13 +1648,7 @@ class LintFixPerformerTest {
         .name("Add appCompat")
         .composite(
           fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
-          fix()
-            .replace()
-            .beginning()
-            .with("appCompat = \"1.5.1\"\n")
-            .priority(1)
-            .range(range)
-            .build(),
+          fix().replace().beginning().with("appCompat = \"1.5.1\"\n").priority(1).range(range).build(),
         )
         .autoFix()
     val fix2 =
@@ -1783,13 +1656,7 @@ class LintFixPerformerTest {
         .name("Add activityCompose")
         .composite(
           fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
-          fix()
-            .replace()
-            .beginning()
-            .with("activityCompose = \"1.7.0-alpha02\"\n")
-            .priority(2)
-            .range(range)
-            .build(),
+          fix().replace().beginning().with("activityCompose = \"1.7.0-alpha02\"\n").priority(2).range(range).build(),
         )
         .autoFix()
 
@@ -1816,10 +1683,7 @@ class LintFixPerformerTest {
 
   @Test
   fun testSkipComments() {
-    checkSkip(
-      " /* this /* is nested */ */ // line\n|test",
-      LintFixPerformer.Companion::skipCommentsAndWhitespace,
-    )
+    checkSkip(" /* this /* is nested */ */ // line\n|test", LintFixPerformer.Companion::skipCommentsAndWhitespace)
   }
 
   @Test
@@ -1852,10 +1716,7 @@ class LintFixPerformerTest {
 
   @Test
   fun testCollectNames() {
-    checkShorten(
-      "[foo.Bar]",
-      "/* not.Code /* nested */ not.Code */ val x = \"not.Code\"; val y = foo.Bar",
-    )
+    checkShorten("[foo.Bar]", "/* not.Code /* nested */ not.Code */ val x = \"not.Code\"; val y = foo.Bar")
     checkShorten("[foo.Bar]", "val x = \"\\\"not.Code\\\"\"; val y = foo.Bar")
   }
 }

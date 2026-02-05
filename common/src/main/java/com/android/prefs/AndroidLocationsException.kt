@@ -16,41 +16,34 @@
 
 package com.android.prefs
 
-class AndroidLocationsException @JvmOverloads constructor(
-    message: String,
-    cause: Throwable? = null
-) : Exception(message, cause) {
-    companion object {
+class AndroidLocationsException @JvmOverloads constructor(message: String, cause: Throwable? = null) : Exception(message, cause) {
+  companion object {
 
-        /**
-         * Creates an instance with a list of [LocationValue] pairs where the locations of the
-         * preferences was searched.
-         */
-        internal fun createForHomeLocation(
-            vars: List<LocationValue>
-        ): AndroidLocationsException {
-            val list =
-                vars.joinToString(separator = "\n") { "- ${it.propertyName}(${it.queryType} -> ${it.value}" }
+    /** Creates an instance with a list of [LocationValue] pairs where the locations of the preferences was searched. */
+    internal fun createForHomeLocation(vars: List<LocationValue>): AndroidLocationsException {
+      val list = vars.joinToString(separator = "\n") { "- ${it.propertyName}(${it.queryType} -> ${it.value}" }
 
-            val start = """
-                Unable to find the location of the home directory.
-                The following locations have been checked, but they do not exist:
-                """.trimIndent()
+      val start =
+        """
+        Unable to find the location of the home directory.
+        The following locations have been checked, but they do not exist:
+        """
+          .trimIndent()
 
-            return AndroidLocationsException("$start\n$list")
-        }
+      return AndroidLocationsException("$start\n$list")
     }
+  }
 }
 
-internal interface LocationValue: Comparable<LocationValue> {
-    val propertyName: String
-    val queryType: String
-    val value: String
+internal interface LocationValue : Comparable<LocationValue> {
+  val propertyName: String
+  val queryType: String
+  val value: String
 
-    override fun compareTo(other: LocationValue): Int {
-        return when (val i = propertyName.compareTo(other.propertyName)) {
-            0 -> return queryType.compareTo(other.queryType)
-            else -> i
-        }
+  override fun compareTo(other: LocationValue): Int {
+    return when (val i = propertyName.compareTo(other.propertyName)) {
+      0 -> return queryType.compareTo(other.queryType)
+      else -> i
     }
+  }
 }

@@ -39,104 +39,77 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * TaskManager for standalone test application that lives in a separate module from the tested
- * application.
- */
+/** TaskManager for standalone test application that lives in a separate module from the tested application. */
 class TestApplicationTaskManager(
-    project: Project,
-    variants: MutableCollection<out ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>>,
-    testComponents: MutableCollection<out TestComponentCreationConfig?>,
-    testFixturesComponents: MutableCollection<out TestFixturesCreationConfig?>,
-    globalConfig: GlobalTaskCreationConfig,
-    localConfig: TaskManagerConfig
-) : AbstractAppTaskManager<TestVariantBuilder, TestVariantCreationConfig>(
+  project: Project,
+  variants: MutableCollection<out ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>>,
+  testComponents: MutableCollection<out TestComponentCreationConfig?>,
+  testFixturesComponents: MutableCollection<out TestFixturesCreationConfig?>,
+  globalConfig: GlobalTaskCreationConfig,
+  localConfig: TaskManagerConfig,
+) :
+  AbstractAppTaskManager<TestVariantBuilder, TestVariantCreationConfig>(
     project,
     variants,
     testComponents,
     testFixturesComponents,
     globalConfig,
-    localConfig
-) {
-    private fun getTestData(
-        testVariantProperties: TestVariantCreationConfig
-    ): SeparateTestModuleTestData {
-        val testingApk: Provider<Directory> =
-            testVariantProperties.artifacts.get(SingleArtifact.APK)
+    localConfig,
+  ) {
+  private fun getTestData(testVariantProperties: TestVariantCreationConfig): SeparateTestModuleTestData {
+    val testingApk: Provider<Directory> = testVariantProperties.artifacts.get(SingleArtifact.APK)
 
-        return SeparateTestModuleTestData(
-            testVariantProperties.namespace,
-            testVariantProperties,
-            testingApk,
-            testVariantProperties.testedApks,
-            testVariantProperties
-                .services
-                .projectOptions
-                .getExtraInstrumentationTestRunnerArgs()
-        )
-    }
+    return SeparateTestModuleTestData(
+      testVariantProperties.namespace,
+      testVariantProperties,
+      testingApk,
+      testVariantProperties.testedApks,
+      testVariantProperties.services.projectOptions.getExtraInstrumentationTestRunnerArgs(),
+    )
+  }
 
-    override fun doCreateTasksForVariant(
-        variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>
-    ) {
-        createCommonTasks(variantInfo)
+  override fun doCreateTasksForVariant(variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>) {
+    createCommonTasks(variantInfo)
 
-        val testVariantProperties = variantInfo.variant
-        val testData = getTestData(testVariantProperties)
-        configureTestData(testVariantProperties, testData)
+    val testVariantProperties = variantInfo.variant
+    val testData = getTestData(testVariantProperties)
+    configureTestData(testVariantProperties, testData)
 
-        // create tasks to validate signing and produce signing config versions file.
-        createValidateSigningTask(testVariantProperties)
-        taskFactory.register<SigningConfigVersionsWriterTask>(
-            SigningConfigVersionsWriterTask.CreationAction(testVariantProperties)
-        )
+    // create tasks to validate signing and produce signing config versions file.
+    createValidateSigningTask(testVariantProperties)
+    taskFactory.register<SigningConfigVersionsWriterTask>(SigningConfigVersionsWriterTask.CreationAction(testVariantProperties))
 
-        // create the test connected check task.
-        val instrumentTestTask: TaskProvider<DeviceProviderInstrumentTestTask> =
-            taskFactory.register<DeviceProviderInstrumentTestTask>(
-                object : DeviceProviderInstrumentTestTask.CreationAction(
-                    testVariantProperties, testData
-                ) {
-                    override val name: String
-                        get() = super.name + ComponentType.ANDROID_TEST_SUFFIX
-                })
-
-        taskFactory.configure(CONNECTED_ANDROID_TEST, Action { task: Task? -> task!!.dependsOn(instrumentTestTask) })
-
-        createTestDevicesForVariant(
-            testVariantProperties,
-            testData,
-            testVariantProperties.name,
-            ComponentType.ANDROID_TEST_SUFFIX
-        )
-    }
-
-    override fun maybeCreateJavaCodeShrinkerTask(
-        creationConfig: ConsumableCreationConfig
-    ) {
-        if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
-            doCreateJavaCodeShrinkerTask(creationConfig, true)
-        } else {
-            val checkObfuscation: TaskProvider<CheckTestedAppObfuscation> =
-                taskFactory.register<CheckTestedAppObfuscation>(
-                    CheckTestedAppObfuscation.CreationAction(
-                        creationConfig as TestVariantCreationConfig
-                    )
-                )
-            Preconditions.checkNotNull(creationConfig.taskContainer.javacTask)
-            creationConfig.taskContainer.javacTask.dependsOn<DefaultTask>(checkObfuscation)
+    // create the test connected check task.
+    val instrumentTestTask: TaskProvider<DeviceProviderInstrumentTestTask> =
+      taskFactory.register<DeviceProviderInstrumentTestTask>(
+        object : DeviceProviderInstrumentTestTask.CreationAction(testVariantProperties, testData) {
+          override val name: String
+            get() = super.name + ComponentType.ANDROID_TEST_SUFFIX
         }
-    }
+      )
 
-    /** Creates the merge manifests task.  */
-    override fun createMergeManifestTasks(
-        creationConfig: ApkCreationConfig
-    ): TaskProvider<out ManifestProcessorTask> {
-        val taskConfig =
-            forTestComponent(creationConfig as TestVariantCreationConfig)
+    taskFactory.configure(CONNECTED_ANDROID_TEST, Action { task: Task? -> task!!.dependsOn(instrumentTestTask) })
 
-        return taskFactory.register(
-            ProcessTestManifest.CreationAction(taskConfig)
+    createTestDevicesForVariant(testVariantProperties, testData, testVariantProperties.name, ComponentType.ANDROID_TEST_SUFFIX)
+  }
+
+  override fun maybeCreateJavaCodeShrinkerTask(creationConfig: ConsumableCreationConfig) {
+    if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
+      doCreateJavaCodeShrinkerTask(creationConfig, true)
+    } else {
+      val checkObfuscation: TaskProvider<CheckTestedAppObfuscation> =
+        taskFactory.register<CheckTestedAppObfuscation>(
+          CheckTestedAppObfuscation.CreationAction(creationConfig as TestVariantCreationConfig)
         )
+      Preconditions.checkNotNull(creationConfig.taskContainer.javacTask)
+      creationConfig.taskContainer.javacTask.dependsOn<DefaultTask>(checkObfuscation)
     }
+  }
+
+  /** Creates the merge manifests task. */
+  override fun createMergeManifestTasks(creationConfig: ApkCreationConfig): TaskProvider<out ManifestProcessorTask> {
+    val taskConfig = forTestComponent(creationConfig as TestVariantCreationConfig)
+
+    return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
+  }
 }

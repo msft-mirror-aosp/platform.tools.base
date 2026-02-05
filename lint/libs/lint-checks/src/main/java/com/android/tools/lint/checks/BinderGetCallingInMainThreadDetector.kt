@@ -48,24 +48,16 @@ class BinderGetCallingInMainThreadDetector : Detector(), Detector.UastScanner {
         priority = 9,
         severity = Severity.ERROR,
         androidSpecific = true,
-        implementation =
-          Implementation(BinderGetCallingInMainThreadDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(BinderGetCallingInMainThreadDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
 
-    private val GET_CALLING_METHODS =
-      Method("android.os.Binder", listOf("getCallingUid", "getCallingPid"))
+    private val GET_CALLING_METHODS = Method("android.os.Binder", listOf("getCallingUid", "getCallingPid"))
     private val DISALLOWED_METHODS_LIST: List<Method> =
       listOf(
         Method("android.app.Activity", listOf("onCreate", "onRestart", "onStart")),
         Method("android.app.Service", listOf("onCreate", "onBind", "onRebind")),
-        Method(
-          "android.app.Fragment",
-          listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated"),
-        ),
-        Method(
-          "androidx.fragment.app.Fragment",
-          listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated"),
-        ),
+        Method("android.app.Fragment", listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated")),
+        Method("androidx.fragment.app.Fragment", listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated")),
       )
   }
 
@@ -77,10 +69,7 @@ class BinderGetCallingInMainThreadDetector : Detector(), Detector.UastScanner {
     val invokedClass: PsiClass = method.containingClass ?: return
     if (context.evaluator.inheritsFrom(invokedClass, GET_CALLING_METHODS.className)) {
       for ((className, methodNames) in DISALLOWED_METHODS_LIST) {
-        if (
-          context.evaluator.inheritsFrom(containingClass, className, true) &&
-            methodNames.contains(containingMethod.name)
-        ) {
+        if (context.evaluator.inheritsFrom(containingClass, className, true) && methodNames.contains(containingMethod.name)) {
           val incident =
             Incident(
               ISSUE,

@@ -23,34 +23,35 @@ import org.junit.Test
 
 class ResourceShrinkerErrorTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        gradleProperties {
-            add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-            add(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, true)
-        }
-        androidApplication {
-            android {
-                defaultConfig.minSdk = 24
-                buildTypes {
-                    named("release") {
-                        it.isMinifyEnabled = true
-                        it.isShrinkResources = true
-                    }
-                }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      gradleProperties {
+        add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
+        add(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, true)
+      }
+      androidApplication {
+        android {
+          defaultConfig.minSdk = 24
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = true
+              it.isShrinkResources = true
             }
+          }
         }
+      }
     }
 
-    @Test
-    fun `check error`() {
-        val result = rule.build.executor
-            .expectFailure()
-            .run(":app:assembleRelease")
-        result.assertErrorContains("Optimized resource shrinking requires non-final IDs.\n" +
-                "Suggestion: opt back in to non-final resource IDs by setting " +
-                "android.nonFinalResIds=true in gradle.properties.\n" +
-                "Alternative: temporarily opt out of optimized resource shrinking until you're " +
-                "ready to migrate by setting android.r8.optimizedResourceShrinking=false")
-    }
+  @Test
+  fun `check error`() {
+    val result = rule.build.executor.expectFailure().run(":app:assembleRelease")
+    result.assertErrorContains(
+      "Optimized resource shrinking requires non-final IDs.\n" +
+        "Suggestion: opt back in to non-final resource IDs by setting " +
+        "android.nonFinalResIds=true in gradle.properties.\n" +
+        "Alternative: temporarily opt out of optimized resource shrinking until you're " +
+        "ready to migrate by setting android.r8.optimizedResourceShrinking=false"
+    )
+  }
 }

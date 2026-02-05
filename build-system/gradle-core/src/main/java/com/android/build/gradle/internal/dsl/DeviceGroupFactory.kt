@@ -19,10 +19,9 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.NamedDomainObjectFactory
 
-class DeviceGroupFactory(private val dslServices: DslServices) :
-    NamedDomainObjectFactory<com.android.build.api.dsl.DeviceGroup> {
+class DeviceGroupFactory(private val dslServices: DslServices) : NamedDomainObjectFactory<com.android.build.api.dsl.DeviceGroup> {
 
-    override fun create(name: String): DeviceGroup {
-        return dslServices.newInstance(DeviceGroup::class.java, dslServices, name);
-    }
+  override fun create(name: String): DeviceGroup {
+    return dslServices.newInstance(DeviceGroup::class.java, dslServices, name)
+  }
 }

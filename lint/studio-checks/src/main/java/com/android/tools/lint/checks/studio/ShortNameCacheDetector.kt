@@ -65,9 +65,7 @@ class ShortNameCacheDetector : Detector(), SourceCodeScanner {
     for (method in declaration.methods) {
       if (
         method.name.startsWith("process") &&
-          method.javaPsi.findSuperMethods().any {
-            it.containingClass?.qualifiedName == "com.intellij.psi.search.PsiShortNamesCache"
-          }
+          method.javaPsi.findSuperMethods().any { it.containingClass?.qualifiedName == "com.intellij.psi.search.PsiShortNamesCache" }
       ) {
         checkMethod(context, method)
       }

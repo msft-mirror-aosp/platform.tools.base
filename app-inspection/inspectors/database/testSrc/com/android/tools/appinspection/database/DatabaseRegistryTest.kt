@@ -40,29 +40,20 @@ import org.robolectric.junit.rules.CloseGuardRule
 
 /** Tests for [DatabaseRegistry] */
 @RunWith(ParameterizedRobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
   private val temporaryFolder = TemporaryFolder()
   private val closeablesRule = CloseablesRule()
 
   @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule())
-      .around(closeablesRule)
-      .around(temporaryFolder)
-      .around(LogPrinterRule())
+  val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(closeablesRule).around(temporaryFolder).around(LogPrinterRule())
 
   private val events = mutableListOf<DbEvent>()
 
   @Test
   fun getConnection_withReadOnly_returnsReadOnly() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events)
     val readOnlyDb = databaseProvider.getReadOnlyDb()
     registry.notifyDatabaseOpened(readOnlyDb)
@@ -74,8 +65,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
   @Test
   fun getConnection_withReadWrite_returnsReadWrite() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events)
     val readOnlyDb = databaseProvider.getReadOnlyDb()
     registry.notifyDatabaseOpened(readOnlyDb)
@@ -90,8 +80,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
   @Test
   fun getConnection_withForced_returnsForced() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
     databaseProvider.createAndClose()
     registry.notifyOnDiskDatabase(databaseProvider.path)
@@ -103,8 +92,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
   @Test
   fun getConnection_withForcedAndReadOnly_returnsForced() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
     databaseProvider.createAndClose()
     registry.notifyOnDiskDatabase(databaseProvider.path)
@@ -117,8 +105,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
   @Test
   fun getConnection_withForcedAndReadWrite_returnsForced() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
     databaseProvider.createAndClose()
     registry.notifyOnDiskDatabase(databaseProvider.path)
@@ -145,8 +132,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
   @Test
   fun notifyKeepOpenToggle_doNotKeepForcedConnections() {
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
     databaseProvider.createAndClose()
     registry.notifyOnDiskDatabase(databaseProvider.path)
@@ -161,8 +147,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
     // ANDROID_X Database doesn't support keep-open yet
     assumeTrue(databaseType != ANDROID_X)
 
-    val databaseProvider =
-      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val databaseProvider = databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val readOnlyDb = databaseProvider.getReadOnlyDb(autoClose = false)
     val readWriteDb = databaseProvider.getReadWriteDb(autoClose = false)
     val registry = databaseRegistry(events)
@@ -200,14 +185,12 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
     // Transition from no db to a read-only db
     registry.notifyDatabaseOpened(readOnlyDb)
-    assertThat(events)
-      .containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
+    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
     events.clear()
 
     // Transition from read-only db to writable db
     registry.notifyDatabaseOpened(readWriteDb1)
-    assertThat(events)
-      .containsExactly(DbOpenedEvent(1, path, isReadOnly = false, databaseType.apiClassName))
+    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = false, databaseType.apiClassName))
     events.clear()
 
     // Opening another writeable db does not trigger an event
@@ -222,8 +205,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
     // Closing the second writeable db does results in a transition to read-only
     readWriteDb2.close()
     registry.notifyAllDatabaseReferencesReleased(readWriteDb2)
-    assertThat(events)
-      .containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
+    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
     events.clear()
 
     // Closing the read-only db triggers a `close` event.
@@ -232,22 +214,14 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
     assertThat(events).containsExactly(DbClosedEvent(1, path))
   }
 
-  private class DbOpenedCallback(private val events: MutableList<DbEvent>) :
-    OnDatabaseOpenedCallback {
+  private class DbOpenedCallback(private val events: MutableList<DbEvent>) : OnDatabaseOpenedCallback {
 
-    override fun onDatabaseOpened(
-      databaseId: Int,
-      path: String,
-      isForced: Boolean,
-      isReadOnly: Boolean,
-      apiClassName: String,
-    ) {
+    override fun onDatabaseOpened(databaseId: Int, path: String, isForced: Boolean, isReadOnly: Boolean, apiClassName: String) {
       events.add(DbOpenedEvent(databaseId, path, isReadOnly, apiClassName))
     }
   }
 
-  private class DbClosedCallback(private val events: MutableList<DbEvent>) :
-    OnDatabaseClosedCallback {
+  private class DbClosedCallback(private val events: MutableList<DbEvent>) : OnDatabaseClosedCallback {
 
     override fun onDatabaseClosed(databaseId: Int, path: String) {
       events.add(DbClosedEvent(databaseId, path))
@@ -255,12 +229,8 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
   }
 
   private sealed class DbEvent(open val id: Int, open val path: String) {
-    data class DbOpenedEvent(
-      override val id: Int,
-      override val path: String,
-      val isReadOnly: Boolean,
-      val apiClassName: String,
-    ) : DbEvent(id, path)
+    data class DbOpenedEvent(override val id: Int, override val path: String, val isReadOnly: Boolean, val apiClassName: String) :
+      DbEvent(id, path)
 
     data class DbClosedEvent(override val id: Int, override val path: String) : DbEvent(id, path)
   }

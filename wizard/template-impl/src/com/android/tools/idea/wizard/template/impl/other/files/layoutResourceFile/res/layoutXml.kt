@@ -16,9 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.layoutResourceFile.res
 
-fun layoutXml(
-  rootTag: String
-) = """
+fun layoutXml(rootTag: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${rootTag} xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

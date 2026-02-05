@@ -27,113 +27,88 @@ import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.sdklib.AndroidApiLevel
 import com.android.testutils.TestResources
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Path
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Path
 
-/**
- * Tests for [AgentProcessTracker]
- */
+/** Tests for [AgentProcessTracker] */
 @Suppress("OPT_IN_IS_NOT_ENABLED")
 @OptIn(ExperimentalCoroutinesApi::class) // runTest is experimental (replaced runTestTest)
 internal class AgentProcessTrackerTest {
 
-    private val makeAgentDirHandler = MakeAgentDirCommandHandler()
-    private val agentHandler = ProcessTrackerAgentCommandHandler()
+  private val makeAgentDirHandler = MakeAgentDirCommandHandler()
+  private val agentHandler = ProcessTrackerAgentCommandHandler()
 
-    @get:Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDeviceHandler(agentHandler)
-        installDeviceHandler(makeAgentDirHandler)
-    }
-    private val logger = FakeAdbLoggerFactory().logger
-    private val agentSourcePath = TestResources.getDirectory("/agent").toPath()
+  @get:Rule
+  val fakeAdbRule = FakeAdbServerProviderRule {
+    installDeviceHandler(agentHandler)
+    installDeviceHandler(makeAgentDirHandler)
+  }
+  private val logger = FakeAdbLoggerFactory().logger
+  private val agentSourcePath = TestResources.getDirectory("/agent").toPath()
 
-    @Test
-    fun trackProcesses_createsStudioDirectory(): Unit = runTest {
-        setupDevice("device1")
-        agentHandler.emitEof()
-        val tracker = agentProcessTracker("device1")
+  @Test
+  fun trackProcesses_createsStudioDirectory(): Unit = runTest {
+    setupDevice("device1")
+    agentHandler.emitEof()
+    val tracker = agentProcessTracker("device1")
 
-        tracker.trackProcesses().toList()
+    tracker.trackProcesses().toList()
 
-        assertThat(makeAgentDirHandler.invocations).containsExactly("device1")
-    }
+    assertThat(makeAgentDirHandler.invocations).containsExactly("device1")
+  }
 
-    @Test
-    fun trackProcesses_tracks(): Unit = runTest {
-        setupDevice("device1")
-        agentHandler
-            .emitStdout("+ 1 foo")
-            .emitStdout("+ 2 bar")
-            .emitStdout("- 1")
-            .emitStdout("- 2")
-            .emitEof()
-        val tracker = agentProcessTracker("device1", intervalMillis = 1000)
+  @Test
+  fun trackProcesses_tracks(): Unit = runTest {
+    setupDevice("device1")
+    agentHandler.emitStdout("+ 1 foo").emitStdout("+ 2 bar").emitStdout("- 1").emitStdout("- 2").emitEof()
+    val tracker = agentProcessTracker("device1", intervalMillis = 1000)
 
-        val events = tracker.trackProcesses().toList()
+    val events = tracker.trackProcesses().toList()
 
-        assertThat(agentHandler.invocations).containsExactly("device1: --interval 1000")
-        assertThat(events).containsExactly(
-            ProcessAdded(1, null, "foo"),
-            ProcessAdded(2, null, "bar"),
-            ProcessRemoved(1),
-            ProcessRemoved(2),
-        ).inOrder()
-    }
+    assertThat(agentHandler.invocations).containsExactly("device1: --interval 1000")
+    assertThat(events)
+      .containsExactly(ProcessAdded(1, null, "foo"), ProcessAdded(2, null, "bar"), ProcessRemoved(1), ProcessRemoved(2))
+      .inOrder()
+  }
 
-    @Test
-    fun trackProcesses_ignoresBadLines(): Unit = runTest {
-        setupDevice("device2")
-        agentHandler
-            .emitStdout("+ 5 foo")
-            .emitStdout("bar")
-            .emitStdout("- bar")
-            .emitStdout("+ 2")
-            .emitEof()
-        val tracker = agentProcessTracker("device2", intervalMillis = 2000)
+  @Test
+  fun trackProcesses_ignoresBadLines(): Unit = runTest {
+    setupDevice("device2")
+    agentHandler.emitStdout("+ 5 foo").emitStdout("bar").emitStdout("- bar").emitStdout("+ 2").emitEof()
+    val tracker = agentProcessTracker("device2", intervalMillis = 2000)
 
-        val events = tracker.trackProcesses().toList()
+    val events = tracker.trackProcesses().toList()
 
-        assertThat(agentHandler.invocations).containsExactly("device2: --interval 2000")
-        assertThat(events).containsExactly(
-            ProcessAdded(5, null, "foo"),
-        ).inOrder()
-    }
+    assertThat(agentHandler.invocations).containsExactly("device2: --interval 2000")
+    assertThat(events).containsExactly(ProcessAdded(5, null, "foo")).inOrder()
+  }
 
-    @Test
-    fun trackProcesses_pushesAgent(): Unit = runTest {
-        val device = setupDevice("device1")
-        agentHandler.emitEof()
-        val tracker = agentProcessTracker("device1", "abi", agentSourcePath)
-        tracker.trackProcesses().toList()
+  @Test
+  fun trackProcesses_pushesAgent(): Unit = runTest {
+    val device = setupDevice("device1")
+    agentHandler.emitEof()
+    val tracker = agentProcessTracker("device1", "abi", agentSourcePath)
+    tracker.trackProcesses().toList()
 
-        val agentFile: DeviceFileState = device.getFile(AGENT_PATH)!!
+    val agentFile: DeviceFileState = device.getFile(AGENT_PATH)!!
 
-        assertThat(agentFile.posixPermission()).isEqualTo("r-x------")
-        assertThat(String(agentFile.bytes)).isEqualTo("Hello from process-tracker\n")
-    }
+    assertThat(agentFile.posixPermission()).isEqualTo("r-x------")
+    assertThat(String(agentFile.bytes)).isEqualTo("Hello from process-tracker\n")
+  }
 
-    private fun setupDevice(serialNumber: String): DeviceState =
-        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(33), USB)
+  private fun setupDevice(serialNumber: String): DeviceState =
+    fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(33), USB)
 
-    private fun agentProcessTracker(
-        serialNumber: String,
-        deviceAbi: String = "abi",
-        agentSourcePath: Path = this.agentSourcePath,
-        intervalMillis: Int = 1000,
-    ): AgentProcessTracker =
-        AgentProcessTracker(
-            fakeAdbRule.adbSession,
-            serialNumber,
-            deviceAbi,
-            agentSourcePath,
-            intervalMillis,
-            logger
-        )
+  private fun agentProcessTracker(
+    serialNumber: String,
+    deviceAbi: String = "abi",
+    agentSourcePath: Path = this.agentSourcePath,
+    intervalMillis: Int = 1000,
+  ): AgentProcessTracker = AgentProcessTracker(fakeAdbRule.adbSession, serialNumber, deviceAbi, agentSourcePath, intervalMillis, logger)
 }
 
 private fun DeviceFileState.posixPermission() = RemoteFileMode.fromModeBits(permission).posixString

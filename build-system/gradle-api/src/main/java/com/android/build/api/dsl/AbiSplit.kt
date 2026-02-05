@@ -22,6 +22,6 @@ package com.android.build.api.dsl
  * See [FULL_APK Splits](https://developer.android.com/studio/build/configure-apk-splits.html).
  */
 interface AbiSplit : Split {
-    /** Whether to create an FULL_APK with all available ABIs. */
-    var isUniversalApk: Boolean
+  /** Whether to create an FULL_APK with all available ABIs. */
+  var isUniversalApk: Boolean
 }

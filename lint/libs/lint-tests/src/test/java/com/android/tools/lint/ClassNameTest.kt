@@ -120,14 +120,8 @@ class ClassNameTest {
   @Test
   fun testObjectInPackage() {
     // https://groups.google.com/g/lint-dev/c/MF1KJP4hijo/m/3QkHST3IAAAJ
-    assertEquals(
-      "com.test.classes.test",
-      getPackage("package com.test.classes.test; class Foo { }"),
-    )
-    assertEquals(
-      "com.test.objects.test",
-      getPackage("package com.test.objects.test; class Foo { }"),
-    )
+    assertEquals("com.test.classes.test", getPackage("package com.test.classes.test; class Foo { }"))
+    assertEquals("com.test.objects.test", getPackage("package com.test.objects.test; class Foo { }"))
     assertEquals("Foo", getClassName("package com.test.objects.test; class Foo { }"))
   }
 
@@ -343,9 +337,6 @@ class ClassNameTest {
     assertEquals("InspectorPainter", className.jvmName)
     assertEquals("InspectorPainter", className.className)
     assertEquals("com.android.tools.idea.preview.animation", className.packageName)
-    assertEquals(
-      "com/android/tools/idea/preview/animation/InspectorPainter.kt",
-      className.relativePath(),
-    )
+    assertEquals("com/android/tools/idea/preview/animation/InspectorPainter.kt", className.relativePath())
   }
 }

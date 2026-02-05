@@ -22,26 +22,23 @@ import com.android.tools.r8.tracereferences.TraceReferencesCommand
 import com.android.tools.r8.tracereferences.TraceReferencesKeepRules
 import java.nio.file.Path
 
-/**
- * Compute keep rules for shrinking desugar library jars.
- */
+/** Compute keep rules for shrinking desugar library jars. */
 fun runTraceReferenceTool(
-    fullBootClasspath: List<Path>,
-    desugaredDesugarLib: Collection<Path>,
-    dexFiles: Collection<Path>,
-    keepRuleOutput: Path
+  fullBootClasspath: List<Path>,
+  desugaredDesugarLib: Collection<Path>,
+  dexFiles: Collection<Path>,
+  keepRuleOutput: Path,
 ) {
-    val consumer = TraceReferencesKeepRules.builder()
-        .setAllowObfuscation(false)
-        .setOutputConsumer(StringConsumer.FileConsumer(keepRuleOutput))
-        .build()
+  val consumer =
+    TraceReferencesKeepRules.builder().setAllowObfuscation(false).setOutputConsumer(StringConsumer.FileConsumer(keepRuleOutput)).build()
 
-    val command = TraceReferencesCommand.builder()
-        .setConsumer(consumer)
-        .addLibraryFiles(fullBootClasspath)
-        .addTargetFiles(desugaredDesugarLib)
-        .addSourceFiles(dexFiles)
-        .build()
+  val command =
+    TraceReferencesCommand.builder()
+      .setConsumer(consumer)
+      .addLibraryFiles(fullBootClasspath)
+      .addTargetFiles(desugaredDesugarLib)
+      .addSourceFiles(dexFiles)
+      .build()
 
-    TraceReferences.run(command)
+  TraceReferences.run(command)
 }

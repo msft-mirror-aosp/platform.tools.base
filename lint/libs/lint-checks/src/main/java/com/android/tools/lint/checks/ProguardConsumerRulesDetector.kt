@@ -32,11 +32,9 @@ import java.io.File
 /**
  * Looks for problems with transitive libraries consumer rules.
  *
- * Currently, only looks for global options which should not be included, and will be ignored in AGP
- * 9.0+
+ * Currently, only looks for global options which should not be included, and will be ignored in AGP 9.0+
  */
-class ProguardConsumerRulesDetector :
-  DependencyDetector<ProguardConsumerRulesDetector.GlobalOptionIssue>() {
+class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDetector.GlobalOptionIssue>() {
   /** Represents a specific problematic global option at a specified file */
   class GlobalOptionIssue(
     val coordinates: LintModelMavenName,
@@ -59,9 +57,7 @@ class ProguardConsumerRulesDetector :
 
   override fun isDependencyKnownSafe(group: String, artifact: String, version: String): Boolean {
 
-    if (
-      group == "com.google.android.fhir" && (artifact == "engine" || artifact == "data-capture")
-    ) {
+    if (group == "com.google.android.fhir" && (artifact == "engine" || artifact == "data-capture")) {
       return false // Don't assume these dependencies are safe, see b/456246831
     }
 
@@ -75,18 +71,13 @@ class ProguardConsumerRulesDetector :
   override val dependencyIssueCache: HashMap<LintModelMavenName, List<DependencyIssue>>
     get() = _dependencyIssueCache
 
-  override fun getIncidentsFromAndroidLibrary(
-    library: LintModelAndroidLibrary
-  ): List<DependencyIssue> {
+  override fun getIncidentsFromAndroidLibrary(library: LintModelAndroidLibrary): List<DependencyIssue> {
     if (!library.proguardRules.exists()) {
       return emptyList()
     }
 
     val errors = mutableListOf<DependencyIssue>()
-    ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
-      library.proguardRules,
-      isDynamicFeature = false,
-    ) { issue ->
+    ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(library.proguardRules, isDynamicFeature = false) { issue ->
       errors.add(
         GlobalOptionIssue(
           coordinates = library.resolvedCoordinates,
@@ -139,16 +130,9 @@ class ProguardConsumerRulesDetector :
         category = Category.CORRECTNESS,
         priority = 2,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            ProguardConsumerRulesDetector::class.java,
-            GRADLE_AND_TOML_SCOPE,
-            GRADLE_SCOPE,
-            TOML_SCOPE,
-          ),
+        implementation = Implementation(ProguardConsumerRulesDetector::class.java, GRADLE_AND_TOML_SCOPE, GRADLE_SCOPE, TOML_SCOPE),
         androidSpecific = true,
-        moreInfo =
-          "https://developer.android.com/topic/performance/app-optimization/choose-libraries-wisely",
+        moreInfo = "https://developer.android.com/topic/performance/app-optimization/choose-libraries-wisely",
       )
   }
 }

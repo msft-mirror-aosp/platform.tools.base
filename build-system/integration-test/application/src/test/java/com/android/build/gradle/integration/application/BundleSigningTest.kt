@@ -28,31 +28,22 @@ import org.junit.Test
 
 class BundleSigningTest {
 
-    var minSdkVersion: Int = SignatureAlgorithm.RSA.minSdkVersion
-    @get:Rule
-    var project = builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
+  var minSdkVersion: Int = SignatureAlgorithm.RSA.minSdkVersion
+  @get:Rule var project = builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
 
-    @Test
-    @Throws(java.lang.Exception::class)
-    fun generateSignedBundleFromDebuggableVariant() {
-        val storePassword = "storePassword"
-        val keyPassword = "keyPassword"
-        val keyAlias = "key0"
+  @Test
+  @Throws(java.lang.Exception::class)
+  fun generateSignedBundleFromDebuggableVariant() {
+    val storePassword = "storePassword"
+    val keyPassword = "keyPassword"
+    val keyAlias = "key0"
 
-        val keyStoreFile = project.file("keystore")
-        KeystoreHelper.createNewStore(
-            "jks",
-            keyStoreFile,
-            storePassword,
-            keyPassword,
-            keyAlias,
-            "CN=Bundle signing test",
-            100
-        )
+    val keyStoreFile = project.file("keystore")
+    KeystoreHelper.createNewStore("jks", keyStoreFile, storePassword, keyPassword, keyAlias, "CN=Bundle signing test", 100)
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
             android {
                  namespace = '${HelloWorldApp.NAMESPACE}'
@@ -77,12 +68,12 @@ class BundleSigningTest {
                    }
                 }
             }
-            """.trimIndent()
-        )
-        project.executor().run(":bundleDebug")
-        val aab = project.getBundle(GradleTestProject.ApkType.DEBUG)
-        assertThat(aab).contains("META-INF/KEY0.SF")
-        assertThat(aab).contains("META-INF/KEY0.RSA")
-    }
-
+            """
+        .trimIndent(),
+    )
+    project.executor().run(":bundleDebug")
+    val aab = project.getBundle(GradleTestProject.ApkType.DEBUG)
+    assertThat(aab).contains("META-INF/KEY0.SF")
+    assertThat(aab).contains("META-INF/KEY0.RSA")
+  }
 }

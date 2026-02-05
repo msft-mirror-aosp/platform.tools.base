@@ -23,98 +23,91 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * tests disabling build features that are normally on by default. Similar to
- * [EnabledSrcResGenTest].
- */
+/** tests disabling build features that are normally on by default. Similar to [EnabledSrcResGenTest]. */
 class DisabledSrcResGenTest {
-    @get:Rule
-    val rootProject = GradleTestProject.builder().fromTestProject("applibtest").create()
+  @get:Rule val rootProject = GradleTestProject.builder().fromTestProject("applibtest").create()
 
-    private lateinit var appProject: GradleTestProject
-    private lateinit var libProject: GradleTestProject
+  private lateinit var appProject: GradleTestProject
+  private lateinit var libProject: GradleTestProject
 
-    @Before
-    fun setUp() {
-        appProject = rootProject.getSubproject(":app")
-        libProject = rootProject.getSubproject(":lib")
-    }
+  @Before
+  fun setUp() {
+    appProject = rootProject.getSubproject(":app")
+    libProject = rootProject.getSubproject(":lib")
+  }
 
-    @Test
-    fun `test enabling Res Values via gradle-properties`() {
-        val taskName = "generateDebugResValues"
-        var result = rootProject.executor().run("assembleDebug")
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
+  @Test
+  fun `test enabling Res Values via gradle-properties`() {
+    val taskName = "generateDebugResValues"
+    var result = rootProject.executor().run("assembleDebug")
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
 
-        rootProject.gradlePropertiesFile
-            .appendText(
-                """
+    rootProject.gradlePropertiesFile.appendText(
+      """
     ${BooleanOption.BUILD_FEATURE_RESVALUES.propertyName}=true"""
-            )
+    )
 
-        result = rootProject.executor().run("assembleDebug")
+    result = rootProject.executor().run("assembleDebug")
 
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
-    }
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
+  }
 
-    @Test
-    fun `check disabling Res Values triggers validation errors`() {
-        appProject.buildFile.appendText("""
-            android {
-                buildFeatures.resValues = false
-                defaultConfig {
-                   resValue "string", "foo", "foo"
-                }
-            }
-        """.trimIndent())
+  @Test
+  fun `check disabling Res Values triggers validation errors`() {
+    appProject.buildFile.appendText(
+      """
+      android {
+          buildFeatures.resValues = false
+          defaultConfig {
+             resValue "string", "foo", "foo"
+          }
+      }
+      """
+        .trimIndent()
+    )
 
-        rootProject.executor().expectFailure().run("app:assembleDebug").assertErrorContains(
-            "defaultConfig contains custom resource values, but the feature is disabled."
-        )
-    }
+    rootProject
+      .executor()
+      .expectFailure()
+      .run("app:assembleDebug")
+      .assertErrorContains("defaultConfig contains custom resource values, but the feature is disabled.")
+  }
 
-    private fun checkViaGradleProperties(
-        booleanOption: BooleanOption,
-        taskName: String
-    ) {
-        // first do a build without the disabling to check the task exist in this case
-        // build both apk and aar
-        var result = rootProject.executor().run("assembleDebug")
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
+  private fun checkViaGradleProperties(booleanOption: BooleanOption, taskName: String) {
+    // first do a build without the disabling to check the task exist in this case
+    // build both apk and aar
+    var result = rootProject.executor().run("assembleDebug")
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
 
-        // then change the project and run again
-        rootProject.gradlePropertiesFile
-            .appendText(
-                """
+    // then change the project and run again
+    rootProject.gradlePropertiesFile.appendText(
+      """
     ${booleanOption.propertyName}=false"""
-            )
+    )
 
-        result = rootProject.executor().run("assembleDebug")
+    result = rootProject.executor().run("assembleDebug")
 
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
-    }
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
+  }
 
-    private fun checkViaBuildFile(
-        propertyName: String,
-        taskName: String
-    ) {
-        // first do a build without the disabling to check the task exist in this case
-        // build both apk and aar
-        var result = rootProject.executor().run("assembleDebug")
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
+  private fun checkViaBuildFile(propertyName: String, taskName: String) {
+    // first do a build without the disabling to check the task exist in this case
+    // build both apk and aar
+    var result = rootProject.executor().run("assembleDebug")
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
 
-        // then change the project and run again
-        appProject.buildFile.appendText("android.buildFeatures.$propertyName = false")
-        libProject.buildFile.appendText("android.buildFeatures.$propertyName = false")
+    // then change the project and run again
+    appProject.buildFile.appendText("android.buildFeatures.$propertyName = false")
+    libProject.buildFile.appendText("android.buildFeatures.$propertyName = false")
 
-        result = rootProject.executor().run("assembleDebug")
+    result = rootProject.executor().run("assembleDebug")
 
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
-    }
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
+  }
 }

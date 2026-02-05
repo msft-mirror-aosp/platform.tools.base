@@ -49,8 +49,7 @@ class DosLineEndingDetector : LayoutDetector() {
         severity = Severity.ERROR,
         // This check is probably not relevant for most users anymore
         enabledByDefault = false,
-        implementation =
-          Implementation(DosLineEndingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(DosLineEndingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 
@@ -67,8 +66,7 @@ class DosLineEndingDetector : LayoutDetector() {
     while (i < n) {
       val c = contents[i]
       if (c == '\r' && prev == '\r') {
-        val message =
-          "Incorrect line ending: found carriage return (`\\r`) without corresponding newline (`\\n`)"
+        val message = "Incorrect line ending: found carriage return (`\\r`) without corresponding newline (`\\n`)"
 
         // Mark the whole line as the error range, since pointing just to the
         // line ending makes the error invisible in IDEs and error reports etc

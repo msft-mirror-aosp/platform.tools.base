@@ -36,9 +36,7 @@ fun getOkHttpCallStack(okHttpPackage: String): String {
     }
   }
   return if (okHttpCallstackStart >= 0) {
-    callstack.copyOfRange(okHttpCallstackEnd, callstack.size).fold("") { acc, stackTraceElement ->
-      "$acc$stackTraceElement\n"
-    }
+    callstack.copyOfRange(okHttpCallstackEnd, callstack.size).fold("") { acc, stackTraceElement -> "$acc$stackTraceElement\n" }
   } else {
     ""
   }
@@ -47,13 +45,11 @@ fun getOkHttpCallStack(okHttpPackage: String): String {
 /**
  * Returns an [OutputStream] that simply discards written bytes.
  *
- * Our profiling instrumentation code assumes that a request's body is an [OutputStream] that is
- * written into before the request is sent. However, OkHttp uses [okio.Sink]s instead of
- * [OutputStream]s for their request bodies, so we provide a temporary stub output stream to use
- * that will be wrapped with a [okio.Sink] and can still be tracked.
+ * Our profiling instrumentation code assumes that a request's body is an [OutputStream] that is written into before the request is sent.
+ * However, OkHttp uses [okio.Sink]s instead of [OutputStream]s for their request bodies, so we provide a temporary stub output stream to
+ * use that will be wrapped with a [okio.Sink] and can still be tracked.
  *
- * TODO: We may want to clean up this assumption in HttpTracker so these OkHttp gymnastics are not
- *   required.
+ * TODO: We may want to clean up this assumption in HttpTracker so these OkHttp gymnastics are not required.
  */
 fun createNullOutputStream(): OutputStream {
   return object : OutputStream() {
@@ -66,8 +62,7 @@ fun createNullOutputStream(): OutputStream {
 }
 
 /**  */
-fun shouldIgnoreRequest(callstack: String, className: String): Boolean =
-  callstack.contains(className)
+fun shouldIgnoreRequest(callstack: String, className: String): Boolean = callstack.contains(className)
 
 fun logInterceptionError(e: Throwable, description: String) {
   when (e) {

@@ -25,35 +25,34 @@ import org.junit.rules.ExpectedException
 
 class GradlePropertiesDelegateTest {
 
-    @get:Rule
-    val exceptionRule: ExpectedException = ExpectedException.none()
+  @get:Rule val exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testBooleanAdd() {
-        val delegate = GradlePropertiesDelegate()
+  @Test
+  fun testBooleanAdd() {
+    val delegate = GradlePropertiesDelegate()
 
-        delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
+    delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
 
-        Truth.assertThat(delegate.properties).containsExactly("android.experimental.enableTestFixtures=true")
-    }
+    Truth.assertThat(delegate.properties).containsExactly("android.experimental.enableTestFixtures=true")
+  }
 
-    @Test
-    fun testStringAdd() {
-        val delegate = GradlePropertiesDelegate()
+  @Test
+  fun testStringAdd() {
+    val delegate = GradlePropertiesDelegate()
 
-        delegate.add(StringOption.LINT_HEAP_SIZE, "twelve")
+    delegate.add(StringOption.LINT_HEAP_SIZE, "twelve")
 
-        Truth.assertThat(delegate.properties).containsExactly("android.experimental.lint.heapSize=twelve")
-    }
+    Truth.assertThat(delegate.properties).containsExactly("android.experimental.lint.heapSize=twelve")
+  }
 
-    @Test
-    fun testConflicts() {
-        val delegate = GradlePropertiesDelegate()
+  @Test
+  fun testConflicts() {
+    val delegate = GradlePropertiesDelegate()
 
-        delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
-        delegate.add("android.experimental.enableTestFixtures","true")
+    delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
+    delegate.add("android.experimental.enableTestFixtures", "true")
 
-        exceptionRule.expect(RuntimeException::class.java)
-        delegate.properties
-    }
+    exceptionRule.expect(RuntimeException::class.java)
+    delegate.properties
+  }
 }

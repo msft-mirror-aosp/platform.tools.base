@@ -20,15 +20,13 @@ import com.android.build.api.dsl.ConfigurableFiles
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class ConfigurableFilesImpl@Inject constructor(
-    val dslServices: DslServices
-): ConfigurableFiles {
+abstract class ConfigurableFilesImpl @Inject constructor(val dslServices: DslServices) : ConfigurableFiles {
 
-    override fun file(file: Any) {
-       files.add(dslServices.file(file))
-    }
+  override fun file(file: Any) {
+    files.add(dslServices.file(file))
+  }
 
-    override fun files(vararg files: Any) {
-        files.forEach { file(it) }
-    }
+  override fun files(vararg files: Any) {
+    files.forEach { file(it) }
+  }
 }

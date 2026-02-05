@@ -21,38 +21,34 @@ import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.junit.Test
 
 class PluginExceptionReportTest {
-    @Test
-    fun testExceptionSerialized() {
-        val pluginExceptionReport = PluginExceptionReport.create(NullPointerException())
+  @Test
+  fun testExceptionSerialized() {
+    val pluginExceptionReport = PluginExceptionReport.create(NullPointerException())
 
-        val builder = MultipartEntityBuilder.create()
-        pluginExceptionReport!!.serialize(builder)
+    val builder = MultipartEntityBuilder.create()
+    pluginExceptionReport!!.serialize(builder)
 
-        val content = builder.build().content.bufferedReader().use {
-            it.readText()
-        }
+    val content = builder.build().content.bufferedReader().use { it.readText() }
 
-        assertThat(content).contains("Content-Disposition: form-data; name=\"type\"")
-        assertThat(content).contains(REPORT_TYPE)
-        assertThat(content).contains("Content-Disposition: form-data; name=\"exception_info\"")
-        assertThat(content).contains(
-            "java.lang.NullPointerException: <message removed>\n" +
-                    "\tat com.android.build.gradle.internal.crash.PluginExceptionReportTest.testExceptionSerialized(PluginExceptionReportTest.kt:"
-        )
-    }
+    assertThat(content).contains("Content-Disposition: form-data; name=\"type\"")
+    assertThat(content).contains(REPORT_TYPE)
+    assertThat(content).contains("Content-Disposition: form-data; name=\"exception_info\"")
+    assertThat(content)
+      .contains(
+        "java.lang.NullPointerException: <message removed>\n" +
+          "\tat com.android.build.gradle.internal.crash.PluginExceptionReportTest.testExceptionSerialized(PluginExceptionReportTest.kt:"
+      )
+  }
 
-    @Test
-    fun testExceptionMessageRemoved() {
-        val pluginExceptionReport =
-            PluginExceptionReport.create(NullPointerException("message to be removed"))
+  @Test
+  fun testExceptionMessageRemoved() {
+    val pluginExceptionReport = PluginExceptionReport.create(NullPointerException("message to be removed"))
 
-        val builder = MultipartEntityBuilder.create()
-        pluginExceptionReport!!.serialize(builder)
+    val builder = MultipartEntityBuilder.create()
+    pluginExceptionReport!!.serialize(builder)
 
-        val content = builder.build().content.bufferedReader().use {
-            it.readText()
-        }
+    val content = builder.build().content.bufferedReader().use { it.readText() }
 
-        assertThat(content).doesNotContain("message to be removed")
-    }
+    assertThat(content).doesNotContain("message to be removed")
+  }
 }

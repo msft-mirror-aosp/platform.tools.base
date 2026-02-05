@@ -68,8 +68,7 @@ class UnsafeNativeCodeDetectorTest : AbstractCheckTest() {
   }
 
   fun testNativeCode() {
-    val bytesWithElfHeader =
-      byteArrayOf(0x7F.toByte(), 0x45.toByte(), 0x4C.toByte(), 0x46.toByte(), 0)
+    val bytesWithElfHeader = byteArrayOf(0x7F.toByte(), 0x45.toByte(), 0x4C.toByte(), 0x46.toByte(), 0)
     lint()
       .files(
         bytes("res/raw/hello", bytesWithElfHeader),
@@ -92,8 +91,7 @@ class UnsafeNativeCodeDetectorTest : AbstractCheckTest() {
   }
 
   fun testNoWorkInInteractiveMode() {
-    val bytesWithElfHeader =
-      byteArrayOf(0x7F.toByte(), 0x45.toByte(), 0x4C.toByte(), 0x46.toByte(), 0)
+    val bytesWithElfHeader = byteArrayOf(0x7F.toByte(), 0x45.toByte(), 0x4C.toByte(), 0x46.toByte(), 0)
 
     // Make sure we don't scan through all resource folders when just incrementally
     // editing a Java file

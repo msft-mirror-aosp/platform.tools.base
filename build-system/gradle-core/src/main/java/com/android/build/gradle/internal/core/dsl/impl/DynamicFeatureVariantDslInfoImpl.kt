@@ -33,16 +33,17 @@ import com.android.builder.core.ComponentType
 import org.gradle.api.file.DirectoryProperty
 
 internal class DynamicFeatureVariantDslInfoImpl(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    dataProvider: ManifestDataProvider,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    extension: InternalDynamicFeatureExtension
-) : TestedVariantDslInfoImpl(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  dataProvider: ManifestDataProvider,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  extension: InternalDynamicFeatureExtension,
+) :
+  TestedVariantDslInfoImpl(
     componentIdentity,
     componentType,
     defaultConfig,
@@ -51,26 +52,22 @@ internal class DynamicFeatureVariantDslInfoImpl(
     dataProvider,
     services,
     buildDirectory,
-    extension
-), DynamicFeatureVariantDslInfo {
+    extension,
+  ),
+  DynamicFeatureVariantDslInfo {
 
-    // TODO: Dynamic feature variant doesn't have isDebuggable dsl in the build type, we should only
-    //  have `debug` variants be debuggable
-    override val isDebuggable: Boolean
-        get() = ProfilingMode.getProfilingModeType(
-            services.projectOptions[StringOption.PROFILING_MODE]
-        ).isDebuggable
-            ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
-            ?: false
+  // TODO: Dynamic feature variant doesn't have isDebuggable dsl in the build type, we should only
+  //  have `debug` variants be debuggable
+  override val isDebuggable: Boolean
+    get() =
+      ProfilingMode.getProfilingModeType(services.projectOptions[StringOption.PROFILING_MODE]).isDebuggable
+        ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
+        ?: false
 
-    override val signingConfigResolver: SigningConfigResolver? = null
+  override val signingConfigResolver: SigningConfigResolver? = null
 
-    override val isMultiDexSetFromDsl: Boolean
-        get() = (buildTypeObj as? ApplicationBuildType)?.multiDexEnabled != null
+  override val isMultiDexSetFromDsl: Boolean
+    get() = (buildTypeObj as? ApplicationBuildType)?.multiDexEnabled != null
 
-    override val dexingDslInfo: DexingDslInfo by lazy {
-        DexingDslInfoImpl(
-            buildTypeObj, mergedFlavor
-        )
-    }
+  override val dexingDslInfo: DexingDslInfo by lazy { DexingDslInfoImpl(buildTypeObj, mergedFlavor) }
 }

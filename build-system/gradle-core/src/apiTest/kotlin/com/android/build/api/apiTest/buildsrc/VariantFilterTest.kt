@@ -18,59 +18,61 @@ package com.android.build.api.apiTest.buildsrc
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class VariantFilterTest:  VariantApiBaseTest(
-    TestType.BuildSrc
-) {
-    @Test
-    fun testVariantFilteringOnBuildType() {
-        given {
-            addBuildSrc {
-                addSource("src/main/kotlin/CustomPlugin.kt",
-                    // language=kotlin
-                    """
-                        import com.android.build.api.variant.ApplicationAndroidComponentsExtension
-                        import com.android.build.api.variant.LibraryAndroidComponentsExtension
-                        import com.android.build.gradle.AppPlugin
-                        import com.android.build.gradle.LibraryPlugin
-                        import org.gradle.api.Plugin
-                        import org.gradle.api.Project
+class VariantFilterTest : VariantApiBaseTest(TestType.BuildSrc) {
+  @Test
+  fun testVariantFilteringOnBuildType() {
+    given {
+      addBuildSrc {
+        addSource(
+          "src/main/kotlin/CustomPlugin.kt",
+          // language=kotlin
+          """
+          import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+          import com.android.build.api.variant.LibraryAndroidComponentsExtension
+          import com.android.build.gradle.AppPlugin
+          import com.android.build.gradle.LibraryPlugin
+          import org.gradle.api.Plugin
+          import org.gradle.api.Project
 
-                        class CustomPlugin: Plugin<Project> {
-                            override fun apply(project: Project) {
-                                project.plugins.withType(AppPlugin::class.java) {
-                                    val extension = project.extensions.getByName("androidComponents") as ApplicationAndroidComponentsExtension
-                                    extension.beforeVariants {
-                                        // disable all unit tests for apps (only using instrumentation tests)
-                                        it.enableUnitTest = false
-                                    }
-                                }
-                                project.plugins.withType(LibraryPlugin::class.java) {
-                                    val extension = project.extensions.getByName("androidComponents") as LibraryAndroidComponentsExtension
-                                    extension.beforeVariants(extension.selector().withBuildType("debug")) {
-                                        // Disable instrumentation for debug
-                                        it.enableAndroidTest = false
-                                    }
-                                    extension.beforeVariants(extension.selector().withBuildType("release")) {
-                                        // disable all unit tests for apps (only using instrumentation tests)
-                                        it.enableUnitTest = false
-                                    }
-                                }
-                            }
-                        }
-                    """.trimIndent())
-                buildFile =
-                    """
+          class CustomPlugin: Plugin<Project> {
+              override fun apply(project: Project) {
+                  project.plugins.withType(AppPlugin::class.java) {
+                      val extension = project.extensions.getByName("androidComponents") as ApplicationAndroidComponentsExtension
+                      extension.beforeVariants {
+                          // disable all unit tests for apps (only using instrumentation tests)
+                          it.enableUnitTest = false
+                      }
+                  }
+                  project.plugins.withType(LibraryPlugin::class.java) {
+                      val extension = project.extensions.getByName("androidComponents") as LibraryAndroidComponentsExtension
+                      extension.beforeVariants(extension.selector().withBuildType("debug")) {
+                          // Disable instrumentation for debug
+                          it.enableAndroidTest = false
+                      }
+                      extension.beforeVariants(extension.selector().withBuildType("release")) {
+                          // disable all unit tests for apps (only using instrumentation tests)
+                          it.enableUnitTest = false
+                      }
+                  }
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        buildFile =
+          """
                     dependencies {
                         implementation("com.android.tools.build:gradle:$agpVersion")
                     }
-                    """.trimIndent()
-            }
-            addModule(":app") {
-                buildFile =
                     """
+            .trimIndent()
+      }
+      addModule(":app") {
+        buildFile =
+          """
                     plugins {
                             id("com.android.application")
                             kotlin("android")
@@ -80,57 +82,64 @@ class VariantFilterTest:  VariantApiBaseTest(
 
                     android { ${testingElements.addCommonAndroidBuildLogic()}
                     }
-                    """.trimIndent()
-                testingElements.addManifest(this)
-                testingElements.addMainActivity(this)
-                addSource("src/test/java/ExampleUnitTest.kt",
-                """
-                    import org.junit.Test
+                    """
+            .trimIndent()
+        testingElements.addManifest(this)
+        testingElements.addMainActivity(this)
+        addSource(
+          "src/test/java/ExampleUnitTest.kt",
+          """
+          import org.junit.Test
 
-                    import org.junit.Assert.*
+          import org.junit.Assert.*
 
-                    /**
-                     * Example local unit test, which will execute on the development machine (host).
-                     *
-                     * See [testing documentation](http://d.android.com/tools/testing).
-                     */
-                    class ExampleUnitTest {
-                        @Test
-                        fun addition_isCorrect() {
-                            assertEquals(4, 2 + 2)
-                        }
-                    }
-                """.trimIndent())
+          /**
+           * Example local unit test, which will execute on the development machine (host).
+           *
+           * See [testing documentation](http://d.android.com/tools/testing).
+           */
+          class ExampleUnitTest {
+              @Test
+              fun addition_isCorrect() {
+                  assertEquals(4, 2 + 2)
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      addSource(
+        "src/androidTest/kotlin/ExampleInstrumentedTest.kt",
+        """
+        import androidx.test.platform.app.InstrumentationRegistry
+        import androidx.test.ext.junit.runners.AndroidJUnit4
+
+        import org.junit.Test
+        import org.junit.runner.RunWith
+
+        import org.junit.Assert.*
+
+        /**
+         * Instrumented test, which will execute on an Android device.
+         *
+         * See [testing documentation](http://d.android.com/tools/testing).
+         */
+        @RunWith(AndroidJUnit4::class)
+        class ExampleInstrumentedTest {
+            @Test
+            fun useAppContext() {
+                // Context of the app under test.
+                val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+                assertEquals("com.example.appandlib", appContext.packageName)
             }
-            addSource("src/androidTest/kotlin/ExampleInstrumentedTest.kt",
-                """
-                import androidx.test.platform.app.InstrumentationRegistry
-                import androidx.test.ext.junit.runners.AndroidJUnit4
-
-                import org.junit.Test
-                import org.junit.runner.RunWith
-
-                import org.junit.Assert.*
-
-                /**
-                 * Instrumented test, which will execute on an Android device.
-                 *
-                 * See [testing documentation](http://d.android.com/tools/testing).
-                 */
-                @RunWith(AndroidJUnit4::class)
-                class ExampleInstrumentedTest {
-                    @Test
-                    fun useAppContext() {
-                        // Context of the app under test.
-                        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-                        assertEquals("com.example.appandlib", appContext.packageName)
-                    }
-                }
-                """.trimIndent())
         }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        """
+          .trimIndent(),
+      )
     }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

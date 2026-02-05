@@ -32,68 +32,43 @@ import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledOutOperationRequestTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: OutOperationRequest<Directory> = mock()
+  private val delegate: OutOperationRequest<Directory> = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledOutOperationRequest<Directory> by lazy {
-        AnalyticsEnabledOutOperationRequest(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledOutOperationRequest<Directory> by lazy { AnalyticsEnabledOutOperationRequest(delegate, stats) }
 
-    @Test
-    fun testToCreate() {
+  @Test
+  fun testToCreate() {
 
-        proxy.toCreate(SingleArtifact.APK)
+    proxy.toCreate(SingleArtifact.APK)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.TO_CREATE_VALUE
-            )
-        )
-        verify(delegate, times(1)).toCreate(
-            SingleArtifact.APK,
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.TO_CREATE_VALUE))
+    verify(delegate, times(1)).toCreate(SingleArtifact.APK)
+  }
 
-    @Test
-    fun testToAppend() {
+  @Test
+  fun testToAppend() {
 
-        proxy.toAppendTo(MultipleArtifact.NATIVE_DEBUG_METADATA)
+    proxy.toAppendTo(MultipleArtifact.NATIVE_DEBUG_METADATA)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.TO_APPEND_TO_VALUE
-            )
-        )
-        verify(delegate, times(1)).toAppendTo(
-            MultipleArtifact.NATIVE_DEBUG_METADATA,
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.TO_APPEND_TO_VALUE))
+    verify(delegate, times(1)).toAppendTo(MultipleArtifact.NATIVE_DEBUG_METADATA)
+  }
 
+  @Test
+  fun testToListenTo() {
 
-    @Test
-    fun testToListenTo() {
+    proxy.toListenTo(SingleArtifact.APK)
 
-        proxy.toListenTo(SingleArtifact.APK)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.SINGLE_TO_LISTEN_TO_VALUE
-            )
-        )
-        verify(delegate, times(1)).toListenTo(
-            SingleArtifact.APK,
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SINGLE_TO_LISTEN_TO_VALUE))
+    verify(delegate, times(1)).toListenTo(SingleArtifact.APK)
+  }
 }

@@ -21,21 +21,18 @@ import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.AssumeUtil
 import com.google.common.truth.Truth
+import java.util.Scanner
 import org.junit.Rule
 import org.junit.Test
-import java.util.Scanner
 
 class NestedResourceFoldersTest {
-    @get:Rule
-    var project = builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule var project = builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun simpleNestedDirs() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun simpleNestedDirs() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android {
                     sourceSets.main.res.srcDirs = [
                        'src/main/res/layout/people',
@@ -43,75 +40,81 @@ class NestedResourceFoldersTest {
                        'src/main/res/layout',
                        'src/main/res']
                 }
-                """
-        )
-        val result = project.executor().run("clean", "mergeDebugResources", "packageDebugResources")
+                """,
+    )
+    val result = project.executor().run("clean", "mergeDebugResources", "packageDebugResources")
 
-        TruthHelper.assertThat(result.exception).isNull()
-        Truth.assertThat(result.stdout.findAll("Nested resources detected.").count()).isEqualTo(1)
-        findMultilineText(result.stdout,
-        """
-        + src/main/res/layout
-        -- src/main/res/layout/people
-        -- src/main/res/layout/parks
+    TruthHelper.assertThat(result.exception).isNull()
+    Truth.assertThat(result.stdout.findAll("Nested resources detected.").count()).isEqualTo(1)
+    findMultilineText(
+      result.stdout,
+      """
+      + src/main/res/layout
+      -- src/main/res/layout/people
+      -- src/main/res/layout/parks
 
-        + src/main/res
-        -- src/main/res/layout/people
-        -- src/main/res/layout/parks
-        -- src/main/res/layout
-        """.trimIndent()
-        )
-    }
+      + src/main/res
+      -- src/main/res/layout/people
+      -- src/main/res/layout/parks
+      -- src/main/res/layout
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun nestedDirsWithComplexPaths() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun nestedDirsWithComplexPaths() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android {
                     sourceSets.main.res.srcDirs = [
                        'src/main/res/special',
                        'src/main/res/special/one/../two']
                 }
-                """
-        )
-        val result = project.executor().run("clean", "mergeDebugResources")
-        TruthHelper.assertThat(result.exception).isNull()
-        findMultilineText(result.stdout,
-            """
-        + src/main/res/special
-        -- src/main/res/special/two
-        """.trimIndent())
-    }
+                """,
+    )
+    val result = project.executor().run("clean", "mergeDebugResources")
+    TruthHelper.assertThat(result.exception).isNull()
+    findMultilineText(
+      result.stdout,
+      """
+      + src/main/res/special
+      -- src/main/res/special/two
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun nestedDirsWithAbsolutePaths() {
-        AssumeUtil.assumeNotWindows()
+  @Test
+  fun nestedDirsWithAbsolutePaths() {
+    AssumeUtil.assumeNotWindows()
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android {
                     sourceSets.main.res.srcDirs = [
                        '/temp',
                        '/temp/internal']
                 }
-                """
-        )
-        val result = project.executor().run("clean", "mergeDebugResources")
-        TruthHelper.assertThat(result.exception).isNull()
-        findMultilineText(result.stdout,
-            """
-        + /temp
-        -- /temp/internal
-        """.trimIndent())
-    }
+                """,
+    )
+    val result = project.executor().run("clean", "mergeDebugResources")
+    TruthHelper.assertThat(result.exception).isNull()
+    findMultilineText(
+      result.stdout,
+      """
+      + /temp
+      -- /temp/internal
+      """
+        .trimIndent(),
+    )
+  }
 
-    private fun findMultilineText(s: Scanner, str: String) {
-        val buffer = StringBuilder()
-        while (s.hasNextLine())
-            buffer.append(s.nextLine().replace("\\","/") + "\n")
-        TruthHelper.assertThat(buffer.toString()).contains(str)
-    }
-
+  private fun findMultilineText(s: Scanner, str: String) {
+    val buffer = StringBuilder()
+    while (s.hasNextLine()) buffer.append(s.nextLine().replace("\\", "/") + "\n")
+    TruthHelper.assertThat(buffer.toString()).contains(str)
+  }
 }

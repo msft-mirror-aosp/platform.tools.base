@@ -22,8 +22,9 @@ import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 
 @OptIn(ExternalKotlinTargetApi::class)
 class KotlinMultiplatformAndroidDeviceTestCompilationImpl(
-    private val testOnDevice: KotlinMultiplatformAndroidDeviceTest,
-    delegate: Delegate,
-) : KotlinMultiplatformAndroidCompilationImpl(delegate),
-    KotlinMultiplatformAndroidDeviceTestCompilation,
-    KotlinMultiplatformAndroidDeviceTest by testOnDevice
+  private val testOnDevice: KotlinMultiplatformAndroidDeviceTest,
+  delegate: Delegate,
+) :
+  KotlinMultiplatformAndroidCompilationImpl(delegate),
+  KotlinMultiplatformAndroidDeviceTestCompilation,
+  KotlinMultiplatformAndroidDeviceTest by testOnDevice

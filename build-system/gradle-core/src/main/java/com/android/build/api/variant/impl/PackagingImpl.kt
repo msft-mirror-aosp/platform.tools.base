@@ -19,14 +19,9 @@ package com.android.build.api.variant.impl
 import com.android.build.api.variant.Packaging
 import com.android.build.gradle.internal.services.VariantServices
 
-open class PackagingImpl(
-    dslPackaging: com.android.build.api.dsl.Packaging,
-    variantServices: VariantServices
-) : Packaging {
+open class PackagingImpl(dslPackaging: com.android.build.api.dsl.Packaging, variantServices: VariantServices) : Packaging {
 
-    override val jniLibs =
-        JniLibsPackagingImpl(dslPackaging, variantServices)
+  override val jniLibs = JniLibsPackagingImpl(dslPackaging, variantServices)
 
-    override val resources =
-        ResourcesPackagingImpl(dslPackaging, variantServices)
+  override val resources = ResourcesPackagingImpl(dslPackaging, variantServices)
 }

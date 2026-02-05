@@ -28,6 +28,17 @@ import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
 import com.google.common.io.ByteStreams
 import com.google.common.truth.Truth.assertThat
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.net.URL
+import java.net.URLClassLoader
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+import kotlin.reflect.jvm.jvmName
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -43,983 +54,872 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ARETURN
 import org.objectweb.asm.Type
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.net.URL
-import java.net.URLClassLoader
-import java.util.zip.Deflater
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
-import java.util.zip.ZipOutputStream
-import kotlin.reflect.jvm.jvmName
 
 @RunWith(Parameterized::class)
 class AsmInstrumentationManagerTest(private val testMode: TestMode) {
-    enum class TestMode {
-        DIR,
-        JAR
+  enum class TestMode {
+    DIR,
+    JAR,
+  }
+
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "testMode_{0}")
+    fun modes(): List<TestMode> {
+      return listOf(TestMode.DIR, TestMode.JAR)
+    }
+  }
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
+
+  private val apiVersion: Int = ASM_API_VERSION
+  private val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
+  private val classesCache = ClassesDataCache()
+  private val issueHandler = InstrumentationIssueHandler()
+
+  private lateinit var classesHierarchyResolver: ClassesHierarchyResolver
+  private lateinit var inputDir: File
+  private lateinit var inputJar: File
+  private lateinit var outputDir: File
+  private lateinit var classes: Map<String, ByteArray>
+
+  /** As we're setting maxs to -1, and the value is stored in an unsigned 16 bit integer, the stored value will be (2^16) - 1 */
+  private val invalidMaxsValue = (1 shl 16) - 1
+
+  @Before
+  fun setUp() {
+    inputDir = temporaryFolder.newFolder()
+    outputDir = temporaryFolder.newFolder()
+
+    val srcClasses =
+      listOf(
+        I::class.java,
+        InterfaceExtendsI::class.java,
+        ClassImplementsI::class.java,
+        ClassWithNoInterfacesOrSuperclasses::class.java,
+        ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
+        ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java,
+      )
+
+    val builder = ClassesHierarchyResolver.Builder(classesCache).addDependenciesSources(androidJar)
+
+    if (testMode == TestMode.DIR) {
+      TestInputsGenerator.pathWithClasses(inputDir.toPath(), srcClasses)
+      val classesFiles = getClassesFilesMap(inputDir)
+      classes = classesFiles.mapValues { ByteStreams.toByteArray(FileInputStream(it.value)) }
+      builder.addProjectSources(inputDir)
+    } else {
+      inputJar = File(inputDir, "classes.jar")
+      TestInputsGenerator.pathWithClasses(inputJar.toPath(), srcClasses)
+      classes = getClassesByteArrayMapFromJar(inputJar)
+      builder.addProjectSources(inputJar)
     }
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "testMode_{0}")
-        fun modes(): List<TestMode> {
-            return listOf(TestMode.DIR, TestMode.JAR)
+    classesHierarchyResolver = builder.build()
+  }
+
+  @After
+  fun tearDown() {
+    classesCache.close()
+  }
+
+  private fun AsmInstrumentationManager.instrument(inputDir: File, outputDir: File) {
+    if (testMode == TestMode.DIR) {
+      instrumentClassesFromDirectoryToDirectory(inputDir, outputDir)
+    } else {
+      val inputJar = inputDir.listFiles()!![0]
+      instrumentClassesFromJarToJar(inputJar, File(outputDir, inputJar.name))
+    }
+    close()
+  }
+
+  @Test
+  fun testNoVisitors() {
+    // Given no visitors, when the instrumentation manager is invoked
+    AsmInstrumentationManager(listOf(), apiVersion, classesHierarchyResolver, issueHandler, FramesComputationMode.COPY_FRAMES, emptySet())
+      .instrument(inputDir, outputDir)
+
+    // Then the classes should be copied to the destination
+
+    val outputClasses = getOutputClassesByteArrayMap()
+    assertThat(outputClasses).hasSize(classes.size)
+
+    outputClasses.forEach { (className, byteArray) -> assertThat(byteArray).isEqualTo(classes[className]) }
+  }
+
+  @Test
+  fun testDataIsSentCorrectly() {
+    val visitorFactory =
+      getConfiguredVisitorFactory(DataCapturerVisitorFactory::class.java) {
+        it.a = "Custom"
+        it.b = 1234
+      }
+        as DataCapturerVisitorFactory
+
+    AsmInstrumentationManager(
+        listOf(visitorFactory),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        emptySet(),
+      )
+      .instrument(inputDir, outputDir)
+
+    val outputClasses = getOutputClassesByteArrayMap()
+    assertThat(outputClasses).hasSize(classes.size)
+
+    outputClasses.forEach { (className, classFile) -> assertThat(getClassContentDiff(classes[className], classFile)).isEmpty() }
+
+    assertThat(visitorFactory.instrumentationContext.apiVersion.get()).isEqualTo(apiVersion)
+    assertThat(visitorFactory.parameters.get().a).isEqualTo("Custom")
+    assertThat(visitorFactory.parameters.get().b).isEqualTo(1234)
+
+    val classDataList = visitorFactory.capturedClassData.sortedBy { it.className }
+
+    assertThat(classDataList).hasSize(6)
+    classDataList[0].assertEquals(
+      className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
+      annotations = listOf(Instrument::class.java.name),
+      interfaces = listOf(InterfaceExtendsI::class.java.name, I::class.java.name),
+      superClasses =
+        listOf(
+          ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
+          ClassWithNoInterfacesOrSuperclasses::class.java.name,
+          Object::class.java.name,
+        ),
+    )
+    classDataList[1].assertEquals(
+      className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
+      annotations = listOf(),
+      interfaces = listOf(InterfaceExtendsI::class.java.name, I::class.java.name),
+      superClasses = listOf(ClassWithNoInterfacesOrSuperclasses::class.java.name, Object::class.java.name),
+    )
+    classDataList[2].assertEquals(
+      className = ClassImplementsI::class.java.name,
+      annotations = listOf(Instrument::class.java.name),
+      interfaces = listOf(I::class.java.name),
+      superClasses = listOf(Object::class.java.name),
+    )
+    classDataList[3].assertEquals(
+      className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
+      annotations = listOf(),
+      interfaces = listOf(),
+      superClasses = listOf(Object::class.java.name),
+    )
+    classDataList[4].assertEquals(
+      className = I::class.java.name,
+      annotations = listOf(),
+      interfaces = listOf(),
+      superClasses = listOf(Object::class.java.name),
+    )
+    classDataList[5].assertEquals(
+      className = InterfaceExtendsI::class.java.name,
+      annotations = listOf(Instrument::class.java.name),
+      interfaces = listOf(I::class.java.name),
+      superClasses = listOf(Object::class.java.name),
+    )
+  }
+
+  @Test
+  fun testTwoModifyingVisitors() {
+    // Given two visitors:
+    // The first one annotates methods named "f1" or "f2" in classes implementing the interface
+    // I with "FirstVisitorAnnotation"
+    // The second one annotates methods named "f3" or "f4" in classes implementing the interface
+    // J with "SecondVisitorAnnotation"
+
+    // When the instrumentation manager is invoked
+
+    AsmInstrumentationManager(
+        listOf(
+          getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java),
+          getConfiguredVisitorFactory(SecondVisitorAnnotationAddingFactory::class.java),
+        ),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        emptySet(),
+      )
+      .instrument(inputDir, outputDir)
+
+    val instrumentedClassesLoader =
+      if (testMode == TestMode.DIR) {
+        InstrumentedClassesLoader(arrayOf(outputDir.toURI().toURL()), this::class.java.classLoader)
+      } else {
+        InstrumentedClassesLoader(arrayOf(outputDir.listFiles()!!.first().toURI().toURL()), this::class.java.classLoader)
+      }
+
+    // Then classes I and ClassWithNoInterfacesOrSuperclasses should be the same
+
+    val outputClasses = getOutputClassesByteArrayMap()
+    assertThat(outputClasses).hasSize(classes.size)
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = I::class.java.name,
+      expectedAnnotatedMethods = emptyList(),
+    )
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
+      expectedAnnotatedMethods = emptyList(),
+    )
+
+    // InterfaceExtendsI.f2 should be annotated with FirstVisitorAnnotation
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = InterfaceExtendsI::class.java.name,
+      expectedAnnotatedMethods = listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name)),
+    )
+
+    // ClassImplementsI.f1 should be annotated with FirstVisitorAnnotation
+    // ClassImplementsI.f2 should be annotated with FirstVisitorAnnotation
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassImplementsI::class.java.name,
+      expectedAnnotatedMethods =
+        listOf("f1" to listOf(FirstVisitorAnnotation::class.java.name), "f2" to listOf(FirstVisitorAnnotation::class.java.name)),
+    )
+
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with
+    // FirstVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with
+    // SecondVisitorAnnotation
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
+      expectedAnnotatedMethods =
+        listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name), "f3" to listOf(SecondVisitorAnnotation::class.java.name)),
+    )
+
+    // The above annotated methods should be inherited
+    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated
+    // with
+    // SecondVisitorAnnotation
+
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
+      expectedAnnotatedMethods =
+        listOf(
+          "f2" to listOf(FirstVisitorAnnotation::class.java.name),
+          "f3" to listOf(SecondVisitorAnnotation::class.java.name),
+          "f4" to listOf(SecondVisitorAnnotation::class.java.name),
+        ),
+    )
+  }
+
+  @Test
+  fun metaInfDirShouldBeIgnored() {
+    if (testMode != TestMode.JAR) {
+      return
+    }
+
+    val jarFile = inputDir.listFiles()!!.first()
+    val newJarFile = File(inputDir, "classesWithMetaInf.jar")
+
+    ZipOutputStream(BufferedOutputStream(FileOutputStream(newJarFile))).use { outputJar ->
+      outputJar.setLevel(Deflater.NO_COMPRESSION)
+      ZipFile(jarFile).use { inputJar ->
+        val entries = inputJar.entries()
+        while (entries.hasMoreElements()) {
+          val oldEntry = entries.nextElement()
+          val byteArray = ByteStreams.toByteArray(inputJar.getInputStream(oldEntry))
+          val entry = ZipEntry(oldEntry.name)
+          outputJar.putNextEntry(entry)
+          outputJar.write(byteArray)
+          outputJar.closeEntry()
         }
+      }
+
+      val metaInfClassEntry = ZipEntry("META-INF/Test.class")
+      outputJar.putNextEntry(metaInfClassEntry)
+      outputJar.write("ASM should fail trying to load this corrupted class".toByteArray())
+      outputJar.closeEntry()
     }
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+    jarFile.delete()
 
-    private val apiVersion: Int = ASM_API_VERSION
-    private val androidJar =
-        TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
-    private val classesCache = ClassesDataCache()
-    private val issueHandler = InstrumentationIssueHandler()
+    abstract class Factory : AsmClassVisitorFactory<InstrumentationParameters.None> {
 
-    private lateinit var classesHierarchyResolver: ClassesHierarchyResolver
-    private lateinit var inputDir: File
-    private lateinit var inputJar: File
-    private lateinit var outputDir: File
-    private lateinit var classes: Map<String, ByteArray>
+      override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor =
+        object : ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
 
-    /**
-     * As we're setting maxs to -1, and the value is stored in an unsigned 16 bit integer, the
-     * stored value will be (2^16) - 1
-     */
-    private val invalidMaxsValue = (1 shl 16) - 1
-
-    @Before
-    fun setUp() {
-        inputDir = temporaryFolder.newFolder()
-        outputDir = temporaryFolder.newFolder()
-
-        val srcClasses = listOf(
-            I::class.java,
-            InterfaceExtendsI::class.java,
-            ClassImplementsI::class.java,
-            ClassWithNoInterfacesOrSuperclasses::class.java,
-            ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
-            ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java
-        )
-
-        val builder = ClassesHierarchyResolver.Builder(classesCache)
-            .addDependenciesSources(androidJar)
-
-        if (testMode == TestMode.DIR) {
-            TestInputsGenerator.pathWithClasses(inputDir.toPath(), srcClasses)
-            val classesFiles = getClassesFilesMap(inputDir)
-            classes = classesFiles.mapValues {
-                ByteStreams.toByteArray(FileInputStream(it.value))
-            }
-            builder.addProjectSources(inputDir)
-        } else {
-            inputJar = File(inputDir, "classes.jar")
-            TestInputsGenerator.pathWithClasses(inputJar.toPath(), srcClasses)
-            classes = getClassesByteArrayMapFromJar(inputJar)
-            builder.addProjectSources(inputJar)
-        }
-
-        classesHierarchyResolver = builder.build()
+      override fun isInstrumentable(classData: ClassData): Boolean = true
     }
 
-    @After
-    fun tearDown() {
-        classesCache.close()
-    }
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(Factory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        emptySet(),
+      )
+      .instrument(inputDir, outputDir)
+  }
 
-    private fun AsmInstrumentationManager.instrument(inputDir: File, outputDir: File) {
-        if (testMode == TestMode.DIR) {
-            instrumentClassesFromDirectoryToDirectory(inputDir, outputDir)
-        } else {
-            val inputJar = inputDir.listFiles()!![0]
-            instrumentClassesFromJarToJar(inputJar, File(outputDir, inputJar.name))
-        }
-        close()
-    }
+  @Test
+  fun testExcludes() {
+    // Given two visitors:
+    // The first one annotates methods named "f1" or "f2" in classes implementing the interface
+    // I with "FirstVisitorAnnotation"
+    // The second one annotates methods named "f3" or "f4" in classes implementing the interface
+    // J with "SecondVisitorAnnotation"
 
-    @Test
-    fun testNoVisitors() {
-        // Given no visitors, when the instrumentation manager is invoked
-        AsmInstrumentationManager(
-            listOf(),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(inputDir, outputDir)
+    // When the instrumentation manager is invoked with the following excludes patterns
+    // ["**/*ImplementsI",
+    // "com/android/build/gradle/internal/instrumentation/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces"]
 
-        // Then the classes should be copied to the destination
+    AsmInstrumentationManager(
+        listOf(
+          getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java),
+          getConfiguredVisitorFactory(SecondVisitorAnnotationAddingFactory::class.java),
+        ),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        setOf(
+          "**/*ImplementsI",
+          "com/android/build/gradle/internal/instrumentation/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces",
+        ),
+      )
+      .instrument(inputDir, outputDir)
 
-        val outputClasses = getOutputClassesByteArrayMap()
-        assertThat(outputClasses).hasSize(classes.size)
+    val instrumentedClassesLoader =
+      if (testMode == TestMode.DIR) {
+        InstrumentedClassesLoader(arrayOf(outputDir.toURI().toURL()), this::class.java.classLoader)
+      } else {
+        InstrumentedClassesLoader(arrayOf(outputDir.listFiles()!!.first().toURI().toURL()), this::class.java.classLoader)
+      }
 
-        outputClasses.forEach { (className, byteArray) ->
-            assertThat(byteArray).isEqualTo(classes[className])
-        }
-    }
+    // Then classes I and ClassWithNoInterfacesOrSuperclasses should be the same
 
-    @Test
-    fun testDataIsSentCorrectly() {
-        val visitorFactory = getConfiguredVisitorFactory(DataCapturerVisitorFactory::class.java) {
-            it.a = "Custom"
-            it.b = 1234
-        } as DataCapturerVisitorFactory
+    val outputClasses = getOutputClassesByteArrayMap()
+    assertThat(outputClasses).hasSize(classes.size)
 
-        AsmInstrumentationManager(
-            listOf(visitorFactory),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(inputDir, outputDir)
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = I::class.java.name,
+      expectedAnnotatedMethods = emptyList(),
+    )
 
-        val outputClasses = getOutputClassesByteArrayMap()
-        assertThat(outputClasses).hasSize(classes.size)
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
+      expectedAnnotatedMethods = emptyList(),
+    )
 
-        outputClasses.forEach { (className, classFile) ->
-            assertThat(getClassContentDiff(classes[className], classFile)).isEmpty()
-        }
+    // InterfaceExtendsI.f2 should be annotated with FirstVisitorAnnotation
 
-        assertThat(visitorFactory.instrumentationContext.apiVersion.get()).isEqualTo(apiVersion)
-        assertThat(visitorFactory.parameters.get().a).isEqualTo("Custom")
-        assertThat(visitorFactory.parameters.get().b).isEqualTo(1234)
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = InterfaceExtendsI::class.java.name,
+      expectedAnnotatedMethods = listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name)),
+    )
 
-        val classDataList = visitorFactory.capturedClassData.sortedBy { it.className }
+    // ClassImplementsI.f1 should be annotated with FirstVisitorAnnotation but is filtered out
+    // ClassImplementsI.f2 should be annotated with FirstVisitorAnnotation but is filtered out
 
-        assertThat(classDataList).hasSize(6)
-        classDataList[0].assertEquals(
-            className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
-            annotations = listOf(Instrument::class.java.name),
-            interfaces = listOf(InterfaceExtendsI::class.java.name, I::class.java.name),
-            superClasses = listOf(
-                ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
-                ClassWithNoInterfacesOrSuperclasses::class.java.name,
-                Object::class.java.name
-            )
-        )
-        classDataList[1].assertEquals(
-            className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
-            annotations = listOf(),
-            interfaces = listOf(InterfaceExtendsI::class.java.name, I::class.java.name),
-            superClasses = listOf(
-                ClassWithNoInterfacesOrSuperclasses::class.java.name,
-                Object::class.java.name
-            )
-        )
-        classDataList[2].assertEquals(
-            className = ClassImplementsI::class.java.name,
-            annotations = listOf(Instrument::class.java.name),
-            interfaces = listOf(I::class.java.name),
-            superClasses = listOf(Object::class.java.name)
-        )
-        classDataList[3].assertEquals(
-            className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
-            annotations = listOf(),
-            interfaces = listOf(),
-            superClasses = listOf(Object::class.java.name)
-        )
-        classDataList[4].assertEquals(
-            className = I::class.java.name,
-            annotations = listOf(),
-            interfaces = listOf(),
-            superClasses = listOf(Object::class.java.name)
-        )
-        classDataList[5].assertEquals(
-            className = InterfaceExtendsI::class.java.name,
-            annotations = listOf(Instrument::class.java.name),
-            interfaces = listOf(I::class.java.name),
-            superClasses = listOf(Object::class.java.name)
-        )
-    }
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassImplementsI::class.java.name,
+      expectedAnnotatedMethods = emptyList(),
+    )
 
-    @Test
-    fun testTwoModifyingVisitors() {
-        // Given two visitors:
-        // The first one annotates methods named "f1" or "f2" in classes implementing the interface
-        // I with "FirstVisitorAnnotation"
-        // The second one annotates methods named "f3" or "f4" in classes implementing the interface
-        // J with "SecondVisitorAnnotation"
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with
+    // FirstVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with
+    // SecondVisitorAnnotation
 
-        // When the instrumentation manager is invoked
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
+      expectedAnnotatedMethods =
+        listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name), "f3" to listOf(SecondVisitorAnnotation::class.java.name)),
+    )
 
-        AsmInstrumentationManager(
-            listOf(
-                getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java),
-                getConfiguredVisitorFactory(SecondVisitorAnnotationAddingFactory::class.java)
-            ),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(inputDir, outputDir)
+    // The above annotated methods should be inherited
+    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated
+    // with
+    // SecondVisitorAnnotation but is filtered out
 
-        val instrumentedClassesLoader = if (testMode == TestMode.DIR) {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.toURI().toURL()),
-                this::class.java.classLoader
-            )
-        } else {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.listFiles()!!.first().toURI().toURL()),
-                this::class.java.classLoader
-            )
-        }
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
+      expectedAnnotatedMethods =
+        listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name), "f3" to listOf(SecondVisitorAnnotation::class.java.name)),
+    )
+  }
 
-        // Then classes I and ClassWithNoInterfacesOrSuperclasses should be the same
+  private fun invalidateInputClassesMaxs(): File {
+    val newInputDir = temporaryFolder.newFolder()
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(MaxsInvalidatingVisitorFactory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        emptySet(),
+      )
+      .instrument(inputDir, newInputDir)
+    return newInputDir
+  }
 
-        val outputClasses = getOutputClassesByteArrayMap()
-        assertThat(outputClasses).hasSize(classes.size)
+  @Test
+  fun testCopyFramesMode() {
+    // First invalidate the maxs of ClassImplementsI
+    val newInputDir = invalidateInputClassesMaxs()
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = I::class.java.name,
-            expectedAnnotatedMethods = emptyList()
-        )
+    // The invalid maxs should be just copied
+    var classContent = dumpClassContent(getOutputClassesByteArrayMap(newInputDir)[ClassImplementsI::class.java.name])
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
-            expectedAnnotatedMethods = emptyList()
-        )
+    // The existing methods (<init>, f1, f2) should have invalid maxs
+    assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(3)
+    assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(3)
 
-        // InterfaceExtendsI.f2 should be annotated with FirstVisitorAnnotation
+    // Given a visitor that injects a method to ClassImplementsI
+    // When the instrumentation manager is invoked with COPY_FRAMES mode
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = InterfaceExtendsI::class.java.name,
-            expectedAnnotatedMethods = listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name))
-        )
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COPY_FRAMES,
+        emptySet(),
+      )
+      .instrument(newInputDir, outputDir)
 
-        // ClassImplementsI.f1 should be annotated with FirstVisitorAnnotation
-        // ClassImplementsI.f2 should be annotated with FirstVisitorAnnotation
+    // Then all existing and injected methods should have invalid maxs
+    classContent = dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassImplementsI::class.java.name,
-            expectedAnnotatedMethods = listOf(
-                "f1" to listOf(FirstVisitorAnnotation::class.java.name),
-                "f2" to listOf(FirstVisitorAnnotation::class.java.name)
-            )
-        )
+    assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(4)
+    assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(4)
+  }
 
-        // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with FirstVisitorAnnotation
-        // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with SecondVisitorAnnotation
+  @Test
+  fun testFramesComputationForInstrumentedMethodsOnly() {
+    // First invalidate the maxs of ClassImplementsI
+    val newInputDir = invalidateInputClassesMaxs()
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
-            expectedAnnotatedMethods = listOf(
-                "f2" to listOf(FirstVisitorAnnotation::class.java.name),
-                "f3" to listOf(SecondVisitorAnnotation::class.java.name)
-            )
-        )
+    // Given a visitor that injects a method to ClassImplementsI
+    // When the instrumentation manager is invoked with COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS
+    // mode
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS,
+        emptySet(),
+      )
+      .instrument(newInputDir, outputDir)
 
-        // The above annotated methods should be inherited
-        // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated with
-        // SecondVisitorAnnotation
+    // Then only the existing methods (<init>, f1, f2) should have invalid maxs
+    val classContent = dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
-            expectedAnnotatedMethods = listOf(
-                "f2" to listOf(FirstVisitorAnnotation::class.java.name),
-                "f3" to listOf(SecondVisitorAnnotation::class.java.name),
-                "f4" to listOf(SecondVisitorAnnotation::class.java.name)
-            )
-        )
-    }
+    assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(3)
+    assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(3)
+  }
 
-    @Test
-    fun metaInfDirShouldBeIgnored() {
-        if (testMode != TestMode.JAR) {
-            return
-        }
+  @Test
+  fun testFramesComputationForInstrumentedClasses() {
+    // First invalidate the maxs of ClassImplementsI
+    val newInputDir = invalidateInputClassesMaxs()
 
-        val jarFile = inputDir.listFiles()!!.first()
-        val newJarFile = File(inputDir, "classesWithMetaInf.jar")
+    // Given a visitor that injects a method to ClassImplementsI
+    // When the instrumentation manager is invoked with COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES
+    // mode
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES,
+        emptySet(),
+      )
+      .instrument(newInputDir, outputDir)
 
-        ZipOutputStream(BufferedOutputStream(FileOutputStream(newJarFile))).use { outputJar ->
-            outputJar.setLevel(Deflater.NO_COMPRESSION)
-            ZipFile(jarFile).use { inputJar ->
-                val entries = inputJar.entries()
-                while (entries.hasMoreElements()) {
-                    val oldEntry = entries.nextElement()
-                    val byteArray = ByteStreams.toByteArray(inputJar.getInputStream(oldEntry))
-                    val entry = ZipEntry(oldEntry.name)
-                    outputJar.putNextEntry(entry)
-                    outputJar.write(byteArray)
-                    outputJar.closeEntry()
-                }
-            }
+    // Then all methods should have their maxs fixed
+    val classContent = dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
 
-            val metaInfClassEntry = ZipEntry("META-INF/Test.class")
-            outputJar.putNextEntry(metaInfClassEntry)
-            outputJar.write("ASM should fail trying to load this corrupted class".toByteArray())
+    assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(0)
+    assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(0)
+  }
+
+  @Test
+  fun testInstrumentingJava6ClassesWithRETInstructionWithComputeFramesMode() {
+    val className = "com.android.build.gradle.internal.instrumentation.ClassWithRetInstruction"
+    val classByteArray = getJava6ClassWithRETInstructions(className)
+    if (testMode == TestMode.JAR) {
+      val jarFile = inputDir.listFiles()!!.first()
+      val newJarFile = File(inputDir, "classesWithJava6ByteCode.jar")
+
+      ZipOutputStream(BufferedOutputStream(FileOutputStream(newJarFile))).use { outputJar ->
+        outputJar.setLevel(Deflater.NO_COMPRESSION)
+        ZipFile(jarFile).use { inputJar ->
+          val entries = inputJar.entries()
+          while (entries.hasMoreElements()) {
+            val oldEntry = entries.nextElement()
+            val byteArray = ByteStreams.toByteArray(inputJar.getInputStream(oldEntry))
+            val entry = ZipEntry(oldEntry.name)
+            outputJar.putNextEntry(entry)
+            outputJar.write(byteArray)
             outputJar.closeEntry()
+          }
         }
 
-        jarFile.delete()
+        val classWithRetInstructionEntry = ZipEntry(className.replace('.', '/') + DOT_CLASS)
+        outputJar.putNextEntry(classWithRetInstructionEntry)
+        outputJar.write(classByteArray)
+        outputJar.closeEntry()
+      }
 
-        abstract class Factory: AsmClassVisitorFactory<InstrumentationParameters.None> {
-
-            override fun createClassVisitor(
-                classContext: ClassContext,
-                nextClassVisitor: ClassVisitor
-            ): ClassVisitor =
-                object: ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
-
-            override fun isInstrumentable(classData: ClassData): Boolean = true
-        }
-
-        AsmInstrumentationManager(
-            listOf(
-                getConfiguredVisitorFactory(Factory::class.java)
-            ),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(inputDir, outputDir)
+      classesCache.close()
+      FileUtils.delete(jarFile)
+      classesHierarchyResolver = ClassesHierarchyResolver.Builder(classesCache).addDependenciesSources(androidJar, newJarFile).build()
+    } else {
+      FileUtils.join(inputDir, className.replace('.', File.separatorChar) + DOT_CLASS).apply {
+        parentFile.mkdirs()
+        writeBytes(classByteArray)
+      }
     }
 
-    @Test
-    fun testExcludes() {
-        // Given two visitors:
-        // The first one annotates methods named "f1" or "f2" in classes implementing the interface
-        // I with "FirstVisitorAnnotation"
-        // The second one annotates methods named "f3" or "f4" in classes implementing the interface
-        // J with "SecondVisitorAnnotation"
+    AsmInstrumentationManager(
+        listOf(getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java)),
+        apiVersion,
+        classesHierarchyResolver,
+        issueHandler,
+        FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES,
+        emptySet(),
+      )
+      .instrument(inputDir, outputDir)
 
-        // When the instrumentation manager is invoked with the following excludes patterns
-        // ["**/*ImplementsI", "com/android/build/gradle/internal/instrumentation/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces"]
+    val instrumentedClassesLoader =
+      if (testMode == TestMode.DIR) {
+        InstrumentedClassesLoader(arrayOf(outputDir.toURI().toURL()), this::class.java.classLoader)
+      } else {
+        InstrumentedClassesLoader(arrayOf(outputDir.listFiles()!!.first().toURI().toURL()), this::class.java.classLoader)
+      }
 
-        AsmInstrumentationManager(
-            listOf(
-                getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java),
-                getConfiguredVisitorFactory(SecondVisitorAnnotationAddingFactory::class.java)
-            ),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            setOf(
-                "**/*ImplementsI",
-                "com/android/build/gradle/internal/instrumentation/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces"
-            )
-        ).instrument(inputDir, outputDir)
+    checkInstrumentedClassAnnotatedMethods(
+      instrumentedClassesLoader = instrumentedClassesLoader,
+      className = className,
+      expectedAnnotatedMethods = listOf("f1" to listOf(FirstVisitorAnnotation::class.java.name)),
+    )
+  }
 
-        val instrumentedClassesLoader = if (testMode == TestMode.DIR) {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.toURI().toURL()),
-                this::class.java.classLoader
-            )
-        } else {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.listFiles()!!.first().toURI().toURL()),
-                this::class.java.classLoader
-            )
-        }
+  private fun getJava6ClassWithRETInstructions(className: String): ByteArray {
+    /*
+       public class ClassWithRetInstruction implements I {
+           @Override
+           public void f1() { }
 
-        // Then classes I and ClassWithNoInterfacesOrSuperclasses should be the same
+           public void method() {
+               try {}
+               finally {}
+           }
+       }
 
-        val outputClasses = getOutputClassesByteArrayMap()
-        assertThat(outputClasses).hasSize(classes.size)
+    */
+    val cw = ClassWriter(ASM_API_VERSION)
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = I::class.java.name,
-            expectedAnnotatedMethods = emptyList()
-        )
+    cw.visit(
+      Opcodes.V1_6,
+      Opcodes.ACC_PUBLIC,
+      className.replace('.', '/'),
+      null,
+      "java/lang/Object",
+      arrayOf(Type.getInternalName(I::class.java)),
+    )
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassWithNoInterfacesOrSuperclasses::class.java.name,
-            expectedAnnotatedMethods = emptyList()
-        )
+    var mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
+    mv.visitCode()
+    mv.visitVarInsn(Opcodes.ALOAD, 0)
+    mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+    mv.visitInsn(Opcodes.RETURN)
+    mv.visitMaxs(1, 1)
+    mv.visitEnd()
 
-        // InterfaceExtendsI.f2 should be annotated with FirstVisitorAnnotation
+    mv = cw.visitMethod(ACC_PUBLIC, "f1", "()V", null, null)
+    mv.visitCode()
+    mv.visitInsn(Opcodes.RETURN)
+    mv.visitMaxs(0, 1)
+    mv.visitEnd()
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = InterfaceExtendsI::class.java.name,
-            expectedAnnotatedMethods = listOf("f2" to listOf(FirstVisitorAnnotation::class.java.name))
-        )
+    mv = cw.visitMethod(ACC_PUBLIC, "method", "()V", null, null)
+    mv.visitCode()
+    val L0 = Label()
+    val L1 = Label()
+    val L2 = Label()
+    val L3 = Label()
+    val L4 = Label()
+    val L5 = Label()
+    val L6 = Label()
+    val L7 = Label()
+    val L8 = Label()
+    val L9 = Label()
+    mv.visitTryCatchBlock(L0, L1, L1, null)
+    mv.visitTryCatchBlock(L2, L3, L1, null)
+    mv.visitLabel(L0)
+    mv.visitLabel(L4)
+    mv.visitJumpInsn(Opcodes.GOTO, L2)
+    mv.visitLabel(L1)
+    mv.visitVarInsn(Opcodes.ASTORE, 2)
+    mv.visitJumpInsn(Opcodes.JSR, L5)
+    mv.visitLabel(L6)
+    mv.visitVarInsn(Opcodes.ALOAD, 2)
+    mv.visitInsn(Opcodes.ATHROW)
+    mv.visitLabel(L5)
+    mv.visitVarInsn(Opcodes.ASTORE, 1)
+    mv.visitLabel(L7)
+    mv.visitLabel(L8)
+    mv.visitVarInsn(Opcodes.RET, 1)
+    mv.visitLabel(L2)
+    mv.visitJumpInsn(Opcodes.JSR, L5)
+    mv.visitLabel(L3)
+    mv.visitInsn(Opcodes.RETURN)
+    mv.visitLabel(L9)
+    mv.visitInsn(Opcodes.RETURN)
+    mv.visitMaxs(1, 3)
+    mv.visitEnd()
 
-        // ClassImplementsI.f1 should be annotated with FirstVisitorAnnotation but is filtered out
-        // ClassImplementsI.f2 should be annotated with FirstVisitorAnnotation but is filtered out
+    return cw.toByteArray()
+  }
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassImplementsI::class.java.name,
-            expectedAnnotatedMethods = emptyList()
-        )
+  class InstrumentedClassesLoader(urls: Array<URL>, parent: ClassLoader) : URLClassLoader(urls, parent) {
 
-        // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with FirstVisitorAnnotation
-        // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with SecondVisitorAnnotation
-
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java.name,
-            expectedAnnotatedMethods = listOf(
-                "f2" to listOf(FirstVisitorAnnotation::class.java.name),
-                "f3" to listOf(SecondVisitorAnnotation::class.java.name)
-            )
-        )
-
-        // The above annotated methods should be inherited
-        // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated with
-        // SecondVisitorAnnotation but is filtered out
-
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java.name,
-            expectedAnnotatedMethods = listOf(
-                "f2" to listOf(FirstVisitorAnnotation::class.java.name),
-                "f3" to listOf(SecondVisitorAnnotation::class.java.name)
-            )
-        )
+    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+      var loadedClass = findLoadedClass(name)
+      if (loadedClass == null) {
+        loadedClass =
+          try {
+            findClass(name)
+          } catch (e: ClassNotFoundException) {
+            super.loadClass(name, resolve)
+          }
+      }
+      if (resolve) {
+        resolveClass(loadedClass)
+      }
+      return loadedClass
     }
+  }
 
-    private fun invalidateInputClassesMaxs(): File {
-        val newInputDir = temporaryFolder.newFolder()
-        AsmInstrumentationManager(
-            listOf(getConfiguredVisitorFactory(MaxsInvalidatingVisitorFactory::class.java)),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(inputDir, newInputDir)
-        return newInputDir
-    }
-
-    @Test
-    fun testCopyFramesMode() {
-        // First invalidate the maxs of ClassImplementsI
-        val newInputDir = invalidateInputClassesMaxs()
-
-        // The invalid maxs should be just copied
-        var classContent =
-            dumpClassContent(getOutputClassesByteArrayMap(newInputDir)[ClassImplementsI::class.java.name])
-
-        // The existing methods (<init>, f1, f2) should have invalid maxs
-        assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(3)
-        assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(3)
-
-        // Given a visitor that injects a method to ClassImplementsI
-        // When the instrumentation manager is invoked with COPY_FRAMES mode
-
-        AsmInstrumentationManager(
-            listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COPY_FRAMES,
-            emptySet()
-        ).instrument(newInputDir, outputDir)
-
-        // Then all existing and injected methods should have invalid maxs
-        classContent =
-            dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
-
-        assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(4)
-        assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(4)
-    }
-
-    @Test
-    fun testFramesComputationForInstrumentedMethodsOnly() {
-        // First invalidate the maxs of ClassImplementsI
-        val newInputDir = invalidateInputClassesMaxs()
-
-        // Given a visitor that injects a method to ClassImplementsI
-        // When the instrumentation manager is invoked with COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS
-        // mode
-        AsmInstrumentationManager(
-            listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS,
-            emptySet()
-        ).instrument(newInputDir, outputDir)
-
-        // Then only the existing methods (<init>, f1, f2) should have invalid maxs
-        val classContent =
-            dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
-
-        assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(3)
-        assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(3)
-    }
-
-    @Test
-    fun testFramesComputationForInstrumentedClasses() {
-        // First invalidate the maxs of ClassImplementsI
-        val newInputDir = invalidateInputClassesMaxs()
-
-        // Given a visitor that injects a method to ClassImplementsI
-        // When the instrumentation manager is invoked with COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES
-        // mode
-        AsmInstrumentationManager(
-            listOf(getConfiguredVisitorFactory(MethodInjectingVisitorFactory::class.java)),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES,
-            emptySet()
-        ).instrument(newInputDir, outputDir)
-
-        // Then all methods should have their maxs fixed
-        val classContent =
-            dumpClassContent(getOutputClassesByteArrayMap()[ClassImplementsI::class.java.name])
-
-        assertThat(classContent.count { it.contains("MAXSTACK = $invalidMaxsValue") }).isEqualTo(0)
-        assertThat(classContent.count { it.contains("MAXLOCALS = $invalidMaxsValue") }).isEqualTo(0)
-    }
-
-    @Test
-    fun testInstrumentingJava6ClassesWithRETInstructionWithComputeFramesMode() {
-        val className = "com.android.build.gradle.internal.instrumentation.ClassWithRetInstruction"
-        val classByteArray = getJava6ClassWithRETInstructions(className)
-        if (testMode == TestMode.JAR) {
-            val jarFile = inputDir.listFiles()!!.first()
-            val newJarFile = File(inputDir, "classesWithJava6ByteCode.jar")
-
-            ZipOutputStream(BufferedOutputStream(FileOutputStream(newJarFile))).use { outputJar ->
-                outputJar.setLevel(Deflater.NO_COMPRESSION)
-                ZipFile(jarFile).use { inputJar ->
-                    val entries = inputJar.entries()
-                    while (entries.hasMoreElements()) {
-                        val oldEntry = entries.nextElement()
-                        val byteArray = ByteStreams.toByteArray(inputJar.getInputStream(oldEntry))
-                        val entry = ZipEntry(oldEntry.name)
-                        outputJar.putNextEntry(entry)
-                        outputJar.write(byteArray)
-                        outputJar.closeEntry()
-                    }
-                }
-
-                val classWithRetInstructionEntry = ZipEntry(
-                    className.replace('.', '/') + DOT_CLASS
-                )
-                outputJar.putNextEntry(classWithRetInstructionEntry)
-                outputJar.write(classByteArray)
-                outputJar.closeEntry()
-            }
-
-            classesCache.close()
-            FileUtils.delete(jarFile)
-            classesHierarchyResolver =
-                ClassesHierarchyResolver.Builder(classesCache)
-                    .addDependenciesSources(androidJar, newJarFile)
-                    .build()
-        } else {
-            FileUtils.join(inputDir,className.replace('.', File.separatorChar) + DOT_CLASS).apply {
-                parentFile.mkdirs()
-                writeBytes(classByteArray)
+  private fun checkInstrumentedClassAnnotatedMethods(
+    instrumentedClassesLoader: ClassLoader,
+    className: String,
+    expectedAnnotatedMethods: List<Pair<String, List<String>>>,
+  ) {
+    val annotatedMethods =
+      instrumentedClassesLoader
+        .loadClass(className)
+        .methods
+        .map {
+          it.name to
+            it.annotations.mapNotNull { annotation ->
+              annotation.annotationClass.jvmName.takeIf { name -> !name.startsWith("jdk.internal.") }
             }
         }
+        .filter { it.second.isNotEmpty() }
 
-        AsmInstrumentationManager(
-            listOf(
-                getConfiguredVisitorFactory(FirstVisitorAnnotationAddingFactory::class.java)
-            ),
-            apiVersion,
-            classesHierarchyResolver,
-            issueHandler,
-            FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES,
-            emptySet()
-        ).instrument(inputDir, outputDir)
+    assertThat(annotatedMethods).containsExactlyElementsIn(expectedAnnotatedMethods)
+  }
 
-        val instrumentedClassesLoader = if (testMode == TestMode.DIR) {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.toURI().toURL()),
-                this::class.java.classLoader
-            )
-        } else {
-            InstrumentedClassesLoader(
-                arrayOf(outputDir.listFiles()!!.first().toURI().toURL()),
-                this::class.java.classLoader
-            )
+  private fun <T : InstrumentationParameters> getConfiguredVisitorFactory(
+    visitorFactoryClass: Class<out AsmClassVisitorFactory<T>>,
+    paramsConfig: (T) -> Unit = {},
+  ): AsmClassVisitorFactory<T> {
+    return AsmClassVisitorFactoryEntry(visitorFactoryClass, paramsConfig)
+      .also { it.configure(FakeObjectFactory.factory, apiVersion) }
+      .visitorFactory
+  }
+
+  private fun ClassData.assertEquals(className: String, annotations: List<String>, interfaces: List<String>, superClasses: List<String>) {
+    assertThat(this.className).isEqualTo(className)
+    assertThat(this.classAnnotations).containsExactlyElementsIn(annotations)
+    assertThat(this.interfaces).containsExactlyElementsIn(interfaces)
+    assertThat(this.superClasses).containsExactlyElementsIn(superClasses)
+  }
+
+  private fun getClassesFilesMap(dir: File): Map<String, File> {
+    return FileUtils.getAllFiles(dir)
+      .map { "com.android.build.gradle.internal.instrumentation.${it.name.removeSuffix(DOT_CLASS)}" to it }
+      .toMap()
+  }
+
+  private fun getClassesByteArrayMapFromDir(dir: File): Map<String, ByteArray> {
+    return getClassesFilesMap(dir).mapValues { ByteStreams.toByteArray(FileInputStream(it.value)) }
+  }
+
+  private fun getClassesByteArrayMapFromJar(jar: File): Map<String, ByteArray> {
+    val result = mutableMapOf<String, ByteArray>()
+    ZipFile(jar).use {
+      val entries = it.entries()
+      while (entries.hasMoreElements()) {
+        val entry = entries.nextElement()
+        it.getInputStream(entry).use { inputStream ->
+          result[entry.name.removeSuffix(DOT_CLASS).replace('/', '.')] = ByteStreams.toByteArray(inputStream)
         }
+      }
+    }
+    return result
+  }
 
-        checkInstrumentedClassAnnotatedMethods(
-            instrumentedClassesLoader = instrumentedClassesLoader,
-            className = className,
-            expectedAnnotatedMethods = listOf(
-                "f1" to listOf(FirstVisitorAnnotation::class.java.name)
-            )
-        )
+  private fun getOutputClassesByteArrayMap(outputDir: File = this.outputDir): Map<String, ByteArray> {
+    if (testMode == TestMode.JAR) {
+      return getClassesByteArrayMapFromJar(outputDir.listFiles()!![0])
+    }
+    return getClassesByteArrayMapFromDir(outputDir)
+  }
+
+  open class Params : InstrumentationParameters {
+    lateinit var a: String
+    var b: Int = -1
+  }
+
+  @Retention(AnnotationRetention.RUNTIME) annotation class FirstVisitorAnnotation
+
+  @Retention(AnnotationRetention.RUNTIME) annotation class SecondVisitorAnnotation
+
+  abstract class FirstVisitorAnnotationAddingFactory : AsmClassVisitorFactory<Params> {
+
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor {
+      return AnnotationAddingVisitor(
+        setOf("f1", "f2"),
+        Type.getDescriptor(FirstVisitorAnnotation::class.java),
+        instrumentationContext.apiVersion.get(),
+        nextClassVisitor,
+      )
     }
 
-    private fun getJava6ClassWithRETInstructions(className: String): ByteArray {
-        /*
-            public class ClassWithRetInstruction implements I {
-                @Override
-                public void f1() { }
+    override fun isInstrumentable(classData: ClassData): Boolean {
+      return classData.interfaces.contains(I::class.java.name)
+    }
+  }
 
-                public void method() {
-                    try {}
-                    finally {}
-                }
+  abstract class SecondVisitorAnnotationAddingFactory : AsmClassVisitorFactory<Params> {
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor {
+      return AnnotationAddingVisitor(
+        setOf("f3", "f4"),
+        Type.getDescriptor(SecondVisitorAnnotation::class.java),
+        instrumentationContext.apiVersion.get(),
+        nextClassVisitor,
+      )
+    }
+
+    override fun isInstrumentable(classData: ClassData): Boolean {
+      return classData.interfaces.contains(InterfaceExtendsI::class.java.name)
+    }
+  }
+
+  class AnnotationAddingVisitor(
+    private val methodNamesToBeAnnotated: Set<String>,
+    private val annotationDescriptor: String,
+    val apiVersion: Int,
+    classVisitor: ClassVisitor,
+  ) : ClassVisitor(apiVersion, classVisitor) {
+    override fun visitMethod(
+      access: Int,
+      name: String?,
+      descriptor: String?,
+      signature: String?,
+      exceptions: Array<out String>?,
+    ): MethodVisitor {
+      if (methodNamesToBeAnnotated.contains(name)) {
+        return object : MethodVisitor(apiVersion, super.visitMethod(access, name, descriptor, signature, exceptions)) {
+          private var annotationVisited = false
+
+          override fun visitCode() {
+            visitAnnotation(annotationDescriptor, true)
+            annotationVisited = true
+            super.visitCode()
+          }
+
+          override fun visitEnd() {
+            // We don't visit code in interfaces
+            if (!annotationVisited) {
+              visitAnnotation(annotationDescriptor, true)
             }
-
-         */
-        val cw = ClassWriter(ASM_API_VERSION)
-
-        cw.visit(
-            Opcodes.V1_6,
-            Opcodes.ACC_PUBLIC,
-            className.replace('.', '/'),
-            null,
-            "java/lang/Object",
-            arrayOf(Type.getInternalName(I::class.java))
-        )
-
-        var mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
-        mv.visitCode()
-        mv.visitVarInsn(Opcodes.ALOAD, 0)
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-        mv.visitInsn(Opcodes.RETURN)
-        mv.visitMaxs(1, 1)
-        mv.visitEnd()
-
-        mv = cw.visitMethod(ACC_PUBLIC, "f1", "()V", null, null)
-        mv.visitCode()
-        mv.visitInsn(Opcodes.RETURN)
-        mv.visitMaxs(0, 1)
-        mv.visitEnd()
-
-        mv = cw.visitMethod(ACC_PUBLIC, "method", "()V", null, null)
-        mv.visitCode()
-        val L0 = Label()
-        val L1 = Label()
-        val L2 = Label()
-        val L3 = Label()
-        val L4 = Label()
-        val L5 = Label()
-        val L6 = Label()
-        val L7 = Label()
-        val L8 = Label()
-        val L9 = Label()
-        mv.visitTryCatchBlock(L0, L1, L1, null)
-        mv.visitTryCatchBlock(L2, L3, L1, null)
-        mv.visitLabel(L0)
-        mv.visitLabel(L4)
-        mv.visitJumpInsn(Opcodes.GOTO, L2)
-        mv.visitLabel(L1)
-        mv.visitVarInsn(Opcodes.ASTORE, 2)
-        mv.visitJumpInsn(Opcodes.JSR, L5)
-        mv.visitLabel(L6)
-        mv.visitVarInsn(Opcodes.ALOAD, 2)
-        mv.visitInsn(Opcodes.ATHROW)
-        mv.visitLabel(L5)
-        mv.visitVarInsn(Opcodes.ASTORE, 1)
-        mv.visitLabel(L7)
-        mv.visitLabel(L8)
-        mv.visitVarInsn(Opcodes.RET, 1)
-        mv.visitLabel(L2)
-        mv.visitJumpInsn(Opcodes.JSR, L5)
-        mv.visitLabel(L3)
-        mv.visitInsn(Opcodes.RETURN)
-        mv.visitLabel(L9)
-        mv.visitInsn(Opcodes.RETURN)
-        mv.visitMaxs(1, 3)
-        mv.visitEnd()
-
-        return cw.toByteArray()
-    }
-
-    class InstrumentedClassesLoader(urls: Array<URL>, parent: ClassLoader) :
-        URLClassLoader(urls, parent) {
-
-        override fun loadClass(name: String, resolve: Boolean): Class<*> {
-            var loadedClass = findLoadedClass(name)
-            if (loadedClass == null) {
-                loadedClass = try {
-                    findClass(name)
-                } catch (e: ClassNotFoundException) {
-                    super.loadClass(name, resolve)
-                }
-            }
-            if (resolve) {
-                resolveClass(loadedClass)
-            }
-            return loadedClass
-        }
-    }
-
-    private fun checkInstrumentedClassAnnotatedMethods(
-        instrumentedClassesLoader: ClassLoader,
-        className: String,
-        expectedAnnotatedMethods: List<Pair<String, List<String>>>
-    ) {
-        val annotatedMethods =
-            instrumentedClassesLoader.loadClass(className).methods
-                .map {
-                    it.name to it.annotations.mapNotNull { annotation ->
-                        annotation.annotationClass.jvmName.takeIf { name ->
-                            !name.startsWith("jdk.internal.")
-                        }
-                    }
-                }.filter { it.second.isNotEmpty() }
-
-        assertThat(annotatedMethods).containsExactlyElementsIn(expectedAnnotatedMethods)
-    }
-
-    private fun<T : InstrumentationParameters> getConfiguredVisitorFactory(
-        visitorFactoryClass: Class<out AsmClassVisitorFactory<T>>,
-        paramsConfig: (T) -> Unit = {}
-    ): AsmClassVisitorFactory<T> {
-        return AsmClassVisitorFactoryEntry(
-            visitorFactoryClass,
-            paramsConfig
-        ).also {
-            it.configure(
-                FakeObjectFactory.factory,
-                apiVersion
-            )
-        }.visitorFactory
-    }
-
-    private fun ClassData.assertEquals(
-        className: String,
-        annotations: List<String>,
-        interfaces: List<String>,
-        superClasses: List<String>
-    ) {
-        assertThat(this.className).isEqualTo(className)
-        assertThat(this.classAnnotations).containsExactlyElementsIn(annotations)
-        assertThat(this.interfaces).containsExactlyElementsIn(interfaces)
-        assertThat(this.superClasses).containsExactlyElementsIn(superClasses)
-    }
-
-    private fun getClassesFilesMap(dir: File): Map<String, File> {
-        return FileUtils.getAllFiles(dir).map {
-            "com.android.build.gradle.internal.instrumentation.${it.name.removeSuffix(DOT_CLASS)}" to it
-        }.toMap()
-    }
-
-    private fun getClassesByteArrayMapFromDir(dir: File): Map<String, ByteArray> {
-        return getClassesFilesMap(dir).mapValues {
-            ByteStreams.toByteArray(FileInputStream(it.value))
-        }
-    }
-
-    private fun getClassesByteArrayMapFromJar(jar: File): Map<String, ByteArray> {
-        val result = mutableMapOf<String, ByteArray>()
-        ZipFile(jar).use {
-            val entries = it.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                it.getInputStream(entry).use { inputStream ->
-                    result[entry.name.removeSuffix(DOT_CLASS).replace('/', '.')] =
-                        ByteStreams.toByteArray(inputStream)
-                }
-            }
-        }
-        return result
-    }
-
-    private fun getOutputClassesByteArrayMap(outputDir: File = this.outputDir): Map<String, ByteArray> {
-        if (testMode == TestMode.JAR) {
-            return getClassesByteArrayMapFromJar(outputDir.listFiles()!![0])
-        }
-        return getClassesByteArrayMapFromDir(outputDir)
-    }
-
-    open class Params : InstrumentationParameters {
-        lateinit var a: String
-        var b: Int = -1
-    }
-
-    @Retention(AnnotationRetention.RUNTIME)
-    annotation class FirstVisitorAnnotation
-
-    @Retention(AnnotationRetention.RUNTIME)
-    annotation class SecondVisitorAnnotation
-
-    abstract class FirstVisitorAnnotationAddingFactory : AsmClassVisitorFactory<Params> {
-
-        override fun createClassVisitor(
-            classContext: ClassContext,
-            nextClassVisitor: ClassVisitor
-        ): ClassVisitor {
-            return AnnotationAddingVisitor(
-                setOf("f1", "f2"),
-                Type.getDescriptor(FirstVisitorAnnotation::class.java),
-                instrumentationContext.apiVersion.get(),
-                nextClassVisitor
-            )
-        }
-
-        override fun isInstrumentable(
-            classData: ClassData
-        ): Boolean {
-            return classData.interfaces.contains(I::class.java.name)
-        }
-    }
-
-    abstract class SecondVisitorAnnotationAddingFactory : AsmClassVisitorFactory<Params> {
-        override fun createClassVisitor(
-            classContext: ClassContext,
-            nextClassVisitor: ClassVisitor
-        ): ClassVisitor {
-            return AnnotationAddingVisitor(
-                setOf("f3", "f4"),
-                Type.getDescriptor(SecondVisitorAnnotation::class.java),
-                instrumentationContext.apiVersion.get(),
-                nextClassVisitor
-            )
-        }
-
-        override fun isInstrumentable(
-            classData: ClassData
-        ): Boolean {
-            return classData.interfaces.contains(InterfaceExtendsI::class.java.name)
-        }
-    }
-
-    class AnnotationAddingVisitor(
-        private val methodNamesToBeAnnotated: Set<String>,
-        private val annotationDescriptor: String,
-        val apiVersion: Int,
-        classVisitor: ClassVisitor
-    ) : ClassVisitor(apiVersion, classVisitor) {
-        override fun visitMethod(
-            access: Int,
-            name: String?,
-            descriptor: String?,
-            signature: String?,
-            exceptions: Array<out String>?
-        ): MethodVisitor {
-            if (methodNamesToBeAnnotated.contains(name)) {
-                return object : MethodVisitor(
-                    apiVersion,
-                    super.visitMethod(access, name, descriptor, signature, exceptions)
-                ) {
-                    private var annotationVisited = false
-
-                    override fun visitCode() {
-                        visitAnnotation(annotationDescriptor, true)
-                        annotationVisited = true
-                        super.visitCode()
-                    }
-
-                    override fun visitEnd() {
-                        // We don't visit code in interfaces
-                        if (!annotationVisited) {
-                            visitAnnotation(annotationDescriptor, true)
-                        }
-                        super.visitEnd()
-                    }
-                }
-            }
-            return super.visitMethod(access, name, descriptor, signature, exceptions)
-        }
-    }
-
-    class MaxsInvalidatingClassVisitor(
-        val apiVersion: Int,
-        classVisitor: ClassVisitor
-    ) : ClassVisitor(apiVersion, classVisitor) {
-
-        override fun visitMethod(
-            access: Int,
-            name: String?,
-            descriptor: String?,
-            signature: String?,
-            exceptions: Array<out String>?
-        ): MethodVisitor {
-            val mv = super.visitMethod(access, name, descriptor, signature, exceptions)
-            return object : MethodVisitor(apiVersion, mv) {
-                override fun visitMaxs(maxStack: Int, maxLocals: Int) {
-                    super.visitMaxs(-1, -1)
-                }
-            }
-        }
-    }
-
-    abstract class MaxsInvalidatingVisitorFactory : AsmClassVisitorFactory<Params> {
-        override fun createClassVisitor(
-            classContext: ClassContext,
-            nextClassVisitor: ClassVisitor
-        ): ClassVisitor {
-            return MaxsInvalidatingClassVisitor(
-                instrumentationContext.apiVersion.get(),
-                nextClassVisitor
-            )
-        }
-
-        override fun isInstrumentable(classData: ClassData): Boolean {
-            return classData.classAnnotations.contains(Instrument::class.java.name) &&
-                    classData.className.endsWith("ClassImplementsI")
-        }
-    }
-
-    class MethodInjectingClassVisitor(
-        val apiVersion: Int,
-        classVisitor: ClassVisitor
-    ) : ClassVisitor(apiVersion, classVisitor) {
-
-        override fun visitEnd() {
-            visitMethod(
-                ACC_PUBLIC,
-                "injectedMethod",
-                "()Ljava/lang/String;",
-                null,
-                null
-            ).also { methodVisitor ->
-                methodVisitor.visitCode()
-                methodVisitor.visitLdcInsn("This is an injected method")
-                methodVisitor.visitInsn(ARETURN)
-                methodVisitor.visitMaxs(-1, -1)
-                methodVisitor.visitEnd()
-            }
-
             super.visitEnd()
+          }
         }
+      }
+      return super.visitMethod(access, name, descriptor, signature, exceptions)
+    }
+  }
+
+  class MaxsInvalidatingClassVisitor(val apiVersion: Int, classVisitor: ClassVisitor) : ClassVisitor(apiVersion, classVisitor) {
+
+    override fun visitMethod(
+      access: Int,
+      name: String?,
+      descriptor: String?,
+      signature: String?,
+      exceptions: Array<out String>?,
+    ): MethodVisitor {
+      val mv = super.visitMethod(access, name, descriptor, signature, exceptions)
+      return object : MethodVisitor(apiVersion, mv) {
+        override fun visitMaxs(maxStack: Int, maxLocals: Int) {
+          super.visitMaxs(-1, -1)
+        }
+      }
+    }
+  }
+
+  abstract class MaxsInvalidatingVisitorFactory : AsmClassVisitorFactory<Params> {
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor {
+      return MaxsInvalidatingClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor)
     }
 
-    abstract class MethodInjectingVisitorFactory : AsmClassVisitorFactory<Params> {
-        override fun createClassVisitor(
-            classContext: ClassContext,
-            nextClassVisitor: ClassVisitor
-        ): ClassVisitor {
-            return MethodInjectingClassVisitor(
-                instrumentationContext.apiVersion.get(),
-                nextClassVisitor
-            )
-        }
+    override fun isInstrumentable(classData: ClassData): Boolean {
+      return classData.classAnnotations.contains(Instrument::class.java.name) && classData.className.endsWith("ClassImplementsI")
+    }
+  }
 
-        override fun isInstrumentable(classData: ClassData): Boolean {
-            return classData.classAnnotations.contains(Instrument::class.java.name) &&
-                    classData.className.endsWith("ClassImplementsI")
-        }
+  class MethodInjectingClassVisitor(val apiVersion: Int, classVisitor: ClassVisitor) : ClassVisitor(apiVersion, classVisitor) {
+
+    override fun visitEnd() {
+      visitMethod(ACC_PUBLIC, "injectedMethod", "()Ljava/lang/String;", null, null).also { methodVisitor ->
+        methodVisitor.visitCode()
+        methodVisitor.visitLdcInsn("This is an injected method")
+        methodVisitor.visitInsn(ARETURN)
+        methodVisitor.visitMaxs(-1, -1)
+        methodVisitor.visitEnd()
+      }
+
+      super.visitEnd()
+    }
+  }
+
+  abstract class MethodInjectingVisitorFactory : AsmClassVisitorFactory<Params> {
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor {
+      return MethodInjectingClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor)
     }
 
-    abstract class DataCapturerVisitorFactory : AsmClassVisitorFactory<Params> {
-        val capturedClassData: MutableList<ClassData> = mutableListOf()
-
-        override fun createClassVisitor(
-            classContext: ClassContext,
-            nextClassVisitor: ClassVisitor
-        ): ClassVisitor {
-            capturedClassData.add(classContext.currentClassData)
-            return object :
-                ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
-        }
-
-        override fun isInstrumentable(
-            classData: ClassData
-        ): Boolean {
-            return true
-        }
+    override fun isInstrumentable(classData: ClassData): Boolean {
+      return classData.classAnnotations.contains(Instrument::class.java.name) && classData.className.endsWith("ClassImplementsI")
     }
+  }
+
+  abstract class DataCapturerVisitorFactory : AsmClassVisitorFactory<Params> {
+    val capturedClassData: MutableList<ClassData> = mutableListOf()
+
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor {
+      capturedClassData.add(classContext.currentClassData)
+      return object : ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
+    }
+
+    override fun isInstrumentable(classData: ClassData): Boolean {
+      return true
+    }
+  }
 }

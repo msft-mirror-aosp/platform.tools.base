@@ -18,10 +18,10 @@ package com.android.builder.model.v2.models
 
 import java.io.File
 
-interface AssetsTestSuiteSource: TestSuiteSource {
+interface AssetsTestSuiteSource : TestSuiteSource {
 
-    override val type: SourceType
-        get() = SourceType.ASSETS
+  override val type: SourceType
+    get() = SourceType.ASSETS
 
-    val directories: Collection<File>
+  val directories: Collection<File>
 }

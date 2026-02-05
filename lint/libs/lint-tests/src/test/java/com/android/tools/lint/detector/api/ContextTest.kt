@@ -555,10 +555,7 @@ class ContextTest : AbstractCheckTest() {
           Category.MESSAGES,
           5,
           Severity.WARNING,
-          Implementation(
-            ReportsUElementFromGradleContextDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE),
-          ),
+          Implementation(ReportsUElementFromGradleContextDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE)),
         )
     }
   }
@@ -569,8 +566,7 @@ class ContextTest : AbstractCheckTest() {
 
   // Detector which reproduces problem in issue https://issuetracker.google.com/116838536
   class NoLocationNodeDetector : Detector(), SourceCodeScanner {
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-      listOf(ULiteralExpression::class.java)
+    override fun getApplicableUastTypes(): List<Class<out UElement>>? = listOf(ULiteralExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler? =
       object : UElementHandler() {
@@ -596,11 +592,7 @@ class ContextTest : AbstractCheckTest() {
             context.report(PSI_TEST_ISSUE, scope = node.sourcePsi, location, message)
           } else if (s == "testAccessLibraryResource") {
             // Trigger scenario in testAccessLibraryResource()
-            val resources =
-              context.client.getResources(
-                context.project,
-                ResourceRepositoryScope.LOCAL_DEPENDENCIES,
-              )
+            val resources = context.client.getResources(context.project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
             resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "local")
             val lib = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "lib")
             lib.first().source // Trigger error

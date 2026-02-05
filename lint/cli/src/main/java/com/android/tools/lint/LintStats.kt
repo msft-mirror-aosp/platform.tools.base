@@ -69,10 +69,7 @@ class LintStats(
             // but not found in the project;
             //    perhaps they have been fixed? Unmatched issue types: HardcodedText
             // [LintBaselineFixed]"
-            if (
-              incident.issue != IssueRegistry.BASELINE_USED &&
-                incident.issue != IssueRegistry.BASELINE_FIXED
-            ) {
+            if (incident.issue != IssueRegistry.BASELINE_USED && incident.issue != IssueRegistry.BASELINE_FIXED) {
               hintCount++
             }
           }
@@ -126,9 +123,7 @@ class LintStats(
   }
 }
 
-/**
- * Whether this incident has a fix that can be automatically performed without user intervention.
- */
+/** Whether this incident has a fix that can be automatically performed without user intervention. */
 fun Incident.hasAutoFix(): Boolean {
   val fixData = fix ?: return false
   return canAutoFix(fixData)

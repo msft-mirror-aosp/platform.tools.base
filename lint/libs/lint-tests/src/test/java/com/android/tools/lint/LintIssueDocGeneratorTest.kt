@@ -49,116 +49,114 @@ class LintIssueDocGeneratorTest {
   fun testMarkDeep() {
     // (This is the default output format)
     val outputFolder = temporaryFolder.root
-    LintIssueDocGenerator.run(
-      arrayOf("--no-index", "--issues", "SdCardPath,MissingClass", "--output", outputFolder.path)
-    )
+    LintIssueDocGenerator.run(arrayOf("--no-index", "--issues", "SdCardPath,MissingClass", "--output", outputFolder.path))
     val files = outputFolder.listFiles()!!.sortedBy { it.name }
     val names = files.joinToString { it.name }
     assertEquals("MissingClass.md.html, SdCardPath.md.html", names)
     val text = files[1].readText()
     assertEquals(
       """
-            <meta charset="utf-8">
-            (#) Hardcoded reference to `/sdcard`
+      <meta charset="utf-8">
+      (#) Hardcoded reference to `/sdcard`
 
-            !!! WARNING: Hardcoded reference to `/sdcard`
-               This is a warning.
+      !!! WARNING: Hardcoded reference to `/sdcard`
+         This is a warning.
 
-            Id
-            :   `SdCardPath`
-            Summary
-            :   Hardcoded reference to `/sdcard`
-            Severity
-            :   Warning
-            Category
-            :   Correctness
-            Platform
-            :   Android
-            Vendor
-            :   Android Open Source Project
-            Feedback
-            :   https://issuetracker.google.com/issues/new?component=192708
-            Affects
-            :   Kotlin and Java files
-            Editing
-            :   This check runs on the fly in the IDE editor
-            See
-            :   https://developer.android.com/training/data-storage#filesExternal
+      Id
+      :   `SdCardPath`
+      Summary
+      :   Hardcoded reference to `/sdcard`
+      Severity
+      :   Warning
+      Category
+      :   Correctness
+      Platform
+      :   Android
+      Vendor
+      :   Android Open Source Project
+      Feedback
+      :   https://issuetracker.google.com/issues/new?component=192708
+      Affects
+      :   Kotlin and Java files
+      Editing
+      :   This check runs on the fly in the IDE editor
+      See
+      :   https://developer.android.com/training/data-storage#filesExternal
 
-            Your code should not reference the `/sdcard` path directly; instead use
-            `Environment.getExternalStorageDirectory().getPath()`.
+      Your code should not reference the `/sdcard` path directly; instead use
+      `Environment.getExternalStorageDirectory().getPath()`.
 
-            Similarly, do not reference the `/data/data/` path directly; it can vary
-            in multi-user scenarios. Instead, use
-            `Context.getFilesDir().getPath()`.
+      Similarly, do not reference the `/data/data/` path directly; it can vary
+      in multi-user scenarios. Instead, use
+      `Context.getFilesDir().getPath()`.
 
-            (##) Suppressing
+      (##) Suppressing
 
-            You can suppress false positives using one of the following mechanisms:
+      You can suppress false positives using one of the following mechanisms:
 
-            * Using a suppression annotation like this on the enclosing
-              element:
+      * Using a suppression annotation like this on the enclosing
+        element:
 
-              ```kt
-              // Kotlin
-              @Suppress("SdCardPath")
-              fun method() {
-                 problematicStatement()
-              }
-              ```
+        ```kt
+        // Kotlin
+        @Suppress("SdCardPath")
+        fun method() {
+           problematicStatement()
+        }
+        ```
 
-              or
+        or
 
-              ```java
-              // Java
-              @SuppressWarnings("SdCardPath")
-              void method() {
-                 problematicStatement();
-              }
-              ```
+        ```java
+        // Java
+        @SuppressWarnings("SdCardPath")
+        void method() {
+           problematicStatement();
+        }
+        ```
 
-            * Using a suppression comment like this on the line above:
+      * Using a suppression comment like this on the line above:
 
-              ```kt
-              //noinspection SdCardPath
-              problematicStatement()
-              ```
+        ```kt
+        //noinspection SdCardPath
+        problematicStatement()
+        ```
 
-            * Using a special `lint.xml` file in the source tree which turns off
-              the check in that folder and any sub folder. A simple file might look
-              like this:
-              ```xml
-              &lt;?xml version="1.0" encoding="UTF-8"?&gt;
-              &lt;lint&gt;
-                  &lt;issue id="SdCardPath" severity="ignore" /&gt;
-              &lt;/lint&gt;
-              ```
-              Instead of `ignore` you can also change the severity here, for
-              example from `error` to `warning`. You can find additional
-              documentation on how to filter issues by path, regular expression and
-              so on
-              [here](https://googlesamples.github.io/android-custom-lint-rules/usage/lintxml.md.html).
+      * Using a special `lint.xml` file in the source tree which turns off
+        the check in that folder and any sub folder. A simple file might look
+        like this:
+        ```xml
+        &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+        &lt;lint&gt;
+            &lt;issue id="SdCardPath" severity="ignore" /&gt;
+        &lt;/lint&gt;
+        ```
+        Instead of `ignore` you can also change the severity here, for
+        example from `error` to `warning`. You can find additional
+        documentation on how to filter issues by path, regular expression and
+        so on
+        [here](https://googlesamples.github.io/android-custom-lint-rules/usage/lintxml.md.html).
 
-            * In Gradle projects, using the DSL syntax to configure lint. For
-              example, you can use something like
-              ```gradle
-              lintOptions {
-                  disable 'SdCardPath'
-              }
-              ```
-              In Android projects this should be nested inside an `android { }`
-              block.
+      * In Gradle projects, using the DSL syntax to configure lint. For
+        example, you can use something like
+        ```gradle
+        lintOptions {
+            disable 'SdCardPath'
+        }
+        ```
+        In Android projects this should be nested inside an `android { }`
+        block.
 
-            * For manual invocations of `lint`, using the `--ignore` flag:
-              ```
-              ${'$'} lint --ignore SdCardPath ...`
-              ```
+      * For manual invocations of `lint`, using the `--ignore` flag:
+        ```
+        ${'$'} lint --ignore SdCardPath ...`
+        ```
 
-            * Last, but not least, using baselines, as discussed
-              [here](https://googlesamples.github.io/android-custom-lint-rules/usage/baselines.md.html).
+      * Last, but not least, using baselines, as discussed
+        [here](https://googlesamples.github.io/android-custom-lint-rules/usage/baselines.md.html).
 
-            <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
-            """
+      <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
+      """
         .trimIndent(),
       text,
     )
@@ -169,8 +167,7 @@ class LintIssueDocGeneratorTest {
     val outputFolder = temporaryFolder.newFolder("out")
     val sourceFolder = temporaryFolder.newFolder("src")
 
-    val packageFolder =
-      File(sourceFolder, "lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks")
+    val packageFolder = File(sourceFolder, "lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks")
     packageFolder.mkdirs()
     File(packageFolder, "SdCardDetector.kt").writeText("// Copyright 1985, 2019, 2016-2018\n")
     // In reality this detector is in Kotlin but here testing that we correctly compute URLs based
@@ -197,112 +194,112 @@ class LintIssueDocGeneratorTest {
     val text = files[0].readText()
     assertEquals(
       """
-            # Battery Life Issues
+      # Battery Life Issues
 
-            Id             | `BatteryLife`
-            ---------------|--------------------------------------------------------
-            Summary        | Battery Life Issues
-            Severity       | Warning
-            Category       | Correctness
-            Platform       | Android
-            Vendor         | Android Open Source Project
-            Feedback       | https://issuetracker.google.com/issues/new?component=192708
-            Affects        | Kotlin and Java files and manifest files
-            Editing        | This check runs on the fly in the IDE editor
-            See            | https://developer.android.com/topic/performance/background-optimization
-            Implementation | [Source Code](https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-master-dev:lint/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/BatteryDetector.java)
-            Copyright Year | 2020
+      Id             | `BatteryLife`
+      ---------------|--------------------------------------------------------
+      Summary        | Battery Life Issues
+      Severity       | Warning
+      Category       | Correctness
+      Platform       | Android
+      Vendor         | Android Open Source Project
+      Feedback       | https://issuetracker.google.com/issues/new?component=192708
+      Affects        | Kotlin and Java files and manifest files
+      Editing        | This check runs on the fly in the IDE editor
+      See            | https://developer.android.com/topic/performance/background-optimization
+      Implementation | [Source Code](https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-master-dev:lint/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/BatteryDetector.java)
+      Copyright Year | 2020
 
-            This issue flags code that either
-            * negatively affects battery life, or
-            * uses APIs that have recently changed behavior to prevent background
-              tasks from consuming memory and battery excessively.
+      This issue flags code that either
+      * negatively affects battery life, or
+      * uses APIs that have recently changed behavior to prevent background
+        tasks from consuming memory and battery excessively.
 
-            Generally, you should be using `WorkManager` instead.
+      Generally, you should be using `WorkManager` instead.
 
-            For more details on how to update your code, please see
-            https://developer.android.com/topic/performance/background-optimization.
+      For more details on how to update your code, please see
+      https://developer.android.com/topic/performance/background-optimization.
 
-            (##) Suppressing
+      (##) Suppressing
 
-            You can suppress false positives using one of the following mechanisms:
+      You can suppress false positives using one of the following mechanisms:
 
-            * Using a suppression annotation like this on the enclosing
-              element:
+      * Using a suppression annotation like this on the enclosing
+        element:
 
-              ```kt
-              // Kotlin
-              @Suppress("BatteryLife")
-              fun method() {
-                 problematicStatement()
-              }
-              ```
+        ```kt
+        // Kotlin
+        @Suppress("BatteryLife")
+        fun method() {
+           problematicStatement()
+        }
+        ```
 
-              or
+        or
 
-              ```java
-              // Java
-              @SuppressWarnings("BatteryLife")
-              void method() {
-                 problematicStatement();
-              }
-              ```
+        ```java
+        // Java
+        @SuppressWarnings("BatteryLife")
+        void method() {
+           problematicStatement();
+        }
+        ```
 
-            * Using a suppression comment like this on the line above:
+      * Using a suppression comment like this on the line above:
 
-              ```kt
-              //noinspection BatteryLife
-              problematicStatement()
-              ```
+        ```kt
+        //noinspection BatteryLife
+        problematicStatement()
+        ```
 
-            * Adding the suppression attribute `tools:ignore="BatteryLife"` on the
-              problematic XML element (or one of its enclosing elements). You may
-              also need to add the following namespace declaration on the root
-              element in the XML file if it's not already there:
-              `xmlns:tools="http://schemas.android.com/tools"`.
+      * Adding the suppression attribute `tools:ignore="BatteryLife"` on the
+        problematic XML element (or one of its enclosing elements). You may
+        also need to add the following namespace declaration on the root
+        element in the XML file if it's not already there:
+        `xmlns:tools="http://schemas.android.com/tools"`.
 
-              ```xml
-              <?xml version="1.0" encoding="UTF-8"?>
-              <manifest xmlns:tools="http://schemas.android.com/tools">
-                  ...
-                  <action tools:ignore="BatteryLife" .../>
-                ...
-              </manifest>
-              ```
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <manifest xmlns:tools="http://schemas.android.com/tools">
+            ...
+            <action tools:ignore="BatteryLife" .../>
+          ...
+        </manifest>
+        ```
 
-            * Using a special `lint.xml` file in the source tree which turns off
-              the check in that folder and any sub folder. A simple file might look
-              like this:
-              ```xml
-              <?xml version="1.0" encoding="UTF-8"?>
-              <lint>
-                  <issue id="BatteryLife" severity="ignore" />
-              </lint>
-              ```
-              Instead of `ignore` you can also change the severity here, for
-              example from `error` to `warning`. You can find additional
-              documentation on how to filter issues by path, regular expression and
-              so on
-              [here](https://googlesamples.github.io/android-custom-lint-rules/usage/lintxml.md.html).
+      * Using a special `lint.xml` file in the source tree which turns off
+        the check in that folder and any sub folder. A simple file might look
+        like this:
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="BatteryLife" severity="ignore" />
+        </lint>
+        ```
+        Instead of `ignore` you can also change the severity here, for
+        example from `error` to `warning`. You can find additional
+        documentation on how to filter issues by path, regular expression and
+        so on
+        [here](https://googlesamples.github.io/android-custom-lint-rules/usage/lintxml.md.html).
 
-            * In Gradle projects, using the DSL syntax to configure lint. For
-              example, you can use something like
-              ```gradle
-              lintOptions {
-                  disable 'BatteryLife'
-              }
-              ```
-              In Android projects this should be nested inside an `android { }`
-              block.
+      * In Gradle projects, using the DSL syntax to configure lint. For
+        example, you can use something like
+        ```gradle
+        lintOptions {
+            disable 'BatteryLife'
+        }
+        ```
+        In Android projects this should be nested inside an `android { }`
+        block.
 
-            * For manual invocations of `lint`, using the `--ignore` flag:
-              ```
-              ${'$'} lint --ignore BatteryLife ...`
-              ```
+      * For manual invocations of `lint`, using the `--ignore` flag:
+        ```
+        ${'$'} lint --ignore BatteryLife ...`
+        ```
 
-            * Last, but not least, using baselines, as discussed
-              [here](https://googlesamples.github.io/android-custom-lint-rules/usage/baselines.md.html).
-            """
+      * Last, but not least, using baselines, as discussed
+        [here](https://googlesamples.github.io/android-custom-lint-rules/usage/baselines.md.html).
+      """
         .trimIndent(),
       text,
     )
@@ -313,11 +310,9 @@ class LintIssueDocGeneratorTest {
     val outputFolder = temporaryFolder.newFolder("out")
     val sourceFolder = temporaryFolder.newFolder("src")
 
-    val packageFolder =
-      File(sourceFolder, "lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks")
+    val packageFolder = File(sourceFolder, "lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks")
     packageFolder.mkdirs()
-    File(packageFolder, "InteroperabilityDetector.kt")
-      .writeText("// Copyright 1985, 2019, 2016-2018\n")
+    File(packageFolder, "InteroperabilityDetector.kt").writeText("// Copyright 1985, 2019, 2016-2018\n")
     File(packageFolder, "MissingClassDetector.java").writeText("\n/** (C) 2019-2020 */\n")
 
     LintIssueDocGenerator.run(
@@ -341,114 +336,114 @@ class LintIssueDocGeneratorTest {
     val alphabetical = files[5].readText()
     assertEquals(
       """
-            # Lint Issue Index
+      # Lint Issue Index
 
-            Order: Alphabetical | [By category](categories.md) | [By vendor](vendors.md) | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
+      Order: Alphabetical | [By category](categories.md) | [By vendor](vendors.md) | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
 
-              - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
-              - [MissingClass: Missing registered class](MissingClass.md)
-              - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
+        - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
+        - [MissingClass: Missing registered class](MissingClass.md)
+        - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
 
-            * Withdrawn or Obsolete Issues (1)
+      * Withdrawn or Obsolete Issues (1)
 
-              - [ViewTag](ViewTag.md)
-            """
+        - [ViewTag](ViewTag.md)
+      """
         .trimIndent(),
       alphabetical,
     )
     val categories = files[4].readText()
     assertEquals(
       """
-            # Lint Issue Index
+      # Lint Issue Index
 
-            Order: [Alphabetical](index.md) | By category | [By vendor](vendors.md) | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
+      Order: [Alphabetical](index.md) | By category | [By vendor](vendors.md) | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
 
-            * Correctness (2)
+      * Correctness (2)
 
-              - [MissingClass: Missing registered class](MissingClass.md)
-              - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
+        - [MissingClass: Missing registered class](MissingClass.md)
+        - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
 
-            * Interoperability: Kotlin Interoperability (1)
+      * Interoperability: Kotlin Interoperability (1)
 
-              - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
+        - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
 
-            * Withdrawn or Obsolete Issues (1)
+      * Withdrawn or Obsolete Issues (1)
 
-              - [ViewTag](ViewTag.md)
-            """
+        - [ViewTag](ViewTag.md)
+      """
         .trimIndent(),
       categories,
     )
     val severities = files[7].readText()
     assertEquals(
       """
-            # Lint Issue Index
+      # Lint Issue Index
 
-            Order: [Alphabetical](index.md) | [By category](categories.md) | [By vendor](vendors.md) | By severity | [By year](year.md) | [Libraries](libraries.md)
+      Order: [Alphabetical](index.md) | [By category](categories.md) | [By vendor](vendors.md) | By severity | [By year](year.md) | [Libraries](libraries.md)
 
-            * Error (1)
+      * Error (1)
 
-              - [MissingClass: Missing registered class](MissingClass.md)
+        - [MissingClass: Missing registered class](MissingClass.md)
 
-            * Warning (2)
+      * Warning (2)
 
-              - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
-              - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
+        - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
+        - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
 
-            * Disabled By Default (1)
+      * Disabled By Default (1)
 
-              - [LambdaLast](LambdaLast.md)
+        - [LambdaLast](LambdaLast.md)
 
-            * Withdrawn or Obsolete Issues (1)
+      * Withdrawn or Obsolete Issues (1)
 
-              - [ViewTag](ViewTag.md)
-            """
+        - [ViewTag](ViewTag.md)
+      """
         .trimIndent(),
       severities,
     )
     val vendors = files[8].readText()
     assertEquals(
       """
-            # Lint Issue Index
+      # Lint Issue Index
 
-            Order: [Alphabetical](index.md) | [By category](categories.md) | By vendor | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
+      Order: [Alphabetical](index.md) | [By category](categories.md) | By vendor | [By severity](severity.md) | [By year](year.md) | [Libraries](libraries.md)
 
-            * Built In (3)
+      * Built In (3)
 
-              - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
-              - [MissingClass: Missing registered class](MissingClass.md)
-              - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
+        - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
+        - [MissingClass: Missing registered class](MissingClass.md)
+        - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
 
-            * Withdrawn or Obsolete Issues (1)
+      * Withdrawn or Obsolete Issues (1)
 
-              - [ViewTag](ViewTag.md)
-            """
+        - [ViewTag](ViewTag.md)
+      """
         .trimIndent(),
       vendors,
     )
     val years = files[9].readText()
     assertEquals(
       """
-            # Lint Issue Index
+      # Lint Issue Index
 
-            Order: [Alphabetical](index.md) | [By category](categories.md) | [By vendor](vendors.md) | [By severity](severity.md) | By year | [Libraries](libraries.md)
+      Order: [Alphabetical](index.md) | [By category](categories.md) | [By vendor](vendors.md) | [By severity](severity.md) | By year | [Libraries](libraries.md)
 
-            * 2020 (1)
+      * 2020 (1)
 
-              - [MissingClass: Missing registered class](MissingClass.md)
+        - [MissingClass: Missing registered class](MissingClass.md)
 
-            * 2019 (1)
+      * 2019 (1)
 
-              - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
+        - [LambdaLast: Lambda Parameters Last](LambdaLast.md)
 
-            * Unknown (1)
+      * Unknown (1)
 
-              - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
+        - [SdCardPath: Hardcoded reference to `/sdcard`](SdCardPath.md)
 
-            * Withdrawn or Obsolete Issues (1)
+      * Withdrawn or Obsolete Issues (1)
 
-              - [ViewTag](ViewTag.md)
-            """
+        - [ViewTag](ViewTag.md)
+      """
         .trimIndent(),
       years,
     )
@@ -474,25 +469,25 @@ class LintIssueDocGeneratorTest {
     val text = files[0].readText()
     assertEquals(
       """
-            # MissingRegistered
+      # MissingRegistered
 
-            This issue id is an alias for [MissingClass](MissingClass.md).
+      This issue id is an alias for [MissingClass](MissingClass.md).
 
-            (Additional metadata not available.)
-            """
+      (Additional metadata not available.)
+      """
         .trimIndent(),
       text,
     )
     val text2 = files[2].readText()
     assertEquals(
       """
-            # ViewTag
+      # ViewTag
 
-            The issue for this id has been deleted or marked obsolete and can now be
-            ignored.
+      The issue for this id has been deleted or marked obsolete and can now be
+      ignored.
 
-            (Additional metadata not available.)
-            """
+      (Additional metadata not available.)
+      """
         .trimIndent(),
       text2,
     )
@@ -501,68 +496,59 @@ class LintIssueDocGeneratorTest {
   @Test
   fun testSingleDoc() {
     val output = temporaryFolder.newFile()
-    LintIssueDocGenerator.run(
-      arrayOf(
-        "--single-doc",
-        "--md",
-        "--issues",
-        "SdCardPath,MissingClass",
-        "--output",
-        output.path,
-      )
-    )
+    LintIssueDocGenerator.run(arrayOf("--single-doc", "--md", "--issues", "SdCardPath,MissingClass", "--output", output.path))
     val text = output.readText()
     assertEquals(
       """
-            # Lint Issues
-            This document lists the built-in issues for Lint. Note that lint also reads additional
-            checks directly bundled with libraries, so this is a subset of the checks lint will
-            perform.
+      # Lint Issues
+      This document lists the built-in issues for Lint. Note that lint also reads additional
+      checks directly bundled with libraries, so this is a subset of the checks lint will
+      perform.
 
-            ## Correctness
+      ## Correctness
 
-            ### Missing registered class
+      ### Missing registered class
 
-            Id         | `MissingClass`
-            -----------|------------------------------------------------------------
-            Previously | MissingRegistered
-            Summary    | Missing registered class
-            Severity   | Error
-            Category   | Correctness
-            Platform   | Android
-            Vendor     | Android Open Source Project
-            Feedback   | https://issuetracker.google.com/issues/new?component=192708
-            Affects    | Manifest files and resource files
-            Editing    | This check runs on the fly in the IDE editor
-            See        | https://developer.android.com/guide/topics/manifest/manifest-intro.html
+      Id         | `MissingClass`
+      -----------|------------------------------------------------------------
+      Previously | MissingRegistered
+      Summary    | Missing registered class
+      Severity   | Error
+      Category   | Correctness
+      Platform   | Android
+      Vendor     | Android Open Source Project
+      Feedback   | https://issuetracker.google.com/issues/new?component=192708
+      Affects    | Manifest files and resource files
+      Editing    | This check runs on the fly in the IDE editor
+      See        | https://developer.android.com/guide/topics/manifest/manifest-intro.html
 
-            If a class is referenced in the manifest or in a layout file, it must
-            also exist in the project (or in one of the libraries included by the
-            project. This check helps uncover typos in registration names, or
-            attempts to rename or move classes without updating the XML references
-            properly.
+      If a class is referenced in the manifest or in a layout file, it must
+      also exist in the project (or in one of the libraries included by the
+      project. This check helps uncover typos in registration names, or
+      attempts to rename or move classes without updating the XML references
+      properly.
 
-            ### Hardcoded reference to `/sdcard`
+      ### Hardcoded reference to `/sdcard`
 
-            Id       | `SdCardPath`
-            ---------|--------------------------------------------------------------
-            Summary  | Hardcoded reference to `/sdcard`
-            Severity | Warning
-            Category | Correctness
-            Platform | Android
-            Vendor   | Android Open Source Project
-            Feedback | https://issuetracker.google.com/issues/new?component=192708
-            Affects  | Kotlin and Java files
-            Editing  | This check runs on the fly in the IDE editor
-            See      | https://developer.android.com/training/data-storage#filesExternal
+      Id       | `SdCardPath`
+      ---------|--------------------------------------------------------------
+      Summary  | Hardcoded reference to `/sdcard`
+      Severity | Warning
+      Category | Correctness
+      Platform | Android
+      Vendor   | Android Open Source Project
+      Feedback | https://issuetracker.google.com/issues/new?component=192708
+      Affects  | Kotlin and Java files
+      Editing  | This check runs on the fly in the IDE editor
+      See      | https://developer.android.com/training/data-storage#filesExternal
 
-            Your code should not reference the `/sdcard` path directly; instead use
-            `Environment.getExternalStorageDirectory().getPath()`.
+      Your code should not reference the `/sdcard` path directly; instead use
+      `Environment.getExternalStorageDirectory().getPath()`.
 
-            Similarly, do not reference the `/data/data/` path directly; it can vary
-            in multi-user scenarios. Instead, use
-            `Context.getFilesDir().getPath()`.
-            """
+      Similarly, do not reference the `/data/data/` path directly; it can vary
+      in multi-user scenarios. Instead, use
+      `Context.getFilesDir().getPath()`.
+      """
         .trimIndent(),
       text,
     )
@@ -592,13 +578,13 @@ class LintIssueDocGeneratorTest {
     val text = files[2].readText()
     assertEquals(
       """
-            # ViewTag
+      # ViewTag
 
-            The issue for this id has been deleted or marked obsolete and can now be
-            ignored.
+      The issue for this id has been deleted or marked obsolete and can now be
+      ignored.
 
-            (Additional metadata not available.)
-            """
+      (Additional metadata not available.)
+      """
         .trimIndent(),
       text,
     )
@@ -749,63 +735,63 @@ class LintIssueDocGeneratorTest {
     val text = files[0].readText()
     assertEquals(
       """
-            # Hardcoded reference to `/sdcard`
+      # Hardcoded reference to `/sdcard`
 
-            Id             | `SdCardPath`
-            ---------------|--------------------------------------------------------
-            Summary        | Hardcoded reference to `/sdcard`
-            Severity       | Warning
-            Category       | Correctness
-            Platform       | Android
-            Vendor         | Android Open Source Project
-            Feedback       | https://issuetracker.google.com/issues/new?component=192708
-            Affects        | Kotlin and Java files
-            Editing        | This check runs on the fly in the IDE editor
-            See            | https://developer.android.com/training/data-storage#filesExternal
-            Implementation | [Source Code](http://example.com/lint-source-code/src/com/android/tools/lint/checks/SdCardDetector.kt)
-            Tests          | [Source Code](http://example.com/lint-source-code/tests/com/android/tools/lint/checks/SdCardDetectorTest.java)
-            Copyright Year | 2020
+      Id             | `SdCardPath`
+      ---------------|--------------------------------------------------------
+      Summary        | Hardcoded reference to `/sdcard`
+      Severity       | Warning
+      Category       | Correctness
+      Platform       | Android
+      Vendor         | Android Open Source Project
+      Feedback       | https://issuetracker.google.com/issues/new?component=192708
+      Affects        | Kotlin and Java files
+      Editing        | This check runs on the fly in the IDE editor
+      See            | https://developer.android.com/training/data-storage#filesExternal
+      Implementation | [Source Code](http://example.com/lint-source-code/src/com/android/tools/lint/checks/SdCardDetector.kt)
+      Tests          | [Source Code](http://example.com/lint-source-code/tests/com/android/tools/lint/checks/SdCardDetectorTest.java)
+      Copyright Year | 2020
 
-            Your code should not reference the `/sdcard` path directly; instead use
-            `Environment.getExternalStorageDirectory().getPath()`.
+      Your code should not reference the `/sdcard` path directly; instead use
+      `Environment.getExternalStorageDirectory().getPath()`.
 
-            Similarly, do not reference the `/data/data/` path directly; it can vary
-            in multi-user scenarios. Instead, use
-            `Context.getFilesDir().getPath()`.
+      Similarly, do not reference the `/data/data/` path directly; it can vary
+      in multi-user scenarios. Instead, use
+      `Context.getFilesDir().getPath()`.
 
-            (##) Example
+      (##) Example
 
-            Here is an example of lint warnings produced by this check:
-            ```text
-            src/main/kotlin/test/pkg/MyTest.kt:4:Warning: Do not hardcode
-            "/sdcard/"; use Environment.getExternalStorageDirectory().getPath()
-            instead [SdCardPath]
-                val s: String = "/sdcard/mydir"
-                                 ~~~~~~~~~~~~~
-            ```
+      Here is an example of lint warnings produced by this check:
+      ```text
+      src/main/kotlin/test/pkg/MyTest.kt:4:Warning: Do not hardcode
+      "/sdcard/"; use Environment.getExternalStorageDirectory().getPath()
+      instead [SdCardPath]
+          val s: String = "/sdcard/mydir"
+                           ~~~~~~~~~~~~~
+      ```
 
-            Here is the source file referenced above:
+      Here is the source file referenced above:
 
-            `src/main/kotlin/test/pkg/MyTest.kt`:
-            ```kotlin
-            package test.pkg
-            import androidx.recyclerview.widget.RecyclerView // should be rewritten to AndroidX in docs
-            class MyTest {
-                /* Don't reference an /sdcard path here: */
-                val s: String = "/sdcard/mydir"
-                val other: String = "/other/string"
-            }
-            ```
+      `src/main/kotlin/test/pkg/MyTest.kt`:
+      ```kotlin
+      package test.pkg
+      import androidx.recyclerview.widget.RecyclerView // should be rewritten to AndroidX in docs
+      class MyTest {
+          /* Don't reference an /sdcard path here: */
+          val s: String = "/sdcard/mydir"
+          val other: String = "/other/string"
+      }
+      ```
 
-            You can also visit the
-            [source code](http://example.com/lint-source-code/tests/com/android/tools/lint/checks/SdCardDetectorTest.java)
-            for the unit tests for this check to see additional scenarios.
+      You can also visit the
+      [source code](http://example.com/lint-source-code/tests/com/android/tools/lint/checks/SdCardDetectorTest.java)
+      for the unit tests for this check to see additional scenarios.
 
-            The above example was automatically extracted from the first unit test
-            found for this lint check, `SdCardDetector.testKotlin`.
-            To report a problem with this extracted sample, visit
-            https://issuetracker.google.com/issues/new?component=192708.
-            """
+      The above example was automatically extracted from the first unit test
+      found for this lint check, `SdCardDetector.testKotlin`.
+      To report a problem with this extracted sample, visit
+      https://issuetracker.google.com/issues/new?component=192708.
+      """
         .trimIndent(),
       text,
     )
@@ -871,8 +857,7 @@ class LintIssueDocGeneratorTest {
     val outputFolder = temporaryFolder.newFolder("report")
 
     val sourceFile = File(sources, "com/android/tools/lint/checks/StringFormatDetector.kt")
-    val testSourceFile =
-      File(testSources, "com/android/tools/lint/checks/StringFormatDetectorTest.java")
+    val testSourceFile = File(testSources, "com/android/tools/lint/checks/StringFormatDetectorTest.java")
     sourceFile.parentFile?.mkdirs()
     testSourceFile.parentFile?.mkdirs()
     sourceFile.createNewFile()
@@ -949,58 +934,58 @@ class LintIssueDocGeneratorTest {
     val text = files[0].readText()
     assertEquals(
       """
-            # `String.format` string doesn't match the XML format string
+      # `String.format` string doesn't match the XML format string
 
-            Id       | `StringFormatMatches`
-            ---------|------------------------------------------------------------
-            Summary  | `String.format` string doesn't match the XML format string
-            Severity | Error
-            Category | Correctness: Messages
-            Platform | Android
-            Vendor   | Android Open Source Project
-            Feedback | https://issuetracker.google.com/issues/new?component=192708
-            Affects  | Kotlin and Java files and resource files
-            Editing  | This check runs on the fly in the IDE editor
+      Id       | `StringFormatMatches`
+      ---------|------------------------------------------------------------
+      Summary  | `String.format` string doesn't match the XML format string
+      Severity | Error
+      Category | Correctness: Messages
+      Platform | Android
+      Vendor   | Android Open Source Project
+      Feedback | https://issuetracker.google.com/issues/new?component=192708
+      Affects  | Kotlin and Java files and resource files
+      Editing  | This check runs on the fly in the IDE editor
 
-            This lint check ensures the following:
-            (1) If there are multiple translations of the format string, then all
-            translations use the same type for the same numbered arguments
-            (2) The usage of the format string in Java is consistent with the format
-            string, meaning that the parameter types passed to String.format matches
-            those in the format string.
+      This lint check ensures the following:
+      (1) If there are multiple translations of the format string, then all
+      translations use the same type for the same numbered arguments
+      (2) The usage of the format string in Java is consistent with the format
+      string, meaning that the parameter types passed to String.format matches
+      those in the format string.
 
-            (##) Example
+      (##) Example
 
-            Here is an example of lint warnings produced by this check:
-            ```text
-            src/Test.java:6:Error: Wrong argument type for formatting argument '#1'
-            in score: conversion is 'd', received boolean (argument #2 in method
-            call) (Did you mean formatting character b?) [StringFormatMatches]
-                String output4 = String.format(score, true);  // wrong
-                                                      ~~~~
-            ```
+      Here is an example of lint warnings produced by this check:
+      ```text
+      src/Test.java:6:Error: Wrong argument type for formatting argument '#1'
+      in score: conversion is 'd', received boolean (argument #2 in method
+      call) (Did you mean formatting character b?) [StringFormatMatches]
+          String output4 = String.format(score, true);  // wrong
+                                                ~~~~
+      ```
 
-            Here are the relevant source files:
+      Here are the relevant source files:
 
-            `res/values/formatstrings.xml`:
-            ```xml
-            <resources>
-                <string name="score">Score: %1${"$"}d</string>
-            </resources>
-            ```
+      `res/values/formatstrings.xml`:
+      ```xml
+      <resources>
+          <string name="score">Score: %1${"$"}d</string>
+      </resources>
+      ```
 
-            `src/Test.java`:
-            ```java
-            import android.app.Activity;
+      `src/Test.java`:
+      ```java
+      import android.app.Activity;
 
-            public class Test extends Activity {
-                public void test() {
-                    String score = getString(R.string.score);
-                    String output4 = String.format(score, true);  // wrong
-                }
-            }
-            ```
-            """
+      public class Test extends Activity {
+          public void test() {
+              String score = getString(R.string.score);
+              String output4 = String.format(score, true);  // wrong
+          }
+      }
+      ```
+      """
         .trimIndent(),
       text,
     )
@@ -1010,81 +995,72 @@ class LintIssueDocGeneratorTest {
   fun testOptions() {
     // (This is the default output format)
     val outputFolder = temporaryFolder.root
-    LintIssueDocGenerator.run(
-      arrayOf(
-        "--no-index",
-        "--issues",
-        "UnknownNullness",
-        "--no-suppress-info",
-        "--output",
-        outputFolder.path,
-      )
-    )
+    LintIssueDocGenerator.run(arrayOf("--no-index", "--issues", "UnknownNullness", "--no-suppress-info", "--output", outputFolder.path))
     val files = outputFolder.listFiles()!!.sortedBy { it.name }
     val names = files.joinToString { it.name }
     assertEquals("UnknownNullness.md.html", names)
     val text = files[0].readText()
     assertEquals(
       """
-            <meta charset="utf-8">
-            (#) Unknown nullness
+      <meta charset="utf-8">
+      (#) Unknown nullness
 
-            !!! WARNING: Unknown nullness
-               This is a warning.
+      !!! WARNING: Unknown nullness
+         This is a warning.
 
-            Id
-            :   `UnknownNullness`
-            Summary
-            :   Unknown nullness
-            Note
-            :   **This issue is disabled by default**; use `--enable UnknownNullness`
-            Severity
-            :   Warning
-            Category
-            :   Interoperability: Kotlin Interoperability
-            Platform
-            :   Any
-            Vendor
-            :   Android Open Source Project
-            Feedback
-            :   https://issuetracker.google.com/issues/new?component=192708
-            Affects
-            :   Kotlin and Java files
-            Editing
-            :   This check runs on the fly in the IDE editor
-            See
-            :   https://developer.android.com/kotlin/interop#nullability_annotations
+      Id
+      :   `UnknownNullness`
+      Summary
+      :   Unknown nullness
+      Note
+      :   **This issue is disabled by default**; use `--enable UnknownNullness`
+      Severity
+      :   Warning
+      Category
+      :   Interoperability: Kotlin Interoperability
+      Platform
+      :   Any
+      Vendor
+      :   Android Open Source Project
+      Feedback
+      :   https://issuetracker.google.com/issues/new?component=192708
+      Affects
+      :   Kotlin and Java files
+      Editing
+      :   This check runs on the fly in the IDE editor
+      See
+      :   https://developer.android.com/kotlin/interop#nullability_annotations
 
-            To improve referencing this code from Kotlin, consider adding explicit
-            nullness information here with either `@NonNull` or `@Nullable`.
+      To improve referencing this code from Kotlin, consider adding explicit
+      nullness information here with either `@NonNull` or `@Nullable`.
 
-            !!! Tip
-               This lint check has an associated quickfix available in the IDE.
+      !!! Tip
+         This lint check has an associated quickfix available in the IDE.
 
-            (##) Options
+      (##) Options
 
-            You can configure this lint checks using the following options:
+      You can configure this lint checks using the following options:
 
-            (###) ignore-deprecated
+      (###) ignore-deprecated
 
-            Whether to ignore classes and members that have been annotated with `@Deprecated`.
-            Normally this lint check will flag all unannotated elements, but by setting this option to `true` it will skip any deprecated elements.
+      Whether to ignore classes and members that have been annotated with `@Deprecated`.
+      Normally this lint check will flag all unannotated elements, but by setting this option to `true` it will skip any deprecated elements.
 
-            Default is false.
+      Default is false.
 
-            Example `lint.xml`:
+      Example `lint.xml`:
 
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~xml linenumbers
-            &lt;lint&gt;
-                &lt;issue id="UnknownNullness"&gt;
-                    &lt;option name="ignore-deprecated" value="false" /&gt;
-                &lt;/issue&gt;
-            &lt;/lint&gt;
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~xml linenumbers
+      &lt;lint&gt;
+          &lt;issue id="UnknownNullness"&gt;
+              &lt;option name="ignore-deprecated" value="false" /&gt;
+          &lt;/issue&gt;
+      &lt;/lint&gt;
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-            <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
-            """
+      <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
+      """
         .trimIndent(),
       text,
     )
@@ -1093,8 +1069,7 @@ class LintIssueDocGeneratorTest {
   @Test
   fun testVendor() {
     val outputFolder = temporaryFolder.root
-    val fragmentFolder =
-      File("${LintIssueDocGenerator.getGmavenCache()}/m2repository/androidx/fragment/fragment")
+    val fragmentFolder = File("${LintIssueDocGenerator.getGmavenCache()}/m2repository/androidx/fragment/fragment")
     if (!fragmentFolder.isDirectory) {
       println("Skipping testVendor: no cache available")
       return
@@ -1250,9 +1225,7 @@ class LintIssueDocGeneratorTest {
       <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
       """
         .trimIndent(),
-      libraries
-        .readText()
-        .replace("  \n", "\n"), // intentional trailing spaces to force markdown new lines
+      libraries.readText().replace("  \n", "\n"), // intentional trailing spaces to force markdown new lines
     )
   }
 
@@ -1271,10 +1244,7 @@ class LintIssueDocGeneratorTest {
     val writer = StringWriter()
     Main.printUsage(PrintWriter(writer), true)
     val usage = writer.toString()
-    val newContents =
-      fileContents.substring(0, start) +
-        usage.substring(usage.indexOf("## ")) +
-        fileContents.substring(end)
+    val newContents = fileContents.substring(0, start) + usage.substring(usage.indexOf("## ")) + fileContents.substring(end)
     if (fileContents != newContents && findSourceTree() != null) {
       flags.writeText(newContents)
       fail("Command line flags changed. Updated $flags document.")
@@ -1293,17 +1263,17 @@ class LintIssueDocGeneratorTest {
     // Checks the various output parsing utilities in LintIssueDocGenerator
     val expected =
       """
-        src/test/pkg/ConditionalApiTest.java:27: Warning: Unnecessary; SDK_INT is always >= 14 [ObsoleteSdkInt]
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
-                                                                         ~~
-        src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm from mylibrary-1.0]
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
-                                                                             ~~
-        0 errors, 3 warnings
-        """
+      src/test/pkg/ConditionalApiTest.java:27: Warning: Unnecessary; SDK_INT is always >= 14 [ObsoleteSdkInt]
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
+              alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
+                                                                       ~~
+      src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm from mylibrary-1.0]
+              alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
+                                                                           ~~
+      0 errors, 3 warnings
+      """
         .trimIndent()
 
     val incidents = getOutputIncidents(expected)
@@ -1351,16 +1321,16 @@ class LintIssueDocGeneratorTest {
   fun testOutputParsingMultiline() {
     val expected =
       """
-        src/test.kt:2: Error: This @Composable function has a modifier parameter but it doesn't have a default value.
-        See https://slackhq.github.io/compose-lints/rules/#modifiers-should-have-default-parameters for more information. [ComposeModifierWithoutDefault]
-        fun Something(modifier: Modifier) { }
-                      ~~~~~~~~~~~~~~~~~~
-        src/test.kt:4: Error: This @Composable function has a modifier parameter but it doesn't have a default value.
-        See https://slackhq.github.io/compose-lints/rules/#modifiers-should-have-default-parameters for more information. [ComposeModifierWithoutDefault]
-        fun Something(modifier: Modifier = Modifier, modifier2: Modifier) { }
-                                                     ~~~~~~~~~~~~~~~~~~~
-        2 errors, 0 warnings
-        """
+      src/test.kt:2: Error: This @Composable function has a modifier parameter but it doesn't have a default value.
+      See https://slackhq.github.io/compose-lints/rules/#modifiers-should-have-default-parameters for more information. [ComposeModifierWithoutDefault]
+      fun Something(modifier: Modifier) { }
+                    ~~~~~~~~~~~~~~~~~~
+      src/test.kt:4: Error: This @Composable function has a modifier parameter but it doesn't have a default value.
+      See https://slackhq.github.io/compose-lints/rules/#modifiers-should-have-default-parameters for more information. [ComposeModifierWithoutDefault]
+      fun Something(modifier: Modifier = Modifier, modifier2: Modifier) { }
+                                                   ~~~~~~~~~~~~~~~~~~~
+      2 errors, 0 warnings
+      """
         .trimIndent()
 
     val incidents = getOutputIncidents(expected)
@@ -1424,7 +1394,7 @@ class LintIssueDocGeneratorTest {
               android:id="@+id/button1"
               ~~~~~~~~~~~~~~~~~~~~~~~~~
       0 errors, 1 warnings
-        """
+      """
         .trimIndent()
 
     val incidents = getOutputIncidents(expected)
@@ -1583,16 +1553,7 @@ class LintIssueDocGeneratorTest {
     )
 
     LintIssueDocGenerator.run(
-      arrayOf(
-        "--no-index",
-        "--test-url",
-        "",
-        testSources.path,
-        "--issues",
-        "WrongConstant",
-        "--output",
-        outputFolder.path,
-      )
+      arrayOf("--no-index", "--test-url", "", testSources.path, "--issues", "WrongConstant", "--output", outputFolder.path)
     )
     val files = outputFolder.listFiles()!!.sortedBy { it.name }
     val names = files.joinToString { it.name }
@@ -1615,9 +1576,7 @@ class LintIssueDocGeneratorTest {
       return if (sourceTree.isNotBlank()) {
         File(sourceTree).apply {
           if (!File(this, ".repo").isDirectory) {
-            fail(
-              "Invalid directory $this: should be pointing to the root of a tools checkout directory"
-            )
+            fail("Invalid directory $this: should be pointing to the root of a tools checkout directory")
           }
         }
       } else null

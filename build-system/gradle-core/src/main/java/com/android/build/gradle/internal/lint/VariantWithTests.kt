@@ -17,19 +17,18 @@
 package com.android.build.gradle.internal.lint
 
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
-import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
+import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 
 /**
  * A variant with its (optional) test components for consumption by lint.
  *
- * Note that for lintVital the test components will be omitted, even if they exist, as they
- * should not be analyzed.
+ * Note that for lintVital the test components will be omitted, even if they exist, as they should not be analyzed.
  */
 class VariantWithTests(
-    val main: VariantCreationConfig,
-    val androidTest: DeviceTestCreationConfig? = null,
-    val unitTest: HostTestCreationConfig? = null,
-    val testFixtures: TestFixturesCreationConfig? = null
+  val main: VariantCreationConfig,
+  val androidTest: DeviceTestCreationConfig? = null,
+  val unitTest: HostTestCreationConfig? = null,
+  val testFixtures: TestFixturesCreationConfig? = null,
 )

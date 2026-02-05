@@ -25,8 +25,7 @@ import java.nio.file.Path
 
 object AvdNames {
 
-  private val ALLOWED_FILENAME_CHARS =
-    inRange('a', 'z').or(inRange('A', 'Z')).or(inRange('0', '9')).or(anyOf(".-"))
+  private val ALLOWED_FILENAME_CHARS = inRange('a', 'z').or(inRange('A', 'Z')).or(inRange('0', '9')).or(anyOf(".-"))
   private val ALLOWED_DISPLAY_NAME_CHARS = ALLOWED_FILENAME_CHARS.or(anyOf("_ ()"))
   private const val ALLOWED_CHARS_READABLE = "a-z A-Z 0-9 . _ - ( )"
 
@@ -43,9 +42,8 @@ object AvdNames {
   @JvmStatic fun humanReadableAllowedCharacters(): String = ALLOWED_CHARS_READABLE
 
   /**
-   * Get a version of `avdName` modified such that it is an allowed AVD filename. (This may be more
-   * restrictive than what the underlying filesystem requires.) Remove leading and trailing
-   * disallowed characters. Replace consecutive internal disallowed characters by a single
+   * Get a version of `avdName` modified such that it is an allowed AVD filename. (This may be more restrictive than what the underlying
+   * filesystem requires.) Remove leading and trailing disallowed characters. Replace consecutive internal disallowed characters by a single
    * underscore. If the result is empty, "myavd" will be returned.
    */
   @JvmStatic
@@ -53,9 +51,7 @@ object AvdNames {
     return ALLOWED_FILENAME_CHARS.negate().trimAndCollapseFrom(avdName, '_').ifBlank { "myavd" }
   }
 
-  /**
-   * Computes a reasonable display name for a newly-created AVD with the given device and version.
-   */
+  /** Computes a reasonable display name for a newly-created AVD with the given device and version. */
   @JvmStatic
   fun getDefaultDeviceDisplayName(device: Device, version: AndroidVersion): String {
     // A device name might include the device's screen size as, e.g., 7". The " is not allowed in
@@ -74,24 +70,14 @@ object AvdNames {
 }
 
 /**
- * Appends _n to the name if necessary to make the name unique, where n is the first number that
- * makes the filename unique (starting with 2).
+ * Appends _n to the name if necessary to make the name unique, where n is the first number that makes the filename unique (starting with
+ * 2).
  */
-fun AvdManager.uniquifyAvdName(avdName: String): String =
-  AvdNames.uniquify(avdName, "_") { getAvd(it, false) != null }
+fun AvdManager.uniquifyAvdName(avdName: String): String = AvdNames.uniquify(avdName, "_") { getAvd(it, false) != null }
 
-/**
- * If the given display name is already present on an AVD, appends the first number that makes it
- * unique (starting with 2).
- */
-fun AvdManager.uniquifyDisplayName(displayName: String): String =
-  AvdNames.uniquify(displayName, " ") { findAvdWithDisplayName(it) != null }
+/** If the given display name is already present on an AVD, appends the first number that makes it unique (starting with 2). */
+fun AvdManager.uniquifyDisplayName(displayName: String): String = AvdNames.uniquify(displayName, " ") { findAvdWithDisplayName(it) != null }
 
-/**
- * Finds an available AVD folder with the given basename, appending a suffix _n to the given name as
- * required to make it unique.
- */
+/** Finds an available AVD folder with the given basename, appending a suffix _n to the given name as required to make it unique. */
 fun AvdManager.uniquifyAvdFolder(name: String): Path =
-  baseAvdFolder.resolve(
-    AvdNames.uniquify(name, "_") { Files.exists(baseAvdFolder.resolve("$it.avd")) } + ".avd"
-  )
+  baseAvdFolder.resolve(AvdNames.uniquify(name, "_") { Files.exists(baseAvdFolder.resolve("$it.avd")) } + ".avd")

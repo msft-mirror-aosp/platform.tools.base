@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.InstrumentationCreat
  * ```
  */
 interface InstrumentationTaskCreationAction {
-    val instrumentationCreationConfig: InstrumentationCreationConfig
+  val instrumentationCreationConfig: InstrumentationCreationConfig
 }
 
-class InstrumentationTaskCreationActionImpl(
-    creationConfig: ComponentCreationConfig
-): InstrumentationTaskCreationAction {
+class InstrumentationTaskCreationActionImpl(creationConfig: ComponentCreationConfig) : InstrumentationTaskCreationAction {
 
-    override val instrumentationCreationConfig: InstrumentationCreationConfig =
-        creationConfig.instrumentationCreationConfig!!
+  override val instrumentationCreationConfig: InstrumentationCreationConfig = creationConfig.instrumentationCreationConfig!!
 }

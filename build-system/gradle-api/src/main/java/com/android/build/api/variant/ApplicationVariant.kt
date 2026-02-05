@@ -25,57 +25,53 @@ import org.gradle.api.provider.Property
  * See [Component] and [Variant] for more information.
  */
 @Suppress("DEPRECATION")
-interface ApplicationVariant : GeneratesApk,
-    Variant,
-    HasDeviceTests,
-    HasAndroidTest,
-    HasHostTests,
-    HasUnitTest,
-    HasTestFixtures,
-    HasTestSuites,
-    CanMinifyCode,
-    CanMinifyAndroidResources {
+interface ApplicationVariant :
+  GeneratesApk,
+  Variant,
+  HasDeviceTests,
+  HasAndroidTest,
+  HasHostTests,
+  HasUnitTest,
+  HasTestFixtures,
+  HasTestSuites,
+  CanMinifyCode,
+  CanMinifyAndroidResources {
 
-    /**
-     * Variant's application ID as present in the final manifest file of the APK.
-     *
-     * Setting this value will override anything set via the DSL with
-     * [com.android.build.api.dsl.ApplicationBaseFlavor.applicationId], and
-     * [com.android.build.api.dsl.ApplicationVariantDimension.applicationIdSuffix]
-     */
-    override val applicationId: Property<String>
+  /**
+   * Variant's application ID as present in the final manifest file of the APK.
+   *
+   * Setting this value will override anything set via the DSL with [com.android.build.api.dsl.ApplicationBaseFlavor.applicationId], and
+   * [com.android.build.api.dsl.ApplicationVariantDimension.applicationIdSuffix]
+   */
+  override val applicationId: Property<String>
 
-    /**
-     * Returns the final list of variant outputs.
-     * @return read only list of [VariantOutput] for this variant.
-     */
-    val outputs: List<VariantOutput>
+  /**
+   * Returns the final list of variant outputs.
+   *
+   * @return read only list of [VariantOutput] for this variant.
+   */
+  val outputs: List<VariantOutput>
 
-    /** Specify whether to include SDK dependency information in APKs and Bundles. */
-    val dependenciesInfo: DependenciesInfo
+  /** Specify whether to include SDK dependency information in APKs and Bundles. */
+  val dependenciesInfo: DependenciesInfo
 
-    /**
-     * Variant's signingConfig, initialized by the corresponding DSL element.
-     * @return Variant's config or null if the variant is not configured for signing.
-     */
-    val signingConfig: SigningConfig
+  /**
+   * Variant's signingConfig, initialized by the corresponding DSL element.
+   *
+   * @return Variant's config or null if the variant is not configured for signing.
+   */
+  val signingConfig: SigningConfig
 
-    /**
-     * Variant's information related to the bundle creation configuration.
-     * @return Variant's [BundleConfig].
-     */
-    @get:Incubating
-    val bundleConfig: BundleConfig
+  /**
+   * Variant's information related to the bundle creation configuration.
+   *
+   * @return Variant's [BundleConfig].
+   */
+  @get:Incubating val bundleConfig: BundleConfig
 
-    /**
-     * Variant's android resources processing configuration, initialized by the corresponding
-     * global DSL element.
-     */
-    @get:Incubating
-    override val androidResources: ApplicationAndroidResources
+  /** Variant's android resources processing configuration, initialized by the corresponding global DSL element. */
+  @get:Incubating override val androidResources: ApplicationAndroidResources
 
-    /**
-     * Variant's packagingOptions, initialized by the corresponding global DSL element.
-     */
-    override val packaging: TestedApkPackaging
+  /** Variant's packagingOptions, initialized by the corresponding global DSL element. */
+  override val packaging: TestedApkPackaging
 }

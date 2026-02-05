@@ -19,21 +19,15 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 /**
- * Definition of device test sources for a test suite. Device test source files are compiled and
- * therefore dependencies can be attached to them.
+ * Definition of device test sources for a test suite. Device test source files are compiled and therefore dependencies can be attached to
+ * them.
  */
 @Incubating
 interface TestSuiteTestApkSpec {
 
-    /**
-     * Dependency handler for this sources
-     */
-    @get:Incubating
-    val dependencies: AgpTestSuiteDependencies
+  /** Dependency handler for this sources */
+  @get:Incubating val dependencies: AgpTestSuiteDependencies
 
-    /**
-     * Specifies dependency information for this test suite.
-     */
-    @Incubating
-    fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
+  /** Specifies dependency information for this test suite. */
+  @Incubating fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
 }

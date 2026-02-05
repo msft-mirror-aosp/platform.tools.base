@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMessagingService
 
-
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.CLASS
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
@@ -74,12 +73,17 @@ val automotiveMessagingServiceTemplate
       TextFieldWidget(readReceiverName),
       TextFieldWidget(replyReceiverName),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     recipe = { data: TemplateData ->
-      automotiveMessagingServiceRecipe(data as ModuleTemplateData, serviceName.value, readReceiverName.value, replyReceiverName.value,
-                                       packageName.value)
+      automotiveMessagingServiceRecipe(
+        data as ModuleTemplateData,
+        serviceName.value,
+        readReceiverName.value,
+        replyReceiverName.value,
+        packageName.value,
+      )
     }
 
     thumb { File("automotive-messaging-service").resolve("automotive-messaging-service.png") }

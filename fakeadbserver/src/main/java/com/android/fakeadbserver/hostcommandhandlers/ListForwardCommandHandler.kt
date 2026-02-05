@@ -20,43 +20,35 @@ import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 import java.nio.charset.StandardCharsets
 
-/**
- * Sends a list of all forward socket connections for all active devices
- */
+/** Sends a list of all forward socket connections for all active devices */
 internal class ListForwardCommandHandler : SimpleHostCommandHandler("list-forward") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        val stream = responseSocket.getOutputStream()
-        val deviceListString = formatList(fakeAdbServer.deviceListCopy.get())
-        writeOkay(stream)
-        write4ByteHexIntString(stream, deviceListString.length)
-        stream.write(deviceListString.toByteArray(StandardCharsets.US_ASCII))
-        return false
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    val stream = responseSocket.getOutputStream()
+    val deviceListString = formatList(fakeAdbServer.deviceListCopy.get())
+    writeOkay(stream)
+    write4ByteHexIntString(stream, deviceListString.length)
+    stream.write(deviceListString.toByteArray(StandardCharsets.US_ASCII))
+    return false
+  }
+
+  private fun formatList(deviceList: List<DeviceState>): String {
+    val builder = StringBuilder()
+    for (deviceState in deviceList) {
+      for (portForwarder in deviceState.allPortForwarders.values) {
+        builder.append(deviceState.deviceId)
+        builder.append(" ")
+        builder.append("tcp:${portForwarder?.source?.port}")
+        builder.append(" ")
+        builder.append("tcp:${portForwarder?.destination?.port}")
+        builder.append("\n")
+      }
     }
 
-    private fun formatList(deviceList: List<DeviceState>): String {
-        val builder = StringBuilder()
-        for (deviceState in deviceList) {
-            for (portForwarder in deviceState.allPortForwarders.values) {
-                builder.append(deviceState.deviceId)
-                builder.append(" ")
-                builder.append("tcp:${portForwarder?.source?.port}")
-                builder.append(" ")
-                builder.append("tcp:${portForwarder?.destination?.port}")
-                builder.append("\n")
-            }
-        }
-
-        // Remove trailing '\n' to match adb server behavior
-        if (builder.isNotEmpty()) {
-            builder.deleteCharAt(builder.length - 1)
-        }
-        return builder.toString()
+    // Remove trailing '\n' to match adb server behavior
+    if (builder.isNotEmpty()) {
+      builder.deleteCharAt(builder.length - 1)
     }
-
+    return builder.toString()
+  }
 }

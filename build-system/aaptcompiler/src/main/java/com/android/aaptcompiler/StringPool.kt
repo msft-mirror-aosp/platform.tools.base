@@ -27,7 +27,7 @@ import com.android.utils.ILogger
 
 data class Span(val name: String, var firstChar: Int, var lastChar: Int = firstChar)
 
-data class StyleString(val str : String, val spans : List<Span>)
+data class StyleString(val str: String, val spans: List<Span>)
 
 class StringPool {
 
@@ -35,17 +35,15 @@ class StringPool {
   private val styles = mutableListOf<StyleEntry>()
   private val indexedStrings = mutableMapOf<String, MutableList<Entry>>()
 
-  class Context(
-      var priority: Long = Priority.NORMAL.priority,
-      var config: ConfigDescription = ConfigDescription()) {
+  class Context(var priority: Long = Priority.NORMAL.priority, var config: ConfigDescription = ConfigDescription()) {
     enum class Priority(val priority: Long) {
       HIGH(1),
       NORMAL(0x7fffffffL),
-      LOW(0xffffffffL)
+      LOW(0xffffffffL),
     }
   }
 
-  class Ref (internal val entry: Entry) {
+  class Ref(internal val entry: Entry) {
     init {
       ++entry.ref
     }
@@ -61,9 +59,7 @@ class StringPool {
   class Span(internal val name: Ref, var firstChar: Int, var lastChar: Int = firstChar) {
     override fun equals(other: Any?): Boolean {
       if (other is Span) {
-        return name.value() == other.name.value() &&
-          firstChar == other.firstChar &&
-          lastChar == other.lastChar
+        return name.value() == other.name.value() && firstChar == other.firstChar && lastChar == other.lastChar
       }
       return false
     }
@@ -82,8 +78,10 @@ class StringPool {
   class Entry(val value: String, val context: Context) {
     var index: Int = 0
       internal set
+
     var ref: Int = 0
       internal set
+
     lateinit var pool: StringPool
       internal set
   }
@@ -91,6 +89,7 @@ class StringPool {
   class StyleEntry(val value: String, val context: Context, val spans: List<Span>) {
     var index: Int = 0
       internal set
+
     var ref: Int = 0
       internal set
   }
@@ -101,11 +100,11 @@ class StringPool {
     return strings[index]
   }
 
-  fun makeRef(str: String, context: Context = Context()) : Ref {
+  fun makeRef(str: String, context: Context = Context()): Ref {
     return makeRefImpl(str, context, true)
   }
 
-  fun makeRef(ref: Ref): Ref{
+  fun makeRef(ref: Ref): Ref {
     if (ref.entry.pool == this) {
       return ref
     }
@@ -113,7 +112,7 @@ class StringPool {
     return makeRef(ref.value(), ref.context())
   }
 
-  private fun makeRefImpl(str: String, context: Context, isUnique: Boolean) : Ref {
+  private fun makeRefImpl(str: String, context: Context, isUnique: Boolean): Ref {
     if (isUnique) {
       val entries = indexedStrings[str]
       if (entries != null) {
@@ -154,8 +153,7 @@ class StringPool {
   }
 
   fun makeRef(styleRef: StyleRef): StyleRef {
-    val styleEntry =
-      StyleEntry(styleRef.styleEntry.value, styleRef.styleEntry.context, styleRef.styleEntry.spans)
+    val styleEntry = StyleEntry(styleRef.styleEntry.value, styleRef.styleEntry.context, styleRef.styleEntry.spans)
     styleEntry.index = styles.size
     styleEntry.ref = 0
     for (span in styleEntry.spans) {
@@ -176,13 +174,12 @@ class StringPool {
   }
 
   private fun flatten(out: BigBuffer, utf8: Boolean, logger: ILogger?) {
-    val header = ResStringPoolHeader(
-      ResChunkHeader(
-        ChunkType.STRING_POOL_TYPE.id.hostToDevice(),
-        ResStringPoolHeader.SIZE.hostToDevice()
-      ),
-      size().hostToDevice(),
-      styles.size.hostToDevice())
+    val header =
+      ResStringPoolHeader(
+        ResChunkHeader(ChunkType.STRING_POOL_TYPE.id.hostToDevice(), ResStringPoolHeader.SIZE.hostToDevice()),
+        size().hostToDevice(),
+        styles.size.hostToDevice(),
+      )
     if (utf8) {
       header.flags = ResStringPoolHeader.UTF8_FLAG or header.flags
     }
@@ -190,12 +187,10 @@ class StringPool {
     val headerBlock = out.nextBlock(ResStringPoolHeader.SIZE.toInt())
 
     var currentStringIndex = 0
-    val stringIndexBlock =
-      if (size() != 0) out.nextBlock(4*size()) else null
+    val stringIndexBlock = if (size() != 0) out.nextBlock(4 * size()) else null
 
     var currentStyleIndex = 0
-    val stylesIndexBlock =
-      if (styles.size != 0) out.nextBlock(4*styles.size) else null
+    val stylesIndexBlock = if (styles.size != 0) out.nextBlock(4 * styles.size) else null
 
     val beginStringsIndex = out.size
     header.stringsStart = (out.size - headerStart).hostToDevice()
@@ -203,8 +198,7 @@ class StringPool {
     if (stringIndexBlock != null) {
       // Styles come first
       for (entry in styles) {
-        stringIndexBlock
-          .writeInt((out.size - beginStringsIndex).hostToDevice(), currentStringIndex)
+        stringIndexBlock.writeInt((out.size - beginStringsIndex).hostToDevice(), currentStringIndex)
         currentStringIndex += 4
         encodeString(entry.value, utf8, out)
       }
@@ -224,18 +218,19 @@ class StringPool {
 
       for (entry in styles) {
         stylesIndexBlock.writeInt((out.size - header.stylesStart).hostToDevice(), currentStyleIndex)
-        currentStyleIndex +=4
+        currentStyleIndex += 4
 
         if (entry.spans.isNotEmpty()) {
-          val spansBlock = out.nextBlock(ResStringPoolSpan.SIZE*entry.spans.size)
+          val spansBlock = out.nextBlock(ResStringPoolSpan.SIZE * entry.spans.size)
 
           var currentSpanLocation = 0
           for (span in entry.spans) {
-            val resSpan = ResStringPoolSpan(
-              ResStringPoolRef(
-                span.name.index().hostToDevice()),
-              span.firstChar.hostToDevice(),
-              span.lastChar.hostToDevice())
+            val resSpan =
+              ResStringPoolSpan(
+                ResStringPoolRef(span.name.index().hostToDevice()),
+                span.firstChar.hostToDevice(),
+                span.lastChar.hostToDevice(),
+              )
             encodeSpan(resSpan, spansBlock, currentSpanLocation)
             currentSpanLocation += ResStringPoolSpan.SIZE
           }
@@ -269,7 +264,7 @@ class StringPool {
     out.writeInt(resHeader.stylesStart, 24)
   }
 
-  private fun encodeSpan(resSpan: ResStringPoolSpan, out: BigBuffer.BlockRef, location: Int) : Int {
+  private fun encodeSpan(resSpan: ResStringPoolSpan, out: BigBuffer.BlockRef, location: Int): Int {
     out.writeInt(resSpan.name.index, location)
     out.writeInt(resSpan.firstChar, location + 4)
     out.writeInt(resSpan.lastChar, location + 8)
@@ -277,17 +272,19 @@ class StringPool {
   }
 
   private fun encodeString(str: String, utf8: Boolean, out: BigBuffer) {
-      if (utf8) {
+    if (utf8) {
       val utf16Length = str.length
       val utf8Str = str.toByteArray()
       val utf8Length = utf8Str.size
 
       // Make sure the lengths to be encoded do not exceed the maximum length that can be encoded
       // using chars
-      if (utf8Length > UTF8_ENCODE_LENGTH_MAX ) {
-        error("String of size $utf8Length bytes is too large to encode using UTF-8 " +
-                "($UTF8_ENCODE_LENGTH_MAX bytes). " +
-                "Affected string begins with: '${str.take(STRING_PREFIX_LENGTH_FOR_ERRORS)}'...")
+      if (utf8Length > UTF8_ENCODE_LENGTH_MAX) {
+        error(
+          "String of size $utf8Length bytes is too large to encode using UTF-8 " +
+            "($UTF8_ENCODE_LENGTH_MAX bytes). " +
+            "Affected string begins with: '${str.take(STRING_PREFIX_LENGTH_FOR_ERRORS)}'..."
+        )
       }
 
       val blockSize = getLengthUtf8(utf8Length) + getLengthUtf8(utf16Length) + utf8Length + 1
@@ -315,12 +312,14 @@ class StringPool {
       // Make sure the length to be encoded does not exceed the maximum possible length that can be
       // encoded
       if (utf16Length > UTF16_ENCODE_LENGTH_MAX) {
-        error("String of size ${str.toByteArray().size} is too large to encode using " +
-                "UTF-16 ($UTF16_ENCODE_LENGTH_MAX bytes). " +
-                "Affected string begins with: '${str.take(STRING_PREFIX_LENGTH_FOR_ERRORS)}'...")
+        error(
+          "String of size ${str.toByteArray().size} is too large to encode using " +
+            "UTF-16 ($UTF16_ENCODE_LENGTH_MAX bytes). " +
+            "Affected string begins with: '${str.take(STRING_PREFIX_LENGTH_FOR_ERRORS)}'..."
+        )
       }
 
-      val blockSize = getLengthUtf16(utf16Length) + utf16Length*2 + 2
+      val blockSize = getLengthUtf16(utf16Length) + utf16Length * 2 + 2
       val stringBlock = out.nextBlock(blockSize)
 
       var locationToWrite = 0
@@ -339,8 +338,7 @@ class StringPool {
     }
   }
 
-  private fun getLengthUtf8(length: Int) =
-    if (length <= ONE_BYTE_UTF8_ENCODE_LENGTH_MAX) 1 else 2
+  private fun getLengthUtf8(length: Int) = if (length <= ONE_BYTE_UTF8_ENCODE_LENGTH_MAX) 1 else 2
 
   private fun encodeLengthUtf8(length: Int, out: BigBuffer.BlockRef, location: Int): Int {
     return if (length <= ONE_BYTE_UTF8_ENCODE_LENGTH_MAX) {
@@ -353,36 +351,36 @@ class StringPool {
     }
   }
 
-  private fun getLengthUtf16(length: Int) =
-    if (length <= ONE_CHAR_UTF16_ENCODE_LENGTH_MAX) 2 else 4
+  private fun getLengthUtf16(length: Int) = if (length <= ONE_CHAR_UTF16_ENCODE_LENGTH_MAX) 2 else 4
 
   private fun encodeLengthUtf16(length: Int, out: BigBuffer.BlockRef, location: Int): Int {
     return if (length <= ONE_CHAR_UTF16_ENCODE_LENGTH_MAX) {
       out.writeShort(length.toShort().hostToDevice(), location)
       2
     } else {
-      out.writeShort(
-        ((length shr 16) or TWO_CHAR_UTF16_LENGTH_SIGNIFIER).toShort().hostToDevice(), location)
+      out.writeShort(((length shr 16) or TWO_CHAR_UTF16_LENGTH_SIGNIFIER).toShort().hostToDevice(), location)
       out.writeShort(length.toShort().hostToDevice(), location + 2)
       4
     }
   }
 
   private fun sortEntries(comparator: Comparator<Context>?) {
-    val entryComparator = if (comparator!= null) {
-      compareBy<Entry, Context>(comparator) {it.context}.thenComparing(ENTRY_ON_VALUE)
-    } else {
-      ENTRY_ON_VALUE
-    }
+    val entryComparator =
+      if (comparator != null) {
+        compareBy<Entry, Context>(comparator) { it.context }.thenComparing(ENTRY_ON_VALUE)
+      } else {
+        ENTRY_ON_VALUE
+      }
     strings.sortWith(entryComparator)
   }
 
   private fun sortStyles(comparator: Comparator<Context>?) {
-    val entryComparator = if (comparator!= null) {
-      compareBy<StyleEntry, Context>(comparator) {it.context}.thenComparing(STYLE_ON_VALUE)
-    } else {
-      STYLE_ON_VALUE
-    }
+    val entryComparator =
+      if (comparator != null) {
+        compareBy<StyleEntry, Context>(comparator) { it.context }.thenComparing(STYLE_ON_VALUE)
+      } else {
+        STYLE_ON_VALUE
+      }
     styles.sortWith(entryComparator)
   }
 
@@ -410,8 +408,7 @@ class StringPool {
     // exceeds the maximum permitted utf-8 or utf-16 byte size.
     const val STRING_PREFIX_LENGTH_FOR_ERRORS = 42
 
-    val ENTRY_ON_VALUE = compareBy<Entry> {it.value}
-    val STYLE_ON_VALUE = compareBy<StyleEntry> {it.value}
+    val ENTRY_ON_VALUE = compareBy<Entry> { it.value }
+    val STYLE_ON_VALUE = compareBy<StyleEntry> { it.value }
   }
 }
-

@@ -18,56 +18,53 @@ package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.COM_GOOGLE_ANDROID_MATERIAL_MATERIAL_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 
-/**
- * Sanity tests for the new compile R class flow pipeline.
- */
+/** Sanity tests for the new compile R class flow pipeline. */
 class CompileRClassFlowTest {
 
-    private val lib1 = MinimalSubProject.lib("com.example.lib1")
-        .withFile(
-            "src/main/res/values/strings.xml",
-            """<resources><string name="lib1String">Lib1 string</string></resources>"""
-        )
-        .withFile(
-            "src/main/java/com/example/lib1/Example.java",
-            """package com.example.lib1;
+  private val lib1 =
+    MinimalSubProject.lib("com.example.lib1")
+      .withFile("src/main/res/values/strings.xml", """<resources><string name="lib1String">Lib1 string</string></resources>""")
+      .withFile(
+        "src/main/java/com/example/lib1/Example.java",
+        """package com.example.lib1;
                     public class Example {
                         public static final int LIB1_STRING = R.string.lib1String;
                         public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;
-                    }"""
-        )
+                    }""",
+      )
 
-    private val lib2 = MinimalSubProject.lib("com.example.lib2")
-        .withFile(
-            "src/main/res/values/strings.xml",
-            """<resources>
+  private val lib2 =
+    MinimalSubProject.lib("com.example.lib2")
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """<resources>
                         <string name="lib2String">Lib2 string</string>
-                    </resources>"""
-        )
-        .withFile(
-            "src/main/java/com/example/lib2/Example.java",
-            """package com.example.lib2;
+                    </resources>""",
+      )
+      .withFile(
+        "src/main/java/com/example/lib2/Example.java",
+        """package com.example.lib2;
                     public class Example {
                         public static final int LIB2_STRING = R.string.lib2String;
                         public static final int LIB1_STRING = com.example.lib1.R.string.lib1String;
                         public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;
-                    }"""
-        )
+                    }""",
+      )
 
-    /** Included to make sure that the ids on an app compilation R class are constant expressions */
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile(
-            "src/main/java/com/example/app/Example.java",
-            """package com.example.app;
+  /** Included to make sure that the ids on an app compilation R class are constant expressions */
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/java/com/example/app/Example.java",
+        """package com.example.app;
 
                     import com.example.lib2.R;
 
@@ -80,63 +77,53 @@ class CompileRClassFlowTest {
                             }
                         }
                     }
-                    """
-        )
+                    """,
+      )
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":lib1", lib1)
-            .subproject(":lib2", lib2)
-            .subproject(":app", app)
-            .dependency(lib1, "com.google.android.material:material:$COM_GOOGLE_ANDROID_MATERIAL_MATERIAL_VERSION")
-            .dependency(lib2, lib1)
-            .dependency(app, lib2)
-            .build()
+  private val testApp =
+    MultiModuleTestProject.builder()
+      .subproject(":lib1", lib1)
+      .subproject(":lib2", lib2)
+      .subproject(":app", app)
+      .dependency(lib1, "com.google.android.material:material:$COM_GOOGLE_ANDROID_MATERIAL_MATERIAL_VERSION")
+      .dependency(lib2, lib1)
+      .dependency(app, lib2)
+      .build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp)
-        // consider using default heap size when b/339837484 is resolved
-        .withHeap("2048m")
-        .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(testApp)
+      // consider using default heap size when b/339837484 is resolved
+      .withHeap("2048m")
+      .create()
 
-    /** Verifies the behavior when enabling and disabling the COMPILE_CLASSPATH_LIBRARY_R_CLASSES flag. */
-    @Test
-    fun runtimeRClassFlowTest() {
+  /** Verifies the behavior when enabling and disabling the COMPILE_CLASSPATH_LIBRARY_R_CLASSES flag. */
+  @Test
+  fun runtimeRClassFlowTest() {
 
-        val tasks = listOf(
-            ":app:assembleDebug",
-            ":app:assembleDebugAndroidTest",
-            ":lib1:assembleDebugAndroidTest",
-            ":lib2:assembleDebug",
-            ":lib2:assembleDebugAndroidTest"
-        )
+    val tasks =
+      listOf(
+        ":app:assembleDebug",
+        ":app:assembleDebugAndroidTest",
+        ":lib1:assembleDebugAndroidTest",
+        ":lib2:assembleDebug",
+        ":lib2:assembleDebugAndroidTest",
+      )
 
-        // When compiled with the flag is enabled,
-        // then the build should fail:
-        val result = project.executor()
-                .expectFailure()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-            .run(tasks)
-        assertThat(result.stderr)
-            .contains("public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;\n")
+    // When compiled with the flag is enabled,
+    // then the build should fail:
+    val result = project.executor().expectFailure().with(BooleanOption.USE_NON_FINAL_RES_IDS, false).run(tasks)
+    assertThat(result.stderr)
+      .contains("public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;\n")
 
-        // Given an updated project where the library on to the compile classpath:
-        // (Done by having an 'api' rather than 'implementation' dependency in lib1, so lib2
-        // has the library on the compile classpath.)
-        TestFileUtils.searchAndReplace(
-                project.file("lib1/build.gradle"),
-                "implementation '",
-                "api '"
-        )
-        TestFileUtils.searchAndReplace(
-            project.file("lib2/build.gradle"),
-            "implementation",
-            "api"
-        )
-        // When compiled with the flag is enabled,
-        // then the build should succeed:
-        project.executor()
-                .run(tasks)
-    }
+    // Given an updated project where the library on to the compile classpath:
+    // (Done by having an 'api' rather than 'implementation' dependency in lib1, so lib2
+    // has the library on the compile classpath.)
+    TestFileUtils.searchAndReplace(project.file("lib1/build.gradle"), "implementation '", "api '")
+    TestFileUtils.searchAndReplace(project.file("lib2/build.gradle"), "implementation", "api")
+    // When compiled with the flag is enabled,
+    // then the build should succeed:
+    project.executor().run(tasks)
+  }
 }
-

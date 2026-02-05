@@ -18,11 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.loginActivity.res
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun activityLoginXml(
-  activityClass: String,
-  packageName: String,
-  useAndroidX: Boolean,
-  minApiLevel: Int): String {
+fun activityLoginXml(activityClass: String, packageName: String, useAndroidX: Boolean, minApiLevel: Int): String {
 
   return """<?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}

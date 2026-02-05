@@ -20,11 +20,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.layoutResourceFile.res.layoutXml
 
-fun RecipeExecutor.layoutResourceFileRecipe(
-  moduleData: ModuleTemplateData,
-  layoutName: String,
-  rootTag: String
-) {
+fun RecipeExecutor.layoutResourceFileRecipe(moduleData: ModuleTemplateData, layoutName: String, rootTag: String) {
   val resOut = moduleData.resDir
   save(layoutXml(rootTag), moduleData.resDir.resolve("layout/${layoutName}.xml"))
   open(resOut.resolve("layout/${layoutName}.xml"))

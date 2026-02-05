@@ -20,73 +20,56 @@ import com.android.build.gradle.internal.cxx.logging.PassThroughRecordingLogging
 import com.android.build.gradle.internal.cxx.logging.errorln
 import com.android.utils.cxx.CxxDiagnosticCode.NINJA_IS_MISSING
 import com.android.utils.cxx.os.exe
-import org.jetbrains.kotlin.com.google.common.annotations.VisibleForTesting
-import java.io.File
 import com.android.utils.cxx.os.getEnvironmentPaths
+import java.io.File
+import org.jetbrains.kotlin.com.google.common.annotations.VisibleForTesting
 
 /**
  * Method for locating ninja.exe. The search order is:
  * 1) Folder of CMake.exe, if present
  * 2) Environment PATH
- * 3) Other CMake SDK folders, if present
- * See b/326411158 for a discussion about the nuances of this order.
+ * 3) Other CMake SDK folders, if present See b/326411158 for a discussion about the nuances of this order.
  */
 @VisibleForTesting
 fun findNinjaPathLogic(
-    cmakePath: File?,
-    getSdkCmakeFolders: () -> List<File>,
-    getEnvironmentPaths: () -> List<File>,
-    getNinjaPathIfExists: (folder: File) -> File?
+  cmakePath: File?,
+  getSdkCmakeFolders: () -> List<File>,
+  getEnvironmentPaths: () -> List<File>,
+  getNinjaPathIfExists: (folder: File) -> File?,
 ): File? {
-    if (cmakePath != null) {
-        getNinjaPathIfExists(cmakePath)?.let {
-            return it
-        }
+  if (cmakePath != null) {
+    getNinjaPathIfExists(cmakePath)?.let {
+      return it
     }
+  }
 
-    for (environmentPath in getEnvironmentPaths()) {
-        getNinjaPathIfExists(environmentPath)?.let {
-            return it
-        }
+  for (environmentPath in getEnvironmentPaths()) {
+    getNinjaPathIfExists(environmentPath)?.let {
+      return it
     }
+  }
 
-    for (sdkFolder in getSdkCmakeFolders()) {
-        getNinjaPathIfExists(sdkFolder)?.let {
-            return it
-        }
+  for (sdkFolder in getSdkCmakeFolders()) {
+    getNinjaPathIfExists(sdkFolder)?.let {
+      return it
     }
+  }
 
-
-
-    // Error if there is no match
-    errorln(
-        NINJA_IS_MISSING,
-        "Could not find Ninja on PATH or in SDK CMake bin folders."
-    )
-    return null
+  // Error if there is no match
+  errorln(NINJA_IS_MISSING, "Could not find Ninja on PATH or in SDK CMake bin folders.")
+  return null
 }
 
-/**
- * @return path to ninja.exe if it exists in the
- * given folder. Otherwise, null.
- */
-private fun getNinjaIfPathExists(folder : File) : File? {
-    val ninjaExe = folder.resolve("ninja$exe")
-    return if (ninjaExe.isFile) ninjaExe else null
+/** @return path to ninja.exe if it exists in the given folder. Otherwise, null. */
+private fun getNinjaIfPathExists(folder: File): File? {
+  val ninjaExe = folder.resolve("ninja$exe")
+  return if (ninjaExe.isFile) ninjaExe else null
 }
 
 class NinjaLocator {
-    fun findNinjaPath(
-        cmakePath : File?,
-        sdkFolder: File?
-    ): File? {
-        PassThroughRecordingLoggingEnvironment().use {
-            return findNinjaPathLogic(
-                cmakePath,
-                { getSdkCmakeFolders(sdkFolder) },
-                ::getEnvironmentPaths,
-                ::getNinjaIfPathExists
-            )
-        }
+  fun findNinjaPath(cmakePath: File?, sdkFolder: File?): File? {
+    PassThroughRecordingLoggingEnvironment().use {
+      return findNinjaPathLogic(cmakePath, { getSdkCmakeFolders(sdkFolder) }, ::getEnvironmentPaths, ::getNinjaIfPathExists)
     }
+  }
 }

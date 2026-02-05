@@ -21,8 +21,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 
-abstract class DeviceSetupInput :
-  com.android.build.api.instrumentation.manageddevice.DeviceSetupInput {
+abstract class DeviceSetupInput : com.android.build.api.instrumentation.manageddevice.DeviceSetupInput {
 
   @get:Input abstract val deviceName: Property<String>
 

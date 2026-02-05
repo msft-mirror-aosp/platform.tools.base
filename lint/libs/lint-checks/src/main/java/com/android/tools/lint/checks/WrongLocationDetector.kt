@@ -43,8 +43,7 @@ class WrongLocationDetector : LayoutDetector() {
         category = Category.CORRECTNESS,
         priority = 8,
         severity = Severity.FATAL,
-        implementation =
-          Implementation(WrongLocationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(WrongLocationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 

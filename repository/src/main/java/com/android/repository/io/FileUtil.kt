@@ -28,17 +28,19 @@ import java.nio.file.attribute.BasicFileAttributes
  *
  * @return The total size in bytes.
  * @throws IOException If there's a problem reading a file.
- *
  */
 @Throws(IOException::class)
 fun Path.recursiveSize(): Long {
   var size: Long = 0
-  Files.walkFileTree(this, object : SimpleFileVisitor<Path>() {
-    @Throws(IOException::class)
-    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-      size += attrs.size()
-      return FileVisitResult.CONTINUE
-    }
-  })
+  Files.walkFileTree(
+    this,
+    object : SimpleFileVisitor<Path>() {
+      @Throws(IOException::class)
+      override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+        size += attrs.size()
+        return FileVisitResult.CONTINUE
+      }
+    },
+  )
   return size
 }

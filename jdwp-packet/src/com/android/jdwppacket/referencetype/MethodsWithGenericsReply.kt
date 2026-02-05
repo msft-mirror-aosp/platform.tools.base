@@ -20,13 +20,7 @@ import com.android.jdwppacket.Reply
 import com.android.jdwppacket.Writer
 
 data class MethodsWithGenericsReply(val methods: List<Method>) : Reply() {
-  data class Method(
-    val methodID: Long,
-    val name: String,
-    val signature: String,
-    val genericSignature: String,
-    val modBits: Int,
-  ) {
+  data class Method(val methodID: Long, val name: String, val signature: String, val genericSignature: String, val modBits: Int) {
 
     fun write(writer: Writer) {
       writer.putMethodID(methodID)
@@ -44,15 +38,7 @@ data class MethodsWithGenericsReply(val methods: List<Method>) : Reply() {
       val declared = reader.getInt()
       val methods = mutableListOf<Method>()
       repeat(declared) {
-        methods.add(
-          Method(
-            reader.getMethodID(),
-            reader.getString(),
-            reader.getString(),
-            reader.getString(),
-            reader.getInt(),
-          )
-        )
+        methods.add(Method(reader.getMethodID(), reader.getString(), reader.getString(), reader.getString(), reader.getInt()))
       }
       return MethodsWithGenericsReply(methods)
     }

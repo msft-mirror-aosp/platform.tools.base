@@ -23,24 +23,21 @@ import com.android.resources.ResourceType
 import java.nio.file.Path
 
 /**
- * Gathers application resources from proto compiled resource table. Flattens each resource name to
- * be compatible with field names in R classes.
+ * Gathers application resources from proto compiled resource table. Flattens each resource name to be compatible with field names in R
+ * classes.
  *
  * @param resourceTablePath path to resource table in proto format.
  */
 class ProtoResourceTableGatherer(private val resourceTablePath: Path) : ResourcesGatherer {
 
-    override fun gatherResourceValues(model: ResourceShrinkerModel) {
-        model.readResourceTable(resourceTablePath).entriesSequence()
-            .forEach { (id, packageName, type, entry) ->
-                // We need to flatten resource names here to match fields names in R classes via
-                // invoking ResourcesUtil.resourceNameToFieldName because we need to record R fields
-                // usages in code.
-                ResourceType.fromClassName(type)
-                    ?.takeIf { it != ResourceType.STYLEABLE }
-                    ?.let {
-                        model.addResource(it, packageName, resourceNameToFieldName(entry.name), id)
-                    }
-            }
+  override fun gatherResourceValues(model: ResourceShrinkerModel) {
+    model.readResourceTable(resourceTablePath).entriesSequence().forEach { (id, packageName, type, entry) ->
+      // We need to flatten resource names here to match fields names in R classes via
+      // invoking ResourcesUtil.resourceNameToFieldName because we need to record R fields
+      // usages in code.
+      ResourceType.fromClassName(type)
+        ?.takeIf { it != ResourceType.STYLEABLE }
+        ?.let { model.addResource(it, packageName, resourceNameToFieldName(entry.name), id) }
     }
+  }
 }

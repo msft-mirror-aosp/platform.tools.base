@@ -52,10 +52,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/**
- * Most of the evaluator is tested indirectly via all the lint unit tests; this covers some
- * additional specific scenarios.
- */
+/** Most of the evaluator is tested indirectly via all the lint unit tests; this covers some additional specific scenarios. */
 class DefaultJavaEvaluatorTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
@@ -275,24 +272,9 @@ class DefaultJavaEvaluatorTest {
         // Also test location ranges for assignments here
         val methodName = node.methodName ?: node.methodIdentifier?.name
         if (methodName == "setFoo") {
-          context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, false, true),
-            "Error with arguments but no receiver",
-          )
-          context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, true, true),
-            "Error with receiver and arguments",
-          )
-          context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, true, false),
-            "Error with receiver and no arguments",
-          )
+          context.report(ISSUE, node, context.getCallLocation(node, false, true), "Error with arguments but no receiver")
+          context.report(ISSUE, node, context.getCallLocation(node, true, true), "Error with receiver and arguments")
+          context.report(ISSUE, node, context.getCallLocation(node, true, false), "Error with receiver and no arguments")
         }
       }
 
@@ -302,14 +284,10 @@ class DefaultJavaEvaluatorTest {
         context.evaluator.findAnnotationInHierarchy(modifierListOwner, "org.foo.bar")
         context.evaluator.findAnnotation(modifierListOwner, "org.foo.bar")
         context.evaluator.getAnnotation(modifierListOwner, "org.foo.bar")
-        context.evaluator.getAllAnnotations(modifierListOwner, true).mapNotNull {
-          it.qualifiedName?.split(".")?.lastOrNull()
-        }
+        context.evaluator.getAllAnnotations(modifierListOwner, true).mapNotNull { it.qualifiedName?.split(".")?.lastOrNull() }
         // This detector doesn't actually report anything; the regression test
         // ensures that the above calls don't crash
-        context.evaluator.getAnnotations(modifierListOwner, true).mapNotNull {
-          it.qualifiedName?.split(".")?.lastOrNull()
-        }
+        context.evaluator.getAnnotations(modifierListOwner, true).mapNotNull { it.qualifiedName?.split(".")?.lastOrNull() }
       }
     }
 
@@ -535,25 +513,9 @@ class DefaultJavaEvaluatorTest {
               val text = node.text
               sb.append(text.substringBefore('{').trim()).append(":\n")
               sb.append("simple: ")
-              sb
-                .append(
-                  evaluator.getMethodDescription(
-                    method = node,
-                    includeName = false,
-                    includeReturn = false,
-                  )
-                )
-                .append("\n")
+              sb.append(evaluator.getMethodDescription(method = node, includeName = false, includeReturn = false)).append("\n")
               sb.append("full:   ")
-              sb
-                .append(
-                  evaluator.getMethodDescription(
-                    method = node,
-                    includeName = true,
-                    includeReturn = true,
-                  )
-                )
-                .append("\n\n")
+              sb.append(evaluator.getMethodDescription(method = node, includeName = true, includeReturn = true)).append("\n\n")
             }
 
             override fun visitMethod(node: UMethod): Boolean {
@@ -570,26 +532,26 @@ class DefaultJavaEvaluatorTest {
       }
     assertEquals(
       """
-            void test():
-            simple: ()
-            full:   test()V
+      void test():
+      simple: ()
+      full:   test()V
 
-            int test(int a, int[] b, int[][] c, boolean d, float e, double f, long g, short h, char z):
-            simple: (I[I[[IZFDJSC)
-            full:   test(I[I[[IZFDJSC)I
+      int test(int a, int[] b, int[][] c, boolean d, float e, double f, long g, short h, char z):
+      simple: (I[I[[IZFDJSC)
+      full:   test(I[I[[IZFDJSC)I
 
-            List<char[]> test2(List<List<String>> list):
-            simple: (Ljava.util.List;)
-            full:   test2(Ljava.util.List;)Ljava.util.List;
+      List<char[]> test2(List<List<String>> list):
+      simple: (Ljava.util.List;)
+      full:   test2(Ljava.util.List;)Ljava.util.List;
 
-            Inner(int i):
-            simple: (LTest;I)
-            full:   <init>(LTest;I)V
+      Inner(int i):
+      simple: (LTest;I)
+      full:   <init>(LTest;I)V
 
-            void inner():
-            simple: ()
-            full:   inner()V
-            """
+      void inner():
+      simple: ()
+      full:   inner()V
+      """
         .trimIndent()
         .trim(),
       sb.toString().trim(),
@@ -602,11 +564,7 @@ class DefaultJavaEvaluatorTest {
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       if (context.evaluator.methodMatches(method, "test.pkg.TargetClass", false)) {
-        context.report(
-          ISSUE,
-          context.getNameLocation(method),
-          "Found reference to `test.pkg.TargetClass.foo`",
-        )
+        context.report(ISSUE, context.getNameLocation(method), "Found reference to `test.pkg.TargetClass.foo`")
       }
     }
 

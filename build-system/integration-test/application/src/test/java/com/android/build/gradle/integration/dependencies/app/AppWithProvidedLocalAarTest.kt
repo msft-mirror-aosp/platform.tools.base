@@ -25,17 +25,13 @@ import org.junit.Test
 
 class AppWithProvidedLocalAarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithLocalDeps")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     namespace = 'com.android.tests.libWithProvidedLocalJar'
@@ -46,16 +42,15 @@ class AppWithProvidedLocalAarTest : ModelComparator() {
                         compileOnly files("libs/baseLib-1.0.aar")
                     }
                 }
-            """.trimIndent())
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
+  }
 }

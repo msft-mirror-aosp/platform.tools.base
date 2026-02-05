@@ -29,118 +29,107 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class BuiltInKotlinForScreenshotTestTest(private val builtInKotlin: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "builtInKotlin={0}")
-        @JvmStatic
-        fun parameters() = listOf(false, true)
+    @Parameterized.Parameters(name = "builtInKotlin={0}") @JvmStatic fun parameters() = listOf(false, true)
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary {
+        @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
+        android { defaultConfig.minSdk = 21 }
+        kotlin { jvmToolchain(17) }
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+        if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+      }
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
+  /** Include dependency on "androidx.compose.ui:ui-tooling-preview:1.6.5" as a regression test for b/338512598 */
+  @Test
+  fun testModuleAndExternalDependencies() {
+    val build =
+      rule.build {
+        gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
         androidLibrary {
-            @Suppress("DEPRECATION")
-            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
-            android {
-                defaultConfig.minSdk = 21
-            }
-            kotlin {
-                jvmToolchain(17)
-            }
+          android.experimentalProperties[SCREENSHOT_TEST.key] = true
+          dependencies {
+            screenshotTestImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
+            screenshotTestImplementation(project(":lib2"))
+          }
+          files.add(
+            "src/screenshotTest/kotlin/LibScreenshotTest.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+
+            import com.foo.library.two.LibTwoClass
+            import androidx.compose.ui.tooling.preview.Preview
+
+            class LibScreenshotTest
+            """
+              .trimIndent(),
+          )
         }
-        gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-            if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+        androidLibrary(":lib2") {
+          if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
+          kotlin { jvmToolchain(17) }
+          files.add(
+            "src/main/kotlin/LibTwoClass.kt",
+            // language=kotlin
+            """
+            package com.foo.library.two
+            class LibTwoClass
+            """
+              .trimIndent(),
+          )
         }
-    }
+      }
 
-    /**
-     * Include dependency on "androidx.compose.ui:ui-tooling-preview:1.6.5" as a regression test for
-     * b/338512598
-     */
-    @Test
-    fun testModuleAndExternalDependencies() {
-        val build = rule.build {
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }
-            androidLibrary {
-                android.experimentalProperties[SCREENSHOT_TEST.key] = true
-                dependencies {
-                    screenshotTestImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
-                    screenshotTestImplementation(project(":lib2"))
-                }
-                files.add(
-                    "src/screenshotTest/kotlin/LibScreenshotTest.kt",
-                    //language=kotlin
-                    """
-                        package com.foo.library
+    build.executor.run(":lib:compileDebugScreenshotTestKotlin")
 
-                        import com.foo.library.two.LibTwoClass
-                        import androidx.compose.ui.tooling.preview.Preview
+    val screenshotTestClassFile =
+      build
+        .androidLibrary()
+        .intermediatesDir
+        .resolve("built_in_kotlinc/debugScreenshotTest/compileDebugScreenshotTestKotlin/classes/com/foo/library/LibScreenshotTest.class")
+    PathSubject.assertThat(screenshotTestClassFile).exists()
+  }
 
-                        class LibScreenshotTest
-                    """.trimIndent()
-                )
+  @Test
+  fun testInternalModifierAccessible() {
+    val build =
+      rule.build {
+        gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
+        androidLibrary {
+          android.experimentalProperties[SCREENSHOT_TEST.key] = true
+          files.add(
+            "src/screenshotTest/kotlin/LibScreenshotTestFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibScreenshotTestFoo {
+                init { LibFoo().bar() }
             }
-            androidLibrary(":lib2") {
-                if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
-                kotlin {
-                    jvmToolchain(17)
-                }
-                files.add(
-                    "src/main/kotlin/LibTwoClass.kt",
-                    //language=kotlin
-                    """
-                        package com.foo.library.two
-                        class LibTwoClass
-                    """.trimIndent()
-                )
+            """
+              .trimIndent(),
+          )
+          files.add(
+            "src/main/java/LibFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibFoo {
+                internal fun bar() {}
             }
+            """
+              .trimIndent(),
+          )
         }
-
-        build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .run(":lib:compileDebugScreenshotTestKotlin")
-
-        val screenshotTestClassFile =
-            build.androidLibrary().intermediatesDir.resolve(
-                "built_in_kotlinc/debugScreenshotTest/compileDebugScreenshotTestKotlin/classes/com/foo/library/LibScreenshotTest.class"
-            )
-        PathSubject.assertThat(screenshotTestClassFile).exists()
-    }
-
-    @Test
-    fun testInternalModifierAccessible() {
-        val build = rule.build {
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }
-            androidLibrary {
-                android.experimentalProperties[SCREENSHOT_TEST.key] = true
-                files.add(
-                    "src/screenshotTest/kotlin/LibScreenshotTestFoo.kt",
-                    //language=kotlin
-                    """
-                        package com.foo.library
-                        class LibScreenshotTestFoo {
-                            init { LibFoo().bar() }
-                        }
-                    """.trimIndent()
-                )
-                files.add(
-                    "src/main/java/LibFoo.kt",
-                    //language=kotlin
-                    """
-                    package com.foo.library
-                    class LibFoo {
-                        internal fun bar() {}
-                    }
-                    """.trimIndent()
-                )
-            }
-        }
-        build.executor.run(":lib:compileDebugScreenshotTestKotlin")
-    }
-
+      }
+    build.executor.run(":lib:compileDebugScreenshotTestKotlin")
+  }
 }

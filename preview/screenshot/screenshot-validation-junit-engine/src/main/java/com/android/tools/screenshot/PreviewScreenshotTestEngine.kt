@@ -32,57 +32,55 @@ import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
 
 class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExecutionContext>() {
 
-    override fun getId(): String {
-        return "preview-screenshot-test-engine"
-    }
+  override fun getId(): String {
+    return "preview-screenshot-test-engine"
+  }
 
-    override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
-        val engineDescriptor = PreviewScreenshotTestEngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
+  override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
+    val engineDescriptor = PreviewScreenshotTestEngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
 
-        EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
-            .addClassContainerSelectorResolver { true }
-            .addSelectorResolver(ClassSelectorResolver())
-            .addSelectorResolver(MethodSelectorResolver())
-            .addTestDescriptorVisitor { _ ->
-                TestDescriptor.Visitor { it.prune() }
-            }
-            .build()
-            .resolve(discoveryRequest, engineDescriptor)
+    EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
+      .addClassContainerSelectorResolver { true }
+      .addSelectorResolver(ClassSelectorResolver())
+      .addSelectorResolver(MethodSelectorResolver())
+      .addTestDescriptorVisitor { _ -> TestDescriptor.Visitor { it.prune() } }
+      .build()
+      .resolve(discoveryRequest, engineDescriptor)
 
-        return engineDescriptor
-    }
+    return engineDescriptor
+  }
 
-    override fun createExecutionContext(executionRequest: ExecutionRequest): PreviewScreenshotExecutionContext {
-        val listener = if (PreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout) {
-            object: EngineExecutionListener by executionRequest.engineExecutionListener {
-                override fun reportingEntryPublished(
-                    testDescriptor: TestDescriptor,
-                    entry: ReportEntry
-                ) {
-                    executionRequest.engineExecutionListener.reportingEntryPublished(testDescriptor, entry)
-                    entry.keyValuePairs.forEach { key, value ->
-                        println("[additionalTestArtifacts]$key=$value")
-                    }
-                }
-            }
-        } else {
-            executionRequest.engineExecutionListener
+  override fun createExecutionContext(executionRequest: ExecutionRequest): PreviewScreenshotExecutionContext {
+    val listener =
+      if (PreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout) {
+        object : EngineExecutionListener by executionRequest.engineExecutionListener {
+          override fun reportingEntryPublished(testDescriptor: TestDescriptor, entry: ReportEntry) {
+            executionRequest.engineExecutionListener.reportingEntryPublished(testDescriptor, entry)
+            entry.keyValuePairs.forEach { key, value -> println("[additionalTestArtifacts]$key=$value") }
+          }
         }
+      } else {
+        executionRequest.engineExecutionListener
+      }
 
-        val methodNameToPreview = PreviewMethodFinder(
-            PreviewScreenshotTestEngineInput.screenshotTestDirectory,
-            PreviewScreenshotTestEngineInput.screenshotTestJars,
-            PreviewScreenshotTestEngineInput.mainDirectory,
-            PreviewScreenshotTestEngineInput.mainJars,
-            PreviewScreenshotTestEngineInput.dependencyJars,
-        ).findAllPreviewMethods().asSequence().associateBy { it.method.methodFqn }
-
-        return PreviewScreenshotExecutionContext(
-            listener,
-            methodNameToPreview,
-            PreviewScreenshotTestEngineInput.previewImageOutputDir,
-            PreviewScreenshotTestEngineInput.previewDiffImageOutputDir,
-            PreviewScreenshotTestEngineInput.referenceImageDir
+    val methodNameToPreview =
+      PreviewMethodFinder(
+          PreviewScreenshotTestEngineInput.screenshotTestDirectory,
+          PreviewScreenshotTestEngineInput.screenshotTestJars,
+          PreviewScreenshotTestEngineInput.mainDirectory,
+          PreviewScreenshotTestEngineInput.mainJars,
+          PreviewScreenshotTestEngineInput.dependencyJars,
         )
-    }
+        .findAllPreviewMethods()
+        .asSequence()
+        .associateBy { it.method.methodFqn }
+
+    return PreviewScreenshotExecutionContext(
+      listener,
+      methodNameToPreview,
+      PreviewScreenshotTestEngineInput.previewImageOutputDir,
+      PreviewScreenshotTestEngineInput.previewDiffImageOutputDir,
+      PreviewScreenshotTestEngineInput.referenceImageDir,
+    )
+  }
 }

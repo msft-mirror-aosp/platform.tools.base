@@ -24,13 +24,12 @@ import org.gradle.api.tasks.Internal
 /** Common interface for tasks/task inputs that use [Aapt2ThreadPoolBuildService]. */
 interface UsesAapt2ThreadPoolBuildService {
 
-    @get:Internal
-    val aapt2ThreadPoolBuildService: Property<Aapt2ThreadPoolBuildService>
+  @get:Internal val aapt2ThreadPoolBuildService: Property<Aapt2ThreadPoolBuildService>
 
-    fun initializeAapt2ThreadPoolBuildService(task: Task) {
-        getBuildService<Aapt2ThreadPoolBuildService, Aapt2ThreadPoolBuildService.Params>(task.project.gradle.sharedServices).let {
-            aapt2ThreadPoolBuildService.setDisallowChanges(it)
-            task.usesService(it)
-        }
+  fun initializeAapt2ThreadPoolBuildService(task: Task) {
+    getBuildService<Aapt2ThreadPoolBuildService, Aapt2ThreadPoolBuildService.Params>(task.project.gradle.sharedServices).let {
+      aapt2ThreadPoolBuildService.setDisallowChanges(it)
+      task.usesService(it)
     }
+  }
 }

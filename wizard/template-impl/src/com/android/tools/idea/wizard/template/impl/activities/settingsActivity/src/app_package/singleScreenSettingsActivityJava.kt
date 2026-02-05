@@ -16,11 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.settingsActivity.src.app_package
 
-
-fun singleScreenSettingsActivityJava(
-  activityClass: String,
-  packageName: String) =
-
+fun singleScreenSettingsActivityJava(activityClass: String, packageName: String) =
   """package ${packageName};
 
 import android.os.Bundle;

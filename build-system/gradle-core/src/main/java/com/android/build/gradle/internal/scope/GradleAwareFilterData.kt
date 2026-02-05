@@ -18,13 +18,9 @@ package com.android.build.gradle.internal.scope
 
 import org.gradle.api.tasks.Input
 
-/**
- * Gradle aware version of the model's [com.android.build.FilterData]
- */
-interface GradleAwareFilterData: com.android.build.FilterData {
-    @Input
-    override fun getFilterType(): String
+/** Gradle aware version of the model's [com.android.build.FilterData] */
+interface GradleAwareFilterData : com.android.build.FilterData {
+  @Input override fun getFilterType(): String
 
-    @Input
-    override fun getIdentifier(): String
+  @Input override fun getIdentifier(): String
 }

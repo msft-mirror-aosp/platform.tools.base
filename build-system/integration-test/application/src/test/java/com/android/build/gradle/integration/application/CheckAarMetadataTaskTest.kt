@@ -42,81 +42,64 @@ import com.android.zipflinger.BytesSource
 import com.android.zipflinger.ZipArchive
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.nio.file.Files
+import java.util.zip.Deflater
 import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
-import java.util.zip.Deflater
 
 /** Tests for [CheckAarMetadataTask]. */
 class CheckAarMetadataTaskTest {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
+  @JvmField @Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
 
-    @Test
-    fun testBasic() {
-        // Test that app builds successfully when compatible minCompileSdkVersion set library.
-        project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
-        )
-        project.executor().run(":app:assembleDebug")
+  @Test
+  fun testBasic() {
+    // Test that app builds successfully when compatible minCompileSdkVersion set library.
+    project.getSubproject("lib").buildFile.appendText("android.defaultConfig.aarMetadata.minCompileSdk = 28")
+    project.executor().run(":app:assembleDebug")
+  }
+
+  @Test
+  fun testMinCompileSdkVersion_librarySubModule() {
+    // Add resource requiring API level 31 to library
+    FileUtils.join(project.getSubproject("lib").projectDir, "src", "main", "res", "values", "values.xml")
+      .also { it.parentFile.mkdirs() }
+      .writeText(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <style name="Foo">
+                    <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
+                </style>
+            </resources>
+        """
+          .trimIndent()
+      )
+
+    // First test that the build fails when minCompileSdkVersion isn't set.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message).contains("Android resource linking failed")
     }
 
-    @Test
-    fun testMinCompileSdkVersion_librarySubModule() {
-        // Add resource requiring API level 31 to library
-        FileUtils.join(
-            project.getSubproject("lib").projectDir,
-            "src",
-            "main",
-            "res",
-            "values",
-            "values.xml"
-        ).also {
-            it.parentFile.mkdirs()
-        }.writeText(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                    <resources>
-                        <style name="Foo">
-                            <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
-                        </style>
-                    </resources>
-                """.trimIndent()
-        )
+    // Set app's compileSdkVersion to 30, we set this after the check to ensure that
+    // minCompileSdkVersion does not default to the compileSdkVersion.
+    project.getSubproject("app").buildFile
+    TestFileUtils.searchRegexAndReplace(project.getSubproject("app").buildFile, "compileSdkVersion = \\d+", "compileSdkVersion = 30")
 
-        // First test that the build fails when minCompileSdkVersion isn't set.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .contains("Android resource linking failed")
-        }
-
-        // Set app's compileSdkVersion to 30, we set this after the check to ensure that
-        // minCompileSdkVersion does not default to the compileSdkVersion.
-        project.getSubproject("app").buildFile
-        TestFileUtils.searchRegexAndReplace(
-            project.getSubproject("app").buildFile,
-            "compileSdkVersion = \\d+",
-            "compileSdkVersion = 30"
-        )
-
-        // Then test that setting minCompileSdkVersion results in a better error message.
-        project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk = 31"
-        )
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .isEqualTo(
-                    """
+    // Then test that setting minCompileSdkVersion results in a better error message.
+    project.getSubproject("lib").buildFile.appendText("android.defaultConfig.aarMetadata.minCompileSdk = 31")
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .isEqualTo(
+          """
                         An issue was found when checking AAR metadata:
 
                           1.  Dependency ':lib' requires libraries and applications that
@@ -133,69 +116,51 @@ class CheckAarMetadataTaskTest {
                               targetSdk (which opts the app in to new runtime behavior) and
                               minSdk (which determines which devices the app can be installed
                               on).
-                """.trimIndent())
-
-        }
+                """
+            .trimIndent()
+        )
     }
+  }
 
-    @Test
-    fun testMinCompileSdkVersion_aarFileDependency() {
-        // Add resource requiring API level 31 to library
-        FileUtils.join(
-            project.getSubproject("lib").projectDir,
-            "src",
-            "main",
-            "res",
-            "values",
-            "values.xml"
-        ).also {
-            it.parentFile.mkdirs()
-        }.writeText(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                    <resources>
-                        <style name="Foo">
-                            <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
-                        </style>
-                    </resources>
-                """.trimIndent()
-        )
-        project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk = 31"
-        )
-        project.executor().run(":lib:assembleDebug")
-        // Copy lib's .aar build output to the app's libs directory
-        FileUtils.copyFile(
-            project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"),
-            File(
-                File(project.getSubproject("app").projectDir, "libs").also { it.mkdirs() },
-                "library.aar"
-            )
-        )
+  @Test
+  fun testMinCompileSdkVersion_aarFileDependency() {
+    // Add resource requiring API level 31 to library
+    FileUtils.join(project.getSubproject("lib").projectDir, "src", "main", "res", "values", "values.xml")
+      .also { it.parentFile.mkdirs() }
+      .writeText(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <style name="Foo">
+                    <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
+                </style>
+            </resources>
+        """
+          .trimIndent()
+      )
+    project.getSubproject("lib").buildFile.appendText("android.defaultConfig.aarMetadata.minCompileSdk = 31")
+    project.executor().run(":lib:assembleDebug")
+    // Copy lib's .aar build output to the app's libs directory
+    FileUtils.copyFile(
+      project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"),
+      File(File(project.getSubproject("app").projectDir, "libs").also { it.mkdirs() }, "library.aar"),
+    )
 
-        // Set app's compileSdkVersion to 30.
-        project.getSubproject("app").buildFile
-        TestFileUtils.searchRegexAndReplace(
-            project.getSubproject("app").buildFile,
-            "compileSdkVersion = \\d+",
-            "compileSdkVersion 30"
-        )
+    // Set app's compileSdkVersion to 30.
+    project.getSubproject("app").buildFile
+    TestFileUtils.searchRegexAndReplace(project.getSubproject("app").buildFile, "compileSdkVersion = \\d+", "compileSdkVersion 30")
 
-        // Replace app's dependency on the library module with a dependency on the AAR file
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "project(':lib')",
-            "files('libs/library.aar')"
-        )
+    // Replace app's dependency on the library module with a dependency on the AAR file
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "project(':lib')", "files('libs/library.aar')")
 
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .isEqualTo(
-                    """
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .isEqualTo(
+          """
                     An issue was found when checking AAR metadata:
 
                       1.  Dependency 'library.aar' requires libraries and applications that
@@ -212,251 +177,245 @@ class CheckAarMetadataTaskTest {
                           targetSdk (which opts the app in to new runtime behavior) and
                           minSdk (which determines which devices the app can be installed
                           on).
-                """.trimIndent())
-        }
+                """
+            .trimIndent()
+        )
     }
+  }
 
-    @Test
-    fun testMissingAarFormatVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = null,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION
+  @Test
+  fun testMissingAarFormatVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(aarFormatVersion = null, aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION)
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  The AAR metadata for dependency 'library.aar' does not specify an
+                aarFormatVersion value, which is a required value.
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
-                        An issue was found when checking AAR metadata:
-
-                          1.  The AAR metadata for dependency 'library.aar' does not specify an
-                              aarFormatVersion value, which is a required value.
-                    """.trimIndent()
-                )
-        }
     }
+  }
 
-    @Test
-    fun testIncompatibleAarFormatVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = "99999",
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION
+  @Test
+  fun testIncompatibleAarFormatVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(aarFormatVersion = "99999", aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION)
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  Dependency 'library.aar' has an aarFormatVersion value of
+                '99999', which is not compatible with this version of the
+                Android Gradle plugin.
+
+                Please upgrade to a newer version of the Android Gradle plugin.
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message).startsWith("""
-                An issue was found when checking AAR metadata:
-
-                  1.  Dependency 'library.aar' has an aarFormatVersion value of
-                      '99999', which is not compatible with this version of the
-                      Android Gradle plugin.
-
-                      Please upgrade to a newer version of the Android Gradle plugin.
-            """.trimIndent())
-        }
     }
+  }
 
-    @Test
-    fun testInvalidAarFormatVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = "invalid",
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION
+  @Test
+  fun testInvalidAarFormatVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = "invalid",
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+    )
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  The AAR metadata for dependency 'library.aar' has an invalid
+                aarFormatVersion value (invalid).
+
+                Invalid revision: invalid
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
-                        An issue was found when checking AAR metadata:
-
-                          1.  The AAR metadata for dependency 'library.aar' has an invalid
-                              aarFormatVersion value (invalid).
-
-                              Invalid revision: invalid
-                    """.trimIndent()
-                )
-        }
     }
+  }
 
-    @Test
-    fun testMissingAarMetadataVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = null
+  @Test
+  fun testMissingAarMetadataVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION, aarMetadataVersion = null)
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  The AAR metadata for dependency 'library.aar' does not specify an
+                aarMetadataVersion value, which is a required value.
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
-                        An issue was found when checking AAR metadata:
-
-                          1.  The AAR metadata for dependency 'library.aar' does not specify an
-                              aarMetadataVersion value, which is a required value.
-                    """.trimIndent()
-                )
-        }
     }
+  }
 
-    @Test
-    fun testIncompatibleAarMetadataVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = "99999"
+  @Test
+  fun testIncompatibleAarMetadataVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION, aarMetadataVersion = "99999")
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  Dependency 'library.aar' has an aarMetadataVersion value of
+                '99999', which is not compatible with this version of the
+                Android Gradle plugin.
+
+                Please upgrade to a newer version of the Android Gradle plugin.
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message).startsWith("""
-                An issue was found when checking AAR metadata:
-
-                  1.  Dependency 'library.aar' has an aarMetadataVersion value of
-                      '99999', which is not compatible with this version of the
-                      Android Gradle plugin.
-
-                      Please upgrade to a newer version of the Android Gradle plugin.
-                """.trimIndent())
-        }
     }
+  }
 
-    @Test
-    fun testIncompatibleAgpVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minAgpVersion = "99999.0.0"
-        )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .contains("requires Android Gradle plugin 99999.0.0 or higher.")
-        }
+  @Test
+  fun testIncompatibleAgpVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      minAgpVersion = "99999.0.0",
+    )
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message).contains("requires Android Gradle plugin 99999.0.0 or higher.")
     }
+  }
 
-    @Test
-    fun testInvalidAarMetadataVersion() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = "invalid"
+  @Test
+  fun testInvalidAarMetadataVersion() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION, aarMetadataVersion = "invalid")
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  The AAR metadata for dependency 'library.aar' has an invalid
+                aarMetadataVersion value (invalid).
+
+                Invalid revision: invalid
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
-                        An issue was found when checking AAR metadata:
-
-                          1.  The AAR metadata for dependency 'library.aar' has an invalid
-                              aarMetadataVersion value (invalid).
-
-                              Invalid revision: invalid
-                    """.trimIndent()
-                )
-        }
     }
+  }
 
-    @Test
-    fun testInvalidMinCompileSdk() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdk = "invalid"
+  @Test
+  fun testInvalidMinCompileSdk() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      minCompileSdk = "invalid",
+    )
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  The AAR metadata for dependency 'library.aar' has an invalid
+                minCompileSdk value (invalid).
+
+                minCompileSdk must be an integer.
+          """
+            .trimIndent()
         )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
-                        An issue was found when checking AAR metadata:
-
-                          1.  The AAR metadata for dependency 'library.aar' has an invalid
-                              minCompileSdk value (invalid).
-
-                              minCompileSdk must be an integer.
-                    """.trimIndent()
-                )
-        }
     }
+  }
 
-    @Test
-    fun testMultipleInvalidValues() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = "invalid",
-            aarMetadataVersion = "invalid",
-            minCompileSdk = "invalid",
-            minAgpVersion = "invalid",
-            minCompileSdkExtension = "invalid"
-        )
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:assembleDebug")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message).contains(AAR_FORMAT_VERSION_PROPERTY)
-            assertThat(Throwables.getRootCause(e).message).contains(AAR_METADATA_VERSION_PROPERTY)
-            assertThat(Throwables.getRootCause(e).message).contains(MIN_COMPILE_SDK_PROPERTY)
-            assertThat(Throwables.getRootCause(e).message)
-                .contains(MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY)
-            assertThat(Throwables.getRootCause(e).message)
-                .contains(MIN_COMPILE_SDK_EXTENSION_PROPERTY)
-        }
+  @Test
+  fun testMultipleInvalidValues() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = "invalid",
+      aarMetadataVersion = "invalid",
+      minCompileSdk = "invalid",
+      minAgpVersion = "invalid",
+      minCompileSdkExtension = "invalid",
+    )
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message).contains(AAR_FORMAT_VERSION_PROPERTY)
+      assertThat(Throwables.getRootCause(e).message).contains(AAR_METADATA_VERSION_PROPERTY)
+      assertThat(Throwables.getRootCause(e).message).contains(MIN_COMPILE_SDK_PROPERTY)
+      assertThat(Throwables.getRootCause(e).message).contains(MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY)
+      assertThat(Throwables.getRootCause(e).message).contains(MIN_COMPILE_SDK_EXTENSION_PROPERTY)
     }
+  }
 
-    @Test
-    @Ignore(value = "b/322760275")
-    fun testPassingWithForceCompileSdkPreview() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            forceCompileSdkPreview = "UpsideDownCakePrivacySandbox"
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            "\n\nandroid.compileSdkPreview 'UpsideDownCakePrivacySandbox'\n\n"
-        )
-        val result = project.executor().run(":app:checkDebugAarMetadata")
-        result.assertOutputContains("BUILD SUCCESSFUL")
-    }
+  @Test
+  @Ignore(value = "b/322760275")
+  fun testPassingWithForceCompileSdkPreview() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      forceCompileSdkPreview = "UpsideDownCakePrivacySandbox",
+    )
+    TestFileUtils.appendToFile(project.getSubproject("app").buildFile, "\n\nandroid.compileSdkPreview 'UpsideDownCakePrivacySandbox'\n\n")
+    val result = project.executor().run(":app:checkDebugAarMetadata")
+    result.assertOutputContains("BUILD SUCCESSFUL")
+  }
 
-    @Test
-    fun testFailsWithForceCompileSdkPreview() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            forceCompileSdkPreview = "UpsideDownCakePrivacySandbox"
-        )
+  @Test
+  fun testFailsWithForceCompileSdkPreview() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      forceCompileSdkPreview = "UpsideDownCakePrivacySandbox",
+    )
 
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:checkDebugAarMetadata")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
-                    """
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:checkDebugAarMetadata")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
                         An issue was found when checking AAR metadata:
 
                           1.  Dependency 'library.aar' requires libraries and applications that
@@ -472,257 +431,227 @@ class CheckAarMetadataTaskTest {
                               compileSdk {
                                   version = preview("UpsideDownCakePrivacySandbox")
                               }
-                    """.trimIndent()
-                )
-        }
-    }
-
-    @Test
-    fun testPassingWithMinCompileSdkExtension() {
-        // Test with minCompileSdkExtension = "1" to test that CheckAarMetadataTask can actually
-        //  parse the platform extension level correctly. This means that we have to inject a
-        //  non-zero extension level because all current SDKs omit the extension level. android-33
-        //  should have a non-zero extension level, so we can stop injecting the extension level
-        //  once android-33 is released.
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdkExtension = "1"
-        )
-        val sdkLocation = project.androidSdkDir
-        val progress = FakeProgressIndicator()
-        val sdkHandler =
-            AndroidSdkHandler.getInstance(AndroidLocationsSingleton, sdkLocation!!.toPath())
-        val targetManager = sdkHandler.getAndroidTargetManager(progress)
-        val target = targetManager.getTargetFromHashString(compileSdkHash, progress)
-        val targetLocation = File(target.location)
-        val packageXml = targetLocation.resolve("package.xml")
-        PathSubject.assertThat(packageXml).exists()
-        if (!packageXml.readText().contains("<extension-level>")) {
-            TestFileUtils.searchAndReplace(
-                packageXml,
-                "</codename>",
-                "</codename><extension-level>1</extension-level>"
-            )
-        }
-
-        val result = project.executor().run(":app:checkDebugAarMetadata")
-        result.assertOutputContains("BUILD SUCCESSFUL")
-    }
-
-    @Test
-    fun testFailsWithMinCompileSdkExtension() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdkExtension = "1000"
-        )
-
-        // Test that build fails with desired error message.
-        try {
-            project.executor().run(":app:checkDebugAarMetadata")
-            Assert.fail("Expected build failure")
-        } catch (e: Exception) {
-            assertThat(Throwables.getRootCause(e).message)
-                .startsWith(
                     """
-                        An issue was found when checking AAR metadata:
-
-                          1.  Dependency 'library.aar' requires libraries and applications that
-                              depend on it to compile against an SDK with an extension level of
-                              1000 or higher.
-
-                              Recommended action: Update this project to use a compileSdkExtension
-                              value of at least 1000.
-                    """.trimIndent()
-                )
-        }
-    }
-
-    @Test
-    fun testDisableCompileSdk() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            forceCompileSdkPreview = "UpsideDownCakePrivacySandbox"
-        )
-
-        project.executor()
-            .with(BooleanOption.DISABLE_COMPILE_SDK_CHECKS, true)
-            .run(":app:checkDebugAarMetadata")
-    }
-
-    @Test
-    fun testCheckingCoreLibraryDesugaring() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            coreLibraryDesugaringEnabled = "true",
-        )
-
-        val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
-        result.assertErrorContains(
-            """
-                An issue was found when checking AAR metadata:
-
-                  1.  Dependency 'library.aar' requires core library desugaring to be enabled
-                      for :app.
-
-                      See https://developer.android.com/studio/write/java8-support.html for more
-                      details.
-
-            """.trimIndent()
-        )
-
-        // Ensure checkAndroidTestAarMetadata passes for the android test component if core library
-        // desugaring is only enabled for instrumented tests
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_INSTRUMENTATION_TEST_DESUGARING.propertyName}=true"
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android.compileOptions.coreLibraryDesugaringEnabled = false
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'}"
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "implementation files('libs/library.aar')",
-            "androidTestImplementation files('libs/library.aar')"
-        )
-        project.executor().run(":app:checkAndroidTestAarMetadata")
-    }
-
-    @Test
-    fun testCheckingDesugarJdkLib() {
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            coreLibraryDesugaringEnabled = "true",
-            minDesugarJdkLib = "com.android.tools:desugar_jdk_libs_nio:$DESUGAR_NIO_DEPENDENCY_VERSION"
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android.compileOptions.coreLibraryDesugaringEnabled = true
-                android.defaultConfig.multiDexEnabled = true
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'}"
-        )
-        val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
-        result.assertErrorContains(
-            "2 issues were found when checking AAR metadata"
+            .trimIndent()
         )
     }
+  }
 
-    @Test
-    fun testCheckingCoreLibraryDesugaringForLibraryConsumer() {
-        project.executor().run("clean")
-        addAarWithPossiblyInvalidAarMetadataToAppProject(
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            coreLibraryDesugaringEnabled = "true",
-        )
-        // convert the app module to be a library module which consumes the lib aar
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "com.android.application",
-            "com.android.library"
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    testOptions {
-                        unitTests {
-                            setIncludeAndroidResources(true) // used for unit test
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.searchAndReplace(
-            project.settingsFile,
-            ":app",
-            ":lib2"
-        )
-        TestFileUtils.appendToFile(
-            project.settingsFile,
-            "project(':lib2').projectDir = file('app')"
-        )
-        // Unit test is exempted from having core library desugaring enabled, regression test for
-        // b/341002194
-        project.executor().run(":lib2:checkDebugUnitTestAarMetadata")
-        // Android test is enforced to have core library desugaring enabled
-        val result = project.executor().expectFailure().run(
-            ":lib2:checkDebugAndroidTestAarMetadata")
-        result.assertErrorContains(
-            """
-                An issue was found when checking AAR metadata:
-
-                  1.  Dependency 'library.aar' requires core library desugaring to be enabled
-                      for :lib2.
-
-                      See https://developer.android.com/studio/write/java8-support.html for more
-                      details.
-            """.trimIndent()
-        )
+  @Test
+  fun testPassingWithMinCompileSdkExtension() {
+    // Test with minCompileSdkExtension = "1" to test that CheckAarMetadataTask can actually
+    //  parse the platform extension level correctly. This means that we have to inject a
+    //  non-zero extension level because all current SDKs omit the extension level. android-33
+    //  should have a non-zero extension level, so we can stop injecting the extension level
+    //  once android-33 is released.
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      minCompileSdkExtension = "1",
+    )
+    val sdkLocation = project.androidSdkDir
+    val progress = FakeProgressIndicator()
+    val sdkHandler = AndroidSdkHandler.getInstance(AndroidLocationsSingleton, sdkLocation!!.toPath())
+    val targetManager = sdkHandler.getAndroidTargetManager(progress)
+    val target = targetManager.getTargetFromHashString(compileSdkHash, progress)
+    val targetLocation = File(target.location)
+    val packageXml = targetLocation.resolve("package.xml")
+    PathSubject.assertThat(packageXml).exists()
+    if (!packageXml.readText().contains("<extension-level>")) {
+      TestFileUtils.searchAndReplace(packageXml, "</codename>", "</codename><extension-level>1</extension-level>")
     }
 
-    private fun addAarWithPossiblyInvalidAarMetadataToAppProject(
-        aarFormatVersion: String?,
-        aarMetadataVersion: String?,
-        minCompileSdk: String? = null,
-        minAgpVersion: String? = null,
-        forceCompileSdkPreview: String? = null,
-        minCompileSdkExtension: String? = null,
-        coreLibraryDesugaringEnabled: String? = null,
-        minDesugarJdkLib: String? = null,
-    ) {
-        project.executor().run(":lib:assembleDebug")
-        // Copy lib's .aar build output to the app's libs directory
-        val aarFile = project.getSubproject("app").projectDir.toPath().resolve("libs/library.aar")
-        Files.createDirectories(aarFile.parent)
-        FileUtils.copyFile(
-            project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"),
-            aarFile.toFile()
-        )
+    val result = project.executor().run(":app:checkDebugAarMetadata")
+    result.assertOutputContains("BUILD SUCCESSFUL")
+  }
 
-        // Manually write (possibly invalid) AAR metadata entry
-        ZipArchive(aarFile).use { aar ->
-            aar.delete(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            val sb = StringBuilder()
-            aarFormatVersion?.let { sb.appendLine("$AAR_FORMAT_VERSION_PROPERTY=$it") }
-            aarMetadataVersion?.let { sb.appendLine("$AAR_METADATA_VERSION_PROPERTY=$it") }
-            minCompileSdk?.let { sb.appendLine("$MIN_COMPILE_SDK_PROPERTY=$it") }
-            minCompileSdkExtension?.let { sb.appendLine("$MIN_COMPILE_SDK_EXTENSION_PROPERTY=$it") }
-            minAgpVersion?.let { sb.appendLine("$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=$it") }
-            forceCompileSdkPreview?.let { sb.appendLine("$FORCE_COMPILE_SDK_PREVIEW_PROPERTY=$it") }
-            coreLibraryDesugaringEnabled?.let { sb.appendLine("$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=$it") }
-            minDesugarJdkLib?.let { sb.appendLine("$DESUGAR_JDK_LIB_PROPERTY=$it") }
-            aar.add(
-                BytesSource(
-                    sb.toString().toByteArray(),
-                    AarMetadataTask.AAR_METADATA_ENTRY_PATH,
-                    Deflater.NO_COMPRESSION
-                )
-            )
-        }
+  @Test
+  fun testFailsWithMinCompileSdkExtension() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      minCompileSdkExtension = "1000",
+    )
 
-        // Replace app's dependency on the library module with a dependency on the AAR file
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "project(':lib')",
-            "files('libs/library.aar')"
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:checkDebugAarMetadata")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .startsWith(
+          """
+          An issue was found when checking AAR metadata:
+
+            1.  Dependency 'library.aar' requires libraries and applications that
+                depend on it to compile against an SDK with an extension level of
+                1000 or higher.
+
+                Recommended action: Update this project to use a compileSdkExtension
+                value of at least 1000.
+          """
+            .trimIndent()
         )
     }
+  }
+
+  @Test
+  fun testDisableCompileSdk() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      forceCompileSdkPreview = "UpsideDownCakePrivacySandbox",
+    )
+
+    project.executor().with(BooleanOption.DISABLE_COMPILE_SDK_CHECKS, true).run(":app:checkDebugAarMetadata")
+  }
+
+  @Test
+  fun testCheckingCoreLibraryDesugaring() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      coreLibraryDesugaringEnabled = "true",
+    )
+
+    val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
+    result.assertErrorContains(
+      """
+      An issue was found when checking AAR metadata:
+
+        1.  Dependency 'library.aar' requires core library desugaring to be enabled
+            for :app.
+
+            See https://developer.android.com/studio/write/java8-support.html for more
+            details.
+
+      """
+        .trimIndent()
+    )
+
+    // Ensure checkAndroidTestAarMetadata passes for the android test component if core library
+    // desugaring is only enabled for instrumented tests
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "${BooleanOption.ENABLE_INSTRUMENTATION_TEST_DESUGARING.propertyName}=true")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android.compileOptions.coreLibraryDesugaringEnabled = false
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'}",
+    )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("app").buildFile,
+      "implementation files('libs/library.aar')",
+      "androidTestImplementation files('libs/library.aar')",
+    )
+    project.executor().run(":app:checkAndroidTestAarMetadata")
+  }
+
+  @Test
+  fun testCheckingDesugarJdkLib() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      coreLibraryDesugaringEnabled = "true",
+      minDesugarJdkLib = "com.android.tools:desugar_jdk_libs_nio:$DESUGAR_NIO_DEPENDENCY_VERSION",
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android.compileOptions.coreLibraryDesugaringEnabled = true
+      android.defaultConfig.multiDexEnabled = true
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'}",
+    )
+    val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
+    result.assertErrorContains("2 issues were found when checking AAR metadata")
+  }
+
+  @Test
+  fun testCheckingCoreLibraryDesugaringForLibraryConsumer() {
+    project.executor().run("clean")
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      coreLibraryDesugaringEnabled = "true",
+    )
+    // convert the app module to be a library module which consumes the lib aar
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "com.android.application", "com.android.library")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          testOptions {
+              unitTests {
+                  setIncludeAndroidResources(true) // used for unit test
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.searchAndReplace(project.settingsFile, ":app", ":lib2")
+    TestFileUtils.appendToFile(project.settingsFile, "project(':lib2').projectDir = file('app')")
+    // Unit test is exempted from having core library desugaring enabled, regression test for
+    // b/341002194
+    project.executor().run(":lib2:checkDebugUnitTestAarMetadata")
+    // Android test is enforced to have core library desugaring enabled
+    val result = project.executor().expectFailure().run(":lib2:checkDebugAndroidTestAarMetadata")
+    result.assertErrorContains(
+      """
+      An issue was found when checking AAR metadata:
+
+        1.  Dependency 'library.aar' requires core library desugaring to be enabled
+            for :lib2.
+
+            See https://developer.android.com/studio/write/java8-support.html for more
+            details.
+      """
+        .trimIndent()
+    )
+  }
+
+  private fun addAarWithPossiblyInvalidAarMetadataToAppProject(
+    aarFormatVersion: String?,
+    aarMetadataVersion: String?,
+    minCompileSdk: String? = null,
+    minAgpVersion: String? = null,
+    forceCompileSdkPreview: String? = null,
+    minCompileSdkExtension: String? = null,
+    coreLibraryDesugaringEnabled: String? = null,
+    minDesugarJdkLib: String? = null,
+  ) {
+    project.executor().run(":lib:assembleDebug")
+    // Copy lib's .aar build output to the app's libs directory
+    val aarFile = project.getSubproject("app").projectDir.toPath().resolve("libs/library.aar")
+    Files.createDirectories(aarFile.parent)
+    FileUtils.copyFile(project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"), aarFile.toFile())
+
+    // Manually write (possibly invalid) AAR metadata entry
+    ZipArchive(aarFile).use { aar ->
+      aar.delete(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
+      val sb = StringBuilder()
+      aarFormatVersion?.let { sb.appendLine("$AAR_FORMAT_VERSION_PROPERTY=$it") }
+      aarMetadataVersion?.let { sb.appendLine("$AAR_METADATA_VERSION_PROPERTY=$it") }
+      minCompileSdk?.let { sb.appendLine("$MIN_COMPILE_SDK_PROPERTY=$it") }
+      minCompileSdkExtension?.let { sb.appendLine("$MIN_COMPILE_SDK_EXTENSION_PROPERTY=$it") }
+      minAgpVersion?.let { sb.appendLine("$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=$it") }
+      forceCompileSdkPreview?.let { sb.appendLine("$FORCE_COMPILE_SDK_PREVIEW_PROPERTY=$it") }
+      coreLibraryDesugaringEnabled?.let { sb.appendLine("$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=$it") }
+      minDesugarJdkLib?.let { sb.appendLine("$DESUGAR_JDK_LIB_PROPERTY=$it") }
+      aar.add(BytesSource(sb.toString().toByteArray(), AarMetadataTask.AAR_METADATA_ENTRY_PATH, Deflater.NO_COMPRESSION))
+    }
+
+    // Replace app's dependency on the library module with a dependency on the AAR file
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "project(':lib')", "files('libs/library.aar')")
+  }
 }

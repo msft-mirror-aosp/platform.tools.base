@@ -19,70 +19,69 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class OldVariantApiGenTaskVisibility {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("genFolderApi").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("genFolderApi").create()
 
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
 
-        File(project.projectDir, "old_variant_api.build.gradle")
-            .copyTo(project.buildFile)
+    File(project.projectDir, "old_variant_api.build.gradle").copyTo(project.buildFile)
+  }
+
+  @Test
+  fun noManifestConfigurationPassesTest() {
+    project.buildFile.appendText(
+      """
+      public abstract class ValidateResFolders extends DefaultTask {
+          @InputFiles
+          abstract ListProperty<Collection<Directory>> getInputFolders()
+
+          @OutputFile
+          abstract RegularFileProperty getOutputFile()
+
+          @TaskAction
+          void taskAction() {
+              var text = ""
+              getInputFolders().get().forEach { folders ->
+                  folders.forEach { folder ->
+                      text = text + folder.getAsFile().getAbsolutePath() + "\n"
+                  }
+              }
+              getOutputFile().get().getAsFile().text = text
+          }
+      }
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              TaskProvider<ValidateResFolders> taskProvider =
+                  project.tasks.register(
+                      variant.getName() + "ValidateResFolders",
+                      ValidateResFolders.class
+                  ) { task ->
+                     task.getInputFolders().set(variant.sources.res.all)
+                     task.getOutputFile().set(new File(project.buildDir, "result.txt"))
+                  }
+
+          })
+      }
+      """
+        .trimIndent()
+    )
+    project
+      .executor()
+      .withArgument("-P" + "inject_enable_generate_values_res=true")
+      .with(BooleanOption.USE_NEW_DSL, false)
+      .run("debugValidateResFolders")
+
+    val sep = File.separatorChar
+    File(project.buildDir, "result.txt").readText().also {
+      Truth.assertThat(it).contains("genFolderApi${sep}build${sep}generated${sep}res${sep}resValues${sep}debug")
     }
-    @Test
-    fun noManifestConfigurationPassesTest() {
-        project.buildFile.appendText(
-            """
-                public abstract class ValidateResFolders extends DefaultTask {
-                    @InputFiles
-                    abstract ListProperty<Collection<Directory>> getInputFolders()
-
-                    @OutputFile
-                    abstract RegularFileProperty getOutputFile()
-
-                    @TaskAction
-                    void taskAction() {
-                        var text = ""
-                        getInputFolders().get().forEach { folders ->
-                            folders.forEach { folder ->
-                                text = text + folder.getAsFile().getAbsolutePath() + "\n"
-                            }
-                        }
-                        getOutputFile().get().getAsFile().text = text
-                    }
-                }
-                androidComponents {
-                    onVariants(selector().all(), { variant ->
-                        TaskProvider<ValidateResFolders> taskProvider =
-                            project.tasks.register(
-                                variant.getName() + "ValidateResFolders",
-                                ValidateResFolders.class
-                            ) { task ->
-                               task.getInputFolders().set(variant.sources.res.all)
-                               task.getOutputFile().set(new File(project.buildDir, "result.txt"))
-                            }
-
-                    })
-                }
-            """.trimIndent()
-        )
-        project.executor()
-            .withArgument("-P" + "inject_enable_generate_values_res=true")
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run("debugValidateResFolders")
-
-        val sep = File.separatorChar
-        File(project.buildDir, "result.txt").readText().also {
-            Truth.assertThat(it).contains(
-                "genFolderApi${sep}build${sep}generated${sep}res${sep}resValues${sep}debug"
-            )
-        }
-    }
+  }
 }

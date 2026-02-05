@@ -89,9 +89,7 @@ class TypographyDetector : ResourceXmlDetector() {
           checkText(context, element, child, text)
         }
       } else if (
-        child.nodeType == ELEMENT_NODE &&
-          (child.parentNode.nodeName == TAG_STRING_ARRAY ||
-            child.parentNode.nodeName == TAG_PLURALS)
+        child.nodeType == ELEMENT_NODE && (child.parentNode.nodeName == TAG_STRING_ARRAY || child.parentNode.nodeName == TAG_PLURALS)
       ) {
         // String array or plural item children
         for (item in child.childrenIterator()) {
@@ -116,13 +114,7 @@ class TypographyDetector : ResourceXmlDetector() {
       // Replace ... with ellipsis character?
       val ellipsis = trimmedText.indexOf("...")
       if (ellipsis != -1 && !trimmedText.startsWith(".", ellipsis + 3)) {
-        context.report(
-          ELLIPSIS,
-          element,
-          context.getLocation(textNode),
-          ELLIPSIS_MESSAGE,
-          fix().replace().text("...").with("…").build(),
-        )
+        context.report(ELLIPSIS, element, context.getLocation(textNode), ELLIPSIS_MESSAGE, fix().replace().text("...").with("…").build())
       }
     }
 
@@ -137,8 +129,7 @@ class TypographyDetector : ResourceXmlDetector() {
           // one on the left either -- since we don't want to consider
           // "1 2 -3" as a range from 2 to 3
           val isNegativeNumber =
-            !Character.isWhitespace(matcher.group(2)[0]) &&
-              Character.isWhitespace(matcher.group(1)[matcher.group(1).length - 1])
+            !Character.isWhitespace(matcher.group(2)[0]) && Character.isWhitespace(matcher.group(1)[matcher.group(1).length - 1])
           if (!isNegativeNumber && !isAnalyticsTrackingId(element)) {
             context.report(
               DASHES,
@@ -199,9 +190,7 @@ class TypographyDetector : ResourceXmlDetector() {
           quoteEnd != quoteStart + 1 &&
             quoteStart > 0 &&
             (trimmedText[quoteStart - 1].isLetterOrDigit() ||
-              quoteStart > 1 &&
-                trimmedText[quoteStart - 1] == '\\' &&
-                trimmedText[quoteStart - 2].isLetterOrDigit())
+              quoteStart > 1 && trimmedText[quoteStart - 1] == '\\' && trimmedText[quoteStart - 2].isLetterOrDigit())
         ) {
           val textNodeLocation = context.getLocation(textNode)
           val textStartPosition = textNodeLocation.start ?: error("Text node has no start position")
@@ -218,25 +207,11 @@ class TypographyDetector : ResourceXmlDetector() {
             } else {
               Location.create(
                 textNodeLocation.file,
-                DefaultPosition(
-                  textStartPosition.line + lineBreaks,
-                  apostropheColumn,
-                  apostropheOffset,
-                ),
-                DefaultPosition(
-                  textStartPosition.line + lineBreaks,
-                  apostropheColumn + 1,
-                  apostropheOffset + 1,
-                ),
+                DefaultPosition(textStartPosition.line + lineBreaks, apostropheColumn, apostropheOffset),
+                DefaultPosition(textStartPosition.line + lineBreaks, apostropheColumn + 1, apostropheOffset + 1),
               )
             }
-          context.report(
-            QUOTES,
-            element,
-            apostropheLocation,
-            TYPOGRAPHIC_APOSTROPHE_MESSAGE,
-            fix().replace().text("'").with("’").build(),
-          )
+          context.report(QUOTES, element, apostropheLocation, TYPOGRAPHIC_APOSTROPHE_MESSAGE, fix().replace().text("'").with("’").build())
           return
         }
       }
@@ -282,13 +257,7 @@ class TypographyDetector : ResourceXmlDetector() {
               .with("‘${trimmedText.substring(graveStart + 1, quoteEnd)}’")
               .build()
           }
-        context.report(
-          QUOTES,
-          element,
-          context.getLocation(textNode),
-          GRAVE_QUOTE_MESSAGE,
-          quickfix,
-        )
+        context.report(QUOTES, element, context.getLocation(textNode), GRAVE_QUOTE_MESSAGE, quickfix)
         return
       }
 
@@ -351,10 +320,7 @@ class TypographyDetector : ResourceXmlDetector() {
     }
     if (checkMisc) {
       // Fix copyright symbol?
-      if (
-        trimmedText.indexOf('(') != -1 &&
-          (trimmedText.contains("(c)") || trimmedText.contains("(C)"))
-      ) {
+      if (trimmedText.indexOf('(') != -1 && (trimmedText.contains("(c)") || trimmedText.contains("(C)"))) {
         // Suggest replacing with copyright symbol?
         context.report(
           OTHER,
@@ -374,8 +340,7 @@ class TypographyDetector : ResourceXmlDetector() {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(TypographyDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(TypographyDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** Replace hyphens with dashes? */
     @JvmField
@@ -402,8 +367,7 @@ class TypographyDetector : ResourceXmlDetector() {
     val QUOTES =
       create(
         id = "TypographyQuotes",
-        briefDescription =
-          "Straight quotes can be replaced with curvy quotes, and apostrophes with typographic apostrophes.",
+        briefDescription = "Straight quotes can be replaced with curvy quotes, and apostrophes with typographic apostrophes.",
         explanation =
           """
                         Straight single quotes and double quotes, when used as a pair, can be replaced by \
@@ -475,49 +439,35 @@ class TypographyDetector : ResourceXmlDetector() {
         implementation = IMPLEMENTATION,
       )
 
-    private const val GRAVE_QUOTE_MESSAGE =
-      "Avoid quoting with grave accents; use apostrophes or better yet directional quotes instead"
-    private const val ELLIPSIS_MESSAGE =
-      "Replace \"...\" with ellipsis character (\u2026, &#8230;) ?"
-    private const val EN_DASH_MESSAGE =
-      "Replace \"-\" with an \"en dash\" character (\u2013, &#8211;) ?"
-    private const val EM_DASH_MESSAGE =
-      "Replace \"--\" with an \"em dash\" character (\u2014, &#8212;) ?"
-    private const val TYPOGRAPHIC_APOSTROPHE_MESSAGE =
-      "Replace apostrophe (') with typographic apostrophe (\u2019, &#8217;) ?"
-    private const val SINGLE_QUOTE_MESSAGE =
-      "Replace straight quotes ('') with directional quotes (\u2018\u2019, &#8216; and &#8217;) ?"
-    private const val DBL_QUOTES_MESSAGE =
-      "Replace straight quotes (\") with directional quotes (\u201C\u201D, &#8220; and &#8221;) ?"
+    private const val GRAVE_QUOTE_MESSAGE = "Avoid quoting with grave accents; use apostrophes or better yet directional quotes instead"
+    private const val ELLIPSIS_MESSAGE = "Replace \"...\" with ellipsis character (\u2026, &#8230;) ?"
+    private const val EN_DASH_MESSAGE = "Replace \"-\" with an \"en dash\" character (\u2013, &#8211;) ?"
+    private const val EM_DASH_MESSAGE = "Replace \"--\" with an \"em dash\" character (\u2014, &#8212;) ?"
+    private const val TYPOGRAPHIC_APOSTROPHE_MESSAGE = "Replace apostrophe (') with typographic apostrophe (\u2019, &#8217;) ?"
+    private const val SINGLE_QUOTE_MESSAGE = "Replace straight quotes ('') with directional quotes (\u2018\u2019, &#8216; and &#8217;) ?"
+    private const val DBL_QUOTES_MESSAGE = "Replace straight quotes (\") with directional quotes (\u201C\u201D, &#8220; and &#8221;) ?"
     private const val COPYRIGHT_MESSAGE = "Replace (c) with copyright symbol \u00A9 (&#169;) ?"
 
     /**
-     * Pattern used to detect scenarios which can be replaced with n dashes: a numeric range with a
-     * hyphen in the middle (and possibly spaces)
+     * Pattern used to detect scenarios which can be replaced with n dashes: a numeric range with a hyphen in the middle (and possibly
+     * spaces)
      */
     private val HYPHEN_RANGE_PATTERN: Pattern = Pattern.compile(".*(\\d+\\s*)-(\\s*\\d+).*")
 
     /**
-     * Pattern used to detect scenarios where a grave accent mark is used to do ASCII quotations of
-     * the form `this'' or ``this'', which is frowned upon. This pattern tries to avoid falsely
-     * complaining about strings like "Type Option-` then 'Escape'."
+     * Pattern used to detect scenarios where a grave accent mark is used to do ASCII quotations of the form `this'' or ``this'', which is
+     * frowned upon. This pattern tries to avoid falsely complaining about strings like "Type Option-` then 'Escape'."
      */
-    private val GRAVE_QUOTATION: Pattern =
-      Pattern.compile("(^[^`]*`[^'`]+'[^']*$)|(^[^`]*``[^'`]+''[^']*$)")
+    private val GRAVE_QUOTATION: Pattern = Pattern.compile("(^[^`]*`[^'`]+'[^']*$)|(^[^`]*``[^'`]+''[^']*$)")
 
-    /**
-     * Pattern used to detect common fractions, e.g. 1/2, 1/3, 2/3, 1/4, 3/4 and variations like 2 /
-     * 3, but not 11/22 and so on.
-     */
+    /** Pattern used to detect common fractions, e.g. 1/2, 1/3, 2/3, 1/4, 3/4 and variations like 2 / 3, but not 11/22 and so on. */
     private val FRACTION_PATTERN: Pattern = Pattern.compile(".*\\b([13])\\s*/\\s*([234])\\b.*")
 
     /**
-     * Pattern used to detect single quote strings, such as 'hello', but not just quoted strings
-     * like 'Double quote: "', and not sentences where there are multiple apostrophes but not in a
-     * quoting context such as "Mind Your P's and Q's".
+     * Pattern used to detect single quote strings, such as 'hello', but not just quoted strings like 'Double quote: "', and not sentences
+     * where there are multiple apostrophes but not in a quoting context such as "Mind Your P's and Q's".
      */
-    private val SINGLE_QUOTE: Pattern =
-      Pattern.compile(".*\\W*'[^']+'(\\W.*)?", Pattern.UNICODE_CHARACTER_CLASS)
+    private val SINGLE_QUOTE: Pattern = Pattern.compile(".*\\W*'[^']+'(\\W.*)?", Pattern.UNICODE_CHARACTER_CLASS)
 
     private const val FRACTION_MESSAGE = "Use fraction character %1\$c (%2\$s) instead of %3\$s?"
 

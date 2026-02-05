@@ -24,7 +24,7 @@ fun blankFragmentJava(
   className: String,
   fragmentName: String,
   packageName: String,
-  useAndroidX: Boolean
+  useAndroidX: Boolean,
 ): String {
   val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${applicationPackage}.R;" }
   return """

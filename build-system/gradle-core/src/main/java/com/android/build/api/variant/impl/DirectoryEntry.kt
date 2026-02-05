@@ -24,100 +24,65 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
-/**
- * Abstraction of a source directory within the Variant object model.
- */
+/** Abstraction of a source directory within the Variant object model. */
 interface DirectoryEntry {
 
-    /**
-     * To avoid circular dependencies, especially with the old variant API, we need to store the
-     * the KSP and KAPT generated directories separately so the KSP compiler can see all user
-     * generated and java sources but not the KAPT generated ones.
-     *
-     * Therefore, it is necessary to tag the KSP and KAPT generated directories using the enum
-     * below.
-     */
-    enum class Kind { KAPT, KSP, GENERIC }
+  /**
+   * To avoid circular dependencies, especially with the old variant API, we need to store the the KSP and KAPT generated directories
+   * separately so the KSP compiler can see all user generated and java sources but not the KAPT generated ones.
+   *
+   * Therefore, it is necessary to tag the KSP and KAPT generated directories using the enum below.
+   */
+  enum class Kind {
+    KAPT,
+    KSP,
+    GENERIC,
+  }
 
-    /**
-     *  source folder name, human readable but not guaranteed to be unique.
-     */
-    val name: String
+  /** source folder name, human readable but not guaranteed to be unique. */
+  val name: String
 
-    /**
-     * true if it contains generated sources, false it is editable by the user.
-     */
-    val isGenerated: Boolean
+  /** true if it contains generated sources, false it is editable by the user. */
+  val isGenerated: Boolean
 
-    /**
-     * true if the user added this source folder (generated or not), false if it is a folder
-     * that was automatically created by AGP.
-     */
-    val isUserAdded: Boolean
+  /** true if the user added this source folder (generated or not), false if it is a folder that was automatically created by AGP. */
+  val isUserAdded: Boolean
 
-    /**
-     * true if the folder should be added to the IDE model, false otherwise.
-     */
-    val shouldBeAddedToIdeModel: Boolean
+  /** true if the folder should be added to the IDE model, false otherwise. */
+  val shouldBeAddedToIdeModel: Boolean
 
-    /**
-     * Add all directories to the passed [ListProperty]
-     */
-    fun addTo(
-        projectDir: Directory,
-        listProperty: ListProperty<Directory>
-    )
+  /** Add all directories to the passed [ListProperty] */
+  fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>)
 
-    /**
-     * Add all directories to the passed [ConfigurableFileCollection]
-     */
-    fun addTo(
-        projectDir: Directory,
-        into: ConfigurableFileCollection
-    )
+  /** Add all directories to the passed [ConfigurableFileCollection] */
+  fun addTo(projectDir: Directory, into: ConfigurableFileCollection)
 
-    /**
-     * Return the source folder as a [ConfigurableFileTree] which can be used as
-     * [org.gradle.api.Task] input.
-     */
-    fun asFileTree(
-            fileTreeCreator: () -> ConfigurableFileTree
-    ): Provider<List<ConfigurableFileTree>>
+  /** Return the source folder as a [ConfigurableFileTree] which can be used as [org.gradle.api.Task] input. */
+  fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>>
 
-    /**
-     * Return the source folders as a [List] of [ConfigurableFileTree] which CANNOT be used as
-     * [org.gradle.api.Task] input. This method must only be called by
-     * [FlatSourceDirectoriesImpl.getAsFileTreesForOldVariantAPI], all new usages should use
-     * [addTo]
-     *
-     * Remove once b/260920355 is fixed.
-     */
-    fun asFileTreeWithoutTaskDependency(
-            fileTreeCreator: () -> ConfigurableFileTree
-    ): List<ConfigurableFileTree>
+  /**
+   * Return the source folders as a [List] of [ConfigurableFileTree] which CANNOT be used as [org.gradle.api.Task] input. This method must
+   * only be called by [FlatSourceDirectoriesImpl.getAsFileTreesForOldVariantAPI], all new usages should use [addTo]
+   *
+   * Remove once b/260920355 is fixed.
+   */
+  fun asFileTreeWithoutTaskDependency(fileTreeCreator: () -> ConfigurableFileTree): List<ConfigurableFileTree>
 
-    /**
-     * Optional filter associated with this source folder.
-     */
-    val filter: PatternFilterable?
+  /** Optional filter associated with this source folder. */
+  val filter: PatternFilterable?
 
-    /**
-     * Make this source directory entry a dependent of [task]. If [task] is scheduled,
-     * any producer of this source directory will be automatically scheduled for execution
-     * before [task]'s execution.
-     *
-     * @param task task that should depend on this source directory entry producer.
-     * @param projectDir the project directory, to be able to create a task input compatible version
-     * of this [DirectoryEntry] instance.
-     */
-    fun makeDependentOf(task: Task) {
-        // by default do nothing, only TaskBasedDirectoryEntry can be a valid dependent
-    }
+  /**
+   * Make this source directory entry a dependent of [task]. If [task] is scheduled, any producer of this source directory will be
+   * automatically scheduled for execution before [task]'s execution.
+   *
+   * @param task task that should depend on this source directory entry producer.
+   * @param projectDir the project directory, to be able to create a task input compatible version of this [DirectoryEntry] instance.
+   */
+  fun makeDependentOf(task: Task) {
+    // by default do nothing, only TaskBasedDirectoryEntry can be a valid dependent
+  }
 
-    /**
-     * Kind of [DirectoryEntry], it is a [Kind.GENERIC] one by default which mean it is neither the
-     * KSP and KAPT generated source folders.
-     */
-    val kind: Kind
-        get() = Kind.GENERIC
+  /** Kind of [DirectoryEntry], it is a [Kind.GENERIC] one by default which mean it is neither the KSP and KAPT generated source folders. */
+  val kind: Kind
+    get() = Kind.GENERIC
 }

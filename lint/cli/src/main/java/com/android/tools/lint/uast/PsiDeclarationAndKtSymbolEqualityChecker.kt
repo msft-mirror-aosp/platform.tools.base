@@ -40,34 +40,21 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
     if (!returnTypesMatch(psi, symbol, isSuspend)) return false
     if (!typeParametersMatch(psi, symbol)) return false
     val isCompose = COMPOSABLE_CLASSID in symbol.annotations
-    if (symbol is KaFunctionSymbol && !valueParametersMatch(psi, symbol, isSuspend, isCompose))
-      return false
+    if (symbol is KaFunctionSymbol && !valueParametersMatch(psi, symbol, isSuspend, isCompose)) return false
     return true
   }
 
-  private fun KaSession.returnTypesMatch(
-    psi: PsiMethod,
-    symbol: KaCallableSymbol,
-    isSuspend: Boolean = false,
-  ): Boolean {
+  private fun KaSession.returnTypesMatch(psi: PsiMethod, symbol: KaCallableSymbol, isSuspend: Boolean = false): Boolean {
     if (symbol is KaConstructorSymbol) return psi.isConstructor
     val psiReturnType = psi.returnType ?: return false
-    return isTheSameTypes(
-      psi,
-      psiReturnType,
-      symbol.returnType,
-      KaTypeMappingMode.RETURN_TYPE,
-      isSuspend = isSuspend,
-    )
+    return isTheSameTypes(psi, psiReturnType, symbol.returnType, KaTypeMappingMode.RETURN_TYPE, isSuspend = isSuspend)
   }
 
   private fun typeParametersMatch(psi: PsiMethod, symbol: KaCallableSymbol): Boolean {
     // PsiMethod for constructor won't have type parameters
     if (symbol is KaConstructorSymbol) return psi.isConstructor
     val symbolTypeParameters =
-      symbol.typeParameters.takeIf { it.isNotEmpty() }
-        ?: symbol.receiverParameter?.owningCallableSymbol?.typeParameters
-        ?: emptyList()
+      symbol.typeParameters.takeIf { it.isNotEmpty() } ?: symbol.receiverParameter?.owningCallableSymbol?.typeParameters ?: emptyList()
     if (psi.typeParameters.size != symbolTypeParameters.size) return false
     psi.typeParameters.zip(symbolTypeParameters) { psiTypeParameter, typeParameterSymbol ->
       if (psiTypeParameter.name != typeParameterSymbol.name.asString()) return false
@@ -87,8 +74,7 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
         is KaPropertyAccessorSymbol -> symbol.receiverParameter != null
         else -> symbol.isExtension
       }
-    val valueParameterCount =
-      if (isExtension) symbol.valueParameters.size + 1 else symbol.valueParameters.size
+    val valueParameterCount = if (isExtension) symbol.valueParameters.size + 1 else symbol.valueParameters.size
     var psiParameters: List<PsiParameter> = psi.parameterList.parameters.toList()
     if (isSuspend) {
       // Drop the Continuation added by the compiler
@@ -102,8 +88,7 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
     if (psiParameters.size != valueParameterCount) return false
     if (isExtension) {
       val psiParameter = psiParameters[0]
-      if (symbol.receiverType?.let { isTheSameTypes(psi, psiParameter.type, it) } != true)
-        return false
+      if (symbol.receiverType?.let { isTheSameTypes(psi, psiParameter.type, it) } != true) return false
     }
     val offset = if (isExtension) 1 else 0
     symbol.valueParameters.forEachIndexed { index, valueParameterSymbol ->

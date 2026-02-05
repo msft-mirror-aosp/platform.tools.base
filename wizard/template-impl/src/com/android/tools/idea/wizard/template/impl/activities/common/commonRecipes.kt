@@ -15,7 +15,6 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.common
 
-import com.android.tools.idea.wizard.template.ApiTemplateData
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageName
 import com.android.tools.idea.wizard.template.RecipeExecutor
@@ -31,19 +30,19 @@ import com.android.tools.idea.wizard.template.renderIf
 import java.io.File
 
 fun RecipeExecutor.generateSimpleMenu(packageName: PackageName, activityClass: String, resDir: File, menuName: String) {
-  val simpleMenuStrings = """
+  val simpleMenuStrings =
+    """
     <resources>
         <string name="action_settings">Settings</string>
     </resources>
-  """.trimIndent()
+    """
+      .trimIndent()
 
   save(simpleMenu(packageName, activityClass), resDir.resolve("menu/$menuName.xml"))
   mergeXml(simpleMenuStrings, resDir.resolve("values/strings.xml"))
 }
 
-fun RecipeExecutor.generateThemeStyles(
-  themeData: ThemeData, useAndroidX: Boolean, resOut: File
-) {
+fun RecipeExecutor.generateThemeStyles(themeData: ThemeData, useAndroidX: Boolean, resOut: File) {
   addMaterialDependency(useAndroidX)
   if (!themeData.exists) {
     mergeXml(themeStyles(themeData.name, useAndroidX), resOut.resolve("values/themes.xml"))
@@ -64,30 +63,35 @@ fun RecipeExecutor.generateManifest(
   generateActivityTitle: Boolean,
   isResizeable: Boolean = false,
   libraryName: String = "",
-  taskAffinity: String? = null
+  taskAffinity: String? = null,
 ) {
   generateManifestStrings(activityClass, baseFeatureResOut, isNewModule, generateActivityTitle)
 
-  val manifest = androidManifestXml(
-    isNewModule = isNewModule,
-    hasNoActionBar = hasNoActionBar,
-    packageName = packageName,
-    activityClass = activityClass,
-    isLauncher = isLauncher,
-    isLibraryProject = isLibrary,
-    activityThemeName = activityThemeName,
-    generateActivityTitle = generateActivityTitle,
-    isResizeable = isResizeable,
-    libraryName = libraryName,
-    taskAffinity = taskAffinity,
-  )
+  val manifest =
+    androidManifestXml(
+      isNewModule = isNewModule,
+      hasNoActionBar = hasNoActionBar,
+      packageName = packageName,
+      activityClass = activityClass,
+      isLauncher = isLauncher,
+      isLibraryProject = isLibrary,
+      activityThemeName = activityThemeName,
+      generateActivityTitle = generateActivityTitle,
+      isResizeable = isResizeable,
+      libraryName = libraryName,
+      taskAffinity = taskAffinity,
+    )
 
   mergeXml(manifest, manifestOut.resolve("AndroidManifest.xml"))
 }
 
 fun RecipeExecutor.generateSimpleLayout(
-  moduleData: ModuleTemplateData, activityClass: String, simpleLayoutName: String,
-  containerId: String?, openLayout: Boolean = true, includeCppSupport: Boolean = false
+  moduleData: ModuleTemplateData,
+  activityClass: String,
+  simpleLayoutName: String,
+  containerId: String?,
+  openLayout: Boolean = true,
+  includeCppSupport: Boolean = false,
 ) {
   val projectData = moduleData.projectTemplateData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -97,9 +101,16 @@ fun RecipeExecutor.generateSimpleLayout(
   addDependency("com.android.support.constraint:constraint-layout:+")
 
   // TODO(qumeric): check if we sometimes need to pass appBarLayoutName
-  val simpleLayout = simpleLayoutXml(
-    moduleData.isNewModule, includeCppSupport, projectData.androidXSupport, moduleData.packageName, activityClass, null, containerId
-  )
+  val simpleLayout =
+    simpleLayoutXml(
+      moduleData.isNewModule,
+      includeCppSupport,
+      projectData.androidXSupport,
+      moduleData.packageName,
+      activityClass,
+      null,
+      containerId,
+    )
 
   val layoutFile = resOut.resolve("layout/$simpleLayoutName.xml")
   save(simpleLayout, layoutFile)
@@ -113,35 +124,39 @@ fun RecipeExecutor.generateNoActionBarStyles(baseFeatureResOut: File?, resDir: F
   val implicitParentTheme = true // TODO(qumeric)
   val parentBlock = renderIf(!implicitParentTheme) { """parent="${themesData.main.name}"""" }
 
-  val noActionBarBlock = renderIf(!themesData.noActionBar.exists) {
-    """
+  val noActionBarBlock =
+    renderIf(!themesData.noActionBar.exists) {
+      """
     <style name="${themesData.noActionBar.name}" $parentBlock>
       <item name="windowActionBar">false</item>
       <item name="windowNoTitle">true</item>
     </style>
     """
-  }
+    }
 
-  val appBarOverlayBlock = renderIf(!themesData.appBarOverlay.exists) {
-    """<style name="${themesData.appBarOverlay.name}" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />"""
-  }
+  val appBarOverlayBlock =
+    renderIf(!themesData.appBarOverlay.exists) {
+      """<style name="${themesData.appBarOverlay.name}" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />"""
+    }
 
-  val popupOverlayBlock = renderIf(!themesData.popupOverlay.exists) {
-    """<style name="${themesData.popupOverlay.name}" parent="ThemeOverlay.AppCompat.Light" />"""
-  }
+  val popupOverlayBlock =
+    renderIf(!themesData.popupOverlay.exists) {
+      """<style name="${themesData.popupOverlay.name}" parent="ThemeOverlay.AppCompat.Light" />"""
+    }
 
-  val noActionBarStylesContent = """
+  val noActionBarStylesContent =
+    """
     <resources>
       $noActionBarBlock
       $appBarOverlayBlock
       $popupOverlayBlock
     </resources>
-  """.trimIndent()
+  """
+      .trimIndent()
 
   if (baseFeatureResOut != null) {
     mergeXml(noActionBarStylesContent, baseFeatureResOut.resolve("values/themes.xml"))
-  }
-  else {
+  } else {
     mergeXml(noActionBarStylesContent, resDir.resolve("values/themes.xml"))
   }
 }
@@ -150,7 +165,7 @@ fun RecipeExecutor.generateManifestStrings(
   activityClass: String,
   baseFeatureResOut: File,
   isNewModule: Boolean,
-  generateActivityTitle: Boolean
+  generateActivityTitle: Boolean,
 ) {
   mergeXml(manifestStrings(activityClass, isNewModule, generateActivityTitle), baseFeatureResOut.resolve("values/strings.xml"))
 }
@@ -166,12 +181,13 @@ fun RecipeExecutor.generateAppBar(
   baseFeatureResOut: File? = moduleData.baseFeature?.resDir,
   themesData: ThemesData = moduleData.themesData,
   useAndroidX: Boolean,
-  isMaterial3: Boolean
+  isMaterial3: Boolean,
 ) {
   val coordinatorLayout = getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)
   val layoutTag = getMaterialComponentName("android.support.design.widget.AppBarLayout", useAndroidX)
 
-  val appBarLayout = """
+  val appBarLayout =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <$coordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
@@ -214,11 +230,12 @@ fun RecipeExecutor.generateAppBar(
       app:srcCompat="@android:drawable/ic_dialog_email" />
 
       </$coordinatorLayout>
-      """.trimIndent()
+      """
+      .trimIndent()
 
   if (!isMaterial3) {
-      addDependency("com.android.support:appcompat-v7:$appCompatVersion.+")
-      addDependency("com.android.support:design:$appCompatVersion.+")
+    addDependency("com.android.support:appcompat-v7:$appCompatVersion.+")
+    addDependency("com.android.support:design:$appCompatVersion.+")
   }
 
   save(appBarLayout, resDir.resolve("layout/$appBarLayoutName.xml"))
@@ -232,7 +249,7 @@ fun RecipeExecutor.generateAppBar(
 }
 
 private fun appBarDimens(fabMargin: Int) =
-"""<resources>
+  """<resources>
       <dimen name="fab_margin">${fabMargin}dp</dimen>
    </resources>
 """
@@ -260,8 +277,8 @@ fun RecipeExecutor.addViewBindingSupport(viewBindingSupport: ViewBindingSupport,
 }
 
 fun RecipeExecutor.addSecretsGradlePlugin() {
-    addClasspathDependency("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:+", minRev = "2.0.0")
-    applyPlugin("com.google.android.libraries.mapsplatform.secrets-gradle-plugin", "+", minRev = "2.0.0")
+  addClasspathDependency("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:+", minRev = "2.0.0")
+  applyPlugin("com.google.android.libraries.mapsplatform.secrets-gradle-plugin", "+", minRev = "2.0.0")
 }
 
 fun RecipeExecutor.generateMaterial3Themes(themeName: String, resOut: File) {
@@ -269,7 +286,8 @@ fun RecipeExecutor.generateMaterial3Themes(themeName: String, resOut: File) {
   // an Activity is created under a flavor
   // com.android.tools.idea.npw.module.recipes.androidModule.res.values.androidModuleThemesMaterial3
   // com.android.tools.idea.npw.module.recipes.androidModule.res.values_night.androidModuleThemesMaterial3
-  mergeXml("""<resources xmlns:tools="http://schemas.android.com/tools">
+  mergeXml(
+    """<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Base application theme. -->
   <style name="Base.${themeName}" parent="Theme.Material3.DayNight.NoActionBar">
     <!-- Customize your light theme here. -->
@@ -277,13 +295,18 @@ fun RecipeExecutor.generateMaterial3Themes(themeName: String, resOut: File) {
   </style>
 
   <style name="$themeName" parent="Base.${themeName}" />
-</resources>""", resOut.resolve("values/themes.xml"))
+</resources>""",
+    resOut.resolve("values/themes.xml"),
+  )
 
-  mergeXml(  """<resources xmlns:tools="http://schemas.android.com/tools">
+  mergeXml(
+    """<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Base application theme. -->
   <style name="Base.${themeName}" parent="Theme.Material3.DayNight.NoActionBar">
     <!-- Customize your dark theme here. -->
     <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
   </style>
-</resources>""", resOut.resolve("values-night/themes.xml"))
+</resources>""",
+    resOut.resolve("values-night/themes.xml"),
+  )
 }

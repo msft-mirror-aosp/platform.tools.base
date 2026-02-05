@@ -20,8 +20,7 @@ import com.android.jdwppacket.MessageReader
 import com.android.jdwppacket.ThreadReference
 import com.android.jdwppacket.Writer
 
-data class FramesCmd(val threadID: Long, val startFrame: Int, val length: Int) :
-  Cmd(ThreadReference.Frames) {
+data class FramesCmd(val threadID: Long, val startFrame: Int, val length: Int) : Cmd(ThreadReference.Frames) {
 
   override fun paramsKey(): String {
     return "$threadID-$startFrame-$length"

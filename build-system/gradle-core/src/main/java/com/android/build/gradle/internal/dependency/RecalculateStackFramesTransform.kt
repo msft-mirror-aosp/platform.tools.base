@@ -42,140 +42,112 @@ import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Internal
 
 @CacheableTransform
-abstract class RecalculateStackFramesTransform :
-    TransformAction<RecalculateStackFramesTransform.Parameters> {
+abstract class RecalculateStackFramesTransform : TransformAction<RecalculateStackFramesTransform.Parameters> {
 
-    companion object {
-        fun getAttributesForConfig(creationConfig: ComponentCreationConfig)
-                : AndroidAttributes {
-            val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig
-            return if (instrumentationCreationConfig != null &&
-                instrumentationCreationConfig.dependenciesClassesAreInstrumented &&
-                instrumentationCreationConfig.asmFramesComputationMode ==
-                FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES
-            ) {
-                AndroidAttributes(
-                    mapOf(ATTR_ASM_TRANSFORMED_VARIANT to creationConfig.name)
-                )
-            } else {
-                AndroidAttributes(
-                    mapOf(ATTR_ASM_TRANSFORMED_VARIANT to "")
-                )
-            }
-        }
-
-        fun registerGlobalRecalculateStackFramesTransform(
-            projectName: String,
-            dependencyHandler: DependencyHandler,
-            bootClasspathProvider: Provider<List<RegularFile>>,
-            buildServiceRegistry: BuildServiceRegistry
-        ) {
-            registerRecalculateStackFramesTransform(
-                projectName,
-                dependencyHandler,
-                bootClasspathProvider,
-                buildServiceRegistry,
-                AndroidAttributes(
-                    mapOf(ATTR_ASM_TRANSFORMED_VARIANT to "")
-                ),
-                false
-            )
-        }
-
-        fun registerRecalculateStackFramesTransformForComponent(
-            projectName: String,
-            dependencyHandler: DependencyHandler,
-            creationConfig: ComponentCreationConfig
-        ) {
-            val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig
-                ?: return
-            if (instrumentationCreationConfig.dependenciesClassesAreInstrumented &&
-                instrumentationCreationConfig.asmFramesComputationMode ==
-                FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES
-            ) {
-                registerRecalculateStackFramesTransform(
-                    projectName,
-                    dependencyHandler,
-                    creationConfig.global.fullBootClasspathProvider,
-                    creationConfig.services.buildServiceRegistry,
-                    getAttributesForConfig(creationConfig),
-                    true
-                )
-            }
-        }
-
-        private fun registerRecalculateStackFramesTransform(
-            projectName: String,
-            dependencyHandler: DependencyHandler,
-            bootClasspathProvider: Provider<List<RegularFile>>,
-            buildServiceRegistry: BuildServiceRegistry,
-            attributes: AndroidAttributes,
-            fixInstrumentedJars: Boolean
-        ) {
-            dependencyHandler.registerTransform(RecalculateStackFramesTransform::class.java) { spec ->
-                if (fixInstrumentedJars) {
-                    spec.from.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.ASM_INSTRUMENTED_JARS.type
-                    )
-                } else {
-                    spec.from.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.CLASSES_JAR.type
-                    )
-                }
-
-                spec.to.attribute(
-                    ARTIFACT_TYPE_ATTRIBUTE,
-                    AndroidArtifacts.ArtifactType.CLASSES_FIXED_FRAMES_JAR.type
-                )
-
-                spec.parameters { params ->
-                    params.projectName.set(projectName)
-                    params.bootClasspath.set(bootClasspathProvider)
-                    params.classesHierarchyBuildService.set(
-                        getBuildService(buildServiceRegistry)
-                    )
-                }
-
-                attributes.stringAttributes.forEach { name, value ->
-                    spec.from.attribute(name, value)
-                    spec.to.attribute(name, value)
-                }
-            }
-        }
+  companion object {
+    fun getAttributesForConfig(creationConfig: ComponentCreationConfig): AndroidAttributes {
+      val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig
+      return if (
+        instrumentationCreationConfig != null &&
+          instrumentationCreationConfig.dependenciesClassesAreInstrumented &&
+          instrumentationCreationConfig.asmFramesComputationMode == FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES
+      ) {
+        AndroidAttributes(mapOf(ATTR_ASM_TRANSFORMED_VARIANT to creationConfig.name))
+      } else {
+        AndroidAttributes(mapOf(ATTR_ASM_TRANSFORMED_VARIANT to ""))
+      }
     }
 
-    @get:CompileClasspath
-    @get:InputArtifactDependencies
-    abstract val classpath: FileCollection
+    fun registerGlobalRecalculateStackFramesTransform(
+      projectName: String,
+      dependencyHandler: DependencyHandler,
+      bootClasspathProvider: Provider<List<RegularFile>>,
+      buildServiceRegistry: BuildServiceRegistry,
+    ) {
+      registerRecalculateStackFramesTransform(
+        projectName,
+        dependencyHandler,
+        bootClasspathProvider,
+        buildServiceRegistry,
+        AndroidAttributes(mapOf(ATTR_ASM_TRANSFORMED_VARIANT to "")),
+        false,
+      )
+    }
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val inputArtifact: Provider<FileSystemLocation>
-
-    override fun transform(outputs: TransformOutputs) {
-        //TODO(b/162813654) record transform execution span
-        val inputFile = inputArtifact.get().asFile
-        val classesHierarchyResolver = parameters.classesHierarchyBuildService.get()
-            .getClassesHierarchyResolverBuilder()
-            .addDependenciesSources(parameters.bootClasspath.get().map { it.asFile })
-            .addDependenciesSources(inputArtifact.get().asFile)
-            .addDependenciesSources(classpath.files)
-            .build()
-
-        FixStackFramesDelegate.transformJar(
-            inputFile,
-            outputs.file(inputFile.name),
-            classesHierarchyResolver
+    fun registerRecalculateStackFramesTransformForComponent(
+      projectName: String,
+      dependencyHandler: DependencyHandler,
+      creationConfig: ComponentCreationConfig,
+    ) {
+      val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig ?: return
+      if (
+        instrumentationCreationConfig.dependenciesClassesAreInstrumented &&
+          instrumentationCreationConfig.asmFramesComputationMode == FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES
+      ) {
+        registerRecalculateStackFramesTransform(
+          projectName,
+          dependencyHandler,
+          creationConfig.global.fullBootClasspathProvider,
+          creationConfig.services.buildServiceRegistry,
+          getAttributesForConfig(creationConfig),
+          true,
         )
+      }
     }
 
-    interface Parameters : GenericTransformParameters {
-        @get:CompileClasspath
-        val bootClasspath: ListProperty<RegularFile>
+    private fun registerRecalculateStackFramesTransform(
+      projectName: String,
+      dependencyHandler: DependencyHandler,
+      bootClasspathProvider: Provider<List<RegularFile>>,
+      buildServiceRegistry: BuildServiceRegistry,
+      attributes: AndroidAttributes,
+      fixInstrumentedJars: Boolean,
+    ) {
+      dependencyHandler.registerTransform(RecalculateStackFramesTransform::class.java) { spec ->
+        if (fixInstrumentedJars) {
+          spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.ASM_INSTRUMENTED_JARS.type)
+        } else {
+          spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
+        }
 
-        @get:Internal
-        val classesHierarchyBuildService: Property<ClassesHierarchyBuildService>
+        spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_FIXED_FRAMES_JAR.type)
+
+        spec.parameters { params ->
+          params.projectName.set(projectName)
+          params.bootClasspath.set(bootClasspathProvider)
+          params.classesHierarchyBuildService.set(getBuildService(buildServiceRegistry))
+        }
+
+        attributes.stringAttributes.forEach { name, value ->
+          spec.from.attribute(name, value)
+          spec.to.attribute(name, value)
+        }
+      }
     }
+  }
+
+  @get:CompileClasspath @get:InputArtifactDependencies abstract val classpath: FileCollection
+
+  @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
+
+  override fun transform(outputs: TransformOutputs) {
+    // TODO(b/162813654) record transform execution span
+    val inputFile = inputArtifact.get().asFile
+    val classesHierarchyResolver =
+      parameters.classesHierarchyBuildService
+        .get()
+        .getClassesHierarchyResolverBuilder()
+        .addDependenciesSources(parameters.bootClasspath.get().map { it.asFile })
+        .addDependenciesSources(inputArtifact.get().asFile)
+        .addDependenciesSources(classpath.files)
+        .build()
+
+    FixStackFramesDelegate.transformJar(inputFile, outputs.file(inputFile.name), classesHierarchyResolver)
+  }
+
+  interface Parameters : GenericTransformParameters {
+    @get:CompileClasspath val bootClasspath: ListProperty<RegularFile>
+
+    @get:Internal val classesHierarchyBuildService: Property<ClassesHierarchyBuildService>
+  }
 }

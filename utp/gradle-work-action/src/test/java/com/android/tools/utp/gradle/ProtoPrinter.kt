@@ -24,53 +24,58 @@ import com.google.protobuf.TextFormat
 /**
  * A utility class for printing protobuf message to a string for testing.
  *
- * Unlike [MessageOrBuilder.toString], it unpacks [com.google.protobuf.Any] fields
- * and prints them in human readable format instead of escaped byte string.
+ * Unlike [MessageOrBuilder.toString], it unpacks [com.google.protobuf.Any] fields and prints them in human readable format instead of
+ * escaped byte string.
  *
- * @param knownProtoMessages a list of [MessageOrBuilder] classes to be registered. Those proto
- * message classes are used for unpacking [com.google.protobuf.Any] fields.
+ * @param knownProtoMessages a list of [MessageOrBuilder] classes to be registered. Those proto message classes are used for unpacking
+ *   [com.google.protobuf.Any] fields.
  */
 class ProtoPrinter(knownProtoMessages: List<Class<*>>) {
 
-    private val typeUrlToParser: Map<String, Parser<*>> = knownProtoMessages.map {
+  private val typeUrlToParser: Map<String, Parser<*>> =
+    knownProtoMessages
+      .map {
         val descriptor = it.getMethod("getDescriptor").invoke(null) as Descriptors.Descriptor
         val parser = it.getMethod("parser").invoke(null) as Parser<*>
         "type.googleapis.com/${descriptor.fullName}" to parser
-    }.toMap()
+      }
+      .toMap()
 
-    /**
-     * Prints a given proto to a string.
-     */
-    fun printToString(proto: MessageOrBuilder): String {
-        val protoString = proto.toString()
-        return unpackKnownAnyProto(protoString).trim()
-    }
+  /** Prints a given proto to a string. */
+  fun printToString(proto: MessageOrBuilder): String {
+    val protoString = proto.toString()
+    return unpackKnownAnyProto(protoString).trim()
+  }
 
-    private fun unpackKnownAnyProto(protoString: String): String {
-        var last_type_url = ""
-        return protoString.lineSequence().map { line ->
-            val trimmedLine = line.trimStart()
-            if (trimmedLine.startsWith("type_url:")) {
-                last_type_url = trimmedLine.removePrefix("type_url:").trim().removeSurrounding("\"")
-                line
-            } else if (trimmedLine.startsWith("value:")) {
-                val indent = line.length - trimmedLine.length
-                val value = trimmedLine.removePrefix("value:").trim().removeSurrounding("\"")
-                printAnyProtoToString(last_type_url, value, indent)
-            } else {
-                line
-            }
-        }.joinToString("\n")
-    }
-
-    private fun printAnyProtoToString(type_url: String, value: String, indent: Int): String {
-        val parser = typeUrlToParser[type_url]
-        val result = if (parser == null) {
-            """value: "${value}""""
+  private fun unpackKnownAnyProto(protoString: String): String {
+    var last_type_url = ""
+    return protoString
+      .lineSequence()
+      .map { line ->
+        val trimmedLine = line.trimStart()
+        if (trimmedLine.startsWith("type_url:")) {
+          last_type_url = trimmedLine.removePrefix("type_url:").trim().removeSurrounding("\"")
+          line
+        } else if (trimmedLine.startsWith("value:")) {
+          val indent = line.length - trimmedLine.length
+          val value = trimmedLine.removePrefix("value:").trim().removeSurrounding("\"")
+          printAnyProtoToString(last_type_url, value, indent)
         } else {
-            val valueString = parser.parseFrom(TextFormat.unescapeBytes(value)).toString().trim()
-            unpackKnownAnyProto("value {\n${valueString.prependIndent("  ")}\n}")
+          line
         }
-        return result.prependIndent(" ".repeat(indent))
-    }
+      }
+      .joinToString("\n")
+  }
+
+  private fun printAnyProtoToString(type_url: String, value: String, indent: Int): String {
+    val parser = typeUrlToParser[type_url]
+    val result =
+      if (parser == null) {
+        """value: "${value}""""
+      } else {
+        val valueString = parser.parseFrom(TextFormat.unescapeBytes(value)).toString().trim()
+        unpackKnownAnyProto("value {\n${valueString.prependIndent("  ")}\n}")
+      }
+    return result.prependIndent(" ".repeat(indent))
+  }
 }

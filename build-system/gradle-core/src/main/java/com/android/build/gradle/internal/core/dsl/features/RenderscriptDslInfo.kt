@@ -17,20 +17,20 @@
 package com.android.build.gradle.internal.core.dsl.features
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support renderscript.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support renderscript.
  */
 interface RenderscriptDslInfo {
-    val renderscriptTarget: Int
+  val renderscriptTarget: Int
 
-    /** Returns the renderscript support mode.  */
-    val renderscriptSupportModeEnabled: Boolean
+  /** Returns the renderscript support mode. */
+  val renderscriptSupportModeEnabled: Boolean
 
-    /** Returns the renderscript BLAS support mode.  */
-    val renderscriptSupportModeBlasEnabled: Boolean
+  /** Returns the renderscript BLAS support mode. */
+  val renderscriptSupportModeBlasEnabled: Boolean
 
-    /** Returns the renderscript NDK mode.  */
-    val renderscriptNdkModeEnabled: Boolean
+  /** Returns the renderscript NDK mode. */
+  val renderscriptNdkModeEnabled: Boolean
 
-    val renderscriptOptimLevel: Int
+  val renderscriptOptimLevel: Int
 }

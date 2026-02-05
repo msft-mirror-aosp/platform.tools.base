@@ -22,61 +22,58 @@ import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProj
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class CoreLibraryDesugarCachingTest {
 
-    @get:Rule
-    val project = with(EmptyActivityProjectBuilder()) {
-        this.projectName = "project"
-        useGradleBuildCache = true
-        gradleBuildCacheDir = File("../$GRADLE_BUILD_CACHE")
-        build()
+  @get:Rule
+  val project =
+    with(EmptyActivityProjectBuilder()) {
+      this.projectName = "project"
+      useGradleBuildCache = true
+      gradleBuildCacheDir = File("../$GRADLE_BUILD_CACHE")
+      build()
     }
 
-    @get:Rule
-    val projectCopy = with(EmptyActivityProjectBuilder()) {
-        this.projectName = "projectCopy"
-        useGradleBuildCache = true
-        gradleBuildCacheDir = File("../$GRADLE_BUILD_CACHE")
-        build()
+  @get:Rule
+  val projectCopy =
+    with(EmptyActivityProjectBuilder()) {
+      this.projectName = "projectCopy"
+      useGradleBuildCache = true
+      gradleBuildCacheDir = File("../$GRADLE_BUILD_CACHE")
+      build()
     }
 
-    @Before
-    fun setUp() {
-        for (project in listOf(project, projectCopy)) {
-            configureProject(project)
-        }
+  @Before
+  fun setUp() {
+    for (project in listOf(project, projectCopy)) {
+      configureProject(project)
     }
+  }
 
-    @Test
-    fun testDifferentProjectLocations() {
-        val buildCacheDir = File(project.projectDir.parent, GRADLE_BUILD_CACHE)
-        FileUtils.deleteRecursivelyIfExists(buildCacheDir)
+  @Test
+  fun testDifferentProjectLocations() {
+    val buildCacheDir = File(project.projectDir.parent, GRADLE_BUILD_CACHE)
+    FileUtils.deleteRecursivelyIfExists(buildCacheDir)
 
-        val executor = project.executor()
-        executor
-            .withArgument("--build-cache")
-            .run("clean", ASSEMBLE_RELEASE)
-        assertThat(buildCacheDir).exists()
+    val executor = project.executor()
+    executor.withArgument("--build-cache").run("clean", ASSEMBLE_RELEASE)
+    assertThat(buildCacheDir).exists()
 
-        executor
-            .withArgument("--build-cache")
-            .run("clean", ASSEMBLE_RELEASE)
-            .apply {
-                assertTask(L8_DEX_DESUGAR_LIB).wasFromCache()
-                assertTask(MERGE_DEX).wasFromCache()
-                assertTask(DEX_BUILDER).wasFromCache()
-            }
+    executor.withArgument("--build-cache").run("clean", ASSEMBLE_RELEASE).apply {
+      assertTask(L8_DEX_DESUGAR_LIB).wasFromCache()
+      assertTask(MERGE_DEX).wasFromCache()
+      assertTask(DEX_BUILDER).wasFromCache()
     }
+  }
 
-    private fun configureProject(project: GradleTestProject) {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
+  private fun configureProject(project: GradleTestProject) {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
                 android {
                     defaultConfig {
                         minSdkVersion 22
@@ -91,32 +88,33 @@ class CoreLibraryDesugarCachingTest {
                 dependencies {
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
-            """.trimIndent())
+            """
+        .trimIndent(),
+    )
 
+    FileUtils.join(project.getSubproject("app").mainSrcDir, "com/example/helloworld/HelloWorld.java")
+      .also { it.parentFile.mkdirs() }
+      .writeText(
+        """
+        package com.example.helloworld;
+        import java.time.Month;
 
-        FileUtils.join(project.getSubproject("app").mainSrcDir,
-            "com/example/helloworld/HelloWorld.java")
-            .also { it.parentFile.mkdirs() }
-            .writeText(
-                """
-                    package com.example.helloworld;
-                    import java.time.Month;
+        public class HelloWorld {
+            public static Month getTime() {
+                return Month.JUNE;
+            }
+        }
+        """
+          .trimIndent()
+      )
+  }
 
-                    public class HelloWorld {
-                        public static Month getTime() {
-                            return Month.JUNE;
-                        }
-                    }
-                """.trimIndent())
-    }
-
-    companion object {
-        private const val GRADLE_BUILD_CACHE = "gradle-build-cache"
-        private const val ASSEMBLE_RELEASE = ":app:assembleRelease"
-        private const val L8_DEX_DESUGAR_LIB = ":app:l8DexDesugarLibRelease"
-        private const val MERGE_DEX = ":app:mergeDexRelease"
-        private const val DEX_BUILDER = ":app:dexBuilderRelease"
-        private const val DESUGAR_DEPENDENCY
-                = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
-    }
+  companion object {
+    private const val GRADLE_BUILD_CACHE = "gradle-build-cache"
+    private const val ASSEMBLE_RELEASE = ":app:assembleRelease"
+    private const val L8_DEX_DESUGAR_LIB = ":app:l8DexDesugarLibRelease"
+    private const val MERGE_DEX = ":app:mergeDexRelease"
+    private const val DEX_BUILDER = ":app:dexBuilderRelease"
+    private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
+  }
 }

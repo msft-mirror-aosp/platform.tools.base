@@ -22,11 +22,7 @@ import java.util.Locale
 // The file extensions CMake recognizes as header files.
 private val cmakeHeaderFileExtensions = setOf("h", "hh", "h++", "hm", "hpp")
 
-/**
- * Return true if the given file has an extension recognized by CMake as being a header file.
- */
-fun hasCmakeHeaderFileExtensions(file : File) : Boolean {
-    return cmakeHeaderFileExtensions.contains(
-        file.path.substringAfterLast(".").lowercase(Locale.US)
-    )
+/** Return true if the given file has an extension recognized by CMake as being a header file. */
+fun hasCmakeHeaderFileExtensions(file: File): Boolean {
+  return cmakeHeaderFileExtensions.contains(file.path.substringAfterLast(".").lowercase(Locale.US))
 }

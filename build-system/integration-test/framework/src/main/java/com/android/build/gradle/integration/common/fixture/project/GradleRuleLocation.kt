@@ -25,25 +25,20 @@ import java.nio.file.Path
 /**
  * Location information for tests using [GradleRule]
  *
- * This is used internally by the fixture to handle location, and not meant to be used
- * directly by test implementations.
+ * This is used internally by the fixture to handle location, and not meant to be used directly by test implementations.
  */
-internal class GradleRuleLocation private constructor(
-    /**
-     * The location created specifically for a given test to write its own files.
-     */
-    val testFiles: Path,
-    /**
-     * Other test folders that can be read for information. This is not meant to be writeable.
-     */
-    val testSupportLocations: TestLocation
+internal class GradleRuleLocation
+private constructor(
+  /** The location created specifically for a given test to write its own files. */
+  val testFiles: Path,
+  /** Other test folders that can be read for information. This is not meant to be writeable. */
+  val testSupportLocations: TestLocation,
 ) {
-    constructor(projectLocation: ProjectLocation): this(projectLocation.projectDir.toPath(), projectLocation.testLocation)
+  constructor(projectLocation: ProjectLocation) : this(projectLocation.projectDir.toPath(), projectLocation.testLocation)
 
-    fun resolve(subFolder: String): GradleRuleLocation =
-        GradleRuleLocation(testFiles.resolve(subFolder), testSupportLocations)
+  fun resolve(subFolder: String): GradleRuleLocation = GradleRuleLocation(testFiles.resolve(subFolder), testSupportLocations)
 
-    fun toProjectLocation(buildDefinition: GradleBuildDefinition): ProjectLocation {
-        return ProjectLocation(testFiles.resolve((buildDefinition as GradleBuildDefinitionImpl).rootFolderName).toFile(), testSupportLocations)
-    }
+  fun toProjectLocation(buildDefinition: GradleBuildDefinition): ProjectLocation {
+    return ProjectLocation(testFiles.resolve((buildDefinition as GradleBuildDefinitionImpl).rootFolderName).toFile(), testSupportLocations)
+  }
 }

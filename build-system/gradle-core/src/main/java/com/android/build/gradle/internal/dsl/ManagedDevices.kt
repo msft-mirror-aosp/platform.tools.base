@@ -19,45 +19,35 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.gradle.internal.services.DslServices
+import javax.inject.Inject
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.NamedDomainObjectContainer
-import javax.inject.Inject
 
-open class ManagedDevices @Inject constructor(dslServices: DslServices) :
-    com.android.build.api.dsl.ManagedDevices {
+open class ManagedDevices @Inject constructor(dslServices: DslServices) : com.android.build.api.dsl.ManagedDevices {
 
-    override val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device> =
-        dslServices.polymorphicDomainObjectContainer(Device::class.java).apply {
-            registerBinding(
-                com.android.build.api.dsl.ManagedVirtualDevice::class.java,
-                ManagedVirtualDevice::class.java
-            )
-            whenObjectAdded { device: Device ->
-                if (device is com.android.build.api.dsl.ManagedVirtualDevice) {
-                    localDevices.add(device)
-                }
-            }
-            whenObjectRemoved { device: Device ->
-                if (device is com.android.build.api.dsl.ManagedVirtualDevice) {
-                    localDevices.remove(device)
-                }
-            }
+  override val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device> =
+    dslServices.polymorphicDomainObjectContainer(Device::class.java).apply {
+      registerBinding(com.android.build.api.dsl.ManagedVirtualDevice::class.java, ManagedVirtualDevice::class.java)
+      whenObjectAdded { device: Device ->
+        if (device is com.android.build.api.dsl.ManagedVirtualDevice) {
+          localDevices.add(device)
         }
-
-    override val localDevices:
-            NamedDomainObjectContainer<com.android.build.api.dsl.ManagedVirtualDevice> =
-        dslServices.domainObjectContainer(
-            com.android.build.api.dsl.ManagedVirtualDevice::class.java,
-            ManagedVirtualDeviceFactory(dslServices)
-        ).apply {
-            whenObjectAdded { device: com.android.build.api.dsl.ManagedVirtualDevice ->
-                allDevices.add(device)
-            }
-            whenObjectRemoved { device: com.android.build.api.dsl.ManagedVirtualDevice ->
-                allDevices.remove(device)
-            }
+      }
+      whenObjectRemoved { device: Device ->
+        if (device is com.android.build.api.dsl.ManagedVirtualDevice) {
+          localDevices.remove(device)
         }
+      }
+    }
 
-    override val groups: NamedDomainObjectContainer<DeviceGroup> =
-        dslServices.domainObjectContainer(DeviceGroup::class.java, DeviceGroupFactory(dslServices))
+  override val localDevices: NamedDomainObjectContainer<com.android.build.api.dsl.ManagedVirtualDevice> =
+    dslServices
+      .domainObjectContainer(com.android.build.api.dsl.ManagedVirtualDevice::class.java, ManagedVirtualDeviceFactory(dslServices))
+      .apply {
+        whenObjectAdded { device: com.android.build.api.dsl.ManagedVirtualDevice -> allDevices.add(device) }
+        whenObjectRemoved { device: com.android.build.api.dsl.ManagedVirtualDevice -> allDevices.remove(device) }
+      }
+
+  override val groups: NamedDomainObjectContainer<DeviceGroup> =
+    dslServices.domainObjectContainer(DeviceGroup::class.java, DeviceGroupFactory(dslServices))
 }

@@ -121,8 +121,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
 
   private fun isSealedOrData(context: JavaContext, cls: PsiClass?): Boolean {
     if (cls == null) return false
-    return isKotlin(cls.language) &&
-      (context.evaluator.isSealed(cls) || context.evaluator.isData(cls))
+    return isKotlin(cls.language) && (context.evaluator.isSealed(cls) || context.evaluator.isData(cls))
   }
 
   private fun defaultEquals(context: JavaContext, type: PsiClassType?): Boolean {
@@ -168,11 +167,10 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Is this .equals() call within another if check which checks instanceof on a more specific type
-   * than we're calling equals on? If so, does that more specific type define its own equals?
+   * Is this .equals() call within another if check which checks instanceof on a more specific type than we're calling equals on? If so,
+   * does that more specific type define its own equals?
    *
-   * Also handle an implicit check via short circuit evaluation; e.g. something like "return a is A
-   * && b is B && a.equals(b)".
+   * Also handle an implicit check via short circuit evaluation; e.g. something like "return a is A && b is B && a.equals(b)".
    */
   private fun withinCastWithEquals(context: JavaContext, node: UExpression): Boolean {
     var parent = skipParenthesizedExprUp(node.uastParent)
@@ -198,17 +196,12 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
       }
     }
     val ifStatement =
-      node.getParentOfType<UElement>(UIfExpression::class.java, false, UMethod::class.java)
-        as? UIfExpression ?: return false
+      node.getParentOfType<UElement>(UIfExpression::class.java, false, UMethod::class.java) as? UIfExpression ?: return false
     val condition = ifStatement.condition
     return isCastWithEquals(context, condition, target)
   }
 
-  private fun isCastWithEquals(
-    context: JavaContext,
-    node: UExpression,
-    target: PsiElement?,
-  ): Boolean {
+  private fun isCastWithEquals(context: JavaContext, node: UExpression, target: PsiElement?): Boolean {
     when {
       node is UBinaryExpressionWithType -> {
         if (target != null) {
@@ -236,10 +229,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkExpression(context: JavaContext, node: UBinaryExpression) {
-    if (
-      node.operator == UastBinaryOperator.IDENTITY_EQUALS ||
-        node.operator == UastBinaryOperator.EQUALS
-    ) {
+    if (node.operator == UastBinaryOperator.IDENTITY_EQUALS || node.operator == UastBinaryOperator.EQUALS) {
       val left = node.leftOperand.getExpressionType() ?: return
       val right = node.rightOperand.getExpressionType() ?: return
       if (left is PsiClassType && right is PsiClassType) {
@@ -249,19 +239,15 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
               return
             }
 
-            val message =
-              "Suspicious equality check: `equals()` is not implemented in ${left.className}"
-            val location =
-              node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
+            val message = "Suspicious equality check: `equals()` is not implemented in ${left.className}"
+            val location = node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
             context.report(ISSUE, node, location, message)
           }
         } else {
           val message =
-            if (isKotlin(node.lang))
-              "Suspicious equality check: Did you mean `==` instead of `===` ?"
+            if (isKotlin(node.lang)) "Suspicious equality check: Did you mean `==` instead of `===` ?"
             else "Suspicious equality check: Did you mean `.equals()` instead of `==` ?"
-          val location =
-            node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
+          val location = node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
           context.report(ISSUE, node, location, message)
         }
       }

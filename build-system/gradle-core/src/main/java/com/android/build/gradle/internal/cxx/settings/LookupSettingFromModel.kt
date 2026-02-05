@@ -20,10 +20,8 @@ import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.lookup
 import com.android.build.gradle.internal.cxx.settings.Macro.NDK_ANDROID_GRADLE_IS_HOSTING
 
-/**
- * Look up [Macro] equivalent value from the C/C++ build abi model.
- */
-fun CxxAbiModel.resolveMacroValue(macro : Macro) : String {
-    if (macro == NDK_ANDROID_GRADLE_IS_HOSTING) return "1"
-    return lookup(macro.bind ?: return "$macro") ?: ""
+/** Look up [Macro] equivalent value from the C/C++ build abi model. */
+fun CxxAbiModel.resolveMacroValue(macro: Macro): String {
+  if (macro == NDK_ANDROID_GRADLE_IS_HOSTING) return "1"
+  return lookup(macro.bind ?: return "$macro") ?: ""
 }

@@ -165,6 +165,8 @@ def main():
       ci.run(studio_nightly.studio_nightly)
     case 'studio-autobot':
       pass  # No-op. To be filled in later.
+    case 'uitools_evals':
+      pass  # TODO(b/480962307) No-op. To be filled in later.
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')
 

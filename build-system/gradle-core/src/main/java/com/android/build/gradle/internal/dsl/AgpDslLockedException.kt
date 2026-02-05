@@ -18,5 +18,4 @@ package com.android.build.gradle.internal.dsl
 
 import java.lang.RuntimeException
 
-class AgpDslLockedException(cause: String) : RuntimeException(cause) {
-}
+class AgpDslLockedException(cause: String) : RuntimeException(cause) {}

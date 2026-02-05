@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.other.contentProvider
 
-
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.CheckBoxWidget
 import com.android.tools.idea.wizard.template.Constraint.CLASS
@@ -75,7 +74,7 @@ val contentProviderTemplate
       TextFieldWidget(authorities),
       CheckBoxWidget(isExported),
       CheckBoxWidget(isEnabled),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb {

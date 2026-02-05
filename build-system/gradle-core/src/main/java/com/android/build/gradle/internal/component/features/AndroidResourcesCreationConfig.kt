@@ -27,17 +27,17 @@ import org.gradle.api.provider.Provider
  * Creation config for components that support android resources.
  *
  * To use this in a task that requires android resources support, use
- * [com.android.build.gradle.internal.tasks.factory.features.AndroidResourcesTaskCreationAction].
- * Otherwise, access the nullable property on the component
- * [com.android.build.gradle.internal.component.ComponentCreationConfig.androidResourcesCreationConfig].
+ * [com.android.build.gradle.internal.tasks.factory.features.AndroidResourcesTaskCreationAction]. Otherwise, access the nullable property on
+ * the component [com.android.build.gradle.internal.component.ComponentCreationConfig.androidResourcesCreationConfig].
  */
 interface AndroidResourcesCreationConfig {
-    val pseudoLocalesEnabled: Property<Boolean>
-    val isCrunchPngs: Boolean
-    val isPrecompileDependenciesResourcesEnabled: Boolean
-    val resourceConfigurations: Set<String>
-    val vectorDrawables: VectorDrawablesOptions
-    val useResourceShrinker: Boolean
-    val compiledRClassArtifact: Provider<RegularFile>
-    fun getCompiledRClasses(configType: AndroidArtifacts.ConsumedConfigType): FileCollection
+  val pseudoLocalesEnabled: Property<Boolean>
+  val isCrunchPngs: Boolean
+  val isPrecompileDependenciesResourcesEnabled: Boolean
+  val resourceConfigurations: Set<String>
+  val vectorDrawables: VectorDrawablesOptions
+  val useResourceShrinker: Boolean
+  val compiledRClassArtifact: Provider<RegularFile>
+
+  fun getCompiledRClasses(configType: AndroidArtifacts.ConsumedConfigType): FileCollection
 }

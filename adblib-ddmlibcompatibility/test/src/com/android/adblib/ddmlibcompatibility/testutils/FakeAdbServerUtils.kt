@@ -22,28 +22,22 @@ import java.time.Duration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 
-suspend fun DeviceState.waitForOnlineDevice(
-    timeout: Duration = Duration.ofSeconds(5)
-): IDevice {
-    val bridge =
-        AndroidDebugBridge.getBridge()
-            ?: throw AssertionError("No bridge found. `AndroidDebugBridge.createBridge()` should have been called.")
+suspend fun DeviceState.waitForOnlineDevice(timeout: Duration = Duration.ofSeconds(5)): IDevice {
+  val bridge =
+    AndroidDebugBridge.getBridge() ?: throw AssertionError("No bridge found. `AndroidDebugBridge.createBridge()` should have been called.")
 
-    return withTimeout(timeout.toMillis()) {
-        while (true) {
-            val device = bridge.devices.find {
-                it.isOnline && it.serialNumber == deviceId
-            }
+  return withTimeout(timeout.toMillis()) {
+    while (true) {
+      val device = bridge.devices.find { it.isOnline && it.serialNumber == deviceId }
 
-            if (device != null) {
-                // When the device is found, return it from this withTimeout block
-                return@withTimeout device
-            }
+      if (device != null) {
+        // When the device is found, return it from this withTimeout block
+        return@withTimeout device
+      }
 
-            delay(20)
-        }
-
-        @Suppress("UNREACHABLE_CODE")
-        error("This point should not be reached")
+      delay(20)
     }
+
+    @Suppress("UNREACHABLE_CODE") error("This point should not be reached")
+  }
 }

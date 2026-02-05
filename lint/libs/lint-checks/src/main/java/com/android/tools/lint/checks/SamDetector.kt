@@ -105,11 +105,7 @@ class SamDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(
-      ULambdaExpression::class.java,
-      UCallableReferenceExpression::class.java,
-      UCallExpression::class.java,
-    )
+    listOf(ULambdaExpression::class.java, UCallableReferenceExpression::class.java, UCallExpression::class.java)
 
   private fun checkRemoveMethod(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val arguments = node.valueArguments
@@ -142,26 +138,15 @@ class SamDetector : Detector(), SourceCodeScanner {
           }
           val methodName = method.name
           val location = context.getLocation(selector)
-          context.report(
-            ISSUE,
-            selector,
-            location,
-            "This argument is a new instance so `$methodName` will not remove anything",
-          )
+          context.report(ISSUE, selector, location, "This argument is a new instance so `$methodName` will not remove anything")
         }
       }
     }
   }
 
-  private fun PsiType?.hasLambdaType() =
-    this is PsiClassType && canonicalText.startsWith("kotlin.jvm.functions.Function")
+  private fun PsiType?.hasLambdaType() = this is PsiClassType && canonicalText.startsWith("kotlin.jvm.functions.Function")
 
-  private fun checkRemoveLambda(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    argument: UExpression,
-  ): Boolean {
+  private fun checkRemoveLambda(context: JavaContext, node: UCallExpression, method: PsiMethod, argument: UExpression): Boolean {
     if (!isSamConversion(node, argument)) {
       return false
     }
@@ -178,8 +163,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     val qualifiedName = method.containingClass?.qualifiedName
     val isHandler = (qualifiedName == HANDLER_CLASS || qualifiedName == CLASS_VIEW)
     if (variable != null && container?.sourcePsi != null) {
-      val posts =
-        if (isHandler) findPostCalls(container, qualifiedName!!, variable) else emptyList()
+      val posts = if (isHandler) findPostCalls(container, qualifiedName!!, variable) else emptyList()
       var last = location
       for (post in posts) {
         val secondary = context.getLocation(post)
@@ -194,8 +178,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     val argumentName = argument.sourcePsi?.text
     val samType = parameter.type
     val samTypeString = samType.presentableText
-    val samTypeVar =
-      samTypeString.substringBefore("<").replaceFirstChar { it.lowercase(Locale.ROOT) }
+    val samTypeVar = samTypeString.substringBefore("<").replaceFirstChar { it.lowercase(Locale.ROOT) }
 
     var fix: LintFix? = null
     if (variable is PsiVariable && variable.containingFile === node.sourcePsi?.containingFile) {
@@ -227,31 +210,21 @@ class SamDetector : Detector(), SourceCodeScanner {
     return analyze(callExpression) { isSamConversion(callExpression, argument) }
   }
 
-  private fun KaSession.isSamConversion(
-    callExpression: KtCallExpression,
-    argument: UExpression,
-  ): Boolean {
+  private fun KaSession.isSamConversion(callExpression: KtCallExpression, argument: UExpression): Boolean {
     val type = getParameterType(callExpression, argument) ?: return false
     return type.isFunctionalInterface
   }
 
-  private fun KaSession.getParameterType(
-    callExpression: KtCallExpression,
-    argument: UExpression,
-  ): KaType? {
+  private fun KaSession.getParameterType(callExpression: KtCallExpression, argument: UExpression): KaType? {
     val callInfo = callExpression.resolveToCall()?.singleFunctionCallOrNull() ?: return null
     val mapping = callInfo.argumentMapping
-    val parameterSignature =
-      mapping[argument.sourcePsi]
-        ?: mapping[argument.skipParenthesizedExprDown().sourcePsi]
-        ?: return null
+    val parameterSignature = mapping[argument.sourcePsi] ?: mapping[argument.skipParenthesizedExprDown().sourcePsi] ?: return null
     return parameterSignature.returnType
   }
 
   /**
-   * Returns true if this string starts with the given [prefix] as a word (meaning that the next
-   * character is upper case), so `hasWordPrefix("remove")` would return true for `remove` and
-   * `removeListener` but not `removedNotify`.
+   * Returns true if this string starts with the given [prefix] as a word (meaning that the next character is upper case), so
+   * `hasWordPrefix("remove")` would return true for `remove` and `removeListener` but not `removedNotify`.
    */
   private fun String.hasWordPrefix(prefix: String): Boolean {
     if (startsWith(prefix)) {
@@ -267,9 +240,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     return hasWordPrefix("remove") || hasWordPrefix("unregister") || hasWordPrefix("stop")
   }
 
-  /**
-   * Given a removal method name, returns the expected name of the corresponding addition method.
-   */
+  /** Given a removal method name, returns the expected name of the corresponding addition method. */
   private fun getPairedName(methodName: String): String {
     val pairedName =
       when (methodName) {
@@ -287,9 +258,8 @@ class SamDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Returns true if the given [method] looks like it's removing the passed in parameter. It does
-   * this by looking to see if there is a corresponding "add" method with the same type as one of
-   * the parameters.
+   * Returns true if the given [method] looks like it's removing the passed in parameter. It does this by looking to see if there is a
+   * corresponding "add" method with the same type as one of the parameters.
    */
   private fun isInstanceRemoval(method: PsiMethod, parameter: PsiParameter): Boolean {
     val methodName = method.name
@@ -313,11 +283,7 @@ class SamDetector : Detector(), SourceCodeScanner {
       return false
     }
     val samTypeErasure = samType
-    return methods.any {
-      method.parameterList.parameters.any { parameter ->
-        methodParameterMatches(samTypeErasure, parameter)
-      }
-    }
+    return methods.any { method.parameterList.parameters.any { parameter -> methodParameterMatches(samTypeErasure, parameter) } }
   }
 
   private fun methodParameterMatches(samType: PsiType, parameter: PsiParameter): Boolean {
@@ -325,11 +291,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     return parameterType == samType
   }
 
-  private fun createLambdaVariableFix(
-    context: JavaContext,
-    declaration: UVariable?,
-    samType: String,
-  ): LintFix? {
+  private fun createLambdaVariableFix(context: JavaContext, declaration: UVariable?, samType: String): LintFix? {
     if (declaration != null) {
       val name = declaration.name
       val initializer = declaration.uastInitializer
@@ -348,19 +310,13 @@ class SamDetector : Detector(), SourceCodeScanner {
   }
 
   /** Locates any post calls in the same method or class as the corresponding remove call. */
-  private fun findPostCalls(
-    container: UClass,
-    className: String,
-    variable: PsiElement,
-  ): List<UExpression> {
+  private fun findPostCalls(container: UClass, className: String, variable: PsiElement): List<UExpression> {
     val matches = mutableListOf<UExpression>()
     container.accept(
       object : AbstractUastVisitor() {
         override fun visitCallExpression(node: UCallExpression): Boolean {
           val resolved = node.resolve() ?: return super.visitCallExpression(node)
-          if (
-            resolved.name.startsWith("post") && resolved.containingClass?.qualifiedName == className
-          ) {
+          if (resolved.name.startsWith("post") && resolved.containingClass?.qualifiedName == className) {
             val posted = node.valueArguments.firstOrNull()?.skipParenthesizedExprDown()
             val postedVariable = posted?.tryResolve()
             @Suppress("LintImplPsiEquals")
@@ -385,10 +341,7 @@ class SamDetector : Detector(), SourceCodeScanner {
       override fun visitLambdaExpression(node: ULambdaExpression) {
         val parent = node.uastParent ?: return
         if (parent is ULocalVariable) {
-          val psiVar =
-            parent.sourcePsi as? PsiLocalVariable
-              ?: (parent as? ULocalVariableEx)?.javaPsi
-              ?: return
+          val psiVar = parent.sourcePsi as? PsiLocalVariable ?: (parent as? ULocalVariableEx)?.javaPsi ?: return
           checkCalls(context, node, psiVar)
         } else if (parent.isAssignment()) {
           val v = (parent as UBinaryExpression).leftOperand.tryResolve() ?: return
@@ -414,11 +367,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkCalls(
-    context: JavaContext,
-    lambda: ULambdaExpression,
-    variable: PsiLocalVariable,
-  ) {
+  private fun checkCalls(context: JavaContext, lambda: ULambdaExpression, variable: PsiLocalVariable) {
     val method = lambda.getContainingUMethod() ?: return
     method.accept(
       object : AbstractUastVisitor() {
@@ -434,12 +383,7 @@ class SamDetector : Detector(), SourceCodeScanner {
     )
   }
 
-  private fun checkLambda(
-    context: JavaContext,
-    lambda: UExpression,
-    call: UCallExpression,
-    argument: UReferenceExpression,
-  ) {
+  private fun checkLambda(context: JavaContext, lambda: UExpression, call: UCallExpression, argument: UReferenceExpression) {
     val psiMethod = call.resolve() ?: return
     val evaluator = context.evaluator
     if (psiMethod is PsiCompiledElement) {
@@ -470,21 +414,13 @@ class SamDetector : Detector(), SourceCodeScanner {
 
     val psiParameter = call.getParameterForArgument(argument) ?: return
     val method = psiMethod.toUElement(UMethod::class.java) ?: return
-    if (
-      instanceComparesLambda(method, psiParameter) &&
-        !context.driver.isSuppressed(context, ISSUE, method as UElement)
-    ) {
+    if (instanceComparesLambda(method, psiParameter) && !context.driver.isSuppressed(context, ISSUE, method as UElement)) {
       val typeString = psiParameter.type.canonicalText
       reportError(context, lambda, typeString, argument)
     }
   }
 
-  private fun reportError(
-    context: JavaContext,
-    lambda: UExpression,
-    type: String,
-    argument: UReferenceExpression,
-  ) {
+  private fun reportError(context: JavaContext, lambda: UExpression, type: String, argument: UReferenceExpression) {
     val location = context.getLocation(argument)
     val simpleType = type.substringAfterLast('.').substringBefore("<")
     val range = context.getLocation(lambda)
@@ -494,13 +430,7 @@ class SamDetector : Detector(), SourceCodeScanner {
         if (parentVar != null && parentVar.uastInitializer?.skipParenthesizedExprDown() == lambda) {
           createLambdaVariableFix(context, parentVar, simpleType)
         } else {
-          fix()
-            .name("Explicitly create $simpleType instance")
-            .replace()
-            .beginning()
-            .with("$simpleType ")
-            .range(range)
-            .build()
+          fix().name("Explicitly create $simpleType instance").replace().beginning().with("$simpleType ").range(range).build()
         }
       } else {
         null
@@ -516,22 +446,20 @@ class SamDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Returns true if it looks like this method is taking the given lambda [parameter] and either
-   * doing an instance comparison on it or attempting to remove it from a collection (which would
-   * also involve an instance comparison).
+   * Returns true if it looks like this method is taking the given lambda [parameter] and either doing an instance comparison on it or
+   * attempting to remove it from a collection (which would also involve an instance comparison).
    */
   private fun instanceComparesLambda(method: UMethod, parameter: PsiParameter): Boolean {
     var storesLambda = false
     method.accept(
       object : AbstractUastVisitor() {
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
+        override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
           val resolved = node.resolve()
           if (resolved == parameter) {
             val parent = node.uastParent
             if (parent is UCallExpression) {
-              // Decide if we're calling some method which is attempting to remove the new instance
+              // Decide if we're calling some method which is attempting to remove the new
+              // instance
               val methodName = parent.methodName
               if (methodName.isRemoveMethodName()) {
                 storesLambda = true
@@ -539,8 +467,7 @@ class SamDetector : Detector(), SourceCodeScanner {
             } else if (parent is UBinaryExpression) {
               val kind = parent.operator
               if (
-                (kind == UastBinaryOperator.IDENTITY_EQUALS ||
-                  kind == UastBinaryOperator.IDENTITY_NOT_EQUALS) &&
+                (kind == UastBinaryOperator.IDENTITY_EQUALS || kind == UastBinaryOperator.IDENTITY_NOT_EQUALS) &&
                   !parent.rightOperand.isNullLiteral()
               ) {
                 storesLambda = true

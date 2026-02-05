@@ -94,19 +94,15 @@ import org.objectweb.asm.Opcodes.V1_8
 import org.objectweb.asm.Type
 
 /**
- * Special test file which given a series of stub files can generate a .jar file with compiled class
- * files corresponding to the stubs.
+ * Special test file which given a series of stub files can generate a .jar file with compiled class files corresponding to the stubs.
  *
- * Note that this only works for stub files, not files with non-trivial method bodies. The main
- * complications this class deal with are generics signatures, annotations in APIs and field
- * initializers.
+ * Note that this only works for stub files, not files with non-trivial method bodies. The main complications this class deal with are
+ * generics signatures, annotations in APIs and field initializers.
  *
- * It only works at the PSI class file level; it does not generate Kotlin augmented metadata files.
- * Therefore, you can include top level functions, companion objects etc, and the stubs will look as
- * they do from Java code.
+ * It only works at the PSI class file level; it does not generate Kotlin augmented metadata files. Therefore, you can include top level
+ * functions, companion objects etc, and the stubs will look as they do from Java code.
  *
- * TODO: Use the kotlin metadata library to also construct binary content for things like package
- *   level methods; see
+ * TODO: Use the kotlin metadata library to also construct binary content for things like package level methods; see
  *   https://github.com/JetBrains/kotlin/blob/master/libraries/kotlinx-metadata/jvm/ReadMe.md
  */
 internal open class StubClassFile(
@@ -159,10 +155,7 @@ internal open class StubClassFile(
   }
 
   override fun getSources(): List<TestFile> {
-    return stubSources +
-      (compileOnly.filter {
-        it.targetRelativePath.endsWith(DOT_JAVA) || it.targetRelativePath.endsWith(DOT_KT)
-      })
+    return stubSources + (compileOnly.filter { it.targetRelativePath.endsWith(DOT_JAVA) || it.targetRelativePath.endsWith(DOT_KT) })
   }
 
   private var bytecodeFiles: List<TestFile>? = null
@@ -185,17 +178,11 @@ internal open class StubClassFile(
     try {
       folder.create()
       val (contexts, disposable) =
-        parse(
-          temporaryFolder = folder,
-          sdkHome = task?.sdkHome,
-          testFiles = (stubSources + compileOnly).toTypedArray(),
-        )
+        parse(temporaryFolder = folder, sdkHome = task?.sdkHome, testFiles = (stubSources + compileOnly).toTypedArray())
       try {
         val filtered =
           contexts.filter { context ->
-            stubSources.any { testFile ->
-              context.file.path.replace('\\', '/').endsWith(testFile.targetRelativePath)
-            }
+            stubSources.any { testFile -> context.file.path.replace('\\', '/').endsWith(testFile.targetRelativePath) }
           }
 
         val classFiles = mutableListOf<TestFile>()
@@ -302,12 +289,7 @@ internal open class StubClassFile(
             }
 
             // default constructor
-            if (
-              PsiUtil.hasDefaultConstructor(cls) &&
-                !cls.isEnum &&
-                !cls.isInterface &&
-                !cls.isAnnotationType
-            ) {
+            if (PsiUtil.hasDefaultConstructor(cls) && !cls.isEnum && !cls.isInterface && !cls.isAnnotationType) {
               val mv: MethodVisitor = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
               mv.visitCode()
               mv.visitMaxs(0, 0)
@@ -319,13 +301,7 @@ internal open class StubClassFile(
             val hasSyntheticConstructorArgument0: Boolean =
               if (containingClass != null) {
                 val outerClassFieldVisitor =
-                  cw.visitField(
-                    ACC_FINAL + ACC_SYNTHETIC,
-                    "this$1",
-                    "L${containingClass.internalName()};",
-                    null,
-                    null,
-                  )
+                  cw.visitField(ACC_FINAL + ACC_SYNTHETIC, "this$1", "L${containingClass.internalName()};", null, null)
                 outerClassFieldVisitor.visitEnd()
                 classModifierList?.hasModifierProperty(PsiModifier.STATIC) != true
               } else {
@@ -337,11 +313,7 @@ internal open class StubClassFile(
               val exceptions = typeArray(psiMethod.throwsList.referencedTypes)
               @Suppress("DEPRECATION") // deliberate use of internal names
               val description = evaluator.getInternalDescription(psiMethod) ?: continue
-              val methodSignature =
-                getGenericsSignature(
-                  psiMethod,
-                  if (hasSyntheticConstructorArgument0) containingClass else null,
-                )
+              val methodSignature = getGenericsSignature(psiMethod, if (hasSyntheticConstructorArgument0) containingClass else null)
               val isConstructor = psiMethod.isConstructor
               val methodName = if (isConstructor) "<init>" else psiMethod.name
 
@@ -356,14 +328,7 @@ internal open class StubClassFile(
                 )
               }
 
-              val mv =
-                cw.visitMethod(
-                  getModifiers(psiMethod),
-                  methodName,
-                  description,
-                  methodSignature,
-                  exceptions,
-                )
+              val mv = cw.visitMethod(getModifiers(psiMethod), methodName, description, methodSignature, exceptions)
               visitAnnotations(psiMethod.modifierList, mv::visitAnnotation)
 
               if (isConstructor && hasSyntheticConstructorArgument0) {
@@ -376,12 +341,7 @@ internal open class StubClassFile(
               for (index in parameters.indices) {
                 val parameter = parameters[index]
                 val parameterIndex = if (hasSyntheticConstructorArgument0) index + 1 else index
-                visitAnnotations(
-                  parameter.modifierList,
-                  null,
-                  parameterIndex,
-                  mv::visitParameterAnnotation,
-                )
+                visitAnnotations(parameter.modifierList, null, parameterIndex, mv::visitParameterAnnotation)
                 mv.visitParameter(parameter.name, getModifiers(parameter))
               }
 
@@ -391,18 +351,9 @@ internal open class StubClassFile(
                 mv.visitInsn(IRETURN)
                 mv.visitMaxs(1, 1)
               } else {
-                mv.visitTypeInsn(
-                  NEW,
-                  "java/lang/UnsupportedOperationException",
-                ) // otherwise throw unsupported exception
+                mv.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException") // otherwise throw unsupported exception
                 mv.visitInsn(DUP)
-                mv.visitMethodInsn(
-                  INVOKESPECIAL,
-                  "java/lang/UnsupportedOperationException",
-                  "<init>",
-                  "()V",
-                  false,
-                )
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V", false)
                 mv.visitInsn(ATHROW)
                 mv.visitMaxs(2, 3)
               }
@@ -448,14 +399,7 @@ internal open class StubClassFile(
     }
     val cw = ClassWriter(0)
     val internalName = packageStatement.packageName.replace('.', '/') + "/package-info"
-    cw.visit(
-      V1_8,
-      ACC_ABSTRACT + ACC_INTERFACE + ACC_SYNTHETIC,
-      internalName,
-      null,
-      "java/lang/Object",
-      null,
-    )
+    cw.visit(V1_8, ACC_ABSTRACT + ACC_INTERFACE + ACC_SYNTHETIC, internalName, null, "java/lang/Object", null)
     visitAnnotations(annotations, cw::visitAnnotation)
     cw.visitEnd()
     val classFile = internalName + SdkConstants.DOT_CLASS
@@ -485,10 +429,7 @@ internal open class StubClassFile(
     if (types.isEmpty()) {
       return null
     }
-    return types
-      .mapNotNull { it.internalName() }
-      .toTypedArray()
-      .let { if (it.isEmpty()) null else it }
+    return types.mapNotNull { it.internalName() }.toTypedArray().let { if (it.isEmpty()) null else it }
   }
 
   @Suppress("ExternalAnnotations")
@@ -541,23 +482,17 @@ internal open class StubClassFile(
     this ?: return false
     val retention = getAnnotation("java.lang.annotation.Retention")
     if (retention != null) {
-      (retention.attributes.firstOrNull()?.attributeValue as? JvmAnnotationEnumFieldValue)
-        ?.fieldName
-        ?.let { name ->
-          if (name == "SOURCE") {
-            return true
-          }
+      (retention.attributes.firstOrNull()?.attributeValue as? JvmAnnotationEnumFieldValue)?.fieldName?.let { name ->
+        if (name == "SOURCE") {
+          return true
         }
+      }
     }
 
     return false
   }
 
-  private fun writeAttribute(
-    attribute: PsiNameValuePair,
-    visitor: AnnotationVisitor,
-    annotationType: PsiClass?,
-  ) {
+  private fun writeAttribute(attribute: PsiNameValuePair, visitor: AnnotationVisitor, annotationType: PsiClass?) {
     val name = attribute.name ?: ATTR_VALUE
     val element = attribute.value
 
@@ -571,12 +506,7 @@ internal open class StubClassFile(
     }
   }
 
-  private fun writeAttribute(
-    name: String?,
-    value: PsiElement?,
-    visitor: AnnotationVisitor,
-    type: PsiType?,
-  ) {
+  private fun writeAttribute(name: String?, value: PsiElement?, visitor: AnnotationVisitor, type: PsiType?) {
     if (value is PsiReference) {
       val resolved = value.resolve() ?: return
       writeAttribute(name, resolved, visitor, type)
@@ -598,9 +528,7 @@ internal open class StubClassFile(
         // Hack: Kotlin enum references are represented by a KtLightPsiLiteral evaluating to
         // Pair<ClassId,Name>.
         val (enumType, enumValue) = literalValue
-        check(enumType is ClassId && enumValue is Name) {
-          "Expected Kotlin enum value; instead found $literalValue"
-        }
+        check(enumType is ClassId && enumValue is Name) { "Expected Kotlin enum value; instead found $literalValue" }
         val enumTypeName = ClassContext.getInternalName(enumType.asFqNameString())
         visitor.visitEnum(name, "L$enumTypeName;", enumValue.identifier)
       } else {
@@ -628,16 +556,12 @@ internal open class StubClassFile(
         visitor.visit(name, Type.getType("L$classType;"))
       }
     } else if (value is PsiAnnotation) {
-      val visit: ((String, Boolean) -> AnnotationVisitor) = { descriptor, _ ->
-        visitor.visitAnnotation(name, descriptor)
-      }
+      val visit: ((String, Boolean) -> AnnotationVisitor) = { descriptor, _ -> visitor.visitAnnotation(name, descriptor) }
       visitAnnotation(value, visit, -1, null)
     } else {
       // Handle some basic expressions in the stub sources too, such as `static final int constant =
       // "test".length();`
-      val constant =
-        ConstantEvaluator.evaluate(null, value as PsiElement)
-          ?: error("Annotation attribute type not yet supported: $value")
+      val constant = ConstantEvaluator.evaluate(null, value as PsiElement) ?: error("Annotation attribute type not yet supported: $value")
       if (constant is PsiElement) {
         error("Annotation attribute type not yet supported: $constant (from $name=$constant")
       }
@@ -646,10 +570,7 @@ internal open class StubClassFile(
   }
 
   companion object {
-    /**
-     * Is this method a simple method which the stub interpreter can handle? (e.g. returns of
-     * constants or throws)
-     */
+    /** Is this method a simple method which the stub interpreter can handle? (e.g. returns of constants or throws) */
     private fun UMethod.isStub(): Boolean {
       val statement = this.uastBody ?: return true
       if (statement is UBlockExpression) {
@@ -661,11 +582,7 @@ internal open class StubClassFile(
           val single = expressions[0]
           if (single is UReturnExpression) {
             val returnValue = single.returnExpression
-            if (
-              returnValue == null ||
-                returnValue.isNullLiteral() ||
-                ConstantEvaluator.evaluate(null, returnValue) != null
-            ) {
+            if (returnValue == null || returnValue.isNullLiteral() || ConstantEvaluator.evaluate(null, returnValue) != null) {
               return true
             }
           } else if (single is UThrowExpression) {
@@ -760,16 +677,11 @@ internal open class StubClassFile(
       return false
     }
 
-    private fun appendMethodTypeSignature(
-      method: PsiMethod,
-      signature: StringBuilder,
-      instanceOuterClass: PsiClass?,
-    ) {
+    private fun appendMethodTypeSignature(method: PsiMethod, signature: StringBuilder, instanceOuterClass: PsiClass?) {
       signature.append('(')
       if (instanceOuterClass != null) {
         // Synthetic field to outer class inserted in argument list
-        val outerType =
-          JavaPsiFacade.getElementFactory(method.project).createType(instanceOuterClass)
+        val outerType = JavaPsiFacade.getElementFactory(method.project).createType(instanceOuterClass)
         appendFieldTypeSignature(outerType, signature)
       }
       for (parameter in method.parameterList.parameters) {
@@ -793,10 +705,7 @@ internal open class StubClassFile(
       }
     }
 
-    private fun appendFormalTypeParameters(
-      typeParameters: Array<PsiTypeParameter>,
-      signature: StringBuilder,
-    ) {
+    private fun appendFormalTypeParameters(typeParameters: Array<PsiTypeParameter>, signature: StringBuilder) {
       if (typeParameters.isEmpty()) {
         return
       }
@@ -892,9 +801,7 @@ internal open class StubClassFile(
             signature.append(qualified.replace('.', '/'))
           } else {
             val outerQualified = outerMost.qualifiedName!!
-            val canonical =
-              outerQualified.replace('.', '/') +
-                qualified.substring(outerQualified.length).replace('.', '$')
+            val canonical = outerQualified.replace('.', '/') + qualified.substring(outerQualified.length).replace('.', '$')
             signature.append(canonical)
           }
         }

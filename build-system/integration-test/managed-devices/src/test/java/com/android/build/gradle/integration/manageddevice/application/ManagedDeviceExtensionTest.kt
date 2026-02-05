@@ -32,6 +32,8 @@ import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.model.ObjectFactory
@@ -39,216 +41,152 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import javax.inject.Inject
 
 class ManagedDeviceExtensionTest {
 
-    interface MyCustomDevice : Device
+  interface MyCustomDevice : Device
 
-    open class MyCustomDeviceImpl(val deviceName: String) : MyCustomDevice {
-        override fun getName() = deviceName
+  open class MyCustomDeviceImpl(val deviceName: String) : MyCustomDevice {
+    override fun getName() = deviceName
+  }
+
+  abstract class SetupInput : DeviceSetupInput {
+    @get:Input abstract val deviceName: Property<String>
+  }
+
+  abstract class SetupConfigAction : DeviceSetupConfigureAction<MyCustomDevice, SetupInput> {
+    @get:Inject abstract val objectFactory: ObjectFactory
+
+    override fun configureTaskInput(deviceDSL: MyCustomDevice): SetupInput {
+      return objectFactory.newInstance(SetupInput::class.java).apply { deviceName.setDisallowChanges(deviceDSL.name) }
     }
+  }
 
-    abstract class SetupInput : DeviceSetupInput {
-        @get:Input
-        abstract val deviceName: Property<String>
+  open class SetupTaskAction : DeviceSetupTaskAction<SetupInput> {
+    override fun setup(setupInput: SetupInput, outputDir: Directory) {
+      outputDir.file("deviceName.txt").asFile.printWriter(Charsets.UTF_8).use { writer -> writer.println(setupInput.deviceName.get()) }
     }
+  }
 
-    abstract class SetupConfigAction : DeviceSetupConfigureAction<MyCustomDevice, SetupInput> {
-        @get:Inject
-        abstract val objectFactory: ObjectFactory
+  abstract class TestRunInput : DeviceTestRunInput
 
-        override fun configureTaskInput(deviceDSL: MyCustomDevice): SetupInput {
-            return objectFactory.newInstance(SetupInput::class.java).apply {
-                deviceName.setDisallowChanges(deviceDSL.name)
-            }
-        }
+  abstract class TestRunConfigAction : DeviceTestRunConfigureAction<MyCustomDevice, TestRunInput> {
+    @get:Inject abstract val objectFactory: ObjectFactory
+
+    override fun configureTaskInput(deviceDSL: MyCustomDevice): TestRunInput {
+      return objectFactory.newInstance(TestRunInput::class.java)
     }
+  }
 
-    open class SetupTaskAction : DeviceSetupTaskAction<SetupInput> {
-        override fun setup(setupInput: SetupInput, outputDir: Directory) {
-            outputDir.file("deviceName.txt").asFile.printWriter(Charsets.UTF_8).use { writer ->
-                writer.println(setupInput.deviceName.get())
-            }
-        }
-    }
-
-    abstract class TestRunInput : DeviceTestRunInput
-
-    abstract class TestRunConfigAction : DeviceTestRunConfigureAction<MyCustomDevice, TestRunInput> {
-        @get:Inject
-        abstract val objectFactory: ObjectFactory
-
-        override fun configureTaskInput(deviceDSL: MyCustomDevice): TestRunInput {
-            return objectFactory.newInstance(TestRunInput::class.java)
-        }
-    }
-
-    open class TestRunTaskAction : DeviceTestRunTaskAction<TestRunInput> {
-        override fun runTests(params: DeviceTestRunParameters<TestRunInput>): Boolean {
-            params.testRunData.outputDirectory.file("TEST-" + params.testRunData.deviceName + ".xml").asFile.printWriter(
-                Charsets.UTF_8
-            ).use { writer ->
-                writer.println(
-                    //language=xml
-                    """
-<?xml version='1.0' encoding='UTF-8' ?>
-<testsuite name="com.example.android.kotlin.ExampleInstrumentedTest" tests="2" failures="0" errors="0" skipped="0" time="0.969" timestamp="2022-12-12T22:38:18" hostname="localhost">
-    <properties>
-        <property name="device" value="localDevice" />
-        <property name="flavor" value="" />
-        <property name="project" value=":app" />
-    </properties>
-    <testcase name="useAppContext2" classname="com.example.android.kotlin.ExampleInstrumentedTest" time="0.004" />
-    <testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest" time="0.0" />
-</testsuite>
-                    """.trimIndent()
-                )
-            }
-            return true
-        }
-    }
-
-    @get:Rule
-    val rule = GradleRule.from {
-        simpleProject()
-        rootProject {
-            buildscript {
-                classpath(localJar("myCustomGmdClasses") {
-                    addClasses(
-                        MyCustomDevice::class.java,
-                        MyCustomDeviceImpl::class.java,
-                        ManagedDeviceExtensionTest::class.java,
-                        SetupConfigAction::class.java,
-                        SetupInput::class.java,
-                        SetupTaskAction::class.java,
-                        TestRunConfigAction::class.java,
-                        TestRunInput::class.java,
-                        TestRunTaskAction::class.java,
-                    )
-                })
-            }
-        }
-        androidApplication {
-            android.testOptions.managedDevices {
-                allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
-            }
-            pluginCallbacks += AddCustomGMDCallback::class.java
-        }
-        androidApplication(":emptyAppProject") {
-            android.testOptions.managedDevices {
-                allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
-            }
-            pluginCallbacks += AddCustomGMDCallback::class.java
-        }
-    }
-
-    class AddCustomGMDCallback : ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.managedDeviceRegistry.registerDeviceType(MyCustomDevice::class.java) {
-                dslImplementationClass = MyCustomDeviceImpl::class.java
-                setSetupActions(
-                    SetupConfigAction::class.java,
-                    SetupTaskAction::class.java
-                )
-                setTestRunActions(
-                    TestRunConfigAction::class.java,
-                    TestRunTaskAction::class.java
-                )
-            }
-        }
-    }
-
-    private val executor: GradleTaskExecutor
-        get() = rule.build.executor.withEnableInfoLogging(false)
-
-    @Test
-    fun runCustomManagedDevice() {
-        executor.run(":app:myCustomDeviceCheck")
-
-        val project = rule.build.androidApplication()
-
-        val setupDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "managedDeviceSetupResults",
-            "myCustomDevice"
+  open class TestRunTaskAction : DeviceTestRunTaskAction<TestRunInput> {
+    override fun runTests(params: DeviceTestRunParameters<TestRunInput>): Boolean {
+      params.testRunData.outputDirectory.file("TEST-" + params.testRunData.deviceName + ".xml").asFile.printWriter(Charsets.UTF_8).use {
+        writer ->
+        writer.println(
+          // language=xml
+          """
+          <?xml version='1.0' encoding='UTF-8' ?>
+          <testsuite name="com.example.android.kotlin.ExampleInstrumentedTest" tests="2" failures="0" errors="0" skipped="0" time="0.969" timestamp="2022-12-12T22:38:18" hostname="localhost">
+              <properties>
+                  <property name="device" value="localDevice" />
+                  <property name="flavor" value="" />
+                  <property name="project" value=":app" />
+              </properties>
+              <testcase name="useAppContext2" classname="com.example.android.kotlin.ExampleInstrumentedTest" time="0.004" />
+              <testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest" time="0.0" />
+          </testsuite>
+          """
+            .trimIndent()
         )
-        assertThat(File(setupDir, "deviceName.txt")).contains("myCustomDevice")
+      }
+      return true
+    }
+  }
 
-        val reportDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "reports",
-            "androidTests",
-            "managedDevice",
-            "debug",
-            "myCustomDevice"
-        )
-        assertThat(File(reportDir, "index.html")).exists()
-        assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
-        assertThat(
-            File(
-                reportDir,
-                "com.example.android.kotlin.ExampleInstrumentedTest.html"
-            )
-        ).exists()
-
-        val mergedTestReportDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "reports",
-            "androidTests",
-            "managedDevice",
-            "debug",
-            "allDevices"
-        )
-        assertThat(File(mergedTestReportDir, "index.html")).exists()
-        assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
-        assertThat(
-            File(
-                mergedTestReportDir,
-                "com.example.android.kotlin.ExampleInstrumentedTest.html"
-            )
-        ).exists()
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      simpleProject()
+      rootProject {
+        buildscript {
+          classpath(
+            localJar("myCustomGmdClasses") {
+              addClasses(
+                MyCustomDevice::class.java,
+                MyCustomDeviceImpl::class.java,
+                ManagedDeviceExtensionTest::class.java,
+                SetupConfigAction::class.java,
+                SetupInput::class.java,
+                SetupTaskAction::class.java,
+                TestRunConfigAction::class.java,
+                TestRunInput::class.java,
+                TestRunTaskAction::class.java,
+              )
+            }
+          )
+        }
+      }
+      androidApplication {
+        android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
+        pluginCallbacks += AddCustomGMDCallback::class.java
+      }
+      androidApplication(":emptyAppProject") {
+        android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
+        pluginCallbacks += AddCustomGMDCallback::class.java
+      }
     }
 
-    @Test
-    fun runCustomManagedDeviceWithNoTests() {
-        val project = rule.build.androidApplication(":emptyAppProject")
-
-        val result = executor
-            .withEnableInfoLogging(true)  // "No tests found" message is info level.
-            .run(":emptyAppProject:myCustomDeviceCheck")
-
-        result.assertOutputContains("No tests found, nothing to do.")
-
-        val setupDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "managedDeviceSetupResults",
-            "myCustomDevice"
-        )
-        assertThat(File(setupDir, "deviceName.txt")).contains("myCustomDevice")
-
-        val reportDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "reports",
-            "androidTests",
-            "managedDevice",
-            "debug",
-            "myCustomDevice"
-        )
-        assertThat(File(reportDir, "index.html")).exists()
-
-        val mergedTestReportDir = FileUtils.join(
-            project.buildDir.toFile(),
-            "reports",
-            "androidTests",
-            "managedDevice",
-            "debug",
-            "allDevices"
-        )
-        assertThat(File(mergedTestReportDir, "index.html")).exists()
+  class AddCustomGMDCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.managedDeviceRegistry.registerDeviceType(MyCustomDevice::class.java) {
+        dslImplementationClass = MyCustomDeviceImpl::class.java
+        setSetupActions(SetupConfigAction::class.java, SetupTaskAction::class.java)
+        setTestRunActions(TestRunConfigAction::class.java, TestRunTaskAction::class.java)
+      }
     }
+  }
+
+  private val executor: GradleTaskExecutor
+    get() = rule.build.executor.withEnableInfoLogging(false)
+
+  @Test
+  fun runCustomManagedDevice() {
+    executor.run(":app:myCustomDeviceCheck")
+
+    val project = rule.build.androidApplication()
+
+    val setupDir = FileUtils.join(project.buildDir.toFile(), "managedDeviceSetupResults", "myCustomDevice")
+    assertThat(File(setupDir, "deviceName.txt")).contains("myCustomDevice")
+
+    val reportDir = FileUtils.join(project.buildDir.toFile(), "reports", "androidTests", "managedDevice", "debug", "myCustomDevice")
+    assertThat(File(reportDir, "index.html")).exists()
+    assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
+    assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+
+    val mergedTestReportDir = FileUtils.join(project.buildDir.toFile(), "reports", "androidTests", "managedDevice", "debug", "allDevices")
+    assertThat(File(mergedTestReportDir, "index.html")).exists()
+    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+  }
+
+  @Test
+  fun runCustomManagedDeviceWithNoTests() {
+    val project = rule.build.androidApplication(":emptyAppProject")
+
+    val result =
+      executor
+        .withEnableInfoLogging(true) // "No tests found" message is info level.
+        .run(":emptyAppProject:myCustomDeviceCheck")
+
+    result.assertOutputContains("No tests found, nothing to do.")
+
+    val setupDir = FileUtils.join(project.buildDir.toFile(), "managedDeviceSetupResults", "myCustomDevice")
+    assertThat(File(setupDir, "deviceName.txt")).contains("myCustomDevice")
+
+    val reportDir = FileUtils.join(project.buildDir.toFile(), "reports", "androidTests", "managedDevice", "debug", "myCustomDevice")
+    assertThat(File(reportDir, "index.html")).exists()
+
+    val mergedTestReportDir = FileUtils.join(project.buildDir.toFile(), "reports", "androidTests", "managedDevice", "debug", "allDevices")
+    assertThat(File(mergedTestReportDir, "index.html")).exists()
+  }
 }

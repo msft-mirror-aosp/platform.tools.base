@@ -18,34 +18,28 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.services.ExecOutput
-import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
+import kotlinx.coroutines.CoroutineScope
 
 class AbbExecCommandHandler : DeviceCommandHandler("abb_exec") {
 
-    override fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
 
-        // Acknowledge only if "abb_exec" is supported
-        // TODO: Even though it is equivalent to use API level to check for abb_exec the answer
-        //       should come from the list of features contained in [deviceState].
-        if (device.buildVersionSdk.majorVersion < 30) {
-            writeFail(socket.getOutputStream())
-            return
-        }
-
-        writeOkay(socket.getOutputStream())
-
-        // Save command to logs so tests can consult them.
-        device.addAbbLog(args.trim())
-
-        // Wrap stdin/stdout and execute abb command
-        val serviceOutput = ExecOutput(socket, device)
-        device.serviceManager.processCommand(args.split("\u0000"), serviceOutput)
+    // Acknowledge only if "abb_exec" is supported
+    // TODO: Even though it is equivalent to use API level to check for abb_exec the answer
+    //       should come from the list of features contained in [deviceState].
+    if (device.buildVersionSdk.majorVersion < 30) {
+      writeFail(socket.getOutputStream())
+      return
     }
+
+    writeOkay(socket.getOutputStream())
+
+    // Save command to logs so tests can consult them.
+    device.addAbbLog(args.trim())
+
+    // Wrap stdin/stdout and execute abb command
+    val serviceOutput = ExecOutput(socket, device)
+    device.serviceManager.processCommand(args.split("\u0000"), serviceOutput)
+  }
 }

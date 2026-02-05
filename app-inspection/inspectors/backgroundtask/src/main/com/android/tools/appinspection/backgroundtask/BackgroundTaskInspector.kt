@@ -41,24 +41,18 @@ typealias PendingIntentType = BackgroundTaskInspectorProtocol.PendingIntent.Type
 
 private const val BACKGROUND_INSPECTION_ID = "backgroundtask.inspection"
 
-class BackgroundTaskInspectorFactory :
-  InspectorFactory<BackgroundTaskInspector>(BACKGROUND_INSPECTION_ID) {
+class BackgroundTaskInspectorFactory : InspectorFactory<BackgroundTaskInspector>(BACKGROUND_INSPECTION_ID) {
 
-  override fun createInspector(connection: Connection, environment: InspectorEnvironment) =
-    BackgroundTaskInspector(connection, environment)
+  override fun createInspector(connection: Connection, environment: InspectorEnvironment) = BackgroundTaskInspector(connection, environment)
 }
 
-class BackgroundTaskInspector(
-  connection: Connection,
-  private val environment: InspectorEnvironment,
-) : Inspector(connection) {
+class BackgroundTaskInspector(connection: Connection, private val environment: InspectorEnvironment) : Inspector(connection) {
 
   private val intentRegistry = IntentRegistry()
 
   @VisibleForTesting val alarmHandler = AlarmHandlerImpl(connection, intentRegistry)
 
-  @VisibleForTesting
-  val pendingIntentHandler = PendingIntentHandlerImpl(alarmHandler, intentRegistry)
+  @VisibleForTesting val pendingIntentHandler = PendingIntentHandlerImpl(alarmHandler, intentRegistry)
 
   @VisibleForTesting val wakeLockHandler = WakeLockHandlerImpl(connection)
 
@@ -69,17 +63,9 @@ class BackgroundTaskInspector(
     when (command.specializedCase) {
       Command.SpecializedCase.TRACK_BACKGROUND_TASK -> {
         startBackgroundTaskHandlers()
-        callback.reply(
-          Response.newBuilder()
-            .setTrackBackgroundTask(TrackBackgroundTaskResponse.getDefaultInstance())
-            .build()
-            .toByteArray()
-        )
+        callback.reply(Response.newBuilder().setTrackBackgroundTask(TrackBackgroundTaskResponse.getDefaultInstance()).build().toByteArray())
       }
-      else ->
-        throw IllegalStateException(
-          "Unexpected view inspector command case: ${command.specializedCase}"
-        )
+      else -> throw IllegalStateException("Unexpected view inspector command case: ${command.specializedCase}")
     }
   }
 
@@ -111,24 +97,14 @@ class BackgroundTaskInspector(
         listenerTag = args[7] as String?,
       )
     }
-    environment.artTooling().registerEntryHook(
-      AlarmManager::class.java,
-      "cancel(Landroid/app/PendingIntent;)V",
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(AlarmManager::class.java, "cancel(Landroid/app/PendingIntent;)V") { _, args ->
       alarmHandler.onAlarmCancelled((args[0] as? PendingIntent) ?: return@registerEntryHook)
     }
-    environment.artTooling().registerEntryHook(
-      AlarmManager::class.java,
-      "cancel(Landroid/app/AlarmManager\$OnAlarmListener;)V",
-    ) { _, args ->
-      alarmHandler.onAlarmCancelled(
-        (args[0] as? AlarmManager.OnAlarmListener) ?: return@registerEntryHook
-      )
+    environment.artTooling().registerEntryHook(AlarmManager::class.java, "cancel(Landroid/app/AlarmManager\$OnAlarmListener;)V") { _, args
+      ->
+      alarmHandler.onAlarmCancelled((args[0] as? AlarmManager.OnAlarmListener) ?: return@registerEntryHook)
     }
-    environment.artTooling().registerEntryHook(
-      AlarmManager.OnAlarmListener::class.java,
-      "onAlarm()V",
-    ) { listener, _ ->
+    environment.artTooling().registerEntryHook(AlarmManager.OnAlarmListener::class.java, "onAlarm()V") { listener, _ ->
       alarmHandler.onAlarmFired(listener as AlarmManager.OnAlarmListener)
     }
   }
@@ -143,33 +119,23 @@ class BackgroundTaskInspector(
         GET_BROADCAST_METHOD_NAME to PendingIntentType.BROADCAST,
       )
       .forEach { (methodName, type) ->
-        environment.artTooling().registerEntryHook(PendingIntent::class.java, methodName) { _, args
-          ->
+        environment.artTooling().registerEntryHook(PendingIntent::class.java, methodName) { _, args ->
           val requestCode = args[1] as Int
           val intents = buildIntentArray(args[2]) ?: return@registerEntryHook
           val flags = args[3] as Int
           pendingIntentHandler.onIntentCapturedEntry(type, requestCode, intents, flags)
         }
 
-        environment.artTooling().registerExitHook(PendingIntent::class.java, methodName) {
-          pendingIntent: PendingIntent? ->
+        environment.artTooling().registerExitHook(PendingIntent::class.java, methodName) { pendingIntent: PendingIntent? ->
           pendingIntent?.let { pendingIntentHandler.onIntentCapturedExit(it) }
         }
       }
 
-    listOf(
-        CALL_ACTIVITY_ON_CREATE_METHOD_NAME,
-        CALL_ACTIVITY_ON_CREATE_PERSISTABLE_BUNDLE_METHOD_NAME,
-      )
-      .forEach { methodName ->
-        environment.artTooling().registerEntryHook(Instrumentation::class.java, methodName) {
-          _,
-          args ->
-          pendingIntentHandler.onIntentReceived(
-            (args[0] as? Activity)?.intent ?: return@registerEntryHook
-          )
-        }
+    listOf(CALL_ACTIVITY_ON_CREATE_METHOD_NAME, CALL_ACTIVITY_ON_CREATE_PERSISTABLE_BUNDLE_METHOD_NAME).forEach { methodName ->
+      environment.artTooling().registerEntryHook(Instrumentation::class.java, methodName) { _, args ->
+        pendingIntentHandler.onIntentReceived((args[0] as? Activity)?.intent ?: return@registerEntryHook)
       }
+    }
 
     environment.artTooling().registerEntryHook(
       javaClass.classLoader.loadClass("android.app.IntentService"),
@@ -179,23 +145,16 @@ class BackgroundTaskInspector(
     }
 
     val activityThreadClass = javaClass.classLoader.loadClass("android.app.ActivityThread")
-    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_RECEIVER_METHOD_NAME) {
-      _,
-      args ->
+    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_RECEIVER_METHOD_NAME) { _, args ->
       pendingIntentHandler.onReceiverDataCreated(args[0] ?: return@registerEntryHook)
     }
 
-    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_SERVICE_METHOD_NAME) {
-      _,
-      args ->
+    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_SERVICE_METHOD_NAME) { _, args ->
       val args = args[0].getFieldValue("args", null as Intent?)
       pendingIntentHandler.onIntentReceived((args) ?: return@registerEntryHook)
     }
 
-    environment.artTooling().registerEntryHook(
-      BroadcastReceiver::class.java,
-      SET_PENDING_RESULT_METHOD_NAME,
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(BroadcastReceiver::class.java, SET_PENDING_RESULT_METHOD_NAME) { _, args ->
       pendingIntentHandler.onReceiverDataResult(args[0] ?: return@registerEntryHook)
     }
   }
@@ -218,13 +177,11 @@ class BackgroundTaskInspector(
       wakeLockHandler.onWakeLockAcquired(wakeLock as WakeLock, 0)
     }
 
-    environment.artTooling().registerEntryHook(WakeLock::class.java, "acquire(J)V") { wakeLock, args
-      ->
+    environment.artTooling().registerEntryHook(WakeLock::class.java, "acquire(J)V") { wakeLock, args ->
       wakeLockHandler.onWakeLockAcquired(wakeLock as WakeLock, args[0] as Long)
     }
 
-    environment.artTooling().registerEntryHook(WakeLock::class.java, "release(I)V") { wakeLock, args
-      ->
+    environment.artTooling().registerEntryHook(WakeLock::class.java, "release(I)V") { wakeLock, args ->
       wakeLockHandler.onWakeLockReleasedEntry(wakeLock as WakeLock, args[0] as Int)
     }
 
@@ -236,52 +193,28 @@ class BackgroundTaskInspector(
 
   private fun registerJobHooks() {
     val jobSchedulerImpl = javaClass.classLoader.loadClass("android.app.JobSchedulerImpl")
-    environment.artTooling().registerEntryHook(
-      jobSchedulerImpl,
-      "schedule(Landroid/app/job/JobInfo;)I",
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(jobSchedulerImpl, "schedule(Landroid/app/job/JobInfo;)I") { _, args ->
       jobHandler.onScheduleJobEntry((args[0] as JobInfo?) ?: return@registerEntryHook)
     }
 
-    environment.artTooling().registerExitHook<Int>(
-      jobSchedulerImpl,
-      "schedule(Landroid/app/job/JobInfo;)I",
-    ) { scheduleResult ->
+    environment.artTooling().registerExitHook<Int>(jobSchedulerImpl, "schedule(Landroid/app/job/JobInfo;)I") { scheduleResult ->
       jobHandler.onScheduleJobExit(scheduleResult)
     }
 
     val jobHandlerClass = Class.forName("android.app.job.JobServiceEngine\$JobHandler")
-    environment.artTooling().registerEntryHook(
-      jobHandlerClass,
-      "ackStartMessage(Landroid/app/job/JobParameters;Z)V",
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(jobHandlerClass, "ackStartMessage(Landroid/app/job/JobParameters;Z)V") { _, args ->
       val jobParameters = (args[0] as? JobParameters) ?: return@registerEntryHook
-      jobHandler.wrapOnStartJob(
-        params = JobParametersWrapper(jobParameters),
-        workOngoing = args[1] as Boolean,
-      )
+      jobHandler.wrapOnStartJob(params = JobParametersWrapper(jobParameters), workOngoing = args[1] as Boolean)
     }
 
-    environment.artTooling().registerEntryHook(
-      jobHandlerClass,
-      "ackStopMessage(Landroid/app/job/JobParameters;Z)V",
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(jobHandlerClass, "ackStopMessage(Landroid/app/job/JobParameters;Z)V") { _, args ->
       val jobParameters = (args[0] as? JobParameters) ?: return@registerEntryHook
-      jobHandler.wrapOnStopJob(
-        params = JobParametersWrapper(jobParameters),
-        reschedule = args[1] as Boolean,
-      )
+      jobHandler.wrapOnStopJob(params = JobParametersWrapper(jobParameters), reschedule = args[1] as Boolean)
     }
 
-    environment.artTooling().registerEntryHook(
-      JobService::class.java,
-      "jobFinished(Landroid/app/job/JobParameters;Z)V",
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(JobService::class.java, "jobFinished(Landroid/app/job/JobParameters;Z)V") { _, args ->
       val jobParameters = (args[0] as? JobParameters) ?: return@registerEntryHook
-      jobHandler.wrapJobFinished(
-        params = JobParametersWrapper(jobParameters),
-        wantsReschedule = args[1] as Boolean,
-      )
+      jobHandler.wrapJobFinished(params = JobParametersWrapper(jobParameters), wantsReschedule = args[1] as Boolean)
     }
   }
 }

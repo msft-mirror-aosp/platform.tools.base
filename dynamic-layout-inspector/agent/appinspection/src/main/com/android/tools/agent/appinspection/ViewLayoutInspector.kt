@@ -60,13 +60,6 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import com.android.tools.layoutinspector.BitmapType
 import com.android.tools.layoutinspector.errors.errorCode
 import com.android.tools.layoutinspector.errors.noHardwareAcceleration
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -76,6 +69,13 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 // The ".studio" prefix prevents logs from showing in logcat,
 // unless the "logcat.ignore.studio.tags" flag is enabled.
@@ -86,703 +86,574 @@ private const val LAYOUT_INSPECTION_ID = "layoutinspector.view.inspection"
 
 // created by java.util.ServiceLoader
 class ViewLayoutInspectorFactory : InspectorFactory<ViewLayoutInspector>(LAYOUT_INSPECTION_ID) {
-    override fun createInspector(
-        connection: Connection,
-        environment: InspectorEnvironment
-    ) = ViewLayoutInspector(connection, environment)
+  override fun createInspector(connection: Connection, environment: InspectorEnvironment) = ViewLayoutInspector(connection, environment)
 }
 
 private const val MAX_START_FETCH_RETRIES = 10
 
-class ViewLayoutInspector(connection: Connection, private val environment: InspectorEnvironment) :
-    Inspector(connection) {
+class ViewLayoutInspector(connection: Connection, private val environment: InspectorEnvironment) : Inspector(connection) {
 
-    /**
-     * This exists only for testing purposes.
-     */
-    @VisibleForTesting
-    var doBeforeCapture: (() -> Unit)? = null
+  /** This exists only for testing purposes. */
+  @VisibleForTesting var doBeforeCapture: (() -> Unit)? = null
 
-    private var checkpoint: ProgressCheckpoint = ProgressCheckpoint.NOT_STARTED
-        set(value) {
-            if (value <= field){
-                return
-            }
-            field = value
-            if (value != ProgressCheckpoint.NOT_STARTED) {
-                connection.sendEvent {
-                    progressEvent = ProgressEvent.newBuilder().apply {
-                        checkpoint = field
-                    }.build()
-                }
-            }
-        }
-
-    @VisibleForTesting
-    val scope = CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
-
-    @GuardedBy("state.lock")
-    private val state = InspectorState()
-
-    private val foldSupport = createFoldSupport(connection, { state.fetchContinuously })
-        get() = foldSupportOverrideForTests ?: field
-
-    @property:VisibleForTesting
-    var foldSupportOverrideForTests: FoldSupport? = null
-
-    private val xrHelper = XrHelper(environment)
-    private val rootsDetector = RootsDetector(xrHelper, connection, ::onRootsChanged) { checkpoint = it }
-
-    @VisibleForTesting
-    val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(
-        scope = scope,
-        connection = connection,
-        mainDispatcher = MainThreadExecutor().asCoroutineDispatcher()
-    )
-
-    override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
-        val command = Command.parseFrom(data)
-        when (command.specializedCase) {
-            Command.SpecializedCase.START_FETCH_COMMAND -> handleStartFetchCommand(
-                command.startFetchCommand,
-                callback
-            )
-            Command.SpecializedCase.STOP_FETCH_COMMAND -> handleStopFetchCommand(callback)
-            Command.SpecializedCase.GET_PROPERTIES_COMMAND -> handleGetProperties(
-                command.getPropertiesCommand,
-                callback
-            )
-            Command.SpecializedCase.UPDATE_SCREENSHOT_TYPE_COMMAND -> handleUpdateScreenshotType(
-                command.updateScreenshotTypeCommand,
-                callback
-            )
-            Command.SpecializedCase.CAPTURE_SNAPSHOT_COMMAND -> handleCaptureSnapshotCommand(
-                command.captureSnapshotCommand,
-                callback
-            )
-            Command.SpecializedCase.ENABLE_BITMAP_SCREENSHOT_COMMAND -> handleEnableBitmapScreenshotCommand(
-                command.enableBitmapScreenshotCommand,
-                callback
-            )
-            Command.SpecializedCase.ENABLE_XR_INSPECTION_COMMAND -> handleEnableXrInspectionCommand(
-                command.enableXrInspectionCommand,
-                callback
-            )
-            Command.SpecializedCase.DRAW_COMMAND -> handleDrawCommand(
-                command.drawCommand,
-                callback
-            )
-            Command.SpecializedCase.ENABLE_ON_DEVICE_RENDERING_COMMAND -> handleEnableOnDeviceRendering(
-                command.enableOnDeviceRenderingCommand,
-                callback
-            )
-            Command.SpecializedCase.INTERCEPT_TOUCH_EVENTS_COMMAND -> handleInterceptTouchEventsCommand(
-                command.interceptTouchEventsCommand,
-                callback
-            )
-            Command.SpecializedCase.DRAW_OVERLAY_COMMAND -> handleDrawOverlayCommand(
-                command.drawOverlayCommand,
-                callback
-            )
-            Command.SpecializedCase.SET_OVERLAY_ALPHA_COMMAND -> handleSetOverlayAlphaCommand(
-                command.setOverlayAlphaCommand,
-                callback
-            )
-            else -> error("Unexpected view inspector command case: ${command.specializedCase}")
-        }
+  private var checkpoint: ProgressCheckpoint = ProgressCheckpoint.NOT_STARTED
+    set(value) {
+      if (value <= field) {
+        return
+      }
+      field = value
+      if (value != ProgressCheckpoint.NOT_STARTED) {
+        connection.sendEvent { progressEvent = ProgressEvent.newBuilder().apply { checkpoint = field }.build() }
+      }
     }
 
-    override fun onDispose() {
-        Log.w(SPAM_LOG_TAG, "onDispose")
-        // Use runBlocking to prevent the Inspector from being disposed
-        // before these functions are executed.
-        runBlocking {
-            onDeviceRenderingViewModel.dispose()
-            forceStopAllCaptures()
-            foldSupport?.shutdown()
-            SynchronousPixelCopy.stopHandler()
-            scope.cancel("ViewLayoutInspector has been disposed")
-        }
+  @VisibleForTesting val scope = CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
+
+  @GuardedBy("state.lock") private val state = InspectorState()
+
+  private val foldSupport = createFoldSupport(connection, { state.fetchContinuously })
+    get() = foldSupportOverrideForTests ?: field
+
+  @property:VisibleForTesting var foldSupportOverrideForTests: FoldSupport? = null
+
+  private val xrHelper = XrHelper(environment)
+  private val rootsDetector = RootsDetector(xrHelper, connection, ::onRootsChanged) { checkpoint = it }
+
+  @VisibleForTesting
+  val onDeviceRenderingViewModel =
+    OnDeviceRenderingViewModel(scope = scope, connection = connection, mainDispatcher = MainThreadExecutor().asCoroutineDispatcher())
+
+  override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
+    val command = Command.parseFrom(data)
+    when (command.specializedCase) {
+      Command.SpecializedCase.START_FETCH_COMMAND -> handleStartFetchCommand(command.startFetchCommand, callback)
+      Command.SpecializedCase.STOP_FETCH_COMMAND -> handleStopFetchCommand(callback)
+      Command.SpecializedCase.GET_PROPERTIES_COMMAND -> handleGetProperties(command.getPropertiesCommand, callback)
+      Command.SpecializedCase.UPDATE_SCREENSHOT_TYPE_COMMAND -> handleUpdateScreenshotType(command.updateScreenshotTypeCommand, callback)
+      Command.SpecializedCase.CAPTURE_SNAPSHOT_COMMAND -> handleCaptureSnapshotCommand(command.captureSnapshotCommand, callback)
+      Command.SpecializedCase.ENABLE_BITMAP_SCREENSHOT_COMMAND ->
+        handleEnableBitmapScreenshotCommand(command.enableBitmapScreenshotCommand, callback)
+      Command.SpecializedCase.ENABLE_XR_INSPECTION_COMMAND -> handleEnableXrInspectionCommand(command.enableXrInspectionCommand, callback)
+      Command.SpecializedCase.DRAW_COMMAND -> handleDrawCommand(command.drawCommand, callback)
+      Command.SpecializedCase.ENABLE_ON_DEVICE_RENDERING_COMMAND ->
+        handleEnableOnDeviceRendering(command.enableOnDeviceRenderingCommand, callback)
+      Command.SpecializedCase.INTERCEPT_TOUCH_EVENTS_COMMAND ->
+        handleInterceptTouchEventsCommand(command.interceptTouchEventsCommand, callback)
+      Command.SpecializedCase.DRAW_OVERLAY_COMMAND -> handleDrawOverlayCommand(command.drawOverlayCommand, callback)
+      Command.SpecializedCase.SET_OVERLAY_ALPHA_COMMAND -> handleSetOverlayAlphaCommand(command.setOverlayAlphaCommand, callback)
+      else -> error("Unexpected view inspector command case: ${command.specializedCase}")
+    }
+  }
+
+  override fun onDispose() {
+    Log.w(SPAM_LOG_TAG, "onDispose")
+    // Use runBlocking to prevent the Inspector from being disposed
+    // before these functions are executed.
+    runBlocking {
+      onDeviceRenderingViewModel.dispose()
+      forceStopAllCaptures()
+      foldSupport?.shutdown()
+      SynchronousPixelCopy.stopHandler()
+      scope.cancel("ViewLayoutInspector has been disposed")
+    }
+  }
+
+  private fun handleDrawCommand(drawCommand: LayoutInspectorViewProtocol.DrawCommand, callback: CommandCallback) {
+    val type = drawCommand.type
+    when (type) {
+      LayoutInspectorViewProtocol.DrawCommand.Type.SELECTED_NODES -> {
+        onDeviceRenderingViewModel.setSelectedNodes(drawCommand.drawInstructionsList)
+      }
+      LayoutInspectorViewProtocol.DrawCommand.Type.HOVERED_NODES -> {
+        onDeviceRenderingViewModel.setHoveredNodes(drawCommand.drawInstructionsList)
+      }
+      LayoutInspectorViewProtocol.DrawCommand.Type.VISIBLE_NODES -> {
+        onDeviceRenderingViewModel.setVisibleNodes(drawCommand.drawInstructionsList)
+      }
+      LayoutInspectorViewProtocol.DrawCommand.Type.RECOMPOSING_NODES -> {
+        onDeviceRenderingViewModel.setRecomposingNodes(drawCommand.drawInstructionsList)
+      }
+      else -> throw IllegalArgumentException("Unknown draw command type: $type")
     }
 
-    private fun handleDrawCommand(
-        drawCommand: LayoutInspectorViewProtocol.DrawCommand,
-        callback: CommandCallback
-    ) {
-        val type = drawCommand.type
-        when (type) {
-            LayoutInspectorViewProtocol.DrawCommand.Type.SELECTED_NODES -> {
-                onDeviceRenderingViewModel.setSelectedNodes(drawCommand.drawInstructionsList)
-            }
-            LayoutInspectorViewProtocol.DrawCommand.Type.HOVERED_NODES -> {
-                onDeviceRenderingViewModel.setHoveredNodes(drawCommand.drawInstructionsList)
-            }
-            LayoutInspectorViewProtocol.DrawCommand.Type.VISIBLE_NODES -> {
-                onDeviceRenderingViewModel.setVisibleNodes(drawCommand.drawInstructionsList)
-            }
-            LayoutInspectorViewProtocol.DrawCommand.Type.RECOMPOSING_NODES -> {
-                onDeviceRenderingViewModel.setRecomposingNodes(drawCommand.drawInstructionsList)
-            }
-            else -> throw IllegalArgumentException("Unknown draw command type: $type")
-        }
+    callback.reply { drawResponse = LayoutInspectorViewProtocol.DrawResponse.newBuilder().build() }
+  }
 
-        callback.reply {
-            drawResponse = LayoutInspectorViewProtocol.DrawResponse.newBuilder().build()
-        }
+  private fun handleEnableOnDeviceRendering(
+    enableOnDeviceRenderingCommand: LayoutInspectorViewProtocol.EnableOnDeviceRenderingCommand,
+    callback: CommandCallback,
+  ) {
+    scope.launch { onDeviceRenderingViewModel.setEnableOnDeviceRendering(enableOnDeviceRenderingCommand.enable) }
+
+    callback.reply { LayoutInspectorViewProtocol.EnableOnDeviceRenderingResponse.newBuilder().build() }
+  }
+
+  private fun handleInterceptTouchEventsCommand(
+    interceptTouchEventsCommand: LayoutInspectorViewProtocol.InterceptTouchEventsCommand,
+    callback: CommandCallback,
+  ) {
+    onDeviceRenderingViewModel.setInterceptTouchEvents(interceptTouchEventsCommand.intercept)
+    callback.reply { LayoutInspectorViewProtocol.InterceptTouchEventsResponse.newBuilder().build() }
+  }
+
+  private fun handleDrawOverlayCommand(drawOverlayCommand: LayoutInspectorViewProtocol.DrawOverlayCommand, callback: CommandCallback) {
+    if (!drawOverlayCommand.image.isEmpty) {
+      onDeviceRenderingViewModel.setOverlayImage(drawOverlayCommand.image)
+    } else {
+      onDeviceRenderingViewModel.setOverlayImage(null)
     }
+    callback.reply { LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build() }
+  }
 
-    private fun handleEnableOnDeviceRendering(
-        enableOnDeviceRenderingCommand: LayoutInspectorViewProtocol.EnableOnDeviceRenderingCommand,
-        callback: CommandCallback
-    ) {
-        scope.launch {
-            onDeviceRenderingViewModel.setEnableOnDeviceRendering(enableOnDeviceRenderingCommand.enable)
-        }
+  private fun handleSetOverlayAlphaCommand(
+    setOverlayAlphaCommand: LayoutInspectorViewProtocol.SetOverlayAlphaCommand,
+    callback: CommandCallback,
+  ) {
+    onDeviceRenderingViewModel.setOverlayAlpha(setOverlayAlphaCommand.alpha)
+    callback.reply { LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build() }
+  }
 
-        callback.reply {
-            LayoutInspectorViewProtocol.EnableOnDeviceRenderingResponse.newBuilder().build()
-        }
-    }
+  /** Stop any stale roots from capturing and, depending on [InspectorState.fetchContinuously], may start capturing new roots. */
+  private fun onRootsChanged(added: List<Long>, removed: List<Long>, roots: Map<Long, InspectorView>) {
+    synchronized(state.lock) {
+      for (toRemove in removed) {
+        state.captureContextMap.remove(toRemove)?.shutdown()
+      }
+      added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it.view) }
+      removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it.view) }
 
-    private fun handleInterceptTouchEventsCommand(
-        interceptTouchEventsCommand: LayoutInspectorViewProtocol.InterceptTouchEventsCommand,
-        callback: CommandCallback
-    ) {
-        onDeviceRenderingViewModel.setInterceptTouchEvents(interceptTouchEventsCommand.intercept)
-        callback.reply {
-            LayoutInspectorViewProtocol.InterceptTouchEventsResponse.newBuilder().build()
-        }
-    }
+      scope.launch { onDeviceRenderingViewModel.setRoots(roots) }
 
-    private fun handleDrawOverlayCommand(
-        drawOverlayCommand: LayoutInspectorViewProtocol.DrawOverlayCommand,
-        callback: CommandCallback
-    ) {
-        if (!drawOverlayCommand.image.isEmpty) {
-            onDeviceRenderingViewModel.setOverlayImage(drawOverlayCommand.image)
-        }
-        else {
-            onDeviceRenderingViewModel.setOverlayImage(null)
-        }
-        callback.reply {
-            LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build()
-        }
-    }
-
-    private fun handleSetOverlayAlphaCommand(
-        setOverlayAlphaCommand: LayoutInspectorViewProtocol.SetOverlayAlphaCommand,
-        callback: CommandCallback
-    ) {
-        onDeviceRenderingViewModel.setOverlayAlpha(setOverlayAlphaCommand.alpha)
-        callback.reply {
-            LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build()
-        }
-    }
-
-    /**
-     * Stop any stale roots from capturing and, depending on [InspectorState.fetchContinuously],
-     * may start capturing new roots.
-     */
-    private fun onRootsChanged(added: List<Long>, removed: List<Long>, roots: Map<Long, InspectorView>) {
-        synchronized(state.lock) {
-            for (toRemove in removed) {
-                state.captureContextMap.remove(toRemove)?.shutdown()
-            }
-            added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it.view) }
-            removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it.view) }
-
-            scope.launch {
-                onDeviceRenderingViewModel.setRoots(roots)
-            }
-
-            if (state.fetchContinuously) {
-                if (added.isNotEmpty()) {
-                    // The first time we call this method, `lastRootIds` gets initialized
-                    // with views already being captured, so we don't need to start
-                    // capturing them again.
-                    val actuallyAdded = added.toMutableList().apply {
-                        removeAll { id -> state.captureContextMap.containsKey(id) }
-                    }
-                    if (actuallyAdded.isNotEmpty()) {
-                        ThreadUtils.runOnMainThread {
-                            for (toAdd in added) {
-                                try {
-                                    startCapturing(roots.getValue(toAdd))
-                                } catch (t: Throwable) {
-                                    Log.w("layinsp", t)
-                                    connection.sendEvent {
-                                        errorEvent =
-                                            LayoutInspectorViewProtocol.ErrorEvent.newBuilder()
-                                                .apply {
-                                                    message = t.stackTraceToString()
-                                                }.build()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (removed.isNotEmpty()) {
-                    ThreadUtils.runOnMainThread {
-                        // When a window goes away, we expect remaining views to send a
-                        // signal causing the client to refresh, but this doesn't always
-                        // happen, so to be safe, we force it ourselves.
-                        roots.values.forEach { it.view.invalidate() }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun forceStopAllCaptures() {
-        rootsDetector.stop()
-        synchronized(state.lock) {
-            for (context in state.captureContextMap.values) {
-                context.shutdown()
-            }
-            state.captureContextMap.clear()
-        }
-    }
-
-    private fun startCapturing(root: InspectorView) {
-        if (!root.view.isHardwareAccelerated() && !root.view.hasHardwareFlagSetInLayoutParams()) {
-            rootsDetector.stop()
-            throw noHardwareAcceleration()
-        }
-
-        val captureOutputStream = ByteArrayOutputStream()
-
-        val captureExecutor = CaptureExecutor(
-            captureOutputStream,
-            state,
-            root.view,
-            root.isXr,
-            rootsDetector,
-            foldSupport,
-            updateState = { checkpoint = it },
-            connection,
-        )
-        captureExecutor.doBeforeRun = doBeforeCapture
-
-        updateCapturingCallback(root.view, captureExecutor, captureOutputStream)
-        checkpoint = ProgressCheckpoint.STARTED
-
-        // Force a re-render to immediately send the current screen.
-        // Otherwise, Layout Inspector will have to wait for the next refresh to happen.
-        // Use postInvalidate instead of invalidate because in some apps,
-        // for example sysui, the view is not guaranteed to be created by the main thread.
-        root.view.postInvalidate();
-    }
-
-    /**
-     * Return true if the layout params have the hardware accelerated flag.
-     *
-     * Warning: The flag is known to return the wrong result for several OEM devices including
-     *          Samsung, Honor, ... See b/244120504
-     *          The flag is often missing on these devices when it should be present.
-     *
-     * Currently we call this because we fear that View.isHardwareAccelerated() may return false
-     * when the app is hardware accelerated. This could happen when View.mAttachInfo is null.
-     * We do not want to complain about something that is incorrect.
-     */
-    private fun View.hasHardwareFlagSetInLayoutParams(): Boolean {
-        val params = layoutParams
-        if (params is WindowManager.LayoutParams) {
-            if (params.flags and WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED != 0) {
-                return true
-            }
-        }
-        return false
-    }
-
-    private fun updateAllCapturingCallbacks() {
-        for ((_, _, root, captureExecutor, captureOutputStream, _, _) in state.captureContextMap.values) {
-            updateCapturingCallback(root, captureExecutor, captureOutputStream)
-        }
-    }
-
-    /**
-     * Creates or updates the capturing callback associated with [rootView].
-     * The capturing callback can be to capture SKP or BITMAP.
-     * The function creates a new [CaptureContext] associated with [rootView].
-     */
-    private fun updateCapturingCallback(rootView: View, captureExecutor: CaptureExecutor, captureOutputStream: OutputStream) {
-        // Starting rendering captures must be called on the View thread or else it throws
-        ThreadUtils.runOnMainThread {
-            synchronized(state.lock) {
-                var screenshotType = if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.BITMAP }) {
-                    // If at least one snapshot request is for bitmap, use bitmap for all
-                    Screenshot.Type.BITMAP
-                }
-                else if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.SKP }) {
-                    // If at least one snapshot request is for skp, use skp for all
-                    Screenshot.Type.SKP
-                }
-                else {
-                    state.screenshotSettings.type
-                }
-
-                if (screenshotType == state.captureContextMap[rootView.uniqueDrawingId]?.screenshotType) {
-                    // There is already a callback registered for this view and capture type.
-                    return@runOnMainThread
-                }
-
-                // Stop the existing callback.
-                // The AutoClose implementation in ViewDebug will set the picture capture callback
-                // to null in the renderer. Do not call this after creating a new callback.
-                state.captureContextMap[rootView.uniqueDrawingId]?.callbackHandle?.close()
-
-                var capturingCallbackHandle = if (screenshotType == Screenshot.Type.SKP) {
-                    try {
-                        // If we get null, it means the view is gone. It will be removed by the roots detector later.
-                        registerSkpCallback(rootView, captureExecutor, captureOutputStream) ?: return@runOnMainThread
-                    }
-                    catch (exception: Exception) {
-                        connection.sendEvent {
-                            errorEventBuilder.message = "Unable to register listener for 3d mode images: ${exception.message}"
-                        }
-                        state.screenshotSettings = ScreenshotSettings(Screenshot.Type.BITMAP, state.screenshotSettings.scale)
-                        null
-                    }
-                }
-                else {
-                    null
-                }
-
-                if (capturingCallbackHandle == null) {
-                    capturingCallbackHandle = registerScreenshotCallback(rootView, captureExecutor, captureOutputStream)
-                    screenshotType = Screenshot.Type.BITMAP
-                }
-
-                // We might get multiple callbacks for the same view while still processing an earlier
-                // one. Let's process them sequentially to avoid confusion.
-                val sequentialExecutor =
-                    Executors.newSingleThreadExecutor { r -> ThreadUtils.newThread(r) }
-
-                state.captureContextMap[rootView.uniqueDrawingId] =
-                    CaptureContext(
-                        capturingCallbackHandle,
-                        screenshotType,
-                        rootView,
-                        captureExecutor,
-                        captureOutputStream,
-                        sequentialExecutor,
-                        isLastCapture = (!state.fetchContinuously)
-                    )
-            }
-        }
-    }
-
-    private fun registerSkpCallback(
-        rootView: View,
-        captureExecutor: Executor,
-        os: OutputStream
-    ): AutoCloseable? {
-        return if (Build.VERSION.SDK_INT > 32 || (Build.VERSION.SDK_INT == 32  && Build.VERSION.PREVIEW_SDK_INT > 0)) {
-            // This method is only accessible on T+ (or Q, but there it's broken).
-            ViewDebug::class.java.getDeclaredMethod(
-                "startRenderingCommandsCapture",
-                View::class.java,
-                Executor::class.java,
-                Callable::class.java
-            ).invoke(null, rootView, captureExecutor, Callable { os }) as AutoCloseable
-        } else {
-            SkiaQWorkaround.startRenderingCommandsCapture(rootView, captureExecutor) { os }
-        }
-    }
-
-    private fun registerScreenshotCallback(
-        rootView: View,
-        captureExecutor: CaptureExecutor,
-        captureOutputStream: OutputStream
-    ): AutoCloseable {
-        val timer = Timer("ViewLayoutInspectorTimer")
-        var stop = false
-        val doCapture = {
-            if (!stop) {
-                captureExecutor.execute {
-                    // even if the screenshot is not taken, CaptureExecutor#execute runs some
-                    // critical code, necessary for the inspector to function.
-                    // TODO in the future we might want to refactor this, to be able to execute
-                    //  a number of indipendent actions when registerFrameCommitCallback is called.
-                    if (state.enableBitmapScreenshot) {
-                        captureBitmapScreenshot(rootView, captureOutputStream)
-                    }
-                }
-            }
-        }
-        var task: TimerTask? = null
-        lateinit var callback: Runnable
-        callback = Runnable {
-            task?.cancel()
-            task = null
-            doCapture()
-            task = timerTask {
-                if (!stop) {
-                    doCapture()
-                }
-            }
-            // If another frame comes in while the listener is running it seems we won't be able to
-            // re-register the listener in time to capture it. In order to be sure we capture the
-            // end state of an animation, schedule another update for a little bit in the future.
-            timer.schedule(task, 500L)
-
-            if (!stop) {
-                rootView.viewTreeObserver.registerFrameCommitCallback(callback)
-            }
-        }
-        rootView.viewTreeObserver.registerFrameCommitCallback(callback)
-        return AutoCloseable {
-            rootView.viewTreeObserver.unregisterFrameCommitCallback(callback)
-            stop = true
-        }
-
-    }
-
-    private fun captureBitmapScreenshot(rootView: View, captureOutputStream: OutputStream) {
-        // If this is the lowest z-index window (the normal case) we can be more
-        // efficient because we don't need alpha information.
-        val bitmapType = if (rootView.uniqueDrawingId == rootsDetector.lastRootIds.firstOrNull()) {
-            BitmapType.RGB_565
-        }
-        else {
-            BitmapType.ABGR_8888
-        }
-        rootView.takeScreenshot(state.screenshotSettings.scale, bitmapType)
-            ?.toByteArray()
-            ?.compress()
-            ?.let { captureOutputStream.write(it) }
-    }
-
-    private fun sendEmptyLayoutEvent() {
-        connection.sendEvent {
-            layoutEvent = LayoutEvent.getDefaultInstance()
-        }
-    }
-
-    private fun handleStartFetchCommand(
-        startFetchCommand: StartFetchCommand,
-        callback: CommandCallback
-    ) {
-        checkpoint = ProgressCheckpoint.START_RECEIVED
-        forceStopAllCaptures()
-
-        synchronized(state.lock) {
-            state.fetchContinuously = startFetchCommand.continuous
-            if (!startFetchCommand.continuous) {
-                state.screenshotSettings =
-                    ScreenshotSettings(Screenshot.Type.SKP, state.screenshotSettings.scale)
-            }
-        }
-
-        if (startFetchCommand.continuous) {
-            rootsDetector.start()
-        }
-        else {
-            // We may be getting here after a previous start / stop flow
-            rootsDetector.reset()
-        }
-        try {
-            // Since the start command is sent right after we set the debug system properties, which
-            // cause an activity restart, it's possible that the activity will still be restarting
-            // at this point and we won't find any root views. Retry a few times until we do.
-            var tries = 0
-            while (tries++ < MAX_START_FETCH_RETRIES) {
-                val result = ThreadUtils.runOnMainThread {
-                    val rootViews = getRootViews(xrHelper)
-                    if (rootViews.isEmpty()) {
-                        false
-                    } else {
-                        for (root in rootViews) {
-                            startCapturing(root)
-                        }
-                        foldSupport?.initialize(rootViews.first().view.context)
-                        true
-                    }
-                }.get()
-                when {
-                    result -> break
-                    tries == MAX_START_FETCH_RETRIES -> sendEmptyLayoutEvent()
-                    else -> Thread.sleep(300)
-                }
-            }
-        }
-        catch (exception: Exception) {
-            Log.w("layinsp", "Error during startCapturing", exception)
-            callback.reply {
-                startFetchResponse = StartFetchResponse.newBuilder().apply {
-                    error = exception.cause?.message ?: "Unknown error"
-                    code = exception.cause?.errorCode
-                }.build()
-            }
-            return
-        }
-        callback.reply {
-            startFetchResponse = StartFetchResponse.getDefaultInstance()
-        }
-    }
-
-    private fun handleUpdateScreenshotType(
-        updateScreenshotTypeCommand: UpdateScreenshotTypeCommand,
-        callback: CommandCallback
-    ) {
-        var changed: Boolean
-        synchronized(state.lock) {
-            val oldSettings = state.screenshotSettings
-            val newSettings = updateScreenshotTypeCommand.let {
-                ScreenshotSettings(
-                    it.type.takeIf { type -> type != Screenshot.Type.UNKNOWN } ?: oldSettings.type,
-                    it.scale.takeIf { scale -> scale > 0f } ?: oldSettings.scale)
-            }
-            changed = (oldSettings != newSettings)
-            state.screenshotSettings = newSettings
-        }
-        callback.reply {
-            updateScreenshotTypeResponse = UpdateScreenshotTypeResponse.getDefaultInstance()
-        }
-
-        if (changed) {
-            updateAllCapturingCallbacks()
+      if (state.fetchContinuously) {
+        if (added.isNotEmpty()) {
+          // The first time we call this method, `lastRootIds` gets initialized
+          // with views already being captured, so we don't need to start
+          // capturing them again.
+          val actuallyAdded = added.toMutableList().apply { removeAll { id -> state.captureContextMap.containsKey(id) } }
+          if (actuallyAdded.isNotEmpty()) {
             ThreadUtils.runOnMainThread {
-                for (rootView in getRootViews(xrHelper)) {
-                    rootView.view.invalidate()
+              for (toAdd in added) {
+                try {
+                  startCapturing(roots.getValue(toAdd))
+                } catch (t: Throwable) {
+                  Log.w("layinsp", t)
+                  connection.sendEvent {
+                    errorEvent = LayoutInspectorViewProtocol.ErrorEvent.newBuilder().apply { message = t.stackTraceToString() }.build()
+                  }
                 }
+              }
             }
+          }
+        } else if (removed.isNotEmpty()) {
+          ThreadUtils.runOnMainThread {
+            // When a window goes away, we expect remaining views to send a
+            // signal causing the client to refresh, but this doesn't always
+            // happen, so to be safe, we force it ourselves.
+            roots.values.forEach { it.view.invalidate() }
+          }
         }
+      }
+    }
+  }
+
+  private fun forceStopAllCaptures() {
+    rootsDetector.stop()
+    synchronized(state.lock) {
+      for (context in state.captureContextMap.values) {
+        context.shutdown()
+      }
+      state.captureContextMap.clear()
+    }
+  }
+
+  private fun startCapturing(root: InspectorView) {
+    if (!root.view.isHardwareAccelerated() && !root.view.hasHardwareFlagSetInLayoutParams()) {
+      rootsDetector.stop()
+      throw noHardwareAcceleration()
     }
 
-    private fun handleEnableBitmapScreenshotCommand(
-        enableBitmapScreenshotCommand: EnableBitmapScreenshotCommand,
-        callback: CommandCallback
-    ) {
-        synchronized(state.lock) {
-            state.enableBitmapScreenshot = enableBitmapScreenshotCommand.enable
-        }
-        callback.reply {
-            enableBitmapScreenshotResponse = EnableBitmapScreenshotResponse.getDefaultInstance()
-        }
+    val captureOutputStream = ByteArrayOutputStream()
+
+    val captureExecutor =
+      CaptureExecutor(
+        captureOutputStream,
+        state,
+        root.view,
+        root.isXr,
+        rootsDetector,
+        foldSupport,
+        updateState = { checkpoint = it },
+        connection,
+      )
+    captureExecutor.doBeforeRun = doBeforeCapture
+
+    updateCapturingCallback(root.view, captureExecutor, captureOutputStream)
+    checkpoint = ProgressCheckpoint.STARTED
+
+    // Force a re-render to immediately send the current screen.
+    // Otherwise, Layout Inspector will have to wait for the next refresh to happen.
+    // Use postInvalidate instead of invalidate because in some apps,
+    // for example sysui, the view is not guaranteed to be created by the main thread.
+    root.view.postInvalidate()
+  }
+
+  /**
+   * Return true if the layout params have the hardware accelerated flag.
+   *
+   * Warning: The flag is known to return the wrong result for several OEM devices including Samsung, Honor, ... See b/244120504 The flag is
+   * often missing on these devices when it should be present.
+   *
+   * Currently we call this because we fear that View.isHardwareAccelerated() may return false when the app is hardware accelerated. This
+   * could happen when View.mAttachInfo is null. We do not want to complain about something that is incorrect.
+   */
+  private fun View.hasHardwareFlagSetInLayoutParams(): Boolean {
+    val params = layoutParams
+    if (params is WindowManager.LayoutParams) {
+      if (params.flags and WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED != 0) {
+        return true
+      }
     }
+    return false
+  }
 
-    private fun handleEnableXrInspectionCommand(
-        enableXrInspectionCommand: EnableXrInspectionCommand,
-        callback: CommandCallback
-    ) {
-        synchronized(state.lock) {
-            xrHelper.enabled = enableXrInspectionCommand.enable
-        }
-        callback.reply {
-            enableXrInspectionResponse = EnableXrInspectionResponse.getDefaultInstance()
-        }
+  private fun updateAllCapturingCallbacks() {
+    for ((_, _, root, captureExecutor, captureOutputStream, _, _) in state.captureContextMap.values) {
+      updateCapturingCallback(root, captureExecutor, captureOutputStream)
     }
+  }
 
-    private fun handleStopFetchCommand(callback: CommandCallback) {
-        state.fetchContinuously = false
-        callback.reply {
-            stopFetchResponse = StopFetchResponse.getDefaultInstance()
+  /**
+   * Creates or updates the capturing callback associated with [rootView]. The capturing callback can be to capture SKP or BITMAP. The
+   * function creates a new [CaptureContext] associated with [rootView].
+   */
+  private fun updateCapturingCallback(rootView: View, captureExecutor: CaptureExecutor, captureOutputStream: OutputStream) {
+    // Starting rendering captures must be called on the View thread or else it throws
+    ThreadUtils.runOnMainThread {
+      synchronized(state.lock) {
+        var screenshotType =
+          if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.BITMAP }) {
+            // If at least one snapshot request is for bitmap, use bitmap for all
+            Screenshot.Type.BITMAP
+          } else if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.SKP }) {
+            // If at least one snapshot request is for skp, use skp for all
+            Screenshot.Type.SKP
+          } else {
+            state.screenshotSettings.type
+          }
+
+        if (screenshotType == state.captureContextMap[rootView.uniqueDrawingId]?.screenshotType) {
+          // There is already a callback registered for this view and capture type.
+          return@runOnMainThread
         }
 
-        rootsDetector.stop()
-        synchronized(state.lock) {
-            val contextMap = state.captureContextMap
-            for (context in contextMap.values) {
-                context.isLastCapture = true
-            }
-            ThreadUtils.runOnMainThread {
-                getRootViews(xrHelper)
-                    .filter { contextMap.containsKey(it.view.uniqueDrawingId) }
-                    .forEach { it.view.invalidate() }
-            }
-        }
-    }
+        // Stop the existing callback.
+        // The AutoClose implementation in ViewDebug will set the picture capture callback
+        // to null in the renderer. Do not call this after creating a new callback.
+        state.captureContextMap[rootView.uniqueDrawingId]?.callbackHandle?.close()
 
-    private fun handleGetProperties(
-        propertiesCommand: GetPropertiesCommand,
-        callback: CommandCallback
-    ) {
-
-        ThreadUtils.runOnMainThread {
-            val foundView = getRootViews(xrHelper)
-                .asSequence()
-                .filter { it.view.uniqueDrawingId == propertiesCommand.rootViewId }
-                .flatMap { it.view.flatten() }
-                .filter { it.uniqueDrawingId == propertiesCommand.viewId }
-                .firstOrNull()
-
-            environment.executors().primary().execute {
-                val response =
-                    foundView?.createGetPropertiesResponse()
-                        ?: GetPropertiesResponse.getDefaultInstance()
-                callback.reply { getPropertiesResponse = response }
-            }
-        }
-    }
-
-    private fun handleCaptureSnapshotCommand(
-        captureSnapshotCommand: LayoutInspectorViewProtocol.CaptureSnapshotCommand,
-        callback: CommandCallback
-    ) {
-        rootsDetector.checkRoots()
-        state.snapshotRequests.clear()
-
-        scope.launch {
-            val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
-            val windowSnapshotRequests = roots.map { root ->
-                val snapshotRequest = SnapshotRequest(captureSnapshotCommand.screenshotType)
-                state.snapshotRequests[root.view.uniqueDrawingId] = snapshotRequest
-                snapshotRequest.result
-            }
-
-            // Update screenshot settings according to snapshot request
-            val previousScreenshotSettings = state.screenshotSettings
-            val previousEnableBitmapScreenshot = state.enableBitmapScreenshot
-
+        var capturingCallbackHandle =
+          if (screenshotType == Screenshot.Type.SKP) {
             try {
-                state.enableBitmapScreenshot = true
-                updateAllCapturingCallbacks()
-
-                ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
-
-                val windowSnapshotResults = windowSnapshotRequests.awaitAll()
-                val rootIds = roots.map { it.view.uniqueDrawingId }
-
-                val reply = LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder().apply {
-                    windowRoots = WindowRootsEvent.newBuilder().apply {
-                        addAllIds(rootIds)
-                    }.build()
-                    addAllWindowSnapshots(windowSnapshotResults)
-                }.build()
-
-                callback.reply {
-                    captureSnapshotResponse = reply
-                }
-            } finally {
-                // Update screenshot settings to whatever was used before
-                state.screenshotSettings = previousScreenshotSettings
-                state.enableBitmapScreenshot = previousEnableBitmapScreenshot
-
-                updateAllCapturingCallbacks()
+              // If we get null, it means the view is gone. It will be removed by the roots
+              // detector later.
+              registerSkpCallback(rootView, captureExecutor, captureOutputStream) ?: return@runOnMainThread
+            } catch (exception: Exception) {
+              connection.sendEvent { errorEventBuilder.message = "Unable to register listener for 3d mode images: ${exception.message}" }
+              state.screenshotSettings = ScreenshotSettings(Screenshot.Type.BITMAP, state.screenshotSettings.scale)
+              null
             }
+          } else {
+            null
+          }
+
+        if (capturingCallbackHandle == null) {
+          capturingCallbackHandle = registerScreenshotCallback(rootView, captureExecutor, captureOutputStream)
+          screenshotType = Screenshot.Type.BITMAP
         }
+
+        // We might get multiple callbacks for the same view while still processing an earlier
+        // one. Let's process them sequentially to avoid confusion.
+        val sequentialExecutor = Executors.newSingleThreadExecutor { r -> ThreadUtils.newThread(r) }
+
+        state.captureContextMap[rootView.uniqueDrawingId] =
+          CaptureContext(
+            capturingCallbackHandle,
+            screenshotType,
+            rootView,
+            captureExecutor,
+            captureOutputStream,
+            sequentialExecutor,
+            isLastCapture = (!state.fetchContinuously),
+          )
+      }
     }
+  }
+
+  private fun registerSkpCallback(rootView: View, captureExecutor: Executor, os: OutputStream): AutoCloseable? {
+    return if (Build.VERSION.SDK_INT > 32 || (Build.VERSION.SDK_INT == 32 && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+      // This method is only accessible on T+ (or Q, but there it's broken).
+      ViewDebug::class
+        .java
+        .getDeclaredMethod("startRenderingCommandsCapture", View::class.java, Executor::class.java, Callable::class.java)
+        .invoke(null, rootView, captureExecutor, Callable { os }) as AutoCloseable
+    } else {
+      SkiaQWorkaround.startRenderingCommandsCapture(rootView, captureExecutor) { os }
+    }
+  }
+
+  private fun registerScreenshotCallback(
+    rootView: View,
+    captureExecutor: CaptureExecutor,
+    captureOutputStream: OutputStream,
+  ): AutoCloseable {
+    val timer = Timer("ViewLayoutInspectorTimer")
+    var stop = false
+    val doCapture = {
+      if (!stop) {
+        captureExecutor.execute {
+          // even if the screenshot is not taken, CaptureExecutor#execute runs some
+          // critical code, necessary for the inspector to function.
+          // TODO in the future we might want to refactor this, to be able to execute
+          //  a number of indipendent actions when registerFrameCommitCallback is called.
+          if (state.enableBitmapScreenshot) {
+            captureBitmapScreenshot(rootView, captureOutputStream)
+          }
+        }
+      }
+    }
+    var task: TimerTask? = null
+    lateinit var callback: Runnable
+    callback = Runnable {
+      task?.cancel()
+      task = null
+      doCapture()
+      task = timerTask {
+        if (!stop) {
+          doCapture()
+        }
+      }
+      // If another frame comes in while the listener is running it seems we won't be able to
+      // re-register the listener in time to capture it. In order to be sure we capture the
+      // end state of an animation, schedule another update for a little bit in the future.
+      timer.schedule(task, 500L)
+
+      if (!stop) {
+        rootView.viewTreeObserver.registerFrameCommitCallback(callback)
+      }
+    }
+    rootView.viewTreeObserver.registerFrameCommitCallback(callback)
+    return AutoCloseable {
+      rootView.viewTreeObserver.unregisterFrameCommitCallback(callback)
+      stop = true
+    }
+  }
+
+  private fun captureBitmapScreenshot(rootView: View, captureOutputStream: OutputStream) {
+    // If this is the lowest z-index window (the normal case) we can be more
+    // efficient because we don't need alpha information.
+    val bitmapType =
+      if (rootView.uniqueDrawingId == rootsDetector.lastRootIds.firstOrNull()) {
+        BitmapType.RGB_565
+      } else {
+        BitmapType.ABGR_8888
+      }
+    rootView.takeScreenshot(state.screenshotSettings.scale, bitmapType)?.toByteArray()?.compress()?.let { captureOutputStream.write(it) }
+  }
+
+  private fun sendEmptyLayoutEvent() {
+    connection.sendEvent { layoutEvent = LayoutEvent.getDefaultInstance() }
+  }
+
+  private fun handleStartFetchCommand(startFetchCommand: StartFetchCommand, callback: CommandCallback) {
+    checkpoint = ProgressCheckpoint.START_RECEIVED
+    forceStopAllCaptures()
+
+    synchronized(state.lock) {
+      state.fetchContinuously = startFetchCommand.continuous
+      if (!startFetchCommand.continuous) {
+        state.screenshotSettings = ScreenshotSettings(Screenshot.Type.SKP, state.screenshotSettings.scale)
+      }
+    }
+
+    if (startFetchCommand.continuous) {
+      rootsDetector.start()
+    } else {
+      // We may be getting here after a previous start / stop flow
+      rootsDetector.reset()
+    }
+    try {
+      // Since the start command is sent right after we set the debug system properties, which
+      // cause an activity restart, it's possible that the activity will still be restarting
+      // at this point and we won't find any root views. Retry a few times until we do.
+      var tries = 0
+      while (tries++ < MAX_START_FETCH_RETRIES) {
+        val result =
+          ThreadUtils.runOnMainThread {
+              val rootViews = getRootViews(xrHelper)
+              if (rootViews.isEmpty()) {
+                false
+              } else {
+                for (root in rootViews) {
+                  startCapturing(root)
+                }
+                foldSupport?.initialize(rootViews.first().view.context)
+                true
+              }
+            }
+            .get()
+        when {
+          result -> break
+          tries == MAX_START_FETCH_RETRIES -> sendEmptyLayoutEvent()
+          else -> Thread.sleep(300)
+        }
+      }
+    } catch (exception: Exception) {
+      Log.w("layinsp", "Error during startCapturing", exception)
+      callback.reply {
+        startFetchResponse =
+          StartFetchResponse.newBuilder()
+            .apply {
+              error = exception.cause?.message ?: "Unknown error"
+              code = exception.cause?.errorCode
+            }
+            .build()
+      }
+      return
+    }
+    callback.reply { startFetchResponse = StartFetchResponse.getDefaultInstance() }
+  }
+
+  private fun handleUpdateScreenshotType(updateScreenshotTypeCommand: UpdateScreenshotTypeCommand, callback: CommandCallback) {
+    var changed: Boolean
+    synchronized(state.lock) {
+      val oldSettings = state.screenshotSettings
+      val newSettings =
+        updateScreenshotTypeCommand.let {
+          ScreenshotSettings(
+            it.type.takeIf { type -> type != Screenshot.Type.UNKNOWN } ?: oldSettings.type,
+            it.scale.takeIf { scale -> scale > 0f } ?: oldSettings.scale,
+          )
+        }
+      changed = (oldSettings != newSettings)
+      state.screenshotSettings = newSettings
+    }
+    callback.reply { updateScreenshotTypeResponse = UpdateScreenshotTypeResponse.getDefaultInstance() }
+
+    if (changed) {
+      updateAllCapturingCallbacks()
+      ThreadUtils.runOnMainThread {
+        for (rootView in getRootViews(xrHelper)) {
+          rootView.view.invalidate()
+        }
+      }
+    }
+  }
+
+  private fun handleEnableBitmapScreenshotCommand(enableBitmapScreenshotCommand: EnableBitmapScreenshotCommand, callback: CommandCallback) {
+    synchronized(state.lock) { state.enableBitmapScreenshot = enableBitmapScreenshotCommand.enable }
+    callback.reply { enableBitmapScreenshotResponse = EnableBitmapScreenshotResponse.getDefaultInstance() }
+  }
+
+  private fun handleEnableXrInspectionCommand(enableXrInspectionCommand: EnableXrInspectionCommand, callback: CommandCallback) {
+    synchronized(state.lock) { xrHelper.enabled = enableXrInspectionCommand.enable }
+    callback.reply { enableXrInspectionResponse = EnableXrInspectionResponse.getDefaultInstance() }
+  }
+
+  private fun handleStopFetchCommand(callback: CommandCallback) {
+    state.fetchContinuously = false
+    callback.reply { stopFetchResponse = StopFetchResponse.getDefaultInstance() }
+
+    rootsDetector.stop()
+    synchronized(state.lock) {
+      val contextMap = state.captureContextMap
+      for (context in contextMap.values) {
+        context.isLastCapture = true
+      }
+      ThreadUtils.runOnMainThread {
+        getRootViews(xrHelper).filter { contextMap.containsKey(it.view.uniqueDrawingId) }.forEach { it.view.invalidate() }
+      }
+    }
+  }
+
+  private fun handleGetProperties(propertiesCommand: GetPropertiesCommand, callback: CommandCallback) {
+
+    ThreadUtils.runOnMainThread {
+      val foundView =
+        getRootViews(xrHelper)
+          .asSequence()
+          .filter { it.view.uniqueDrawingId == propertiesCommand.rootViewId }
+          .flatMap { it.view.flatten() }
+          .filter { it.uniqueDrawingId == propertiesCommand.viewId }
+          .firstOrNull()
+
+      environment.executors().primary().execute {
+        val response = foundView?.createGetPropertiesResponse() ?: GetPropertiesResponse.getDefaultInstance()
+        callback.reply { getPropertiesResponse = response }
+      }
+    }
+  }
+
+  private fun handleCaptureSnapshotCommand(
+    captureSnapshotCommand: LayoutInspectorViewProtocol.CaptureSnapshotCommand,
+    callback: CommandCallback,
+  ) {
+    rootsDetector.checkRoots()
+    state.snapshotRequests.clear()
+
+    scope.launch {
+      val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
+      val windowSnapshotRequests =
+        roots.map { root ->
+          val snapshotRequest = SnapshotRequest(captureSnapshotCommand.screenshotType)
+          state.snapshotRequests[root.view.uniqueDrawingId] = snapshotRequest
+          snapshotRequest.result
+        }
+
+      // Update screenshot settings according to snapshot request
+      val previousScreenshotSettings = state.screenshotSettings
+      val previousEnableBitmapScreenshot = state.enableBitmapScreenshot
+
+      try {
+        state.enableBitmapScreenshot = true
+        updateAllCapturingCallbacks()
+
+        ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
+
+        val windowSnapshotResults = windowSnapshotRequests.awaitAll()
+        val rootIds = roots.map { it.view.uniqueDrawingId }
+
+        val reply =
+          LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder()
+            .apply {
+              windowRoots = WindowRootsEvent.newBuilder().apply { addAllIds(rootIds) }.build()
+              addAllWindowSnapshots(windowSnapshotResults)
+            }
+            .build()
+
+        callback.reply { captureSnapshotResponse = reply }
+      } finally {
+        // Update screenshot settings to whatever was used before
+        state.screenshotSettings = previousScreenshotSettings
+        state.enableBitmapScreenshot = previousEnableBitmapScreenshot
+
+        updateAllCapturingCallbacks()
+      }
+    }
+  }
 }
 
 private fun Inspector.CommandCallback.reply(initResponse: Response.Builder.() -> Unit) {
-    val response = Response.newBuilder()
-    response.initResponse()
-    reply(response.build().toByteArray())
+  val response = Response.newBuilder()
+  response.initResponse()
+  reply(response.build().toByteArray())
 }
 
 fun Connection.sendEvent(init: Event.Builder.() -> Unit) {
-    sendEvent(
-        Event.newBuilder()
-            .apply { init() }
-            .build()
-            .toByteArray()
-    )
+  sendEvent(Event.newBuilder().apply { init() }.build().toByteArray())
 }
 
 private fun Throwable.stackTraceToString(): String {
-    val error = ByteArrayOutputStream()
-    printStackTrace(PrintStream(error))
-    return error.toString()
+  val error = ByteArrayOutputStream()
+  printStackTrace(PrintStream(error))
+  return error.toString()
 }

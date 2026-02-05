@@ -74,12 +74,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
             else -> mapOf()
           }
         when (val constraints = error.constraints) {
-          null ->
-            context.report(
-              mainIssue,
-              context.locationOf(call),
-              "Call fails non-blocking requirements on arguments",
-            )
+          null -> context.report(mainIssue, context.locationOf(call), "Call fails non-blocking requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
             val concreteReasons =
@@ -95,10 +90,8 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
                   constraints.joinToString(" ") { (symCall, _, _) ->
                     val (param, chain) = symCall.chain
                     when {
-                      chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument at `$param` must not block, but does."
-                      else ->
-                        "Argument at `$param`'s calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does."
+                      chain.size == 1 && chain.first().name == "invoke" -> "Argument at `$param` must not block, but does."
+                      else -> "Argument at `$param`'s calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does."
                     }
                   }
                 context.report(mainIssue, context.locationOf(call), message)
@@ -112,10 +105,8 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
                   // Friendlier message for special cases
                   val message =
                     when {
-                      chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument must not block, but does"
-                      else ->
-                        "Argument's calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does"
+                      chain.size == 1 && chain.first().name == "invoke" -> "Argument must not block, but does"
+                      else -> "Argument's calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does"
                     }
                   context.report(mainIssue, context.locationOf(arg), message)
                 }
@@ -125,8 +116,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
       }
       is Error.ConflictingAnnotations -> {
         val (self, bases) = error
-        val baseAnnotations =
-          bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
+        val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
 
         fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
           for ((i, elem) in this@join.withIndex()) {
@@ -152,23 +142,13 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
           return originStrs.join(originStrs.size) { it }
         }
 
-        val baseStr =
-          baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) ->
-            "$ann (from ${originStr(origins)})"
-          }
+        val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
 
-        context.report(
-          mainIssue,
-          context.locationOf(self.origin),
-          "${self.annotated} restricts $baseStr",
-        )
+        context.report(mainIssue, context.locationOf(self.origin), "${self.annotated} restricts $baseStr")
       }
       is Error.ConflictingInference -> {
         val baseStr =
-          when (
-            val baseName =
-              (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name
-          ) {
+          when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
             null -> "a super method"
             else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
           }
@@ -181,8 +161,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
       is Error.CallingTop -> {}
     }
 
-  private fun Context.locationOf(site: UElement) =
-    client.getUastParser(project).createLocation(site)
+  private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
 
   override fun parseAnnotations(annotations: List<UAnnotation>): Status? {
     val anns = annotations.mapNotNull(::parse).distinct()
@@ -210,8 +189,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
     baseAnns: List<EffectAnnotation.Explicit<Status>>,
   ): EffectAnnotation.Explicit<Status> =
     targetAnn.also {
-      val conflicts =
-        baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
+      val conflicts = baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
       if (conflicts.isNotEmpty()) {
         report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
       }

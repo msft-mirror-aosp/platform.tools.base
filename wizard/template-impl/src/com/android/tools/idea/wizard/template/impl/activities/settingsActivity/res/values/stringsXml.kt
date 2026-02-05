@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.settingsActivity.res.values
 
-
-fun stringsXml(
-  activityTitle: String,
-  simpleName: String) =
+fun stringsXml(activityTitle: String, simpleName: String) =
   """<resources>
     <!-- Settings Activity Title -->
     <string name="title_${simpleName}">${activityTitle}</string>

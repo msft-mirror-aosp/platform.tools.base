@@ -18,121 +18,115 @@ package com.android.adblib
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.utils.ResizableBuffer
+import java.nio.ByteBuffer
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.nio.ByteBuffer
-import java.util.concurrent.TimeUnit
 
 class AdbOutputChannelWriterTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testMultipleWriteStringCallsAreWrittenDirectlyToChannelWhenAutoFlushIsEnabled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val testChannel = TestOutputChannel()
-        val writer = AdbOutputChannelWriter(testChannel)
+  @Test
+  fun testMultipleWriteStringCallsAreWrittenDirectlyToChannelWhenAutoFlushIsEnabled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val testChannel = TestOutputChannel()
+    val writer = AdbOutputChannelWriter(testChannel)
 
-        // Act
-        writer.useShutdown {
-            writer.writeString("FooBar")
-            writer.writeString("Blah")
-        }
-
-        // Assert
-        Assert.assertEquals("FooBarBlah", testChannel.toString())
-        Assert.assertEquals(2, testChannel.writeBufferCount)
-        Assert.assertTrue(testChannel.closed)
+    // Act
+    writer.useShutdown {
+      writer.writeString("FooBar")
+      writer.writeString("Blah")
     }
 
-    @Test
-    fun testMultipleWriteStringCallsAreCombinedWhenAutoFlushIsDisabled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val testChannel = TestOutputChannel()
-        val writer = AdbOutputChannelWriter(testChannel, autoFlush = false)
+    // Assert
+    Assert.assertEquals("FooBarBlah", testChannel.toString())
+    Assert.assertEquals(2, testChannel.writeBufferCount)
+    Assert.assertTrue(testChannel.closed)
+  }
 
-        // Act
-        writer.useShutdown {
-            writer.writeString("FooBar")
-            writer.writeString("Blah")
-        }
+  @Test
+  fun testMultipleWriteStringCallsAreCombinedWhenAutoFlushIsDisabled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val testChannel = TestOutputChannel()
+    val writer = AdbOutputChannelWriter(testChannel, autoFlush = false)
 
-        // Assert
-        Assert.assertEquals("FooBarBlah", testChannel.toString())
-        Assert.assertEquals(1, testChannel.writeBufferCount)
-        Assert.assertTrue(testChannel.closed)
+    // Act
+    writer.useShutdown {
+      writer.writeString("FooBar")
+      writer.writeString("Blah")
     }
 
-    @Test
-    fun testWriteStringCallWithLargeStringIsSplitIntoMultipleWritesToChannel(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val testChannel = TestOutputChannel()
-        val writer = AdbOutputChannelWriter(testChannel, bufferCapacity = 50)
-        val input = "foobar".repeat(45)
+    // Assert
+    Assert.assertEquals("FooBarBlah", testChannel.toString())
+    Assert.assertEquals(1, testChannel.writeBufferCount)
+    Assert.assertTrue(testChannel.closed)
+  }
 
-        // Act
-        writer.useShutdown {
-            writer.writeString(input)
-        }
+  @Test
+  fun testWriteStringCallWithLargeStringIsSplitIntoMultipleWritesToChannel(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val testChannel = TestOutputChannel()
+    val writer = AdbOutputChannelWriter(testChannel, bufferCapacity = 50)
+    val input = "foobar".repeat(45)
 
-        // Assert
-        Assert.assertEquals(input, testChannel.toString())
-        Assert.assertEquals(6, testChannel.writeBufferCount)
-        Assert.assertTrue(testChannel.closed)
+    // Act
+    writer.useShutdown { writer.writeString(input) }
+
+    // Assert
+    Assert.assertEquals(input, testChannel.toString())
+    Assert.assertEquals(6, testChannel.writeBufferCount)
+    Assert.assertTrue(testChannel.closed)
+  }
+
+  @Test
+  fun testMultipleWriteCharCallsAreWrittenDirectlyToChannelWhenAutoFlushIsEnabled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val testChannel = TestOutputChannel()
+    val writer = AdbOutputChannelWriter(testChannel, autoFlush = true)
+
+    // Act
+    writer.useShutdown {
+      writer.writeChar('F')
+      writer.writeChar('B')
     }
 
-    @Test
-    fun testMultipleWriteCharCallsAreWrittenDirectlyToChannelWhenAutoFlushIsEnabled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val testChannel = TestOutputChannel()
-        val writer = AdbOutputChannelWriter(testChannel, autoFlush = true)
+    // Assert
+    Assert.assertEquals("FB", testChannel.toString())
+    Assert.assertEquals(2, testChannel.writeBufferCount)
+    Assert.assertTrue(testChannel.closed)
+  }
 
-        // Act
-        writer.useShutdown {
-            writer.writeChar('F')
-            writer.writeChar('B')
-        }
+  private class TestOutputChannel : AdbOutputChannel {
 
-        // Assert
-        Assert.assertEquals("FB", testChannel.toString())
-        Assert.assertEquals(2, testChannel.writeBufferCount)
-        Assert.assertTrue(testChannel.closed)
+    val workBuffer = ResizableBuffer()
+    var writeBufferCount = 0
+    var closed = false
+
+    /** Convert [workBuffer] contents into a string, leaving [workBuffer] unchanged */
+    override fun toString(): String {
+      val buffer = workBuffer.forChannelWrite()
+      val outputBuffer = ByteBuffer.allocate(buffer.remaining())
+      outputBuffer.put(buffer)
+      workBuffer.clear()
+      // [0, pos] -> [pos=0, limit]
+      outputBuffer.flip()
+      workBuffer.appendBytes(outputBuffer)
+      // [0, pos] -> [pos=0, limit]
+      outputBuffer.flip()
+
+      return String(outputBuffer.array(), AdbProtocolUtils.ADB_CHARSET)
     }
 
-    private class TestOutputChannel : AdbOutputChannel {
-
-        val workBuffer = ResizableBuffer()
-        var writeBufferCount = 0
-        var closed = false
-
-        /**
-         * Convert [workBuffer] contents into a string, leaving [workBuffer] unchanged
-         */
-        override fun toString(): String {
-            val buffer = workBuffer.forChannelWrite()
-            val outputBuffer = ByteBuffer.allocate(buffer.remaining())
-            outputBuffer.put(buffer)
-            workBuffer.clear()
-            // [0, pos] -> [pos=0, limit]
-            outputBuffer.flip()
-            workBuffer.appendBytes(outputBuffer)
-            // [0, pos] -> [pos=0, limit]
-            outputBuffer.flip()
-
-            return String(outputBuffer.array(), AdbProtocolUtils.ADB_CHARSET)
-        }
-
-        override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-            workBuffer.appendBytes(buffer)
-            writeBufferCount++
-        }
-
-        override fun close() {
-            closed = true
-        }
+    override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+      workBuffer.appendBytes(buffer)
+      writeBufferCount++
     }
+
+    override fun close() {
+      closed = true
+    }
+  }
 }

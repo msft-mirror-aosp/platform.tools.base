@@ -20,6 +20,8 @@ import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
@@ -29,58 +31,56 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import javax.inject.Inject
 
 internal class ExpandArtProfileWildcardsTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var task: ExpandArtProfileWildcardsTask
-    private lateinit var expandedArtProfile: File
-    private lateinit var project: Project
-    private lateinit var projectClasses: ConfigurableFileCollection
-    private lateinit var mergedArtProfile: RegularFileProperty
+  private lateinit var task: ExpandArtProfileWildcardsTask
+  private lateinit var expandedArtProfile: File
+  private lateinit var project: Project
+  private lateinit var projectClasses: ConfigurableFileCollection
+  private lateinit var mergedArtProfile: RegularFileProperty
 
-    abstract class ExpandArtProfileWildcardsTaskForTest @Inject constructor(
-        testWorkerExecutor: WorkerExecutor,
-    ) : ExpandArtProfileWildcardsTask() {
-        override val workerExecutor = testWorkerExecutor
-    }
+  abstract class ExpandArtProfileWildcardsTaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) :
+    ExpandArtProfileWildcardsTask() {
+    override val workerExecutor = testWorkerExecutor
+  }
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        projectClasses = project.files()
-        mergedArtProfile =
-            project.objects.fileProperty().also { it.set(File("/does/not/exist")) }
-        task = project.tasks.register(
-            "expandArtProfileWildcardsTask",
-            ExpandArtProfileWildcardsTaskForTest::class.java,
-            FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder()),
-        ).get()
-        task.projectClasses.from(projectClasses)
-        expandedArtProfile = temporaryFolder.newFile()
-        task.expandedArtProfile.set(expandedArtProfile)
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-    }
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    projectClasses = project.files()
+    mergedArtProfile = project.objects.fileProperty().also { it.set(File("/does/not/exist")) }
+    task =
+      project.tasks
+        .register(
+          "expandArtProfileWildcardsTask",
+          ExpandArtProfileWildcardsTaskForTest::class.java,
+          FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder()),
+        )
+        .get()
+    task.projectClasses.from(projectClasses)
+    expandedArtProfile = temporaryFolder.newFile()
+    task.expandedArtProfile.set(expandedArtProfile)
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+  }
 
-    @Test
-    fun `test with no files`() {
-        task.projectClasses.from(project.files())
-        task.taskAction()
-        PathSubject.assertThat(expandedArtProfile).doesNotExist()
-    }
+  @Test
+  fun `test with no files`() {
+    task.projectClasses.from(project.files())
+    task.taskAction()
+    PathSubject.assertThat(expandedArtProfile).doesNotExist()
+  }
 
-    @Test
-    fun `test single file`() {
-        val profile = temporaryFolder.newFile("baseline-prof.txt")
-        profile.writeText("L*;")
-        task.mergedArtProfile.set(profile)
-        val classFile = temporaryFolder.newFile("Hello.class")
-        projectClasses.from(File(classFile.parent))
-        task.taskAction()
-        assertThat(task.expandedArtProfile.get().asFile.readText()).isEqualTo("LHello;\n")
-    }
+  @Test
+  fun `test single file`() {
+    val profile = temporaryFolder.newFile("baseline-prof.txt")
+    profile.writeText("L*;")
+    task.mergedArtProfile.set(profile)
+    val classFile = temporaryFolder.newFile("Hello.class")
+    projectClasses.from(File(classFile.parent))
+    task.taskAction()
+    assertThat(task.expandedArtProfile.get().asFile.readText()).isEqualTo("LHello;\n")
+  }
 }

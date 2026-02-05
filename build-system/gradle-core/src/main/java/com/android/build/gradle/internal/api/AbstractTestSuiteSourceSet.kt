@@ -20,105 +20,93 @@ import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesForJavaImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
-import org.gradle.api.file.Directory
 import java.io.File
 import kotlin.collections.forEach
+import org.gradle.api.file.Directory
 
 abstract class AbstractTestSuiteSourceSet(
-    protected val sourceSetName: String,
-    protected val variantServices: VariantServices,
-    val userAddedSourceSets: Collection<Directory>,
-    val javaEnabled: Boolean,
-    val kotlinEnabled: Boolean,
+  protected val sourceSetName: String,
+  variantServices: VariantServices,
+  val userAddedSourceSets: Collection<Directory>,
+  val javaEnabled: Boolean,
+  val kotlinEnabled: Boolean,
 ) {
-    fun getName(): String = sourceSetName
+  fun getName(): String = sourceSetName
 
-    val defaultTopLevelFolder = File(
-        variantServices.projectInfo.projectDirectory.asFile,
-        "src/$sourceSetName"
-    )
+  val defaultTopLevelFolder = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName")
 
-    protected fun createJavaSources() = FlatSourceDirectoriesForJavaImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
-        it.addSource(
-            FileBasedDirectoryEntryImpl(
-                name = sourceSetName,
-                directory = File(defaultTopLevelFolder, "java"),
-                filter = null,
-                isUserAdded = false,
-                shouldBeAddedToIdeModel = true
-            )
+  protected fun createJavaSources(variantServices: VariantServices) =
+    FlatSourceDirectoriesForJavaImpl(sourceSetName, variantServices, null).also {
+      it.addSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(defaultTopLevelFolder, "java"),
+          filter = null,
+          isUserAdded = false,
+          shouldBeAddedToIdeModel = true,
         )
-        userAddedSourceSets.forEach { userAddedFolder ->
-            it.addSource(
-                FileBasedDirectoryEntryImpl(
-                    name = sourceSetName,
-                    directory = File(userAddedFolder.asFile, "java"),
-                    filter = null,
-                    isUserAdded = true,
-                    shouldBeAddedToIdeModel = true
-                )
-            )
-        }
-    }
-
-    protected fun createKotlinSources() = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
+      )
+      userAddedSourceSets.forEach { userAddedFolder ->
         it.addSource(
-            FileBasedDirectoryEntryImpl(
-                name = sourceSetName,
-                directory = File(defaultTopLevelFolder, "kotlin"),
-                filter = null,
-                isUserAdded = false,
-                shouldBeAddedToIdeModel = true
-            )
+          FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(userAddedFolder.asFile, "java"),
+            filter = null,
+            isUserAdded = true,
+            shouldBeAddedToIdeModel = true,
+          )
         )
-        userAddedSourceSets.forEach { userAddedSourceSet ->
-            it.addSource(
-                FileBasedDirectoryEntryImpl(
-                    name = sourceSetName,
-                    directory = File(userAddedSourceSet.asFile, "kotlin"),
-                    filter = null,
-                    isUserAdded = true,
-                    shouldBeAddedToIdeModel = true
-                )
-            )
-        }
+      }
     }
 
-    protected val resourcesSourcesFolder = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
+  protected fun createKotlinSources(variantServices: VariantServices) =
+    FlatSourceDirectoriesImpl(sourceSetName, variantServices, null).also {
+      it.addSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(defaultTopLevelFolder, "kotlin"),
+          filter = null,
+          isUserAdded = false,
+          shouldBeAddedToIdeModel = true,
+        )
+      )
+      userAddedSourceSets.forEach { userAddedSourceSet ->
         it.addSource(
-            FileBasedDirectoryEntryImpl(
-                name = sourceSetName,
-                directory = File(defaultTopLevelFolder, "resources"),
-                filter = null,
-                isUserAdded = false,
-                shouldBeAddedToIdeModel = true
-            )
+          FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(userAddedSourceSet.asFile, "kotlin"),
+            filter = null,
+            isUserAdded = true,
+            shouldBeAddedToIdeModel = true,
+          )
         )
+      }
     }
 
-    init {
-        userAddedSourceSets.forEach { userAddedSourceSet ->
-            resourcesSourcesFolder.addSource(
-                FileBasedDirectoryEntryImpl(
-                    name = sourceSetName,
-                    directory = File(userAddedSourceSet.asFile, "resources"),
-                    filter = null,
-                    isUserAdded = true,
-                    shouldBeAddedToIdeModel = true
-                )
-            )
-        }
+  protected val resourcesSourcesFolder =
+    FlatSourceDirectoriesImpl(sourceSetName, variantServices, null).also {
+      it.addSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(defaultTopLevelFolder, "resources"),
+          filter = null,
+          isUserAdded = false,
+          shouldBeAddedToIdeModel = true,
+        )
+      )
     }
+
+  init {
+    userAddedSourceSets.forEach { userAddedSourceSet ->
+      resourcesSourcesFolder.addSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(userAddedSourceSet.asFile, "resources"),
+          filter = null,
+          isUserAdded = true,
+          shouldBeAddedToIdeModel = true,
+        )
+      )
+    }
+  }
 }

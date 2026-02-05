@@ -36,10 +36,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Predicate
 
-/**
- * Wraps a LocalPackage for an emulator, providing access to its contents and encoding domain
- * knowledge about emulators.
- */
+/** Wraps a LocalPackage for an emulator, providing access to its contents and encoding domain knowledge about emulators. */
 class EmulatorPackage(private val emulator: LocalPackage) {
   val version: Revision
     get() = emulator.version
@@ -47,20 +44,14 @@ class EmulatorPackage(private val emulator: LocalPackage) {
   val isQemu2: Boolean
     get() = version >= TOOLS_REVISION_WITH_FIRST_QEMU2
 
-  /**
-   * Read metadata about hardware properties from hardware-properties.ini in the emulator package.
-   */
+  /** Read metadata about hardware properties from hardware-properties.ini in the emulator package. */
   fun getHardwareProperties(logger: ILogger): Map<String, HardwareProperty>? {
-    val propertiesPath =
-      emulator.location.resolve(SdkConstants.FD_LIB).resolve(SdkConstants.FN_HARDWARE_INI)
+    val propertiesPath = emulator.location.resolve(SdkConstants.FD_LIB).resolve(SdkConstants.FN_HARDWARE_INI)
     return HardwareProperties.parseHardwareDefinitions(PathFileWrapper(propertiesPath), logger)
   }
 
   @JvmOverloads
-  fun getEmulatorFeatures(
-    logger: ILogger,
-    channel: EmulatorFeaturesChannel = EmulatorFeaturesChannel.RELEASE,
-  ): Set<String>? {
+  fun getEmulatorFeatures(logger: ILogger, channel: EmulatorFeaturesChannel = EmulatorFeaturesChannel.RELEASE): Set<String>? {
     // Fall back from less-stable channels to more-stable channels
     if (channel >= EmulatorFeaturesChannel.CANARY)
       getEmulatorFeatures(EmulatorFeaturesChannel.CANARY.featuresFile, logger)?.let {
@@ -72,9 +63,7 @@ class EmulatorPackage(private val emulator: LocalPackage) {
   private fun getEmulatorFeatures(featuresFile: String, logger: ILogger): Set<String>? {
     val featuresPath = emulator.location.resolve(SdkConstants.FD_LIB).resolve(featuresFile)
     if (Files.exists(featuresPath)) {
-      return ProjectProperties.parsePropertyFile(PathFileWrapper(featuresPath), logger)
-        ?.filter { it.value == "on" }
-        ?.keys
+      return ProjectProperties.parsePropertyFile(PathFileWrapper(featuresPath), logger)?.filter { it.value == "on" }?.keys
     }
     return null
   }
@@ -97,9 +86,7 @@ class EmulatorPackage(private val emulator: LocalPackage) {
 
   fun getSystemImageUpdateRequiredPredicate(): Predicate<SystemImage> {
     val dependencies = getSystemImageUpdateDependencies()
-    return Predicate { systemImage: SystemImage ->
-      dependencies.any { it.updateRequired(systemImage) }
-    }
+    return Predicate { systemImage: SystemImage -> dependencies.any { it.updateRequired(systemImage) } }
   }
 
   private fun getSystemImageUpdateDependencies(): List<SystemImageUpdateDependency> {
@@ -111,10 +98,7 @@ class EmulatorPackage(private val emulator: LocalPackage) {
     }
   }
 
-  /**
-   * Indicates if the emulator supports passing parameters in a file via the -studio-params
-   * argument.
-   */
+  /** Indicates if the emulator supports passing parameters in a file via the -studio-params argument. */
   fun hasStudioParamsSupport(): Boolean {
     return version >= Revision.parseRevision("26.1.0")
   }
@@ -140,27 +124,14 @@ private class SystemImageUpdateDependency(
   private val requiredMajorRevision: Int,
 ) {
   fun updateRequired(image: SystemImage): Boolean {
-    return updateRequired(
-      image.primaryAbiType,
-      image.androidVersion.featureLevel,
-      image.tag,
-      image.revision,
-    )
+    return updateRequired(image.primaryAbiType, image.androidVersion.featureLevel, image.tag, image.revision)
   }
 
-  fun updateRequired(
-    abiType: String,
-    featureLevel: Int,
-    tag: IdDisplay,
-    revision: Revision,
-  ): Boolean {
+  fun updateRequired(abiType: String, featureLevel: Int, tag: IdDisplay, revision: Revision): Boolean {
     val abi = Abi.getEnum(abiType)
     val isAvdIntel = abi == Abi.X86 || abi == Abi.X86_64
 
-    return isAvdIntel &&
-      featureLevel == this.featureLevel &&
-      this.tag == tag &&
-      revision.major < requiredMajorRevision
+    return isAvdIntel && featureLevel == this.featureLevel && this.tag == tag && revision.major < requiredMajorRevision
   }
 }
 

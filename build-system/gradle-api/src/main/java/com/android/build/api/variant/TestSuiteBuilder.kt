@@ -19,10 +19,10 @@ package com.android.build.api.variant
 import org.gradle.api.Named
 
 /**
- * Interface to configure [TestSuite] during the [AndroidComponentsExtension.beforeVariants]
- * callbacks.
+ * Interface to configure [TestSuite] during the [AndroidComponentsExtension.beforeVariants] callbacks.
  *
  * ## Usage example
+ *
  * ```
  * androidComponents.beforeVariants { variant ->
  *     (variant as? HasTestSuites)?.suites.forEach { suiteBuilder ->
@@ -30,22 +30,18 @@ import org.gradle.api.Named
  *     }
  * }
  */
-interface TestSuiteBuilder: Named {
+interface TestSuiteBuilder : Named {
 
-    /**
-     * Enables or disable the test suite for the current variant.
-     */
-    var enable: Boolean
+  /** Enables or disable the test suite for the current variant. */
+  var enable: Boolean
 
-    /**
-     * Configure the [com.android.build.api.dsl.JUnitEngineSpec] for this test suite in this variant.
-     */
-    val junitEngineSpec: JUnitEngineSpecBuilder
+  /** Configure the [com.android.build.api.dsl.JUnitEngineSpec] for this test suite in this variant. */
+  val junitEngineSpec: JUnitEngineSpecBuilder
 
-    /**
-     * Configure the list of [TestSuiteTargetBuilder] for this test suite in this variant.
-     *
-     * The [Map] keys are the test suite names.
-     */
-    val targets: Map<String, TestSuiteTargetBuilder>
+  /**
+   * Configure the list of [TestSuiteTargetBuilder] for this test suite in this variant.
+   *
+   * The [Map] keys are the test suite names.
+   */
+  val targets: Map<String, TestSuiteTargetBuilder>
 }

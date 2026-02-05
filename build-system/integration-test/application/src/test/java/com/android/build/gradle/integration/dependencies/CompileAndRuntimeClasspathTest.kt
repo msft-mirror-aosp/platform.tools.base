@@ -30,93 +30,100 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "enableAlignment_{0}")
-        @JvmStatic
-        fun parameters() = listOf(true, false)
+    @Parameterized.Parameters(name = "enableAlignment_{0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
+
+  @JvmField
+  @Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+      .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
+      .disableBuiltInKotlin()
+      .create()
+
+  @Test
+  fun `Higher Compile than Runtime causes failure`() {
+    project.buildFile.appendText(
+      """
+      |dependencies {
+      |    compileOnly'com.google.guava:guava:20.0'
+      |    runtimeOnly'com.google.guava:guava:19.0'
+      |}
+      """
+        .trimMargin()
+    )
+
+    if (enableAlignment) {
+      val result = project.executor().expectFailure().run("assembleDebug")
+      result.assertErrorContains(
+        "> Could not resolve all files for configuration ':debugCompileClasspath'.\n" +
+          "   > Could not resolve com.google.guava:guava:20.0.\n" +
+          "     Required by:\n" +
+          "         root project 'project'\n" +
+          "      > Cannot find a version of 'com.google.guava:guava' that satisfies the version constraints:\n" +
+          "           Dependency path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
+          "           Constraint path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
+          " version resolved in configuration ':debugRuntimeClasspath' by consistent resolution\n"
+      )
+    } else {
+      val result = project.executor().run("dependencies")
+      result.assertOutputContains(
+        """
+        debugCompileClasspath - Resolved configuration for compilation for variant: debug
+        \--- com.google.guava:guava:20.0
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    @JvmField
-    @Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
-        .disableBuiltInKotlin()
-        .create()
+  @Test
+  fun `Lower Compile than Runtime leads to promoted version`() {
+    project.buildFile.appendText(
+      """
+      |dependencies {
+      |    compileOnly'com.google.guava:guava:19.0'
+      |    runtimeOnly'com.google.guava:guava:20.0'
+      |}
+      """
+        .trimMargin()
+    )
 
-    @Test
-    fun `Higher Compile than Runtime causes failure`() {
-        project.buildFile.appendText(
-            """
-            |dependencies {
-            |    compileOnly'com.google.guava:guava:20.0'
-            |    runtimeOnly'com.google.guava:guava:19.0'
-            |}""".trimMargin()
-        )
-
-        if (enableAlignment) {
-            val result = project.executor().expectFailure().run("assembleDebug")
-            result.assertErrorContains(
-                "> Could not resolve all files for configuration ':debugCompileClasspath'.\n" +
-                        "   > Could not resolve com.google.guava:guava:20.0.\n" +
-                        "     Required by:\n" +
-                        "         root project 'project'\n" +
-                        "      > Cannot find a version of 'com.google.guava:guava' that satisfies the version constraints:\n" +
-                        "           Dependency path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
-                        "           Constraint path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
-                        " version resolved in configuration ':debugRuntimeClasspath' by consistent resolution\n"
-            )
-        } else {
-            val result = project.executor().run("dependencies")
-            result.assertOutputContains(
-                """
-                debugCompileClasspath - Resolved configuration for compilation for variant: debug
-                \--- com.google.guava:guava:20.0
-                """.trimIndent()
-            )
-        }
+    val result = project.executor().run("dependencies")
+    if (enableAlignment) {
+      result.assertOutputContains(
+        """
+        debugCompileClasspath - Resolved configuration for compilation for variant: debug
+        +--- com.google.guava:guava:19.0 -> 20.0
+        \--- com.google.guava:guava:{strictly 20.0}
+        """
+          .trimIndent()
+      )
+    } else {
+      result.assertOutputContains(
+        """
+        debugCompileClasspath - Resolved configuration for compilation for variant: debug
+        \--- com.google.guava:guava:19.0
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    @Test
-    fun `Lower Compile than Runtime leads to promoted version`() {
-        project.buildFile.appendText(
-            """
-            |dependencies {
-            |    compileOnly'com.google.guava:guava:19.0'
-            |    runtimeOnly'com.google.guava:guava:20.0'
-            |}""".trimMargin()
-        )
-
-        val result = project.executor().run("dependencies")
-        if (enableAlignment) {
-            result.assertOutputContains(
-                """
-                debugCompileClasspath - Resolved configuration for compilation for variant: debug
-                +--- com.google.guava:guava:19.0 -> 20.0
-                \--- com.google.guava:guava:{strictly 20.0}
-                """.trimIndent()
-            )
-        } else {
-            result.assertOutputContains(
-                """
-                debugCompileClasspath - Resolved configuration for compilation for variant: debug
-                \--- com.google.guava:guava:19.0
-                """.trimIndent()
-            )
-        }
-    }
-
-    @Test
-    fun `value is represented in the model`() {
-        val models = project.modelV2()
-            // ignore performance warning
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels()
-        val flags = models.container.getProject(":").androidProject!!.flags
-        assertThat(ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.getValue(flags))
-            .named("tooling model ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT")
-            .isEqualTo(enableAlignment)
-    }
-
+  @Test
+  fun `value is represented in the model`() {
+    val models =
+      project
+        .modelV2()
+        // ignore performance warning
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchModels()
+    val flags = models.container.getProject(":").androidProject!!.flags
+    assertThat(ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.getValue(flags))
+      .named("tooling model ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT")
+      .isEqualTo(enableAlignment)
+  }
 }

@@ -23,110 +23,93 @@ import org.junit.Test
 
 class TransformMergedManifestTest {
 
-    @get:Rule
-    val project1: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("dynamicApp")
-        .create()
+  @get:Rule val project1: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").create()
 
-    @get:Rule
-    val project2: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("libsTest")
-        .create()
+  @get:Rule val project2: GradleTestProject = GradleTestProject.builder().fromTestProject("libsTest").create()
 
-    private val updateManifestTask =
-        """
-             import org.apache.commons.io.FileUtils
-             import com.android.build.api.artifact.SingleArtifact
+  private val updateManifestTask =
+    """
+    import org.apache.commons.io.FileUtils
+    import com.android.build.api.artifact.SingleArtifact
 
-             abstract class ManifestUpdaterTask extends DefaultTask {
-             @InputFile
-             abstract RegularFileProperty getMergedManifest()
+    abstract class ManifestUpdaterTask extends DefaultTask {
+    @InputFile
+    abstract RegularFileProperty getMergedManifest()
 
-             @OutputFile
-             abstract RegularFileProperty getUpdatedManifest()
+    @OutputFile
+    abstract RegularFileProperty getUpdatedManifest()
 
-             @TaskAction
-             void taskAction() {
-                try {
-                    FileUtils.copyFile(getMergedManifest().get().asFile, getUpdatedManifest().get().asFile);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("Updated merged manifest")
-             }
-             }
-            """.trimIndent()
-
-    private val updateManifestTaskRegistration = """
-
-            androidComponents {
-               onVariants(selector().all(), { variant ->
-                  TaskProvider manifestUpdater =
-                      project.tasks.register(variant.name + "ManifestUpdater", ManifestUpdaterTask)
-                  variant.artifacts.use(manifestUpdater).wiredWithFiles(
-                      ManifestUpdaterTask::getMergedManifest,
-                      ManifestUpdaterTask::getUpdatedManifest
-                  ).toTransform(SingleArtifact.MERGED_MANIFEST.INSTANCE)
-                })
-             }
-    """.trimIndent()
-
-    /** Regression test for http://b/321141574.*/
-    @Test
-    fun testTransformMergedManifestForDynamicFeature() {
-        project1.getSubproject("feature1").also { feature ->
-            feature.buildFile.appendText(updateManifestTask)
-            feature.buildFile.appendText(updateManifestTaskRegistration)
-        }
-        val result = project1.executor().run(":feature1:assemble")
-        // MERGED_MANIFEST transformers
-        assertThat(result.didWorkTasks).contains(":feature1:debugManifestUpdater")
-        assertThat(result.didWorkTasks).contains(":feature1:releaseManifestUpdater")
-        // MERGED_MANIFEST consumers
-        assertThat(result.didWorkTasks).contains(":feature1:copyDebugMergedManifest")
-        assertThat(result.didWorkTasks).contains(":feature1:copyReleaseMergedManifest")
-        assertThat(
-            result.stdout.findAll(
-                "Updated merged manifest"
-            ).count()
-        ).isEqualTo(2)
+    @TaskAction
+    void taskAction() {
+       try {
+           FileUtils.copyFile(getMergedManifest().get().asFile, getUpdatedManifest().get().asFile);
+       } catch (IOException e) {
+           e.printStackTrace();
+       }
+       System.out.println("Updated merged manifest")
     }
-
-    @Test
-    fun testTransformMergedManifestForLibrary() {
-        project2.getSubproject("lib1").also { feature ->
-            feature.buildFile.appendText(updateManifestTask)
-            feature.buildFile.appendText(updateManifestTaskRegistration)
-        }
-        val result = project2.executor()
-            .run(":lib1:assemble")
-        assertThat(result.didWorkTasks).contains(":lib1:debugManifestUpdater")
-        assertThat(result.didWorkTasks).contains(":lib1:releaseManifestUpdater")
-        assertThat(result.didWorkTasks).contains(":lib1:bundleReleaseAar")
-        assertThat(result.didWorkTasks).contains(":lib1:bundleDebugAar")
-        assertThat(
-            result.stdout.findAll(
-                "Updated merged manifest"
-            ).count()
-        ).isEqualTo(2)
     }
+    """
+      .trimIndent()
 
-    @Test
-    fun testTransformMergedManifestForApplication() {
-        project1.getSubproject("app").also { feature ->
-            feature.buildFile.appendText(updateManifestTask)
-            feature.buildFile.appendText(updateManifestTaskRegistration)
-        }
-        val result = project1.executor().run(":app:assemble")
-        assertThat(result.didWorkTasks).contains(":app:debugManifestUpdater")
-        assertThat(result.didWorkTasks).contains(":app:releaseManifestUpdater")
-        assertThat(result.didWorkTasks).contains(":app:processDebugManifest")
-        assertThat(result.didWorkTasks).contains(":app:processReleaseManifest")
-        assertThat(
-            result.stdout.findAll(
-                "Updated merged manifest"
-            ).count()
-        ).isEqualTo(2)
+  private val updateManifestTaskRegistration =
+    """
+
+    androidComponents {
+       onVariants(selector().all(), { variant ->
+          TaskProvider manifestUpdater =
+              project.tasks.register(variant.name + "ManifestUpdater", ManifestUpdaterTask)
+          variant.artifacts.use(manifestUpdater).wiredWithFiles(
+              ManifestUpdaterTask::getMergedManifest,
+              ManifestUpdaterTask::getUpdatedManifest
+          ).toTransform(SingleArtifact.MERGED_MANIFEST.INSTANCE)
+        })
+     }
+    """
+      .trimIndent()
+
+  /** Regression test for http://b/321141574. */
+  @Test
+  fun testTransformMergedManifestForDynamicFeature() {
+    project1.getSubproject("feature1").also { feature ->
+      feature.buildFile.appendText(updateManifestTask)
+      feature.buildFile.appendText(updateManifestTaskRegistration)
     }
+    val result = project1.executor().run(":feature1:assemble")
+    // MERGED_MANIFEST transformers
+    assertThat(result.didWorkTasks).contains(":feature1:debugManifestUpdater")
+    assertThat(result.didWorkTasks).contains(":feature1:releaseManifestUpdater")
+    // MERGED_MANIFEST consumers
+    assertThat(result.didWorkTasks).contains(":feature1:copyDebugMergedManifest")
+    assertThat(result.didWorkTasks).contains(":feature1:copyReleaseMergedManifest")
+    assertThat(result.stdout.findAll("Updated merged manifest").count()).isEqualTo(2)
+  }
 
+  @Test
+  fun testTransformMergedManifestForLibrary() {
+    project2.getSubproject("lib1").also { feature ->
+      feature.buildFile.appendText(updateManifestTask)
+      feature.buildFile.appendText(updateManifestTaskRegistration)
+    }
+    val result = project2.executor().run(":lib1:assemble")
+    assertThat(result.didWorkTasks).contains(":lib1:debugManifestUpdater")
+    assertThat(result.didWorkTasks).contains(":lib1:releaseManifestUpdater")
+    assertThat(result.didWorkTasks).contains(":lib1:bundleReleaseAar")
+    assertThat(result.didWorkTasks).contains(":lib1:bundleDebugAar")
+    assertThat(result.stdout.findAll("Updated merged manifest").count()).isEqualTo(2)
+  }
+
+  @Test
+  fun testTransformMergedManifestForApplication() {
+    project1.getSubproject("app").also { feature ->
+      feature.buildFile.appendText(updateManifestTask)
+      feature.buildFile.appendText(updateManifestTaskRegistration)
+    }
+    val result = project1.executor().run(":app:assemble")
+    assertThat(result.didWorkTasks).contains(":app:debugManifestUpdater")
+    assertThat(result.didWorkTasks).contains(":app:releaseManifestUpdater")
+    assertThat(result.didWorkTasks).contains(":app:processDebugManifest")
+    assertThat(result.didWorkTasks).contains(":app:processReleaseManifest")
+    assertThat(result.stdout.findAll("Updated merged manifest").count()).isEqualTo(2)
+  }
 }

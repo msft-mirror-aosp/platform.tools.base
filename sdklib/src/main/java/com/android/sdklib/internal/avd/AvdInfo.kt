@@ -32,15 +32,12 @@ import java.nio.file.Path
 /**
  * An immutable structure describing an Android Virtual Device.
  *
- * @property iniFile The path to the AVD's metadata ini file. This is not the config.ini that
- *   resides within folderPath, but the file that resides parallel to the AVD's data folder in the
- *   AVD base folder.
+ * @property iniFile The path to the AVD's metadata ini file. This is not the config.ini that resides within folderPath, but the file that
+ *   resides parallel to the AVD's data folder in the AVD base folder.
  * @property dataFolderPath The path to the data directory, normally with an ".avd" suffix
  * @property systemImage The system image. Can be null if the system image is not found.
- * @property properties The configuration properties (from config.ini). Keys are defined in
- *   [ConfigKey].
- * @property userSettings The user settings from user-settings.ini. Keys are defined in
- *   [UserSettingsKey].
+ * @property properties The configuration properties (from config.ini). Keys are defined in [ConfigKey].
+ * @property userSettings The user settings from user-settings.ini. Keys are defined in [UserSettingsKey].
  * @property environment The environment from environment.ini. Keys are defined in [EnvironmentKey].
  * @property status The error condition of the AVD, or AvdStatus.OK.
  */
@@ -113,14 +110,12 @@ data class AvdInfo(
       val displays = properties[ConfigKey.TAG_DISPLAYNAMES] ?: ""
       val idList = ids.split(',')
       val displayList = displays.split(',')
-      return idList.mapIndexed { i, id ->
-        IdDisplay.create(id, displayList.getOrNull(i)?.takeIf { it.isNotEmpty() } ?: id)
-      }
+      return idList.mapIndexed { i, id -> IdDisplay.create(id, displayList.getOrNull(i)?.takeIf { it.isNotEmpty() } ?: id) }
     }
 
   /** The ABI type of the AVD. */
-  val abiType: String
-    get() = this.properties[ConfigKey.ABI_TYPE]!!
+  val abiType: String?
+    get() = this.properties[ConfigKey.ABI_TYPE]
 
   /** Returns true if this AVD supports Google Play Store */
   fun hasPlayStore(): Boolean {
@@ -129,9 +124,7 @@ data class AvdInfo(
   }
 
   val androidVersion: AndroidVersion
-    get() =
-      getProperty(ConfigKey.TARGET)?.let { AndroidTargetHash.getPlatformVersion(it) }
-        ?: AndroidVersion.DEFAULT
+    get() = getProperty(ConfigKey.TARGET)?.let { AndroidTargetHash.getPlatformVersion(it) } ?: AndroidVersion.DEFAULT
 
   val cpuArch: String
     get() = properties[ConfigKey.CPU_ARCH] ?: SdkConstants.CPU_ARCH_ARM
@@ -146,10 +139,7 @@ data class AvdInfo(
   val configFile: Path
     get() = getConfigFile(this.dataFolderPath)
 
-  /**
-   * Returns the value of the property with the given name, or null if the AVD doesn't have such
-   * property.
-   */
+  /** Returns the value of the property with the given name, or null if the AVD doesn't have such property. */
   fun getProperty(propertyName: String): String? {
     return properties[propertyName]
   }
@@ -161,9 +151,14 @@ data class AvdInfo(
         AvdStatus.ERROR_CONFIG -> "Missing config.ini file in $dataFolderPath"
         AvdStatus.ERROR_PROPERTIES -> "Failed to parse properties from $configFile"
         AvdStatus.ERROR_IMAGE_MISSING -> {
-          val tag =
-            if (SystemImageTags.DEFAULT_TAG == this.tag) "" else (this.tag.getDisplay() + " ")
-          "Missing system image for $tag$abiType $displayName."
+          val tag = if (SystemImageTags.DEFAULT_TAG == this.tag) "" else (this.tag.getDisplay() + " ")
+          this.tag
+          val image = properties[ConfigKey.IMAGES_1]
+          if (image == null) "System image missing in configuration"
+          else {
+            val path = image.removePrefix("system-images").trim('/', '\\')
+            "Missing system image $path."
+          }
         }
         AvdStatus.ERROR_DEVICE_MISSING ->
           "${properties[ConfigKey.DEVICE_MANUFACTURER]} ${properties[ConfigKey.DEVICE_NAME]} no longer exists as a device"
@@ -189,8 +184,7 @@ data class AvdInfo(
     get() = hasTag(SystemImageTags.XR_HEADSET_TAG.getId())
 
   val isAiGlassesDevice: Boolean
-    get() = hasTag(SystemImageTags.AI_GLASSES_TAG.getId()) ||
-            hasTag(SystemImageTags.DEPRECATED_AI_GLASSES_TAG.getId())
+    get() = hasTag(SystemImageTags.AI_GLASSES_TAG.getId()) || hasTag(SystemImageTags.DEPRECATED_AI_GLASSES_TAG.getId())
 
   val isAiGlassesCompatibleDevice: Boolean
     get() = hasTag(SystemImageTags.AI_GLASSES_COMPATIBLE_TAG.getId())
@@ -210,12 +204,11 @@ data class AvdInfo(
     }
 
     /**
-     * Helper method that returns the default AVD folder that would be used for a given AVD name *if
-     * and only if* the AVD was created with the default choice.
+     * Helper method that returns the default AVD folder that would be used for a given AVD name *if and only if* the AVD was created with
+     * the default choice.
      *
-     * Callers must NOT use this to "guess" the actual folder from an actual AVD since the purpose
-     * of the AVD .ini file is to be able to change this folder. Callers should however use this to
-     * create a new [AvdInfo] to setup its data folder to the default.
+     * Callers must NOT use this to "guess" the actual folder from an actual AVD since the purpose of the AVD .ini file is to be able to
+     * change this folder. Callers should however use this to create a new [AvdInfo] to setup its data folder to the default.
      *
      * The default is `getBaseAvdFolder()/avdname.avd/`.
      *

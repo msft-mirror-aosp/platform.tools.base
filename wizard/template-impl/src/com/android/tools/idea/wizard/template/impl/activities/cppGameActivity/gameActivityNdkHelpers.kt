@@ -17,7 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity
 
 import com.android.tools.idea.wizard.template.DEFAULT_CMAKE_VERSION
 
-fun gameActivityCMakeListsTxt(nativeSourceName: String, libraryName: String) = """
+fun gameActivityCMakeListsTxt(nativeSourceName: String, libraryName: String) =
+  """
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
 

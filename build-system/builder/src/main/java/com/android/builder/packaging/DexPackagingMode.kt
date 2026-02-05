@@ -17,7 +17,6 @@
 package com.android.builder.packaging
 
 enum class DexPackagingMode {
-    COMPRESSED,
-    UNCOMPRESSED,
-    ;
+  COMPRESSED,
+  UNCOMPRESSED,
 }

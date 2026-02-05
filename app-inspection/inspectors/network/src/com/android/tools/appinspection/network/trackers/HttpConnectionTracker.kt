@@ -21,14 +21,12 @@ import java.io.OutputStream
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport
 
 /**
- * HTTP stacks can use this interface to report the key states and data associated with individual
- * requests, to be consumed by the network inspector.
+ * HTTP stacks can use this interface to report the key states and data associated with individual requests, to be consumed by the network
+ * inspector.
  *
- * The methods in this interface are expected to be called in the following order (the calls marked
- * with question mark are optional)
+ * The methods in this interface are expected to be called in the following order (the calls marked with question mark are optional)
  *
- * trackRequest() ---> trackRequestBody()? ---> trackResponse() ---> trackResponseBody()? --->
- * disconnect()?
+ * trackRequest() ---> trackRequestBody()? ---> trackResponse() ---> trackResponseBody()? ---> disconnect()?
  *
  * Each method must be called on the thread that initiates the corresponding operation.
  */

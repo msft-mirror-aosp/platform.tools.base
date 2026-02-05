@@ -25,93 +25,82 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isDirectory
 
-/**
- * Android SDK configuration for [GradleBuild] via [GradleRuleBuilder]
- */
+/** Android SDK configuration for [GradleBuild] via [GradleRuleBuilder] */
 @GradleDefinitionDsl
 interface SdkConfigurationBuilder {
-    fun sdkDir(value: Path): SdkConfigurationBuilder
-    fun removeSdk(): SdkConfigurationBuilder
+  fun sdkDir(value: Path): SdkConfigurationBuilder
 
-    fun ndkVersion(value: String): SdkConfigurationBuilder
+  fun removeSdk(): SdkConfigurationBuilder
+
+  fun ndkVersion(value: String): SdkConfigurationBuilder
 }
 
 data class SdkConfiguration(
-    /** if null, sdk should not be setup */
-    val sdkDir: Path?,
-    /** path for the NDK to be use as `ndkPath` in the DSL */
-    val ndkPath: Path?,
+  /** if null, sdk should not be setup */
+  val sdkDir: Path?,
+  /** path for the NDK to be use as `ndkPath` in the DSL */
+  val ndkPath: Path?,
 )
 
-internal class SdkConfigurationDelegate : SdkConfigurationBuilder,
-    MergeableOptions<SdkConfigurationDelegate> {
+internal class SdkConfigurationDelegate : SdkConfigurationBuilder, MergeableOptions<SdkConfigurationDelegate> {
 
-    private var sdkDir: Path? = null
-    private var useSdk = true
+  private var sdkDir: Path? = null
+  private var useSdk = true
 
-    private var ndkPath: Path? = null
-    private var ndkVersion: String? = null
+  private var ndkPath: Path? = null
+  private var ndkVersion: String? = null
 
+  override fun sdkDir(value: Path): SdkConfigurationBuilder {
+    sdkDir = value
+    return this
+  }
 
-    override fun sdkDir(value: Path): SdkConfigurationBuilder {
-        sdkDir = value
-        return this
-    }
+  override fun removeSdk(): SdkConfigurationBuilder {
+    useSdk = false
+    return this
+  }
 
-    override fun removeSdk(): SdkConfigurationBuilder {
-        useSdk = false
-        return this
-    }
+  override fun ndkVersion(value: String): SdkConfigurationBuilder {
+    ndkVersion = value
+    return this
+  }
 
-    override fun ndkVersion(value: String): SdkConfigurationBuilder {
-        ndkVersion = value
-        return this
-    }
-
-    internal val asSdkConfiguration: SdkConfiguration
-        get()  {
-            val sdk = if (!useSdk) {
-                null
-            } else {
-                sdkDir ?: SdkHelper.findSdkDir().toPath()
-            }
-
-            return SdkConfiguration(
-                sdk,
-                ndkPath ?: computeNdkPath(sdk),
-            )
-        }
-
-    override fun mergeWith(other: SdkConfigurationDelegate) {
-        if (!other.useSdk) {
-            removeSdk()
+  internal val asSdkConfiguration: SdkConfiguration
+    get() {
+      val sdk =
+        if (!useSdk) {
+          null
         } else {
-            other.sdkDir?.let {
-                sdkDir = it
-            }
+          sdkDir ?: SdkHelper.findSdkDir().toPath()
         }
 
-        other.ndkVersion?.let {
-            ndkVersion = it
-        }
+      return SdkConfiguration(sdk, ndkPath ?: computeNdkPath(sdk))
     }
 
-    private fun computeNdkPath(sdkDir: Path?): Path? {
-        val envCustomAndroidNdkHome = Strings.emptyToNull(System.getenv()["CUSTOM_ANDROID_NDK_ROOT"]);
-
-        return if (envCustomAndroidNdkHome != null) {
-            Paths.get(envCustomAndroidNdkHome).also {
-                Preconditions.checkState(
-                    it.isDirectory(),
-                    "CUSTOM_ANDROID_NDK_ROOT must point to a directory, %s is not a directory",
-                    it.toString()
-                );
-            }
-        } else {
-            val version = ndkVersion
-            TestEnvironment.getNdkPath(sdkDir, version)
-        }
+  override fun mergeWith(other: SdkConfigurationDelegate) {
+    if (!other.useSdk) {
+      removeSdk()
+    } else {
+      other.sdkDir?.let { sdkDir = it }
     }
+
+    other.ndkVersion?.let { ndkVersion = it }
+  }
+
+  private fun computeNdkPath(sdkDir: Path?): Path? {
+    val envCustomAndroidNdkHome = Strings.emptyToNull(System.getenv()["CUSTOM_ANDROID_NDK_ROOT"])
+
+    return if (envCustomAndroidNdkHome != null) {
+      Paths.get(envCustomAndroidNdkHome).also {
+        Preconditions.checkState(
+          it.isDirectory(),
+          "CUSTOM_ANDROID_NDK_ROOT must point to a directory, %s is not a directory",
+          it.toString(),
+        )
+      }
+    } else {
+      val version = ndkVersion
+      TestEnvironment.getNdkPath(sdkDir, version)
+    }
+  }
 }
-
-

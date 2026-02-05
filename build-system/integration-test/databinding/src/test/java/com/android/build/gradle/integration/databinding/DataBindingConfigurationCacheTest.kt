@@ -25,23 +25,19 @@ import org.junit.Test
 
 class DataBindingConfigurationCacheTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("databinding")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("databinding").create()
 
-    @Before
-    fun setUp() {
-        project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
-    }
+  @Before
+  fun setUp() {
+    project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
+  }
 
-    @Test
-    fun testCleanBuild() {
-        executor().run("assemble")
-        executor().run("clean")
-        executor().run("assemble")
-    }
+  @Test
+  fun testCleanBuild() {
+    executor().run("assemble")
+    executor().run("clean")
+    executor().run("assemble")
+  }
 
-    private fun executor(): GradleTaskExecutor =
-        project.executor().with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
+  private fun executor(): GradleTaskExecutor = project.executor().with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
 }

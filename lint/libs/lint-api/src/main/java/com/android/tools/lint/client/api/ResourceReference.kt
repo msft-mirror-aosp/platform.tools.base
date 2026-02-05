@@ -46,9 +46,8 @@ import org.jetbrains.uast.getQualifiedParentOrThis
 import org.jetbrains.uast.java.JavaUDeclarationsExpression
 
 /**
- * A reference to an Android resource in the AST; the reference may not be qualified. For example,
- * in the below, the `foo` reference on the right hand side of the assignment can be resolved as an
- * [ResourceReference].
+ * A reference to an Android resource in the AST; the reference may not be qualified. For example, in the below, the `foo` reference on the
+ * right hand side of the assignment can be resolved as an [ResourceReference].
  *
  * ```
  * import my.pkg.R.string.foo;
@@ -96,9 +95,7 @@ class ResourceReference(
         return null
       }
 
-      val packageName =
-        if (packageNameFromResolved != null) packageNameFromResolved
-        else Joiner.on('.').join(path.subList(0, size - 3))
+      val packageName = if (packageNameFromResolved != null) packageNameFromResolved else Joiner.on('.').join(path.subList(0, size - 3))
 
       val type = path[size - 2]
       val name = path[size - 1]
@@ -144,8 +141,7 @@ class ResourceReference(
         // pick out the relevant attribute.
         if (
           declaration != null &&
-            declaration::class.java.name ==
-              "com.intellij.psi.impl.source.xml.XmlAttributeValueImpl" &&
+            declaration::class.java.name == "com.intellij.psi.impl.source.xml.XmlAttributeValueImpl" &&
             element is UExpression
         ) {
           try {
@@ -181,16 +177,9 @@ class ResourceReference(
             val resolved = expression?.resolvedName
             if (
               resolved != null &&
-                (resolved.startsWith("import kotlinx.android.synthetic.") ||
-                  resolved.startsWith("kotlinx.android.synthetic."))
+                (resolved.startsWith("import kotlinx.android.synthetic.") || resolved.startsWith("kotlinx.android.synthetic."))
             ) {
-              return ResourceReference(
-                element,
-                "",
-                ResourceType.ID,
-                element.identifier,
-                heuristic = true,
-              )
+              return ResourceReference(element, "", ResourceType.ID, element.identifier, heuristic = true)
             }
           }
         }
@@ -244,11 +233,7 @@ class ResourceReference(
       return ResourceReference(node, packageName, resourceType, resourceName)
     }
 
-    /**
-     * Returns true if the type represents an int array (int[]), which is the type of styleable R
-     * fields.
-     */
-    private fun isIntArray(type: PsiType): Boolean =
-      (type as? PsiArrayType)?.componentType == PsiTypes.intType()
+    /** Returns true if the type represents an int array (int[]), which is the type of styleable R fields. */
+    private fun isIntArray(type: PsiType): Boolean = (type as? PsiArrayType)?.componentType == PsiTypes.intType()
   }
 }

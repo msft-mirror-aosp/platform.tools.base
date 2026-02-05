@@ -23,100 +23,101 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Resource
 import java.util.function.IntFunction
 
-/**
- * A convenience class for handling the building of a [Property], wrapping a
- * [Property.Builder] but with some extra logic.
- */
+/** A convenience class for handling the building of a [Property], wrapping a [Property.Builder] but with some extra logic. */
 class PropertyBuilder(val metadata: PropertyMetadata) {
-    var enumMapping: IntFunction<String>? = null
-    var flagMapping: IntFunction<Set<String>>? = null
+  var enumMapping: IntFunction<String>? = null
+  var flagMapping: IntFunction<Set<String>>? = null
 
-    private val property = Property.newBuilder()
-    private var value: Any? = null
+  private val property = Property.newBuilder()
+  private var value: Any? = null
 
-    init {
-        setType(metadata.type)
+  init {
+    setType(metadata.type)
+  }
+
+  fun setType(type: Property.Type) {
+    property.type = type
+  }
+
+  fun setValue(value: Any?) {
+    // Don't set this on the property until the last possible moment,
+    // as it may depend on `type` being set first.
+    this.value = value
+  }
+
+  fun setSource(source: Resource?) {
+    property.source = source ?: Resource.getDefaultInstance()
+  }
+
+  fun addResolutionResource(resource: Resource) {
+    property.addResolutionStack(resource)
+  }
+
+  fun setIsLayout(isLayout: Boolean) {
+    property.isLayout = isLayout
+  }
+
+  fun build(stringTable: StringTable, view: View): Property? {
+    return value?.let { value ->
+      property.name = stringTable.put(metadata.name)
+      property.namespace = stringTable.put(view.getNamespace(metadata.attributeId))
+      property.setValue(stringTable, value)
+      return property.build()
     }
+  }
 
-    fun setType(type: Property.Type) {
-        property.type = type
-    }
-
-    fun setValue(value: Any?) {
-        // Don't set this on the property until the last possible moment,
-        // as it may depend on `type` being set first.
-        this.value = value
-    }
-
-    fun setSource(source: Resource?) {
-        property.source = source ?: Resource.getDefaultInstance()
-    }
-
-    fun addResolutionResource(resource: Resource) {
-        property.addResolutionStack(resource)
-    }
-
-    fun setIsLayout(isLayout: Boolean) {
-        property.isLayout = isLayout
-    }
-
-    fun build(stringTable: StringTable, view: View): Property? {
-        return value?.let { value ->
-            property.name = stringTable.put(metadata.name)
-            property.namespace = stringTable.put(view.getNamespace(metadata.attributeId))
-            property.setValue(stringTable, value)
-            return property.build()
+  private fun Set<String>.toFlagValue(stringTable: StringTable): FlagValue {
+    val flags = this
+    return FlagValue.newBuilder()
+      .apply {
+        for (flag in flags) {
+          addFlag(stringTable.put(flag))
         }
-    }
+      }
+      .build()
+  }
 
-    private fun Set<String>.toFlagValue(stringTable: StringTable): FlagValue {
-        val flags = this
-        return FlagValue.newBuilder().apply {
-            for (flag in flags) {
-                addFlag(stringTable.put(flag))
-            }
-        }.build()
+  @Suppress("UNCHECKED_CAST")
+  private fun Property.Builder.setValue(stringTable: StringTable, value: Any) {
+    when (type) {
+      Property.Type.STRING,
+      Property.Type.INT_ENUM -> {
+        int32Value = stringTable.put(value as String)
+      }
+      Property.Type.INT32,
+      Property.Type.INT16,
+      Property.Type.BYTE,
+      Property.Type.CHAR,
+      Property.Type.COLOR,
+      Property.Type.DIMENSION -> {
+        int32Value = value as Int
+      }
+      Property.Type.BOOLEAN -> {
+        int32Value = if (value == true) 1 else 0
+      }
+      Property.Type.GRAVITY,
+      Property.Type.INT_FLAG -> {
+        flagValue = (value as Set<String>).toFlagValue(stringTable)
+      }
+      Property.Type.INT64 -> {
+        int64Value = (value as Long)
+      }
+      Property.Type.DOUBLE -> {
+        doubleValue = (value as Double)
+      }
+      Property.Type.FLOAT -> {
+        floatValue = value as Float
+      }
+      Property.Type.RESOURCE -> {
+        resourceValue = value as Resource
+      }
+      Property.Type.DRAWABLE,
+      Property.Type.ANIM,
+      Property.Type.ANIMATOR,
+      Property.Type.INTERPOLATOR -> {
+        int32Value = stringTable.put(value.javaClass.name)
+      }
+      else -> error("Unhandled property type: $type")
     }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun Property.Builder.setValue(stringTable: StringTable, value: Any) {
-        when (type) {
-            Property.Type.STRING, Property.Type.INT_ENUM -> {
-                int32Value = stringTable.put(value as String)
-            }
-            Property.Type.INT32,
-            Property.Type.INT16,
-            Property.Type.BYTE,
-            Property.Type.CHAR,
-            Property.Type.COLOR,
-            Property.Type.DIMENSION -> {
-                int32Value = value as Int
-            }
-            Property.Type.BOOLEAN -> {
-                int32Value = if (value == true) 1 else 0
-            }
-            Property.Type.GRAVITY, Property.Type.INT_FLAG -> {
-                flagValue = (value as Set<String>).toFlagValue(stringTable)
-            }
-            Property.Type.INT64 -> {
-                int64Value = (value as Long)
-            }
-            Property.Type.DOUBLE -> {
-                doubleValue = (value as Double)
-            }
-            Property.Type.FLOAT -> {
-                floatValue = value as Float
-            }
-            Property.Type.RESOURCE -> {
-                resourceValue = value as Resource
-            }
-            Property.Type.DRAWABLE,
-            Property.Type.ANIM,
-            Property.Type.ANIMATOR,
-            Property.Type.INTERPOLATOR -> {
-                int32Value = stringTable.put(value.javaClass.name)
-            }
-            else -> error("Unhandled property type: $type")
-        }
-    }
+  }
 }

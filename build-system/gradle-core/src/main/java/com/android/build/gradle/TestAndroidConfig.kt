@@ -16,23 +16,18 @@
 
 package com.android.build.gradle
 
-/**
- * User configuration settings for 'com.android.test' project.
- */
+/** User configuration settings for 'com.android.test' project. */
 interface TestAndroidConfig : AndroidConfig {
 
-    /**
-     * Returns the Gradle path of the project that this test project tests.
-     */
-    val targetProjectPath: String?
+  /** Returns the Gradle path of the project that this test project tests. */
+  val targetProjectPath: String?
 
-    /**
-     * Returns the variant of the tested project.
-     *
-     * Default is 'debug'
-     *
-     * @deprecated This is deprecated, test module can now test all flavors.
-     */
-    @Deprecated("The test project now tests all flavors")
-    val targetVariant: String
+  /**
+   * Returns the variant of the tested project.
+   *
+   * Default is 'debug'
+   *
+   * @deprecated This is deprecated, test module can now test all flavors.
+   */
+  @Deprecated("The test project now tests all flavors") val targetVariant: String
 }

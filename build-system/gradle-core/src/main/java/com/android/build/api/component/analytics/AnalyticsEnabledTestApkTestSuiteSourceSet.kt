@@ -24,38 +24,35 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import java.io.File
 
 open class AnalyticsEnabledTestApkTestSuiteSourceSet(
-    private val source: TestSuiteSourceSet.TestApk,
-    private val stats: GradleBuildVariant.Builder
-): AnalyticsEnabledTestSuiteSourceSet(source, stats), TestSuiteSourceSet.TestApk {
+  private val source: TestSuiteSourceSet.TestApk,
+  private val stats: GradleBuildVariant.Builder,
+) : AnalyticsEnabledTestSuiteSourceSet(source, stats), TestSuiteSourceSet.TestApk {
 
-    override val java: SourceDirectories.Flat?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_JAVA_VALUE
-            return source.java
-        }
+  override val java: SourceDirectories.Flat?
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_SOURCE_JAVA_VALUE
+      return source.java
+    }
 
-    override val kotlin: SourceDirectories.Flat?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_KOTLIN_VALUE
-            return source.kotlin
-        }
+  override val kotlin: SourceDirectories.Flat?
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_SOURCE_KOTLIN_VALUE
+      return source.kotlin
+    }
 
-    override val resources: SourceDirectories.Flat
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_RESOURCES_VALUE
-            return source.resources
-        }
+  override val resources: SourceDirectories.Flat
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_SOURCE_RESOURCES_VALUE
+      return source.resources
+    }
 
-    override val manifestFile: File
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_MANIFEST_FILE_VALUE
-            return source.manifestFile
-        }
+  override val manifestFile: File
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.TEST_SUITE_SOURCE_MANIFEST_FILE_VALUE
+      return source.manifestFile
+    }
 
-    override val type: TestSuiteSourceType
-        get() = TestSuiteSourceType.TEST_APK
+  override val type: TestSuiteSourceType
+    get() = TestSuiteSourceType.TEST_APK
 }

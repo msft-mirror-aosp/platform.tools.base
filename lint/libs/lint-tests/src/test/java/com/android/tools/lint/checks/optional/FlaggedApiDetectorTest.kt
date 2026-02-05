@@ -1096,16 +1096,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       "",
       // Expected exit code
       LintCliFlags.ERRNO_ERRORS,
-      arrayOf(
-        "--include-aosp-issues",
-        "--exit-code",
-        "-q",
-        "--check",
-        "FlaggedApi",
-        "--disable",
-        "LintError",
-        project.path,
-      ),
+      arrayOf("--include-aosp-issues", "--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
       null,
       null,
     )
@@ -1149,16 +1140,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       "",
       // Expected exit code
       LintCliFlags.ERRNO_ERRORS,
-      arrayOf(
-        "--exit-code",
-        "-q",
-        "--check",
-        "FlaggedApi",
-        "--disable",
-        "LintError",
-        "--project",
-        projectXml.path,
-      ),
+      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
       null,
       null,
     )
@@ -1207,16 +1189,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       "",
       // Expected exit code
       LintCliFlags.ERRNO_SUCCESS,
-      arrayOf(
-        "--exit-code",
-        "-q",
-        "--check",
-        "FlaggedApi",
-        "--disable",
-        "LintError",
-        "--project",
-        projectXml.path,
-      ),
+      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
       null,
       null,
     )

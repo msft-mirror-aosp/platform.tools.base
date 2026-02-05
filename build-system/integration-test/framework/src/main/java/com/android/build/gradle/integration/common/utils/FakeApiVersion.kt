@@ -22,32 +22,29 @@ import com.android.builder.model.ApiVersion
  *
  * This is used to test other implementation of ApiVersion in during tests.
  */
-internal data class FakeApiVersion @JvmOverloads constructor(
-    private val mApiLevel: Int,
-    private val mCodename: String? = null
-) : ApiVersion {
+internal data class FakeApiVersion @JvmOverloads constructor(private val mApiLevel: Int, private val mCodename: String? = null) :
+  ApiVersion {
 
-    override fun getApiLevel(): Int {
-        return mApiLevel
-    }
+  override fun getApiLevel(): Int {
+    return mApiLevel
+  }
 
-    override fun getCodename(): String? {
-        return mCodename
-    }
+  override fun getCodename(): String? {
+    return mCodename
+  }
 
-    override fun getApiString(): String {
-        return mCodename ?: mApiLevel.toString()
-    }
+  override fun getApiString(): String {
+    return mCodename ?: mApiLevel.toString()
+  }
 
-    companion object {
-        fun create(value: Any): ApiVersion {
-            if (value is Int) {
-                return FakeApiVersion(value, null)
-            } else if (value is String) {
-                return FakeApiVersion(1, value)
-            }
-            throw IllegalArgumentException("value is not Int or String")
-        }
+  companion object {
+    fun create(value: Any): ApiVersion {
+      if (value is Int) {
+        return FakeApiVersion(value, null)
+      } else if (value is String) {
+        return FakeApiVersion(1, value)
+      }
+      throw IllegalArgumentException("value is not Int or String")
     }
+  }
 }
-

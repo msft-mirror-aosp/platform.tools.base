@@ -82,10 +82,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
             location.secondary = context.getLocation(declaration)
           }
           val incident = Incident(ISSUE, element, location, message)
-          context.report(
-            incident,
-            map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS),
-          )
+          context.report(incident, map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS))
         }
       }
     }
@@ -93,8 +90,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     if (context.mainProject.targetSdk < 19) return true
-    if (map.getBoolean(KEY_IMPLICIT, false) == true && context.mainProject.targetSdk >= 31)
-      return true
+    if (map.getBoolean(KEY_IMPLICIT, false) == true && context.mainProject.targetSdk >= 31) return true
     return map.getBoolean(KEY_OVERRIDES, false) == false
   }
 
@@ -123,16 +119,12 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
       // question specifically overrides isValidFragment() and thus knowingly allows
       // valid fragments.
       val overrides = overridesIsValidFragment(evaluator, declaration.javaPsi)
-      val message =
-        "`PreferenceActivity` subclass $className should not be exported in the manifest"
+      val message = "`PreferenceActivity` subclass $className should not be exported in the manifest"
       // When linting incrementally just in the Java class, place the error on
       // the class itself rather than the export line in the manifest
       val location = context.getNameLocation(declaration)
       val incident = Incident(ISSUE, declaration, location, message)
-      context.report(
-        incident,
-        map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS),
-      )
+      context.report(incident, map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS))
     }
   }
 

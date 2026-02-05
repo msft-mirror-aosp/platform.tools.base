@@ -17,85 +17,60 @@ package com.android.adblib
 
 import java.time.Duration
 
-/**
- * By convention, all [properties][AdbSessionHost.Property] of this module are defined in
- * this singleton.
- */
+/** By convention, all [properties][AdbSessionHost.Property] of this module are defined in this singleton. */
 internal object AdbLibProperties {
-    private const val NAME_PREFIX = "com.android.adblib"
+  private const val NAME_PREFIX = "com.android.adblib"
 
-    val TRACK_DEVICES_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.track.devices.retry.delay",
-        defaultValue = Duration.ofSeconds(2)
-    )
+  val TRACK_DEVICES_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.track.devices.retry.delay", defaultValue = Duration.ofSeconds(2))
 
-    /**
-     * The default size (in bytes) of in-memory buffers when sending or receiving
-     * data for adb services related to the "shell" (legacy or "v2") protocol,
-     * e.g. [AdbDeviceServices.shell] or [AdbDeviceServices.abb_exec].
-     *
-     * This value can be overridden globally (using this property) or locally
-     * when calling specific [AdbDeviceServices] services, typically by setting
-     * the value of the `bufferSize` parameter.
-     *
-     * Note: The current value of 64KB matches the `adb` implementation as of
-     * [Oct 2023](https://cs.android.com/android/platform/superproject/main/+/05d405aeb41b63dc1258b64e3156e6b4f94315bb:packages/modules/adb/client/commandline.cpp;l=386)
-     *
-     * Note: Although smaller values (e.g. 8KB) are supported in theory, in practice, they
-     *  can make `adb` unreliable on some platforms.
-     *  See [b/272429909](https://issuetracker.google.com/issues/272429909)
-     *
-     * @see AdbDeviceServices.shell
-     * @see AdbDeviceServices.exec
-     * @see AdbDeviceServices.shellV2
-     * @see AdbDeviceServices.abb_exec
-     * @see AdbDeviceServices.abb
-     */
-    val DEFAULT_SHELL_BUFFER_SIZE  = AdbSessionHost.IntProperty(
-        name = "$NAME_PREFIX.default.shell.buffer.size",
-        defaultValue = 64 * 1024
-    )
+  /**
+   * The default size (in bytes) of in-memory buffers when sending or receiving data for adb services related to the "shell" (legacy or
+   * "v2") protocol, e.g. [AdbDeviceServices.shell] or [AdbDeviceServices.abb_exec].
+   *
+   * This value can be overridden globally (using this property) or locally when calling specific [AdbDeviceServices] services, typically by
+   * setting the value of the `bufferSize` parameter.
+   *
+   * Note: The current value of 64KB matches the `adb` implementation as of
+   * [Oct 2023](https://cs.android.com/android/platform/superproject/main/+/05d405aeb41b63dc1258b64e3156e6b4f94315bb:packages/modules/adb/client/commandline.cpp;l=386)
+   *
+   * Note: Although smaller values (e.g. 8KB) are supported in theory, in practice, they can make `adb` unreliable on some platforms. See
+   * [b/272429909](https://issuetracker.google.com/issues/272429909)
+   *
+   * @see AdbDeviceServices.shell
+   * @see AdbDeviceServices.exec
+   * @see AdbDeviceServices.shellV2
+   * @see AdbDeviceServices.abb_exec
+   * @see AdbDeviceServices.abb
+   */
+  val DEFAULT_SHELL_BUFFER_SIZE = AdbSessionHost.IntProperty(name = "$NAME_PREFIX.default.shell.buffer.size", defaultValue = 64 * 1024)
 
-    /**
-     * The default size (in bytes) for in-memory buffers when sending or receiving data
-     * over an [AdbDeviceSyncServices] connection.
-     */
-    val DEFAULT_SYNC_CONNECTION_BUFFER_SIZE  = AdbSessionHost.IntProperty(
-        name = "$NAME_PREFIX.default.sync.connection.buffer.size",
-        defaultValue = DEFAULT_BUFFER_SIZE
-    )
+  /** The default size (in bytes) for in-memory buffers when sending or receiving data over an [AdbDeviceSyncServices] connection. */
+  val DEFAULT_SYNC_CONNECTION_BUFFER_SIZE =
+    AdbSessionHost.IntProperty(name = "$NAME_PREFIX.default.sync.connection.buffer.size", defaultValue = DEFAULT_BUFFER_SIZE)
 
-    /**
-     * This property is used to control `AsynchronousSocketChannel` `SO_KEEPALIVE` option.
-     *
-     * Enabling `SO_KEEPALIVE` for long-running connections (e.g., those created by
-     * `DeviceServices.rawExec`) can prevent connection problems. At the same time this should not
-     * adversely impact short-lived connections.
-     */
-    val SOCKET_CHANNEL_KEEPALIVE = AdbSessionHost.BooleanProperty(
-        name = "$NAME_PREFIX.connect.channel.provider.socket.channel.keepalive",
-        defaultValue = true
-    )
+  /**
+   * This property is used to control `AsynchronousSocketChannel` `SO_KEEPALIVE` option.
+   *
+   * Enabling `SO_KEEPALIVE` for long-running connections (e.g., those created by `DeviceServices.rawExec`) can prevent connection problems.
+   * At the same time this should not adversely impact short-lived connections.
+   */
+  val SOCKET_CHANNEL_KEEPALIVE =
+    AdbSessionHost.BooleanProperty(name = "$NAME_PREFIX.connect.channel.provider.socket.channel.keepalive", defaultValue = true)
 
-    /**
-     * Timeout waiting for the `am` service to be loaded and ready on the device.
-     *
-     * See [ConnectedDevice].[activityManager][ActivityManager]
-     */
-    val AM_SERVICE_TIMEOUT = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.am.service.timeout",
-        defaultValue = Duration.ofSeconds(10)
-    )
+  /**
+   * Timeout waiting for the `am` service to be loaded and ready on the device.
+   *
+   * See [ConnectedDevice].[activityManager][ActivityManager]
+   */
+  val AM_SERVICE_TIMEOUT = AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.am.service.timeout", defaultValue = Duration.ofSeconds(10))
 
-    /**
-     * [Duration] between attempt to call the `am` service on a device if the
-     * service is not started yet.
-     *
-     * @see [AM_SERVICE_TIMEOUT]
-     * @see [ConnectedDevice].[activityManager][ActivityManager]
-     */
-    val AM_SERVICE_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.am.service.retry.delay",
-        defaultValue = Duration.ofSeconds(1)
-    )
+  /**
+   * [Duration] between attempt to call the `am` service on a device if the service is not started yet.
+   *
+   * @see [AM_SERVICE_TIMEOUT]
+   * @see [ConnectedDevice].[activityManager][ActivityManager]
+   */
+  val AM_SERVICE_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.am.service.retry.delay", defaultValue = Duration.ofSeconds(1))
 }

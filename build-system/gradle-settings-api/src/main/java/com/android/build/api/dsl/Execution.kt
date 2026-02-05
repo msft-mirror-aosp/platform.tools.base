@@ -19,12 +19,12 @@ package com.android.build.api.dsl
 import org.gradle.api.NamedDomainObjectContainer
 
 interface Execution {
-    /** Container where profiles can be declared. */
-    val profiles: NamedDomainObjectContainer<ExecutionProfile>
+  /** Container where profiles can be declared. */
+  val profiles: NamedDomainObjectContainer<ExecutionProfile>
 
-    /** Container where profiles can be declared. */
-    fun profiles(action: NamedDomainObjectContainer<ExecutionProfile>.() -> Unit)
+  /** Container where profiles can be declared. */
+  fun profiles(action: NamedDomainObjectContainer<ExecutionProfile>.() -> Unit)
 
-    /** Select execution profile */
-    var defaultProfile: String?
+  /** Select execution profile */
+  var defaultProfile: String?
 }

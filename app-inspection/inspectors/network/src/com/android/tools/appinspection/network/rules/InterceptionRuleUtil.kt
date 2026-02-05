@@ -27,9 +27,7 @@ const val FIELD_CONTENT_TYPE = "content-type"
 const val FIELD_CONTENT_ENCODING = "content-encoding"
 const val FIELD_RESPONSE_STATUS_CODE = "response-status-code"
 
-/**
- * Return true if this pattern matches the [text]. An undefined [MatchingText] matches all texts.
- */
+/** Return true if this pattern matches the [text]. An undefined [MatchingText] matches all texts. */
 fun MatchingText.matches(text: String?, ignoreCase: Boolean = false): Boolean =
   when (type) {
     PLAIN -> this.text.equals(text, ignoreCase = ignoreCase)

@@ -48,11 +48,7 @@ internal class AdbServicesImpl(
   override suspend fun executeCommand(command: String, errorCode: ErrorCode): AdbOutput {
     val output =
       try {
-        adbSession.deviceServices
-          .shellCommand(deviceSelector, command)
-          .withCollector(TextShellV2Collector())
-          .execute()
-          .first()
+        adbSession.deviceServices.shellCommand(deviceSelector, command).withCollector(TextShellV2Collector()).execute().first()
       } catch (e: IOException) {
         val connectedDevice = adbSession.connectedDevicesTracker.device(serialNumber)
         val code = if (connectedDevice != null) DEVICE_DISCONNECTED else UNEXPECTED_ERROR
@@ -65,10 +61,7 @@ internal class AdbServicesImpl(
       output.describe().lines().filter { it.isNotEmpty() }.forEach { logger.debug("  $it") }
     }
     if (output.exitCode != 0) {
-      throw BackupException(
-        errorCode,
-        "Failed to run '$command' on $serialNumber\n${output.describe()}",
-      )
+      throw BackupException(errorCode, "Failed to run '$command' on $serialNumber\n${output.describe()}")
     }
     return AdbOutput(output.stdout.trimEnd('\n'), output.stderr.trimEnd('\n'))
   }

@@ -28,16 +28,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
-/**
- * This test just checks that we have reasonable defaults (e.g. no crash) if Room is not available
- * in the classpath.
- */
+/** This test just checks that we have reasonable defaults (e.g. no crash) if Room is not available in the classpath. */
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class RoomInvalidationRegistryWithoutRoomTest {
   @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(LogPrinterRule())

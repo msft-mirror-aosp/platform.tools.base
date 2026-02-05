@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.blankFragment.src.app_package
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
 fun blankFragmentKt(
@@ -25,7 +25,7 @@ fun blankFragmentKt(
   className: String,
   fragmentName: String,
   packageName: String,
-  useAndroidX: Boolean
+  useAndroidX: Boolean,
 ): String {
   val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }
   return """

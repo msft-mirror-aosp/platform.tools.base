@@ -29,130 +29,114 @@ import com.android.build.gradle.options.StringOption
 import com.android.builder.internal.packaging.IncrementalPackager.APP_METADATA_ENTRY_PATH
 import com.android.testutils.apk.Zip
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
 import java.util.Properties
 import kotlin.io.path.bufferedReader
+import org.junit.Rule
+import org.junit.Test
 
-/**
- * Tests for [AppMetadataTask]
- */
+/** Tests for [AppMetadataTask] */
 class AppMetadataTaskTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .appendToBuild("\n\nandroid.dynamicFeatures = [':feature']\n\n")
-            .withFile(
-                "src/main/res/values/strings.xml",
-                """
-                    <resources>
-                        <string name="feature_title">Dynamic Feature Title</string>
-                    </resources>
-                """.trimIndent()
-            )
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .appendToBuild("\n\nandroid.dynamicFeatures = [':feature']\n\n")
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """
+        <resources>
+            <string name="feature_title">Dynamic Feature Title</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
 
-    private val feature =
-        MinimalSubProject.dynamicFeature("com.example.feature")
-            .apply {
-                replaceFile(
-                    TestSourceFile(
-                        "src/main/AndroidManifest.xml",
-                        // language=XML
-                        """
-                            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                                xmlns:dist="http://schemas.android.com/apk/distribution">
-                                <dist:module
-                                    dist:onDemand="true"
-                                    dist:title="@string/feature_title">
-                                    <dist:fusing dist:include="true" />
-                                </dist:module>
-                                <application />
-                            </manifest>
-                            """.trimIndent()
-                    )
-                )
-            }
-
-    private val lib = MinimalSubProject.lib("com.example.lib")
-
-    @JvmField
-    @Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":feature", feature)
-                    .subproject(":lib", lib)
-                    .dependency(feature, app)
-                    .dependency(app, lib)
-                    .build()
-            ).create()
-
-    @Test
-    fun testNoAppMetadataInAar() {
-        project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
-            folder("META-INF").containsExactly(AarMetadataTask.AAR_METADATA_RELATIVE_PATH)
-        }
+  private val feature =
+    MinimalSubProject.dynamicFeature("com.example.feature").apply {
+      replaceFile(
+        TestSourceFile(
+          "src/main/AndroidManifest.xml",
+          // language=XML
+          """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:dist="http://schemas.android.com/apk/distribution">
+              <dist:module
+                  dist:onDemand="true"
+                  dist:title="@string/feature_title">
+                  <dist:fusing dist:include="true" />
+              </dist:module>
+              <application />
+          </manifest>
+          """
+            .trimIndent(),
+        )
+      )
     }
 
-    @Test
-    fun testNoAppMetadataInDynamicFeatureApk() {
-        project.executor().run(":feature:assembleDebug")
-        project.getSubproject("feature").assertApk(ApkSelector.DEBUG) {
-            folder("META-INF").containsExactly(
-                "MANIFEST.MF",
-                "CERT.RSA",
-                "CERT.SF"
-            )
-        }
+  private val lib = MinimalSubProject.lib("com.example.lib")
+
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":feature", feature)
+          .subproject(":lib", lib)
+          .dependency(feature, app)
+          .dependency(app, lib)
+          .build()
+      )
+      .create()
+
+  @Test
+  fun testNoAppMetadataInAar() {
+    project.executor().run(":lib:assembleDebug")
+    project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
+      folder("META-INF").containsExactly(AarMetadataTask.AAR_METADATA_RELATIVE_PATH)
     }
+  }
 
-    @Test
-    fun testAppMetadataInApk() {
-        project.executor().run(":app:assembleDebug")
-        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
-            textFile(APP_METADATA_ENTRY_PATH).isNotEmpty()
-        }
+  @Test
+  fun testNoAppMetadataInDynamicFeatureApk() {
+    project.executor().run(":feature:assembleDebug")
+    project.getSubproject("feature").assertApk(ApkSelector.DEBUG) {
+      folder("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
     }
+  }
 
-    @Test
-    fun testAppMetadataInBundle() {
-        project.executor().run(":app:bundleDebug")
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
-        Zip(bundleFile).use {
-            assertThat(
-                it.getEntry(
-                    "BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties"
-                )
-            ).isNotNull()
-        }
+  @Test
+  fun testAppMetadataInApk() {
+    project.executor().run(":app:assembleDebug")
+    project.getSubproject("app").assertApk(ApkSelector.DEBUG) { textFile(APP_METADATA_ENTRY_PATH).isNotEmpty() }
+  }
+
+  @Test
+  fun testAppMetadataInBundle() {
+    project.executor().run(":app:bundleDebug")
+    val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+    Zip(bundleFile).use { assertThat(it.getEntry("BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties")).isNotNull() }
+  }
+
+  @Test
+  fun testAppMetadataWithAgdeVersionInApk() {
+    project.executor().with(StringOption.IDE_AGDE_VERSION, "2.72").run(":app:assembleDebug")
+    project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+      apkMetadata().property(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY).isEqualTo("2.72")
     }
+  }
 
+  @Test
+  fun testAppMetadataWithAgdeVersionInBundle() {
+    project.executor().with(StringOption.IDE_AGDE_VERSION, "9.81").run(":app:bundleDebug")
+    val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+    Zip(bundleFile).use {
+      val metadataFile = it.getEntry("BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties")
+      assertThat(metadataFile).named("App Metadata file inside Bundle").isNotNull()
 
-    @Test
-    fun testAppMetadataWithAgdeVersionInApk() {
-        project.executor().with(StringOption.IDE_AGDE_VERSION, "2.72").run(":app:assembleDebug")
-        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
-            apkMetadata().property(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY).isEqualTo("2.72")
-        }
+      // Load the App Metadata File as java Properties object
+      val properties = Properties().apply { metadataFile!!.bufferedReader().use { load(it) } }
+      assertThat(properties.getProperty(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY)).isEqualTo("9.81")
     }
-
-    @Test
-    fun testAppMetadataWithAgdeVersionInBundle() {
-        project.executor().with(StringOption.IDE_AGDE_VERSION, "9.81").run(":app:bundleDebug")
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
-        Zip(bundleFile).use {
-            val metadataFile =
-                it.getEntry(
-                    "BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties")
-            assertThat(metadataFile).named("App Metadata file inside Bundle").isNotNull()
-
-            // Load the App Metadata File as java Properties object
-            val properties = Properties().apply {metadataFile!!.bufferedReader().use {load(it)}}
-            assertThat(properties.getProperty(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY))
-                .isEqualTo("9.81")
-        }
-    }
+  }
 }

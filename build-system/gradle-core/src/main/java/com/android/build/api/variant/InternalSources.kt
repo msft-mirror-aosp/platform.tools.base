@@ -19,111 +19,70 @@ package com.android.build.api.variant
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import org.gradle.api.provider.Provider
 import java.io.File
+import org.gradle.api.provider.Provider
 
-/**
- * Internal representation of the public variant sources API.
- */
-interface InternalSources: Sources {
-    override val java: FlatSourceDirectoriesImpl?
-    override val kotlin: FlatSourceDirectoriesImpl?
-    override val res: LayeredSourceDirectoriesImpl?
-    override val resources: FlatSourceDirectoriesImpl?
-    override val assets: LayeredSourceDirectoriesImpl?
-    override val jniLibs: LayeredSourceDirectoriesImpl?
-    override val shaders: LayeredSourceDirectoriesImpl?
-    override val mlModels: LayeredSourceDirectoriesImpl?
-    override val aidl: FlatSourceDirectoriesImpl?
-    override val renderscript: FlatSourceDirectoriesImpl?
-    override val baselineProfiles: FlatSourceDirectoriesImpl?
-    override val keepRules: FlatSourceDirectoriesImpl?
-    /**
-     * runs [action] passing the [Sources.java] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
+/** Internal representation of the public variant sources API. */
+interface InternalSources : Sources {
+  override val java: FlatSourceDirectoriesImpl?
+  override val kotlin: FlatSourceDirectoriesImpl?
+  override val res: LayeredSourceDirectoriesImpl?
+  override val resources: FlatSourceDirectoriesImpl?
+  override val assets: LayeredSourceDirectoriesImpl?
+  override val jniLibs: LayeredSourceDirectoriesImpl?
+  override val shaders: LayeredSourceDirectoriesImpl?
+  override val mlModels: LayeredSourceDirectoriesImpl?
+  override val aidl: FlatSourceDirectoriesImpl?
+  override val renderscript: FlatSourceDirectoriesImpl?
+  override val baselineProfiles: FlatSourceDirectoriesImpl?
+  override val keepRules: FlatSourceDirectoriesImpl?
 
-    /**
-     * runs [action] passing the [Sources.kotlin] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.java] internal representation if not null. If null, action is not run. */
+  fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.resources] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun resources(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.kotlin] internal representation if not null. If null, action is not run. */
+  fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.aidl] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun aidl(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.resources] internal representation if not null. If null, action is not run. */
+  fun resources(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.renderscript] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun renderscript(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.aidl] internal representation if not null. If null, action is not run. */
+  fun aidl(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.baselineProfiles] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.renderscript] internal representation if not null. If null, action is not run. */
+  fun renderscript(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.keepRules] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun keepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.baselineProfiles] internal representation if not null. If null, action is not run. */
+  fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.res] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun res(action: (LayeredSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.keepRules] internal representation if not null. If null, action is not run. */
+  fun keepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.assets] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun assets(action: (LayeredSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.res] internal representation if not null. If null, action is not run. */
+  fun res(action: (LayeredSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.jniLibs] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.assets] internal representation if not null. If null, action is not run. */
+  fun assets(action: (LayeredSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.shaders] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun shaders(action: (LayeredSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.jniLibs] internal representation if not null. If null, action is not run. */
+  fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.mlModels] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun mlModels(action: (LayeredSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.shaders] internal representation if not null. If null, action is not run. */
+  fun shaders(action: (LayeredSourceDirectoriesImpl) -> Unit)
 
-    val artProfile: File?
-    val manifestFile: File
-    // it's ordered from less to most prioritized
-    val manifestOverlayFiles: Provider<List<File>>
+  /** runs [action] passing the [Sources.mlModels] internal representation if not null. If null, action is not run. */
+  fun mlModels(action: (LayeredSourceDirectoriesImpl) -> Unit)
 
-    val sourceProviderNames: List<String>
+  val artProfile: File?
+  val manifestFile: File
+  // it's ordered from less to most prioritized
+  val manifestOverlayFiles: Provider<List<File>>
 
-    /**
-     * DO NOT USE, this is public for model support only.
-     */
-    val multiFlavorSourceProvider: DefaultAndroidSourceSet?
+  val sourceProviderNames: List<String>
 
-    /**
-     * DO NOT USE, this is public for model support only.
-     */
-    val variantSourceProvider: DefaultAndroidSourceSet?
+  /** DO NOT USE, this is public for model support only. */
+  val multiFlavorSourceProvider: DefaultAndroidSourceSet?
+
+  /** DO NOT USE, this is public for model support only. */
+  val variantSourceProvider: DefaultAndroidSourceSet?
 }

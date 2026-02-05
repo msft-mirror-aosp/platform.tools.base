@@ -16,45 +16,45 @@
 package com.android.ide.common.resources.configuration
 
 import com.android.resources.GrammaticalGender
+import kotlin.test.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertNull
 
 class GrammaticalGenderQualifierTest {
-    private val grammaticalGenderQualifier = GrammaticalGenderQualifier()
-    private val config = FolderConfiguration()
+  private val grammaticalGenderQualifier = GrammaticalGenderQualifier()
+  private val config = FolderConfiguration()
 
-    @Test
-    fun testUnset() {
-        assertNull(grammaticalGenderQualifier.value)
-    }
+  @Test
+  fun testUnset() {
+    assertNull(grammaticalGenderQualifier.value)
+  }
 
-    @Test
-    fun testNeuter() {
-        assertTrue(grammaticalGenderQualifier.checkAndSet("neuter", config))
-        assertEquals(GrammaticalGender.NEUTER, config.grammaticalGenderQualifier!!.value)
-        assertEquals("neuter", config.grammaticalGenderQualifier!!.toString())
-    }
+  @Test
+  fun testNeuter() {
+    assertTrue(grammaticalGenderQualifier.checkAndSet("neuter", config))
+    assertEquals(GrammaticalGender.NEUTER, config.grammaticalGenderQualifier!!.value)
+    assertEquals("neuter", config.grammaticalGenderQualifier!!.toString())
+  }
 
-    @Test
-    fun testFeminine() {
-        assertTrue(grammaticalGenderQualifier.checkAndSet("feminine", config))
-        assertEquals(GrammaticalGender.FEMININE, config.grammaticalGenderQualifier!!.value)
-        assertEquals("feminine", config.grammaticalGenderQualifier!!.toString())
-    }
+  @Test
+  fun testFeminine() {
+    assertTrue(grammaticalGenderQualifier.checkAndSet("feminine", config))
+    assertEquals(GrammaticalGender.FEMININE, config.grammaticalGenderQualifier!!.value)
+    assertEquals("feminine", config.grammaticalGenderQualifier!!.toString())
+  }
 
-    @Test
-    fun testMasculine() {
-        assertTrue(grammaticalGenderQualifier.checkAndSet("masculine", config))
-        assertEquals(GrammaticalGender.MASCULINE, config.grammaticalGenderQualifier!!.value)
-        assertEquals("masculine", config.grammaticalGenderQualifier!!.toString())
-    }
+  @Test
+  fun testMasculine() {
+    assertTrue(grammaticalGenderQualifier.checkAndSet("masculine", config))
+    assertEquals(GrammaticalGender.MASCULINE, config.grammaticalGenderQualifier!!.value)
+    assertEquals("masculine", config.grammaticalGenderQualifier!!.toString())
+  }
 
-    @Test
-    fun testFailures() {
-        assertFalse(grammaticalGenderQualifier.checkAndSet("", config))
-        assertFalse(grammaticalGenderQualifier.checkAndSet("invalid", config))
-    }
+  @Test
+  fun testFailures() {
+    assertFalse(grammaticalGenderQualifier.checkAndSet("", config))
+    assertFalse(grammaticalGenderQualifier.checkAndSet("invalid", config))
+  }
 }

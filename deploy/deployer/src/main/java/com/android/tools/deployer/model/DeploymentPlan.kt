@@ -17,15 +17,15 @@ package com.android.tools.deployer.model
 
 import com.android.ddmlib.IDevice
 
-class DeploymentPlan (val app: App, val appState: AppState) {
-    // The first ABI is always the most preferable on the device.
-    constructor(device: IDevice, app: App) : this( app, AppState(device.abis[0]))
+class DeploymentPlan(val app: App, val appState: AppState) {
+  // The first ABI is always the most preferable on the device.
+  constructor(device: IDevice, app: App) : this(app, AppState(device.abis[0]))
 
-    // We can only IWI things that we can dump. Which basically limit ourselves to package
-    // manager APKs... for now.
-    fun canIwi() = app.allStrategies.all { it is PackageManagerApk }
+  // We can only IWI things that we can dump. Which basically limit ourselves to package
+  // manager APKs... for now.
+  fun canIwi() = app.allStrategies.all { it is PackageManagerApk }
 
-    fun getApksForPackageManager(): List<Apk> {
-        return app.getApksForPackageManager(appState.abi)
-    }
+  fun getApksForPackageManager(): List<Apk> {
+    return app.getApksForPackageManager(appState.abi)
+  }
 }

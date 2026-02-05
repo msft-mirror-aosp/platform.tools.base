@@ -23,79 +23,67 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.jar.JarFile
 
-/**
- * Handles storing [ClassesDataSourceCache] objects and sharing them between different workers that
- * queries the same sources.
- */
-class ClassesDataCache: Closeable {
+/** Handles storing [ClassesDataSourceCache] objects and sharing them between different workers that queries the same sources. */
+class ClassesDataCache : Closeable {
 
-    private val sourcesCacheMap = mutableMapOf<Any, ClassesDataSourceCache>()
+  private val sourcesCacheMap = mutableMapOf<Any, ClassesDataSourceCache>()
 
-    private fun getSourceFileKey(file: File): Any =
-        Files.readAttributes(file.toPath(), BasicFileAttributes::class.java).fileKey()
-            ?: file.canonicalPath
+  private fun getSourceFileKey(file: File): Any =
+    Files.readAttributes(file.toPath(), BasicFileAttributes::class.java).fileKey() ?: file.canonicalPath
 
-    fun getSourceCaches(
-        sources: Map<File, ClassesDataSourceCache.SourceType>
-    ): List<ClassesDataSourceCache> {
-        val requested = sources.filter { it.key.exists() }
-        synchronized(this) {
-            return requested.map { (sourceFile, sourceType) ->
-                val key = getSourceFileKey(sourceFile)
-                sourcesCacheMap.computeIfAbsent(key) {
-                    if (sourceFile.name.endsWith(SdkConstants.DOT_JAR)) {
-                        JarCache(sourceFile, sourceType)
-                    } else {
-                        DirCache(sourceFile, sourceType)
-                    }
-                }
-            }
+  fun getSourceCaches(sources: Map<File, ClassesDataSourceCache.SourceType>): List<ClassesDataSourceCache> {
+    val requested = sources.filter { it.key.exists() }
+    synchronized(this) {
+      return requested.map { (sourceFile, sourceType) ->
+        val key = getSourceFileKey(sourceFile)
+        sourcesCacheMap.computeIfAbsent(key) {
+          if (sourceFile.name.endsWith(SdkConstants.DOT_JAR)) {
+            JarCache(sourceFile, sourceType)
+          } else {
+            DirCache(sourceFile, sourceType)
+          }
         }
+      }
     }
+  }
+
+  override fun close() {
+    sourcesCacheMap.values.forEach(ClassesDataSourceCache::close)
+    sourcesCacheMap.clear()
+  }
+
+  private class JarCache(file: File, sourceType: SourceType) : ClassesDataSourceCache(sourceType) {
+    private val jarFile = JarFile(file)
 
     override fun close() {
-        sourcesCacheMap.values.forEach(ClassesDataSourceCache::close)
-        sourcesCacheMap.clear()
+      super.close()
+      jarFile.close()
     }
 
-    private class JarCache(
-        file: File,
-        sourceType: SourceType
-    ) : ClassesDataSourceCache(sourceType) {
-        private val jarFile = JarFile(file)
+    @Synchronized
+    override fun maybeLoadClassData(className: String): ClassData? {
+      val classFileName = className + SdkConstants.DOT_CLASS
 
-        override fun close() {
-            super.close()
-            jarFile.close()
-        }
+      jarFile.getEntry(classFileName)?.let { entry ->
+        return loadClassData(className, jarFile.getInputStream(entry).buffered())
+      }
 
-        @Synchronized
-        override fun maybeLoadClassData(className: String): ClassData? {
-            val classFileName = className + SdkConstants.DOT_CLASS
-
-            jarFile.getEntry(classFileName)?.let { entry ->
-                return loadClassData(className, jarFile.getInputStream(entry).buffered())
-            }
-
-            return null
-        }
+      return null
     }
+  }
 
-    private class DirCache(
-        private val dir: File,
-        sourceType: SourceType
-    ) : ClassesDataSourceCache(sourceType) {
+  private class DirCache(private val dir: File, sourceType: SourceType) : ClassesDataSourceCache(sourceType) {
 
-        @Synchronized
-        override fun maybeLoadClassData(className: String): ClassData? {
-            val classFileName = className + SdkConstants.DOT_CLASS
+    @Synchronized
+    override fun maybeLoadClassData(className: String): ClassData? {
+      val classFileName = className + SdkConstants.DOT_CLASS
 
-            val classFile = dir.resolve(classFileName)
-            if (classFile.exists()) {
-                return loadClassData(className, classFile.inputStream().buffered())
-            }
+      val classFile = dir.resolve(classFileName)
+      if (classFile.exists()) {
+        return loadClassData(className, classFile.inputStream().buffered())
+      }
 
-            return null
-        }
+      return null
     }
+  }
 }

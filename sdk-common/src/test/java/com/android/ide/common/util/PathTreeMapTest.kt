@@ -20,39 +20,36 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 /**
- * Tests that apply to [PathTreeMapImpl] but not to other [MutablePathMap] implementations. For
- * additional test cases, see [MutablePathMapTest].
+ * Tests that apply to [PathTreeMapImpl] but not to other [MutablePathMap] implementations. For additional test cases, see
+ * [MutablePathMapTest].
  */
 class PathTreeMapTest {
-    @Test
-    fun testPathTreeMapOfContainsCorrectInitialContents() {
-        val map = pathTreeMapOf(
-            PathString("/foo/bar") to "bar",
-            PathString("/wakka/wakka") to "wakka"
-        )
-        Truth.assertThat(map[PathString("/foo/bar")]).isEqualTo("bar")
-    }
+  @Test
+  fun testPathTreeMapOfContainsCorrectInitialContents() {
+    val map = pathTreeMapOf(PathString("/foo/bar") to "bar", PathString("/wakka/wakka") to "wakka")
+    Truth.assertThat(map[PathString("/foo/bar")]).isEqualTo("bar")
+  }
 
-    @Test
-    fun testToPathTreeMapMakesACopy() {
-        val foo = PathString("foo")
-        val bar = PathString("foo")
+  @Test
+  fun testToPathTreeMapMakesACopy() {
+    val foo = PathString("foo")
+    val bar = PathString("foo")
 
-        val input = hashMapOf(foo to "foo")
-        val map = input.toPathTreeMap()
-        Truth.assertThat(input[foo]).isEqualTo("foo")
-        Truth.assertThat(map[foo]).isEqualTo("foo")
+    val input = hashMapOf(foo to "foo")
+    val map = input.toPathTreeMap()
+    Truth.assertThat(input[foo]).isEqualTo("foo")
+    Truth.assertThat(map[foo]).isEqualTo("foo")
 
-        // Modify the input map and confirm it doesn't affect the tree map
-        input.clear()
+    // Modify the input map and confirm it doesn't affect the tree map
+    input.clear()
 
-        Truth.assertThat(input[foo]).isNull()
-        Truth.assertThat(map[foo]).isEqualTo("foo")
+    Truth.assertThat(input[foo]).isNull()
+    Truth.assertThat(map[foo]).isEqualTo("foo")
 
-        // Modify the tree map and confirm it doesn't affect the input map
-        map.put(bar, "bar")
+    // Modify the tree map and confirm it doesn't affect the input map
+    map.put(bar, "bar")
 
-        Truth.assertThat(input[bar]).isNull()
-        Truth.assertThat(map[bar]).isEqualTo("bar")
-    }
+    Truth.assertThat(input[bar]).isNull()
+    Truth.assertThat(map[bar]).isEqualTo("bar")
+  }
 }

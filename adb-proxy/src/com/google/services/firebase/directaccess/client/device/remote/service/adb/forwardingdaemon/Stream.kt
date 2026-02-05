@@ -28,12 +28,10 @@ interface Stream {
   suspend fun sendClose()
 
   /**
-   * Receive a command from the remote device, to either be handled internally in this stream or
-   * sent back to the local ADB server.
+   * Receive a command from the remote device, to either be handled internally in this stream or sent back to the local ADB server.
    *
-   * For services that we replace in the ForwardingDaemon, we may want to make additional or
-   * alternative requests to the remote device. The responses to those requests should be handled
-   * here.
+   * For services that we replace in the ForwardingDaemon, we may want to make additional or alternative requests to the remote device. The
+   * responses to those requests should be handled here.
    */
   suspend fun receiveCommand(command: StreamCommand)
 }

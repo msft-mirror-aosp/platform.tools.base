@@ -67,10 +67,7 @@ class SetupTaskActionTest {
 
     `when`(testLabBuildService.catalog()).thenReturn(catalog)
 
-    setupInput =
-      project.objects.newInstance(DeviceSetupInput::class.java).apply {
-        buildService.set(testLabBuildService)
-      }
+    setupInput = project.objects.newInstance(DeviceSetupInput::class.java).apply { buildService.set(testLabBuildService) }
 
     gson =
       GsonBuilder()
@@ -112,11 +109,7 @@ class SetupTaskActionTest {
 
     SetupTaskAction().setup(setupInput, outDirectory)
 
-    val result =
-      gson.fromJson(
-        outDirectory.file("nameOfDslDevice.json").asFile.readText(),
-        AndroidModel::class.java,
-      )
+    val result = gson.fromJson(outDirectory.file("nameOfDslDevice.json").asFile.readText(), AndroidModel::class.java)
 
     assertThat(result).isEqualTo(target)
   }
@@ -156,17 +149,14 @@ class SetupTaskActionTest {
         )
       )
 
-    val error =
-      assertThrows(IllegalArgumentException::class.java) {
-        SetupTaskAction().setup(setupInput, outDirectory)
-      }
+    val error = assertThrows(IllegalArgumentException::class.java) { SetupTaskAction().setup(setupInput, outDirectory) }
 
     assertThat(error.message)
       .isEqualTo(
         """
-                Device: hi is not a valid input. Available devices for API level 33 are:
-                [Pixel3 (Pixel 3), b0q (SM-S9080), someOtherDevice (something)]
-            """
+        Device: hi is not a valid input. Available devices for API level 33 are:
+        [Pixel3 (Pixel 3), b0q (SM-S9080), someOtherDevice (something)]
+        """
           .trimIndent()
       )
   }
@@ -192,17 +182,14 @@ class SetupTaskActionTest {
           AndroidModel().apply { id = "someOtherDevice" },
         )
       )
-    val error =
-      assertThrows(IllegalStateException::class.java) {
-        SetupTaskAction().setup(setupInput, outDirectory)
-      }
+    val error = assertThrows(IllegalStateException::class.java) { SetupTaskAction().setup(setupInput, outDirectory) }
 
     assertThat(error.message)
       .isEqualTo(
         """
-                apiLevel: 28 is not supported by device: b0q. Available Api levels are:
-                [29, 30, 32, 33]
-            """
+        apiLevel: 28 is not supported by device: b0q. Available Api levels are:
+        [29, 30, 32, 33]
+        """
           .trimIndent()
       )
   }

@@ -78,17 +78,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          res/values/strings.xml:3: Warning: The resource R.string.some_string appears to be unused [UnusedResources]
-              <string name="some_string">Some String</string>
-                      ~~~~~~~~~~~~~~~~~~
-          res/layout/main.xml:2: Warning: The resource R.id.layout appears to be unused [UnusedIds]
-                  android:id="@+id/layout">
-                  ~~~~~~~~~~~~~~~~~~~~~~~~
-          res/layout/main.xml:4: Warning: The resource R.id.button1 appears to be unused [UnusedIds]
-                  android:id="@+id/button1"
-                  ~~~~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 3 warnings
-          """
+        res/values/strings.xml:3: Warning: The resource R.string.some_string appears to be unused [UnusedResources]
+            <string name="some_string">Some String</string>
+                    ~~~~~~~~~~~~~~~~~~
+        res/layout/main.xml:2: Warning: The resource R.id.layout appears to be unused [UnusedIds]
+                android:id="@+id/layout">
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+        res/layout/main.xml:4: Warning: The resource R.id.button1 appears to be unused [UnusedIds]
+                android:id="@+id/button1"
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 3 warnings
+        """
           .trimIndent()
       )
   }
@@ -96,20 +96,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testUnused() {
     val expected =
       """
-        res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-        ^
-        res/layout/main.xml:2: Warning: The resource R.layout.main appears to be unused [UnusedResources]
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        ^
-        res/layout/other.xml:2: Warning: The resource R.layout.other appears to be unused [UnusedResources]
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        ^
-        res/values/strings2.xml:3: Warning: The resource R.string.hello appears to be unused [UnusedResources]
-            <string name="hello">Hello</string>
-                    ~~~~~~~~~~~~
-        0 errors, 4 warnings
-        """
+      res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+      ^
+      res/layout/main.xml:2: Warning: The resource R.layout.main appears to be unused [UnusedResources]
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      ^
+      res/layout/other.xml:2: Warning: The resource R.layout.other appears to be unused [UnusedResources]
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      ^
+      res/values/strings2.xml:3: Warning: The resource R.string.hello appears to be unused [UnusedResources]
+          <string name="hello">Hello</string>
+                  ~~~~~~~~~~~~
+      0 errors, 4 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -159,23 +159,23 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testUnusedIds() {
     val expected =
       """
-        res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-        ^
-        res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-                                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/layout/accessibility.xml:3: Warning: The resource R.id.button1 appears to be unused [UnusedIds]
-            <Button android:text="Button" android:id="@+id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
-                                          ~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/layout/accessibility.xml:4: Warning: The resource R.id.android_logo appears to be unused [UnusedIds]
-            <ImageView android:id="@+id/android_logo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
-                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]
-            <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
-                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 5 warnings
-        """
+      res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+      ^
+      res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+                                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/layout/accessibility.xml:3: Warning: The resource R.id.button1 appears to be unused [UnusedIds]
+          <Button android:text="Button" android:id="@+id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/layout/accessibility.xml:4: Warning: The resource R.id.android_logo appears to be unused [UnusedIds]
+          <ImageView android:id="@+id/android_logo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]
+          <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 5 warnings
+      """
         .trimIndent()
     lint().files(mTest, mR, manifest().minSdk(14), mAccessibility).run().expect(expected)
   }
@@ -218,14 +218,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testArrayReference() {
     val expected =
       """
-        res/values/arrayusage.xml:2: Warning: The resource R.string.my_item appears to be unused [UnusedResources]
-        <string name="my_item">An Item</string>
-                ~~~~~~~~~~~~~~
-        res/values/arrayusage.xml:3: Warning: The resource R.array.my_array appears to be unused [UnusedResources]
-        <string-array name="my_array">
-                      ~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
-        """
+      res/values/arrayusage.xml:2: Warning: The resource R.string.my_item appears to be unused [UnusedResources]
+      <string name="my_item">An Item</string>
+              ~~~~~~~~~~~~~~
+      res/values/arrayusage.xml:3: Warning: The resource R.array.my_array appears to be unused [UnusedResources]
+      <string-array name="my_array">
+                    ~~~~~~~~~~~~~~~
+      0 errors, 2 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -271,11 +271,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testAttrs() {
     val expected =
       """
-        res/layout/customattrlayout.xml:2: Warning: The resource R.layout.customattrlayout appears to be unused [UnusedResources]
-        <foo.bar.ContentFrame
-        ^
-        0 errors, 1 warnings
-        """
+      res/layout/customattrlayout.xml:2: Warning: The resource R.layout.customattrlayout appears to be unused [UnusedResources]
+      <foo.bar.ContentFrame
+      ^
+      0 errors, 1 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -366,11 +366,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          ../LibraryProject/res/values/strings.xml:6: Warning: The resource R.string.string3 appears to be unused [UnusedResources]
-              <string name="string3">String 3</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 1 warnings
-          """
+        ../LibraryProject/res/values/strings.xml:6: Warning: The resource R.string.string3 appears to be unused [UnusedResources]
+            <string name="string3">String 3</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
           .trimIndent()
       )
   }
@@ -447,14 +447,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          ../LibraryProject/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
-              <string name="unused2">Unused 2</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 2 warnings
-          """
+        ../LibraryProject/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+            <string name="unused2">Unused 2</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
           .trimIndent()
       )
   }
@@ -551,17 +551,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
-              <string name="unused2">Unused 2</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 3 warnings
-          """
+        ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+            <string name="unused2">Unused 2</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 3 warnings
+        """
           .trimIndent()
       )
   }
@@ -670,39 +670,39 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          ../LibraryProject1/res/values-en/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          ../LibraryProject1/res/values-fr/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
-              <string name="unused2">Unused 2</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 5 warnings
-          """
+        ../LibraryProject1/res/values-en/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        ../LibraryProject1/res/values-fr/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+            <string name="unused2">Unused 2</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 5 warnings
+        """
           .trimIndent(),
         testMode = TestMode.DEFAULT,
       )
       .expect(
         """
-          ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
-              <string name="unused1">Unused 1</string>
-                      ~~~~~~~~~~~~~~
-          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
-              <string name="unused2">Unused 2</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 3 warnings
-          """
+        ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+            <string name="unused1">Unused 1</string>
+                    ~~~~~~~~~~~~~~
+        res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+            <string name="unused2">Unused 2</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 3 warnings
+        """
           .trimIndent(),
         testMode = TestMode.PARTIAL,
       )
@@ -903,15 +903,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testLibraryMerging() {
     // http://code.google.com/p/android/issues/detail?id=36952
-    val library =
-      project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings)
-        .name("LibraryProject")
+    val library = project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings).name("LibraryProject")
     val main =
       project( // Main project
           manifest().pkg("foo.main").minSdk(14),
-          projectProperties()
-            .property("android.library.reference.1", "../LibraryProject")
-            .property("manifestmerger.enabled", "true"),
+          projectProperties().property("android.library.reference.1", "../LibraryProject").property("manifestmerger.enabled", "true"),
           mMainCode,
         )
         .name("MainProject")
@@ -1193,11 +1189,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // Resources marked as public should not be listed as potentially unused
     val expected =
       """
-        res/values/resources.xml:4: Warning: The resource R.string.nameFormat appears to be unused [UnusedResources]
-            <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
-                                ~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
-        """
+      res/values/resources.xml:4: Warning: The resource R.string.nameFormat appears to be unused [UnusedResources]
+          <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
+                              ~~~~~~~~~~~~~~~~~
+      0 errors, 1 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -1244,10 +1240,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testDynamicResources() {
     val expected =
       """
-        build.gradle: Warning: The resource R.string.cat appears to be unused [UnusedResources]
-        build.gradle: Warning: The resource R.string.dog appears to be unused [UnusedResources]
-        0 errors, 2 warnings
-        """
+      build.gradle: Warning: The resource R.string.cat appears to be unused [UnusedResources]
+      build.gradle: Warning: The resource R.string.dog appears to be unused [UnusedResources]
+      0 errors, 2 warnings
+      """
         .trimIndent() // Note: R.string.foo should not be here since it is not present in
     // `release` variant.
 
@@ -1400,26 +1396,26 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testStyles() {
     val expected =
       """
-        res/values/styles.xml:4: Warning: The resource R.style.UnusedStyleExtendingFramework appears to be unused [UnusedResources]
-           <style name="UnusedStyleExtendingFramework" parent="android:Theme"/>
-                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/values/styles.xml:5: Warning: The resource R.style.UnusedStyle appears to be unused [UnusedResources]
-            <style name="UnusedStyle"/>
-                   ~~~~~~~~~~~~~~~~~~
-        res/values/styles.xml:6: Warning: The resource R.style.UnusedStyle_Sub appears to be unused [UnusedResources]
-            <style name="UnusedStyle.Sub"/>
-                   ~~~~~~~~~~~~~~~~~~~~~~
-        res/values/styles.xml:7: Warning: The resource R.style.UnusedStyle_Something_Sub appears to be unused [UnusedResources]
-            <style name="UnusedStyle.Something.Sub" parent="UnusedStyle"/>
-                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/values/styles.xml:8: Warning: The resource R.style.ImplicitUsed appears to be unused [UnusedResources]
-            <style name="ImplicitUsed" parent="android:Widget.ActionBar"/>
-                   ~~~~~~~~~~~~~~~~~~~
-        res/values/styles.xml:9: Warning: The resource R.style.EmptyParent appears to be unused [UnusedResources]
-            <style name="EmptyParent" parent=""/>
-                   ~~~~~~~~~~~~~~~~~~
-        0 errors, 6 warnings
-        """
+      res/values/styles.xml:4: Warning: The resource R.style.UnusedStyleExtendingFramework appears to be unused [UnusedResources]
+         <style name="UnusedStyleExtendingFramework" parent="android:Theme"/>
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/values/styles.xml:5: Warning: The resource R.style.UnusedStyle appears to be unused [UnusedResources]
+          <style name="UnusedStyle"/>
+                 ~~~~~~~~~~~~~~~~~~
+      res/values/styles.xml:6: Warning: The resource R.style.UnusedStyle_Sub appears to be unused [UnusedResources]
+          <style name="UnusedStyle.Sub"/>
+                 ~~~~~~~~~~~~~~~~~~~~~~
+      res/values/styles.xml:7: Warning: The resource R.style.UnusedStyle_Something_Sub appears to be unused [UnusedResources]
+          <style name="UnusedStyle.Something.Sub" parent="UnusedStyle"/>
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/values/styles.xml:8: Warning: The resource R.style.ImplicitUsed appears to be unused [UnusedResources]
+          <style name="ImplicitUsed" parent="android:Widget.ActionBar"/>
+                 ~~~~~~~~~~~~~~~~~~~
+      res/values/styles.xml:9: Warning: The resource R.style.EmptyParent appears to be unused [UnusedResources]
+          <style name="EmptyParent" parent=""/>
+                 ~~~~~~~~~~~~~~~~~~
+      0 errors, 6 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -2215,11 +2211,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          src/main/res/layout/activity_ignored.xml:2: Warning: The resource R.layout.activity_ignored appears to be unused [UnusedResources]
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-          ^
-          0 errors, 1 warnings
-          """
+        src/main/res/layout/activity_ignored.xml:2: Warning: The resource R.layout.activity_ignored appears to be unused [UnusedResources]
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        0 errors, 1 warnings
+        """
           .trimIndent()
       )
   }
@@ -2631,11 +2627,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          generated/res/raw/something.xml:1: Warning: The resource R.raw.something appears to be unused [UnusedResources]
-          <resources
-          ^
-          0 errors, 1 warnings
-          """
+        generated/res/raw/something.xml:1: Warning: The resource R.raw.something appears to be unused [UnusedResources]
+        <resources
+        ^
+        0 errors, 1 warnings
+        """
           .trimIndent()
       )
   }
@@ -3077,11 +3073,7 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           """
             .trimIndent()
         ),
-        rClass(
-          "com.android.tools.test.unusedbindingtest.R",
-          "@layout/activity_main",
-          "@layout/unused",
-        ),
+        rClass("com.android.tools.test.unusedbindingtest.R", "@layout/activity_main", "@layout/unused"),
         java(
           """
           // Generated by view binder compiler. Do not edit!
@@ -3176,14 +3168,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          ../lib/src/main/res/values/strings.xml:4: Warning: The resource R.string.string1 appears to be unused [UnusedResources]
-              <string name="string1">String 1</string>
-                      ~~~~~~~~~~~~~~
-          src/main/res/layout/unused.xml:1: Warning: The resource R.layout.unused appears to be unused [UnusedResources]
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-          ^
-          0 errors, 2 warnings
-          """
+        ../lib/src/main/res/values/strings.xml:4: Warning: The resource R.string.string1 appears to be unused [UnusedResources]
+            <string name="string1">String 1</string>
+                    ~~~~~~~~~~~~~~
+        src/main/res/layout/unused.xml:1: Warning: The resource R.layout.unused appears to be unused [UnusedResources]
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        0 errors, 2 warnings
+        """
           .trimIndent()
       )
   }
@@ -3415,26 +3407,21 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testSkipLibrary() {
     // Regression test for b/391955627
-    val library =
-      project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings)
+    val library = project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings)
 
     lint().projects(library).run().expectClean()
-    lint()
-      .projects(library)
-      .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, true)
-      .run()
-      .expectClean()
+    lint().projects(library).configureOption(UnusedResourceDetector.SKIP_LIBRARIES, true).run().expectClean()
     lint()
       .projects(library)
       .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, false)
       .run()
       .expect(
         """
-          res/values/strings.xml:6: Warning: The resource R.string.string2 appears to be unused [UnusedResources]
-              <string name="string2">String 2</string>
-                      ~~~~~~~~~~~~~~
-          0 errors, 1 warning
-          """
+        res/values/strings.xml:6: Warning: The resource R.string.string2 appears to be unused [UnusedResources]
+            <string name="string2">String 2</string>
+                    ~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
           .trimIndent()
       )
   }
@@ -3642,10 +3629,6 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         .trimIndent()
 
     private val gradleClientFactory =
-      TestLintTask.ClientFactory {
-        com.android.tools.lint.checks.infrastructure.TestLintClient(
-          LintClient.Companion.CLIENT_GRADLE
-        )
-      }
+      TestLintTask.ClientFactory { com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE) }
   }
 }

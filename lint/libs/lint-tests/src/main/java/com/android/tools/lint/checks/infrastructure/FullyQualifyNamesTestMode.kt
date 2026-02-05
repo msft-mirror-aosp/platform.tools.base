@@ -77,18 +77,15 @@ import org.jetbrains.uast.util.isAssignment
 import org.jetbrains.uast.util.isConstructorCall
 
 /**
- * Test mode which replaces simple symbols with fully qualified names, and in Kotlin files, replaces
- * symbols with import aliases, to help catch bugs where code isn't properly handling fully
- * qualified names which are allowed.
+ * Test mode which replaces simple symbols with fully qualified names, and in Kotlin files, replaces symbols with import aliases, to help
+ * catch bugs where code isn't properly handling fully qualified names which are allowed.
  *
- * Note that it does not rewrite types inside type reference (such as wildcard bounds, disjointed
- * types, etc) since these are not modeled by UAST and it would need to resort to string heuristics.
- * For this reason, it also does not attempt to remove the import statements (since they may be
- * needed for these type expressions).
+ * Note that it does not rewrite types inside type reference (such as wildcard bounds, disjointed types, etc) since these are not modeled by
+ * UAST and it would need to resort to string heuristics. For this reason, it also does not attempt to remove the import statements (since
+ * they may be needed for these type expressions).
  *
- * It also deliberately leaves core types like "String", "Throwable" etc unqualified in Kotlin files
- * such that Kotlin can correctly handle these (changing to for example kotlin.String wouldn't
- * always be correct either).
+ * It also deliberately leaves core types like "String", "Throwable" etc unqualified in Kotlin files such that Kotlin can correctly handle
+ * these (changing to for example kotlin.String wouldn't always be correct either).
  *
  * TODO: See if we can do statically imported methods and fields as well?
  */
@@ -114,12 +111,7 @@ class FullyQualifyNamesTestMode :
         """
       .trimIndent()
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     // Edits at given offsets. By storing it this way
     // we can avoid a few cases where multiple PSI elements redundantly
     // refer to the same element; when we just recorded insertions
@@ -145,10 +137,7 @@ class FullyQualifyNamesTestMode :
 
         private fun checkMember(node: UElement, member: PsiMember) {
           val parent = skipParenthesizedExprUp(node.uastParent)
-          if (
-            parent is UQualifiedReferenceExpression &&
-              parent.receiver.skipParenthesizedExprDown() !== node
-          ) {
+          if (parent is UQualifiedReferenceExpression && parent.receiver.skipParenthesizedExprDown() !== node) {
             return
           }
           if (
@@ -172,19 +161,14 @@ class FullyQualifyNamesTestMode :
     return editMap.values.toMutableList()
   }
 
-  abstract class TypeVisitor(private val context: JavaContext, private val source: String) :
-    EditVisitor() {
+  abstract class TypeVisitor(private val context: JavaContext, private val source: String) : EditVisitor() {
 
     open fun getQualifiedName(reference: UElement, member: PsiMember): String? {
       if (isKotlin(reference.lang)) {
         val sourcePsi = reference.sourcePsi ?: return null
-        val expression =
-          PsiTreeUtil.getParentOfType(sourcePsi, KtExpression::class.java, false)
-            as? KtReferenceExpression ?: return null
+        val expression = PsiTreeUtil.getParentOfType(sourcePsi, KtExpression::class.java, false) as? KtReferenceExpression ?: return null
         analyze(expression) {
-          val symbol =
-            expression.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>()?.symbol
-              ?: return null
+          val symbol = expression.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>()?.symbol ?: return null
 
           if (
             symbol.isExtension ||
@@ -199,10 +183,7 @@ class FullyQualifyNamesTestMode :
             return callableId.asSingleFqName().render()
           }
         }
-      } else if (
-        member.modifierList?.hasModifierProperty(PsiModifier.STATIC) == true &&
-          member !is PsiEnumConstant
-      ) {
+      } else if (member.modifierList?.hasModifierProperty(PsiModifier.STATIC) == true && member !is PsiEnumConstant) {
         return (member.containingClass?.qualifiedName ?: return null) + "." + member.name
       }
       return null
@@ -228,9 +209,7 @@ class FullyQualifyNamesTestMode :
         // `null`.
         return
       }
-      if (
-        psi is KtSuperTypeCallEntry || psi is KtThisExpression || psi is KtConstructorDelegationCall
-      ) {
+      if (psi is KtSuperTypeCallEntry || psi is KtThisExpression || psi is KtConstructorDelegationCall) {
         return
       }
       if (!visitedElements.add(psi)) {
@@ -308,10 +287,7 @@ class FullyQualifyNamesTestMode :
       return super.visitSimpleNameReferenceExpression(node)
     }
 
-    protected open fun allowClassReference(
-      node: USimpleNameReferenceExpression,
-      parent: UQualifiedReferenceExpression,
-    ): Boolean {
+    protected open fun allowClassReference(node: USimpleNameReferenceExpression, parent: UQualifiedReferenceExpression): Boolean {
       return true
     }
 
@@ -323,10 +299,7 @@ class FullyQualifyNamesTestMode :
         checkMethodReference(node, resolved)
       } else if (resolved is PsiField) {
         checkFieldReference(node, resolved)
-      } else if (
-        parent is UQualifiedReferenceExpression &&
-          parent.receiver.skipParenthesizedExprDown() === node
-      ) {
+      } else if (parent is UQualifiedReferenceExpression && parent.receiver.skipParenthesizedExprDown() === node) {
         if (resolved is PsiClass) {
           if (!allowClassReference(node, parent)) {
             return
@@ -400,9 +373,7 @@ class FullyQualifyNamesTestMode :
         if (start > 0 && (source[start - 1] == '.' || source[start - 1] == ':')) {
           return
         }
-        node.resolve()?.let { cls ->
-          replaceClassReference(cls, anchor, context.evaluator.getClassType(cls))
-        }
+        node.resolve()?.let { cls -> replaceClassReference(cls, anchor, context.evaluator.getClassType(cls)) }
       }
     }
 
@@ -475,8 +446,7 @@ class FullyQualifyNamesTestMode :
       // We sometimes get qualified expressions that are not
       // provided as a UQualifiedReferenceExpression
       if (reference.sourcePsi is KtConstructorCalleeExpression) {
-        val typeReference =
-          (reference.sourcePsi as? KtConstructorCalleeExpression)?.typeReference?.toUElement()
+        val typeReference = (reference.sourcePsi as? KtConstructorCalleeExpression)?.typeReference?.toUElement()
         if (typeReference != null) {
           replaceClassReference(cls, typeReference, node.getExpressionType())
           return
@@ -494,10 +464,7 @@ class FullyQualifyNamesTestMode :
         val erased = context.evaluator.erasure(type)
         val cls = context.evaluator.getTypeClass(erased)
         val sourcePsi = node.sourcePsi
-        val typeReference =
-          node.expression
-            ?: if (sourcePsi is KtClassLiteralExpression) sourcePsi.lhs.toUElement() ?: node
-            else node
+        val typeReference = node.expression ?: if (sourcePsi is KtClassLiteralExpression) sourcePsi.lhs.toUElement() ?: node else node
         if (cls != null) {
           replaceClassReference(cls, typeReference, type)
         } else {

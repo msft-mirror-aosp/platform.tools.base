@@ -20,12 +20,11 @@ import androidx.inspection.Inspector
 import java.util.concurrent.Executor
 
 class TestCommandCallback : Inspector.CommandCallback {
-    val replyListeners = mutableListOf<(ByteArray) -> Unit>()
+  val replyListeners = mutableListOf<(ByteArray) -> Unit>()
 
-    override fun reply(response: ByteArray) {
-        replyListeners.forEach { it(response) }
-    }
+  override fun reply(response: ByteArray) {
+    replyListeners.forEach { it(response) }
+  }
 
-    override fun addCancellationListener(executor: Executor, runnable: Runnable) =
-        throw NotImplementedError()
+  override fun addCancellationListener(executor: Executor, runnable: Runnable) = throw NotImplementedError()
 }

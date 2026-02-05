@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun modelH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_MODEL_H
 #define ANDROIDGLINVESTIGATIONS_MODEL_H
 

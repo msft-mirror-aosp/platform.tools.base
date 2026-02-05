@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.res.values
 
-const val stringsXml = """<resources>
+const val stringsXml =
+  """<resources>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>

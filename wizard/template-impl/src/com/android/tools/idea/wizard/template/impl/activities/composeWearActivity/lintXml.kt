@@ -18,13 +18,13 @@ package com.android.tools.idea.wizard.template.impl.activities.composeWearActivi
 fun lintXml() =
   // language=xml
   """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <lint>
-        <!-- Ignore the IconLocation for the Tile preview images -->
-        <issue id="IconLocation">
-            <ignore path="res/drawable/tile_preview.png" />
-            <ignore path="res/drawable-round/tile_preview.png" />
-        </issue>
-    </lint>
-"""
+  <?xml version="1.0" encoding="UTF-8"?>
+  <lint>
+      <!-- Ignore the IconLocation for the Tile preview images -->
+      <issue id="IconLocation">
+          <ignore path="res/drawable/tile_preview.png" />
+          <ignore path="res/drawable-round/tile_preview.png" />
+      </issue>
+  </lint>
+  """
     .trimIndent()

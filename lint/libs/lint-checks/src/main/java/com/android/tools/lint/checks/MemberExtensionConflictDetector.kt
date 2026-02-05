@@ -53,8 +53,7 @@ import org.jetbrains.uast.USimpleNameReferenceExpression
 
 class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(MemberExtensionConflictDetector::class.java, JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MemberExtensionConflictDetector::class.java, JAVA_FILE_SCOPE)
 
     private const val MSG = "Conflict applicable candidates of member and extension"
 
@@ -78,11 +77,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(
-      UImportStatement::class.java,
-      UCallExpression::class.java,
-      USimpleNameReferenceExpression::class.java,
-    )
+    listOf(UImportStatement::class.java, UCallExpression::class.java, USimpleNameReferenceExpression::class.java)
 
   private val explicitlyImportedExtensions = mutableSetOf<CallableId>()
 
@@ -99,8 +94,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
 
         val importDirective = node.sourcePsi as? KtImportDirective ?: return
         val importedReference = importDirective.importedReference ?: return
-        val ktReference =
-          importedReference.getQualifiedElementSelector() as? KtReferenceExpression ?: return
+        val ktReference = importedReference.getQualifiedElementSelector() as? KtReferenceExpression ?: return
         analyze(ktReference) {
           if (!isK2()) return
           val symbols = ktReference.mainReference.resolveToSymbols()
@@ -173,8 +167,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         // *unless* users explicitly import them. Those are technically unused,
         // so this warning will bring their attention to either remove import
         // or introduce import alias if their intention was to use an extension.
-        val filteredExtensions =
-          extensions.filter { !it.isFromKotlinBuiltIns() || it.isExplicitlyImported() }
+        val filteredExtensions = extensions.filter { !it.isFromKotlinBuiltIns() || it.isExplicitlyImported() }
         // Yet another bail-out: no extensions
         if (filteredExtensions.isEmpty()) {
           return
@@ -205,11 +198,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         return callableId.packageName.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME)
       }
 
-      private fun KaSession.reportConflict(
-        node: UElement,
-        member: KaCallCandidateInfo,
-        extension: KaCallCandidateInfo,
-      ) {
+      private fun KaSession.reportConflict(node: UElement, member: KaCallCandidateInfo, extension: KaCallCandidateInfo) {
         val mem = member.candidate.symbol()
         val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
         val message = buildString {
@@ -230,8 +219,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
 
       private fun KaCall.symbol(): KaSymbol =
         when (this) {
-          is KaCompoundVariableAccessCall ->
-            compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCompoundVariableAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
           is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
           is KaCallableMemberCall<*, *> -> symbol
         }

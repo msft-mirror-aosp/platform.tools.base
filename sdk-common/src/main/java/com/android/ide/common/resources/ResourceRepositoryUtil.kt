@@ -33,32 +33,31 @@ import java.util.TreeSet
  * Returns the resources values matching a given [FolderConfiguration].
  *
  * @param referenceConfig the configuration that each value must match
- * @return a [Table] with one row for every namespace present in this repository, where
- *         every row contains an entry for all resource types
+ * @return a [Table] with one row for every namespace present in this repository, where every row contains an entry for all resource types
  */
 fun ResourceRepository.getConfiguredResources(
-    referenceConfig: FolderConfiguration
+  referenceConfig: FolderConfiguration
 ): Table<ResourceNamespace, ResourceType, ResourceValueMap> {
-    val backingMap: Map<ResourceNamespace, Map<ResourceType, ResourceValueMap>> =
-        if (KnownNamespacesMap.canContainAll(namespaces)) { KnownNamespacesMap() } else { HashMap() }
-    val result = Tables.newCustomTable(backingMap) { EnumMap(ResourceType::class.java) }
-
-    for (namespace in namespaces) {
-        // TODO(namespaces): Move this method to ResourceResolverCache.
-        // For performance reasons don't mix framework and non-framework resources since
-        // they have different life spans.
-        assert(namespaces.size == 1 || namespace !== ResourceNamespace.ANDROID)
-
-        for (type in ResourceType.values()) {
-            // get the local results and put them in the map
-            result.put(
-                namespace,
-                type,
-                getConfiguredResources(namespace, type, referenceConfig)
-            )
-        }
+  val backingMap: Map<ResourceNamespace, Map<ResourceType, ResourceValueMap>> =
+    if (KnownNamespacesMap.canContainAll(namespaces)) {
+      KnownNamespacesMap()
+    } else {
+      HashMap()
     }
-    return result
+  val result = Tables.newCustomTable(backingMap) { EnumMap(ResourceType::class.java) }
+
+  for (namespace in namespaces) {
+    // TODO(namespaces): Move this method to ResourceResolverCache.
+    // For performance reasons don't mix framework and non-framework resources since
+    // they have different life spans.
+    assert(namespaces.size == 1 || namespace !== ResourceNamespace.ANDROID)
+
+    for (type in ResourceType.values()) {
+      // get the local results and put them in the map
+      result.put(namespace, type, getConfiguredResources(namespace, type, referenceConfig))
+    }
+  }
+  return result
 }
 
 /**
@@ -71,56 +70,52 @@ fun ResourceRepository.getConfiguredResources(
  * @param referenceConfig the configuration to best match
  */
 fun ResourceRepository.getConfiguredResources(
-    namespace: ResourceNamespace,
-    type: ResourceType,
-    referenceConfig: FolderConfiguration
+  namespace: ResourceNamespace,
+  type: ResourceType,
+  referenceConfig: FolderConfiguration,
 ): ResourceValueMap {
-    val itemsByName = getResources(namespace, type).asMap()
-    val result = ResourceValueMap.createWithExpectedSize(itemsByName.size)
+  val itemsByName = getResources(namespace, type).asMap()
+  val result = ResourceValueMap.createWithExpectedSize(itemsByName.size)
 
-    for (itemGroup in itemsByName.values) {
-        // Look for the best match for the given configuration.
-        val match = referenceConfig.findMatchingConfigurable<ResourceItem>(itemGroup)
-        if (match != null) {
-            val value = match.resourceValue
-            if (value != null) {
-                result[match.name] = value
-            }
-        }
+  for (itemGroup in itemsByName.values) {
+    // Look for the best match for the given configuration.
+    val match = referenceConfig.findMatchingConfigurable<ResourceItem>(itemGroup)
+    if (match != null) {
+      val value = match.resourceValue
+      if (value != null) {
+        result[match.name] = value
+      }
     }
+  }
 
-    return result
+  return result
 }
 
 // TODO: namespaces
-fun ResourceRepository.getConfiguredValue(
-    type: ResourceType,
-    name: String,
-    referenceConfig: FolderConfiguration
-): ResourceValue? {
-    val items = getResources(ResourceNamespace.TODO(), type, name)
-    // Look for the best match for the given configuration.
-    // The match has to be of type ResourceFile since that's what the input list contains.
-    val match = referenceConfig.findMatchingConfigurable<ResourceItem>(items)
-    return match?.resourceValue
+fun ResourceRepository.getConfiguredValue(type: ResourceType, name: String, referenceConfig: FolderConfiguration): ResourceValue? {
+  val items = getResources(ResourceNamespace.TODO(), type, name)
+  // Look for the best match for the given configuration.
+  // The match has to be of type ResourceFile since that's what the input list contains.
+  val match = referenceConfig.findMatchingConfigurable<ResourceItem>(items)
+  return match?.resourceValue
 }
 
 /** Returns the sorted list of locales used in the resources. */
 fun ResourceRepository.getLocales(): SortedSet<LocaleQualifier> {
-    // As an optimization we could just look for values since that's typically where
-    // the languages are defined -- not on layouts, menus, etc -- especially if there
-    // are no translations for it.
-    val locales = TreeSet<LocaleQualifier>()
+  // As an optimization we could just look for values since that's typically where
+  // the languages are defined -- not on layouts, menus, etc -- especially if there
+  // are no translations for it.
+  val locales = TreeSet<LocaleQualifier>()
 
-    for (repository in leafResourceRepositories) {
-        repository.accept {
-            val locale = it.configuration.localeQualifier
-            if (locale != null) {
-                locales.add(locale)
-            }
-            ResourceVisitor.VisitResult.CONTINUE
-        }
+  for (repository in leafResourceRepositories) {
+    repository.accept {
+      val locale = it.configuration.localeQualifier
+      if (locale != null) {
+        locales.add(locale)
+      }
+      ResourceVisitor.VisitResult.CONTINUE
     }
+  }
 
-    return locales
+  return locales
 }

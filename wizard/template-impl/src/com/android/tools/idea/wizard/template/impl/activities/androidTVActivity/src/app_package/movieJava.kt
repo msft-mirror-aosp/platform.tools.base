@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-
-fun movieJava(
-  packageName: String
-) = """
+fun movieJava(packageName: String) =
+  """
 package ${packageName};
 
 import java.io.Serializable;

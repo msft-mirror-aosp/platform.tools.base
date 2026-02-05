@@ -33,13 +33,16 @@ fun drawerActivityKt(
   menuName: String,
   navHostFragmentId: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
   val appBarMainBinding = underscoreToLowerCamelCase(appBarLayoutName)
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -73,14 +76,14 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported,
           id = "toolbar",
-          bindingName = "binding.${appBarMainBinding}")})
+          bindingName = "binding.${appBarMainBinding}",)})
 
         ${findViewById(
           Language.Kotlin,
           isViewBindingSupported,
           id = "fab",
           className = "FloatingActionButton",
-          bindingName = "binding.${appBarMainBinding}")}.setOnClickListener { view ->
+          bindingName = "binding.${appBarMainBinding}",)}.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null)
                     .setAnchorView(R.id.fab).show()

@@ -30,9 +30,10 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.UnsafeOutputsTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.DefaultIssueReporter
-import com.android.build.gradle.internal.utils.setDisallowChanges
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
@@ -44,75 +45,51 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
-import javax.inject.Inject
 
-/** Task wrapper around [CxxMetadataGenerator].  */
+/** Task wrapper around [CxxMetadataGenerator]. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.NATIVE, secondaryTaskCategories = [TaskCategory.METADATA])
-abstract class ExternalNativeBuildJsonTask @Inject constructor(
-        @get:Internal val ops: ExecOperations) :
-        UnsafeOutputsTask("C/C++ Configuration is always run.") {
+abstract class ExternalNativeBuildJsonTask @Inject constructor(@get:Internal val ops: ExecOperations) :
+  UnsafeOutputsTask("C/C++ Configuration is always run.") {
 
-    @get:Internal
-    abstract val sdkComponents: Property<SdkComponentsBuildService>
+  @get:Internal abstract val sdkComponents: Property<SdkComponentsBuildService>
 
-    @get:Internal
-    abstract val nativeLocationsBuildService: Property<NativeLocationsBuildService>
+  @get:Internal abstract val nativeLocationsBuildService: Property<NativeLocationsBuildService>
 
-    @get:Internal
-    internal lateinit var abi: CxxAbiModel
+  @get:Internal internal lateinit var abi: CxxAbiModel
 
-    /**
-     * Specify at least one output in order to avoid having the clean task run in parallel with
-     * this task. See http://b/262059864 for more details.
-     */
-    @Optional
-    @OutputDirectory
-    fun getMetadataGenerationTimingFolder()  = abi.metadataGenerationTimingFolder
+  /**
+   * Specify at least one output in order to avoid having the clean task run in parallel with this task. See http://b/262059864 for more
+   * details.
+   */
+  @Optional @OutputDirectory fun getMetadataGenerationTimingFolder() = abi.metadataGenerationTimingFolder
 
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    @get:InputFiles
-    abstract val renderscriptSources: DirectoryProperty
+  @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional @get:InputFiles abstract val renderscriptSources: DirectoryProperty
 
-    override fun doTaskAction() {
-        IssueReporterLoggingEnvironment(
-            DefaultIssueReporter(LoggerWrapper(logger)),
-            analyticsService.get(),
-            abi.variant
-        ).use {
-            val generator: CxxMetadataGenerator =
-                createCxxMetadataGenerator(
-                    abi = abi.rewriteWithLocations(nativeLocationsBuildService.get()),
-                    analyticsService = analyticsService.get()
-                )
-            generator.configure(ops, false)
-        }
+  override fun doTaskAction() {
+    IssueReporterLoggingEnvironment(DefaultIssueReporter(LoggerWrapper(logger)), analyticsService.get(), abi.variant).use {
+      val generator: CxxMetadataGenerator =
+        createCxxMetadataGenerator(
+          abi = abi.rewriteWithLocations(nativeLocationsBuildService.get()),
+          analyticsService = analyticsService.get(),
+        )
+      generator.configure(ops, false)
     }
+  }
 }
 
-/**
- * Create a C/C++ configure task.
- */
-fun createCxxConfigureTask(
-    project: Project,
-    creationConfig: VariantCreationConfig,
-    abi: CxxAbiModel,
-    name: String
-) = object : VariantTaskCreationAction<ExternalNativeBuildJsonTask, VariantCreationConfig>(creationConfig) {
+/** Create a C/C++ configure task. */
+fun createCxxConfigureTask(project: Project, creationConfig: VariantCreationConfig, abi: CxxAbiModel, name: String) =
+  object : VariantTaskCreationAction<ExternalNativeBuildJsonTask, VariantCreationConfig>(creationConfig) {
     override val name = name
     override val type = ExternalNativeBuildJsonTask::class.java
+
     override fun configure(task: ExternalNativeBuildJsonTask) {
-        super.configure(task)
-        task.abi = abi
-        task.nativeLocationsBuildService.setDisallowChanges(getBuildService(project.gradle.sharedServices))
-        if (creationConfig.renderscriptCreationConfig?.dslRenderscriptNdkModeEnabled == true) {
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    InternalArtifactType.RENDERSCRIPT_SOURCE_OUTPUT_DIR,
-                    task.renderscriptSources
-                )
-        }
+      super.configure(task)
+      task.abi = abi
+      task.nativeLocationsBuildService.setDisallowChanges(getBuildService(project.gradle.sharedServices))
+      if (creationConfig.renderscriptCreationConfig?.dslRenderscriptNdkModeEnabled == true) {
+        creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.RENDERSCRIPT_SOURCE_OUTPUT_DIR, task.renderscriptSources)
+      }
     }
-}
+  }

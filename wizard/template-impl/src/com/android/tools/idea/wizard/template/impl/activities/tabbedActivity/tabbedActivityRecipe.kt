@@ -28,11 +28,11 @@ import com.android.tools.idea.wizard.template.impl.activities.common.generateNoA
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.layout.appBarActivityXml
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.layout.fragmentSimpleXml
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values.dimensXml
+import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values.stringsXml
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values_land.dimensXml as dimensXmlLand
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values_w1240dp.dimensXml as dimensXmlW1240dp
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values_w600dp.dimensXml as dimensXmlW600dp
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values_w820dp.dimensXml as dimensXmlW820dp
-import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values.stringsXml
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.tabsActivityJava
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.tabsActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.ui.main.pageViewModelJava
@@ -48,7 +48,7 @@ fun RecipeExecutor.tabbedActivityRecipe(
   layoutName: String,
   fragmentLayoutName: String,
   isLauncher: Boolean,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut) = moduleData
   val apis = moduleData.apis
@@ -62,10 +62,7 @@ fun RecipeExecutor.tabbedActivityRecipe(
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
 
-  generateManifest(
-    moduleData, activityClass, packageName, isLauncher, true,
-    generateActivityTitle = true
-  )
+  generateManifest(moduleData, activityClass, packageName, isLauncher, true, generateActivityTitle = true)
   generateNoActionBarStyles(moduleData.baseFeature?.resDir, resOut, moduleData.themesData)
 
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
@@ -75,65 +72,69 @@ fun RecipeExecutor.tabbedActivityRecipe(
   mergeXml(dimensXmlW600dp(), resOut.resolve("values-w600dp/dimens.xml"))
   mergeXml(dimensXmlW1240dp(), resOut.resolve("values-w1240dp/dimens.xml"))
 
-  val appBarActivityLayoutXml = appBarActivityXml(
-    activityClass,
-    packageName,
-    moduleData.themesData.appBarOverlay.name,
-    useAndroidX)
+  val appBarActivityLayoutXml = appBarActivityXml(activityClass, packageName, moduleData.themesData.appBarOverlay.name, useAndroidX)
   save(appBarActivityLayoutXml, resOut.resolve("layout/${layoutName}.xml"))
   val fragmentLayoutXml = fragmentSimpleXml(packageName, useAndroidX)
   save(fragmentLayoutXml, resOut.resolve("layout/${fragmentLayoutName}.xml"))
 
   val ktOrJavaExt = projectData.language.extension
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val tabsActivity = when (projectData.language) {
-    Language.Java -> tabsActivityJava(
-      activityClass = activityClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> tabsActivityKt(
-      activityClass = activityClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val tabsActivity =
+    when (projectData.language) {
+      Language.Java ->
+        tabsActivityJava(
+          activityClass = activityClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        tabsActivityKt(
+          activityClass = activityClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(tabsActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
 
-  val pageViewModel = when (projectData.language) {
-    Language.Java -> pageViewModelJava(packageName, useAndroidX)
-    Language.Kotlin -> pageViewModelKt(packageName, useAndroidX)
-  }
+  val pageViewModel =
+    when (projectData.language) {
+      Language.Java -> pageViewModelJava(packageName, useAndroidX)
+      Language.Kotlin -> pageViewModelKt(packageName, useAndroidX)
+    }
   save(pageViewModel, srcOut.resolve("ui/main/PageViewModel.${ktOrJavaExt}"))
 
-  val placeholderFragment = when (projectData.language) {
-    Language.Java -> placeholderFragmentJava(
-      fragmentLayoutName = fragmentLayoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> placeholderFragmentKt(
-      fragmentLayoutName = fragmentLayoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val placeholderFragment =
+    when (projectData.language) {
+      Language.Java ->
+        placeholderFragmentJava(
+          fragmentLayoutName = fragmentLayoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        placeholderFragmentKt(
+          fragmentLayoutName = fragmentLayoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(placeholderFragment, srcOut.resolve("ui/main/PlaceholderFragment.${ktOrJavaExt}"))
 
-  val sectionsPagerAdapter = when (projectData.language) {
-    Language.Java -> sectionsPagerAdapterJava(packageName, useAndroidX)
-    Language.Kotlin -> sectionsPagerAdapterKt(packageName, useAndroidX)
-  }
+  val sectionsPagerAdapter =
+    when (projectData.language) {
+      Language.Java -> sectionsPagerAdapterJava(packageName, useAndroidX)
+      Language.Kotlin -> sectionsPagerAdapterKt(packageName, useAndroidX)
+    }
   save(sectionsPagerAdapter, srcOut.resolve("ui/main/SectionsPagerAdapter.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${activityClass}.${ktOrJavaExt}"))

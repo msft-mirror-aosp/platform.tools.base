@@ -24,46 +24,47 @@ import org.junit.Test
 
 class AnalyticsCompositeBuildTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("multiCompositeBuild")
-            .withDependencyChecker(false)
-            .enableProfileOutput()
-            .disableBuiltInKotlin()
-            .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("multiCompositeBuild")
+      .withDependencyChecker(false)
+      .enableProfileOutput()
+      .disableBuiltInKotlin()
+      .create()
 
-    // regression test for b/226095015
-    @Test
-    fun testFetchNativeModelInCompositeBuild() {
-        // This is to mimic what tooling api does during a sync which is to add
-        // prepareKotlinBuildScriptModel task to the root project.
-        project.projectDir.resolve("TestCompositeApp/app/build.gradle").appendText(
-            """
-                def tasks = gradle.startParameter.taskNames.toSet()
-                tasks.add("prepareKotlinBuildScriptModel")
-                gradle.startParameter.setTaskNames(tasks)
-            """.trimIndent()
-        )
+  // regression test for b/226095015
+  @Test
+  fun testFetchNativeModelInCompositeBuild() {
+    // This is to mimic what tooling api does during a sync which is to add
+    // prepareKotlinBuildScriptModel task to the root project.
+    project.projectDir
+      .resolve("TestCompositeApp/app/build.gradle")
+      .appendText(
+        """
+        def tasks = gradle.startParameter.taskNames.toSet()
+        tasks.add("prepareKotlinBuildScriptModel")
+        gradle.startParameter.setTaskNames(tasks)
+        """
+          .trimIndent()
+      )
 
-        // This is to make the main build(TestCompositeApp) gets configured before one of its
-        // included build(TestCompositeLib1) to trigger the issue of b/226095015
-        TestFileUtils.searchAndReplace(
-            project.projectDir.resolve("TestCompositeApp/settings.gradle"),
-            "includeBuild '../TestCompositeLib1'",
-            """
-                includeBuild('../TestCompositeLib1') {
-                    dependencySubstitution {
-                        substitute(module("com.test.composite:composite1")).using(project(":composite1"))
-                    }
-                }
-            """.trimIndent()
-        )
+    // This is to make the main build(TestCompositeApp) gets configured before one of its
+    // included build(TestCompositeLib1) to trigger the issue of b/226095015
+    TestFileUtils.searchAndReplace(
+      project.projectDir.resolve("TestCompositeApp/settings.gradle"),
+      "includeBuild '../TestCompositeLib1'",
+      """
+      includeBuild('../TestCompositeLib1') {
+          dependencySubstitution {
+              substitute(module("com.test.composite:composite1")).using(project(":composite1"))
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Only fetching the native model will trigger this issue.
-        project.getSubproject("TestCompositeApp")
-            .modelV2()
-            .ignoreSyncIssues()
-            .fetchNativeModules(ModelBuilderV2.NativeModuleParams())
-    }
+    // Only fetching the native model will trigger this issue.
+    project.getSubproject("TestCompositeApp").modelV2().ignoreSyncIssues().fetchNativeModules(ModelBuilderV2.NativeModuleParams())
+  }
 }

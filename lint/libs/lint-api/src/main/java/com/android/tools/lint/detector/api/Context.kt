@@ -50,8 +50,8 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
- * Context passed to the detectors during an analysis run. It provides information about the file
- * being analyzed, it allows shared properties (so the detectors can share results), etc.
+ * Context passed to the detectors during an analysis run. It provides information about the file being analyzed, it allows shared
+ * properties (so the detectors can share results), etc.
  */
 open class Context(
   /** The driver running through the checks. */
@@ -59,19 +59,17 @@ open class Context(
   /** The project containing the file being checked. */
   val project: Project,
   /**
-   * The "main" project. For normal projects, this is the same as [project], but for library
-   * projects, it's the root project that includes (possibly indirectly) the various library
-   * projects and their library projects.
+   * The "main" project. For normal projects, this is the same as [project], but for library projects, it's the root project that includes
+   * (possibly indirectly) the various library projects and their library projects.
    *
-   * Note that this is a property on the [Context], not the [Project], since a library project can
-   * be included from multiple different top level projects, so there isn't **one** main project,
-   * just one per main project being analyzed with its library projects.
+   * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
+   * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
    */
   private val main: Project?,
 
   /**
-   * The file being checked. Note that this may not always be to a concrete file. For example, in
-   * the [Detector.beforeCheckProject] method, the context file is the directory of the project.
+   * The file being checked. Note that this may not always be to a concrete file. For example, in the [Detector.beforeCheckProject] method,
+   * the context file is the directory of the project.
    */
   @JvmField val file: File,
 
@@ -80,8 +78,7 @@ open class Context(
 ) {
 
   /** The current configuration controlling which checks are enabled etc. */
-  val configuration: Configuration =
-    client.getConfiguration(file) ?: project.getConfiguration(driver)
+  val configuration: Configuration = client.getConfiguration(file) ?: project.getConfiguration(driver)
 
   /** Whether this file contains any suppress markers (null means not yet determined) */
   private var containsCommentSuppress: Boolean? = null
@@ -94,9 +91,8 @@ open class Context(
   var isTestSource: Boolean = project.isTestProject == true
 
   /**
-   * Returns the main project if this project is a library project, or self if this is not a library
-   * project. The main project is the root project of all library projects, not necessarily the
-   * directly including project.
+   * Returns the main project if this project is a library project, or self if this is not a library project. The main project is the root
+   * project of all library projects, not necessarily the directly including project.
    *
    * @return the main project, never null
    */
@@ -119,9 +115,8 @@ open class Context(
     get() = driver.client
 
   /**
-   * Returns the contents of the file. This may not be the contents of the file on disk, since it
-   * delegates to the [LintClient], which in turn may decide to return the current edited contents
-   * of the file open in an editor.
+   * Returns the contents of the file. This may not be the contents of the file on disk, since it delegates to the [LintClient], which in
+   * turn may decide to return the current edited contents of the file open in an editor.
    *
    * @return the contents of the given file, or null if an error occurs.
    */
@@ -141,10 +136,7 @@ open class Context(
   val sdkInfo: SdkInfo
     get() = project.getSdkInfo()
 
-  /**
-   * Returns the location of the given [node], which could be an AST node, an XML element, and so
-   * on.
-   */
+  /** Returns the location of the given [node], which could be an AST node, an XML element, and so on. */
   open fun getLocation(node: Any?, type: LocationType = LocationType.DEFAULT): Location {
     node ?: return Location.NONE
 
@@ -159,12 +151,8 @@ open class Context(
           if (this is JavaContext) {
             this
           } else {
-            val file =
-              node.sourcePsi?.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) }
-                ?: file
-            JavaContext(driver, project, main, file).apply {
-              uastParser = client.getUastParser(project)
-            }
+            val file = node.sourcePsi?.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
+            JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
           }
         return when (type) {
           LocationType.DEFAULT -> context.getLocation(node)
@@ -176,17 +164,9 @@ open class Context(
             }
           LocationType.NAME -> context.getNameLocation(node)
           LocationType.CALL_WITH_ARGUMENTS ->
-            context.getCallLocation(
-              node as UCallExpression,
-              includeReceiver = false,
-              includeArguments = true,
-            )
+            context.getCallLocation(node as UCallExpression, includeReceiver = false, includeArguments = true)
           LocationType.CALL_WITH_RECEIVER ->
-            context.getCallLocation(
-              node as UCallExpression,
-              includeReceiver = true,
-              includeArguments = false,
-            )
+            context.getCallLocation(node as UCallExpression, includeReceiver = true, includeArguments = false)
           LocationType.VALUE -> error("$type not supported for ${node.javaClass}")
         }
       }
@@ -195,11 +175,8 @@ open class Context(
           if (this is JavaContext) {
             this
           } else {
-            val file =
-              node.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
-            JavaContext(driver, project, main, file).apply {
-              uastParser = client.getUastParser(project)
-            }
+            val file = node.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
+            JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
           }
         return when (type) {
           LocationType.DEFAULT -> context.getLocation(node)
@@ -247,9 +224,7 @@ open class Context(
             val doc = node.ownerDocument
             val file =
               doc.getUserData(File::class.java.name) as? File
-                ?: (doc.getUserData(PsiFile::class.java.name) as? PsiFile)?.virtualFile?.let {
-                  VfsUtilCore.virtualToIoFile(it)
-                }
+                ?: (doc.getUserData(PsiFile::class.java.name) as? PsiFile)?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) }
                 ?: return Location.create(project.getManifestFiles().firstOrNull() ?: project.dir)
             // We're only calling location methods here so we don't need an accurate
             // folder type for example
@@ -257,11 +232,9 @@ open class Context(
           }
         return when (type) {
           LocationType.ALL -> context.getLocation(node)
-          LocationType.DEFAULT ->
-            if (node is Element) context.getElementLocation(node) else context.getLocation(node)
+          LocationType.DEFAULT -> if (node is Element) context.getElementLocation(node) else context.getLocation(node)
           LocationType.NAME -> context.getNameLocation(node)
-          LocationType.VALUE ->
-            if (node is Attr) context.getValueLocation(node) else context.getLocation(node)
+          LocationType.VALUE -> if (node is Attr) context.getValueLocation(node) else context.getLocation(node)
           LocationType.CALL_WITH_ARGUMENTS,
           LocationType.CALL_WITH_RECEIVER -> error("$type not supported for ${node.javaClass}")
         }
@@ -299,8 +272,8 @@ open class Context(
   }
 
   /**
-   * Given a merged node, search in the projects (starting with this one) to find a match in one of
-   * the existing manifest files. If none is found just return this project's primary location.
+   * Given a merged node, search in the projects (starting with this one) to find a match in one of the existing manifest files. If none is
+   * found just return this project's primary location.
    */
   private fun findNodeInProject(node: Node, type: LocationType): Location {
     // Project context - need to find the right source file
@@ -314,8 +287,7 @@ open class Context(
         else -> null
       }
     if (element != null) {
-      val projects =
-        sequenceOf(project) + project.getAllLibraries().filter { !it.isExternalLibrary }
+      val projects = sequenceOf(project) + project.getAllLibraries().filter { !it.isExternalLibrary }
       for (p in projects) {
         for (manifest in p.getManifestFiles()) {
           try {
@@ -336,8 +308,7 @@ open class Context(
   // ---- Convenience wrappers  ---- (makes the detector code a bit leaner)
 
   /**
-   * Returns false if the given issue has been disabled. Convenience wrapper around
-   * [Configuration.getSeverity].
+   * Returns false if the given issue has been disabled. Convenience wrapper around [Configuration.getSeverity].
    *
    * @param issue the issue to check
    * @return false if the issue has been disabled
@@ -366,12 +337,7 @@ open class Context(
   )
   */
   @JvmOverloads
-  open fun report(
-    issue: Issue,
-    location: Location,
-    message: String,
-    quickfixData: LintFix? = null,
-  ) {
+  open fun report(issue: Issue, location: Location, message: String, quickfixData: LintFix? = null) {
     val incident = Incident(issue, location, message, quickfixData)
     driver.client.report(this, incident)
   }
@@ -386,31 +352,26 @@ open class Context(
   }
 
   /**
-   * Returns true if lint is running in "global" mode: This is where lint is analyzing the whole
-   * project, where it is given access to for example library dependencies' sources (if local),
-   * where you can look up the main project via [Context.mainProject].
+   * Returns true if lint is running in "global" mode: This is where lint is analyzing the whole project, where it is given access to for
+   * example library dependencies' sources (if local), where you can look up the main project via [Context.mainProject].
    *
-   * This is the opposite of "partial analysis", where lint can be either analyzing an individual
-   * module, or performing reporting where it merges individual module results. You can look up the
-   * exact mode via [LintDriver.mode].
+   * This is the opposite of "partial analysis", where lint can be either analyzing an individual module, or performing reporting where it
+   * merges individual module results. You can look up the exact mode via [LintDriver.mode].
    */
   fun isGlobalAnalysis(): Boolean = driver.isGlobalAnalysis()
 
   /**
-   * Reports the given incident to lint as a provisional incident, meaning that it is not yet
-   * conclusive. Lint will evaluate the given [constraint] for each project that depends on this one
-   * and check the condition against the parameters in that project.
+   * Reports the given incident to lint as a provisional incident, meaning that it is not yet conclusive. Lint will evaluate the given
+   * [constraint] for each project that depends on this one and check the condition against the parameters in that project.
    */
   fun report(incident: Incident, constraint: Constraint) {
     client.report(this, incident, constraint)
   }
 
   /**
-   * Reports the given incident to lint as a conditional incident, meaning that it is not yet
-   * conclusive. Lint will later ask the detector to decide, via [Detector.filterIncident] whether
-   * the issue should be included in the reporting project's report or not. The map can be used to
-   * store and retrieve state, since the callback will happen on a different instance of the
-   * [Detector].
+   * Reports the given incident to lint as a conditional incident, meaning that it is not yet conclusive. Lint will later ask the detector
+   * to decide, via [Detector.filterIncident] whether the issue should be included in the reporting project's report or not. The map can be
+   * used to store and retrieve state, since the callback will happen on a different instance of the [Detector].
    *
    * See [LintClient.report] for more details.
    */
@@ -419,23 +380,19 @@ open class Context(
   }
 
   /**
-   * Returns a [PartialResult] where a [Detector] can write state about the current project, and/or
-   * read state about dependent projects. See [LintClient.supportsPartialAnalysis]. [Detector]s
-   * should only write state for the current project being analyzed; any changes made to other
-   * project's state will not be persisted.
+   * Returns a [PartialResult] where a [Detector] can write state about the current project, and/or read state about dependent projects. See
+   * [LintClient.supportsPartialAnalysis]. [Detector]s should only write state for the current project being analyzed; any changes made to
+   * other project's state will not be persisted.
    *
-   * This is a more general mechanism for reporting provisional issues when you need to collect a
-   * lot of data and do some post-processing before figuring out what to report, and you can't
-   * enumerate out specific [Incident] occurrences up front.
+   * This is a more general mechanism for reporting provisional issues when you need to collect a lot of data and do some post-processing
+   * before figuring out what to report, and you can't enumerate out specific [Incident] occurrences up front.
    *
-   * Note that in this case, the lint infrastructure will not automatically look up the error
-   * location (since there isn't one yet) to see if the issue has been suppressed (via annotations,
-   * lint.xml and other mechanisms), so you should do this yourself, via the various
+   * Note that in this case, the lint infrastructure will not automatically look up the error location (since there isn't one yet) to see if
+   * the issue has been suppressed (via annotations, lint.xml and other mechanisms), so you should do this yourself, via the various
    * [LintDriver.isSuppressed] methods.
    *
-   * The returned [PartialResult] contains a reference to the current project being analyzed
-   * ([Context.project]) such that "context.getPartialResults(ISSUE).map()" yields the [LintMap] for
-   * the current project.
+   * The returned [PartialResult] contains a reference to the current project being analyzed ([Context.project]) such that
+   * "context.getPartialResults(ISSUE).map()" yields the [LintMap] for the current project.
    */
   fun getPartialResults(issue: Issue): PartialResult {
     return client.getPartialResults(project, issue)
@@ -462,12 +419,11 @@ open class Context(
    * @param format the error message using [java.lang.String.format] syntax, possibly null
    * @param args any arguments for the format string
    */
-  fun log(exception: Throwable?, format: String?, vararg args: Any) =
-    driver.client.log(exception, format, *args)
+  fun log(exception: Throwable?, format: String?, vararg args: Any) = driver.client.log(exception, format, *args)
 
   /**
-   * Returns the current phase number. The first pass is phase number one, and only one pass will be
-   * performed, unless a [Detector] calls [requestRepeat].
+   * Returns the current phase number. The first pass is phase number one, and only one pass will be performed, unless a [Detector] calls
+   * [requestRepeat].
    *
    * @return the current phase, usually 1
    */
@@ -475,19 +431,17 @@ open class Context(
     get() = driver.phase
 
   /**
-   * Requests another pass through the data for the given detector. This is typically done when a
-   * detector needs to do more expensive computation, but it only wants to do this once it **knows**
-   * that an error is present, or once it knows more specifically what to check for.
+   * Requests another pass through the data for the given detector. This is typically done when a detector needs to do more expensive
+   * computation, but it only wants to do this once it **knows** that an error is present, or once it knows more specifically what to check
+   * for.
    *
-   * @param detector the detector that should be included in the next pass. Note that the lint
-   *   runner may refuse to run more than a couple of runs.
-   * @param scope the scope to be revisited. This must be a subset of the current scope
-   *   ([this.scope], and it is just a performance hint; in particular, the detector should be
-   *   prepared to be called on other scopes as well (since they may have been requested by other
+   * @param detector the detector that should be included in the next pass. Note that the lint runner may refuse to run more than a couple
+   *   of runs.
+   * @param scope the scope to be revisited. This must be a subset of the current scope ([this.scope], and it is just a performance hint; in
+   *   particular, the detector should be prepared to be called on other scopes as well (since they may have been requested by other
    *   detectors). You can pall null to indicate "all".
    */
-  fun requestRepeat(detector: Detector, scope: EnumSet<Scope>?) =
-    driver.requestRepeat(detector, scope)
+  fun requestRepeat(detector: Detector, scope: EnumSet<Scope>?) = driver.requestRepeat(detector, scope)
 
   /** Returns the comment marker used in Studio to suppress statements for language, if any. */
   protected open val suppressCommentPrefix: String?
@@ -520,20 +474,14 @@ open class Context(
     return containsCommentSuppress!!
   }
 
-  /**
-   * Returns true if the given issue is suppressed at the given character offset in the file's
-   * contents.
-   */
+  /** Returns true if the given issue is suppressed at the given character offset in the file's contents. */
   fun isSuppressedWithComment(startOffset: Int, issue: Issue): Boolean {
     val prefix = suppressCommentPrefix ?: return false
     val line = getSuppressionDirective(prefix, getContents() ?: "", startOffset) ?: return false
     return isSuppressedWithComment(line, issue)
   }
 
-  /**
-   * When set, access to state outside of the current project is not allowed. This is intended for
-   * lint infrastructure usage.
-   */
+  /** When set, access to state outside of the current project is not allowed. This is intended for lint infrastructure usage. */
   private val forbidMainAccess: Boolean
     get() = driver.mode == DriverMode.ANALYSIS_ONLY
 
@@ -541,16 +489,12 @@ open class Context(
     const val SUPPRESS_XML_COMMENT_PREFIX = "<!--suppress "
 
     /**
-     * The prefix is usually //noinspection but it can also be @noinspection (such as /
-     * ** @noinspection ClassNameDiffersFromFileName
+     * The prefix is usually //noinspection but it can also be @noinspection (such as / ** @noinspection ClassNameDiffersFromFileName
      * * / in a javadoc, so just use the basename as the prefix
      */
     const val SUPPRESS_JAVA_COMMENT_PREFIX = "noinspection "
 
-    /**
-     * For a given [source] code contents and a [startOffset], returns the previous line if it is a
-     * comment line suppress directive.
-     */
+    /** For a given [source] code contents and a [startOffset], returns the previous line if it is a comment line suppress directive. */
     fun getSuppressionDirective(prefix: String, source: CharSequence, startOffset: Int): String? {
       if (source.startsWith("//", startOffset) || source.startsWith("/*")) {
         var index = startOffset + 2
@@ -592,9 +536,7 @@ open class Context(
       if (issue.getAliases().any { alias -> lineContainsId(line, alias) }) {
         return true
       }
-      return lineContainsId(line, issue.id) ||
-        lineContainsId(line, SUPPRESS_ALL) ||
-        isSuppressedWithComment(line, issue.category)
+      return lineContainsId(line, issue.id) || lineContainsId(line, SUPPRESS_ALL) || isSuppressedWithComment(line, issue.category)
     }
 
     private fun isSuppressedWithComment(line: String, category: Category): Boolean {
@@ -647,11 +589,7 @@ open class Context(
 
     private fun isWordDelimiter(c: Char): Boolean = !c.isJavaIdentifierPart()
 
-    private fun findPrefixOnPreviousLine(
-      contents: CharSequence,
-      lineStart: Int,
-      prefix: String,
-    ): Int {
+    private fun findPrefixOnPreviousLine(contents: CharSequence, lineStart: Int, prefix: String): Int {
       // Search backwards on the previous line until you find the prefix start (also look
       // back on previous lines if the previous line(s) contain just whitespace
       val first = prefix[0]
@@ -686,15 +624,9 @@ open class Context(
     /**
      * Check forbidden access and report issue if necessary.
      *
-     * Warning: setting [driver] to null may lead to spurious errors when using multiple
-     * [LintDriver]s in the same process.
+     * Warning: setting [driver] to null may lead to spurious errors when using multiple [LintDriver]s in the same process.
      */
-    fun checkForbidden(
-      methodName: String,
-      file: File,
-      driver: LintDriver?,
-      extraMessage: String = "",
-    ): Boolean {
+    fun checkForbidden(methodName: String, file: File, driver: LintDriver?, extraMessage: String = ""): Boolean {
       // LintDriver.currentDrivers.firstOrNull() is not guaranteed to return the desired
       // driver when there are multiple drivers. When driver is null, this method can produce
       // a false positive LintError (or a false negative).
@@ -704,17 +636,8 @@ open class Context(
         val warnings = detectorsWarned ?: HashSet<String>().also { detectorsWarned = it }
         if (warnings.add(detector)) {
           val stack = StringBuilder()
-          LintDriver.appendStackTraceSummary(
-            RuntimeException(),
-            stack,
-            skipFrames = 1,
-            maxFrames = 20,
-          )
-          val vendors =
-            issues
-              .mapNotNull { it.vendor ?: it.registry?.vendor }
-              .toSet()
-              .sortedBy { it.identifier }
+          LintDriver.appendStackTraceSummary(RuntimeException(), stack, skipFrames = 1, maxFrames = 20)
+          val vendors = issues.mapNotNull { it.vendor ?: it.registry?.vendor }.toSet().sortedBy { it.identifier }
           val vendorString =
             if (issues.isNotEmpty()) {
               val sb = StringBuilder()
@@ -777,10 +700,7 @@ open class Context(
         // was by detector
         for (element in frames) {
           val detectorClass = element.className
-          if (
-            !detectorClass.startsWith("com.android.tools.lint.") ||
-              detectorClass.startsWith("com.android.tools.lint.checks.")
-          ) {
+          if (!detectorClass.startsWith("com.android.tools.lint.") || detectorClass.startsWith("com.android.tools.lint.checks.")) {
             return Pair(detectorClass, LintDriver.getDetectorIssues(detectorClass, driver))
           }
         }

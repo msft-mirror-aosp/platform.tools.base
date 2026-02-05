@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.res.values
 
-
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <resources>
     <dimen name="text_margin">16dp</dimen>
 </resources>

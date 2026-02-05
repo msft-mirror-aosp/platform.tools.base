@@ -388,7 +388,8 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
               """
           )
           .indented(),
-        // Using Gradle, so we need to move stub to the right source set, src/main/java rather than
+        // Using Gradle, so we need to move stub to the right source set, src/main/java rather
+        // than
         // src/
         gradleSourceSet(discouragedAnnotationStub),
       )
@@ -416,10 +417,7 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
   }
 
   private fun gradleSourceSet(kotlinFile: TestFile): TestFile {
-    return kotlin(
-      "src/main/java/" + kotlinFile.targetRelativePath.removePrefix("src/"),
-      kotlinFile.contents.trimIndent(),
-    )
+    return kotlin("src/main/java/" + kotlinFile.targetRelativePath.removePrefix("src/"), kotlinFile.contents.trimIndent())
   }
 
   override fun getDetector(): Detector {

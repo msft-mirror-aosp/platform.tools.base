@@ -20,47 +20,36 @@ import org.junit.Test
 
 class AdbFailResponseExceptionTest {
 
-    @Test
-    fun hostExceptionMessageWorks() {
-        // Prepare
+  @Test
+  fun hostExceptionMessageWorks() {
+    // Prepare
 
-        // Act
-        val exception = AdbHostFailResponseException("foo-bar", "host not available")
+    // Act
+    val exception = AdbHostFailResponseException("foo-bar", "host not available")
 
-        // Assert
-        Assert.assertEquals(
-            "'host not available' error executing ADB service 'foo-bar'",
-            exception.message
-        )
-    }
+    // Assert
+    Assert.assertEquals("'host not available' error executing ADB service 'foo-bar'", exception.message)
+  }
 
-    @Test
-    fun deviceExceptionMessageWorks() {
-        // Prepare
+  @Test
+  fun deviceExceptionMessageWorks() {
+    // Prepare
 
-        // Act
-        val exception =
-            AdbDeviceFailResponseException(DeviceSelector.usb(), "foo-bar", "device not available")
+    // Act
+    val exception = AdbDeviceFailResponseException(DeviceSelector.usb(), "foo-bar", "device not available")
 
-        // Assert
-        Assert.assertEquals(
-            "'device not available' error on device 'usb' executing service 'foo-bar'",
-            exception.message
-        )
-    }
+    // Assert
+    Assert.assertEquals("'device not available' error on device 'usb' executing service 'foo-bar'", exception.message)
+  }
 
-    @Test
-    fun exceptionMessagePrintsNulls() {
-        // Prepare
+  @Test
+  fun exceptionMessagePrintsNulls() {
+    // Prepare
 
-        // Act
-        val exception =
-            AdbDeviceFailResponseException(DeviceSelector.usb(), "p1\u0000p2", "sample error")
+    // Act
+    val exception = AdbDeviceFailResponseException(DeviceSelector.usb(), "p1\u0000p2", "sample error")
 
-        // Assert
-        Assert.assertEquals(
-            "'sample error' error on device 'usb' executing service 'p1[NUL]p2'",
-            exception.message
-        )
-    }
+    // Assert
+    Assert.assertEquals("'sample error' error on device 'usb' executing service 'p1[NUL]p2'", exception.message)
+  }
 }

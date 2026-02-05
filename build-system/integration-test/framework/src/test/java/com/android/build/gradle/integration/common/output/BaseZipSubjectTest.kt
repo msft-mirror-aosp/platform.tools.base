@@ -22,43 +22,41 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.TruthFailureSubject
+import kotlin.io.path.writeBytes
 import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import kotlin.io.path.writeBytes
 
-val FAKE_CLASS: ByteArray =
-    byteArrayOf(0xCA.toByte(), 0xFE.toByte(), 0xBA.toByte(), 0xBE.toByte())
+val FAKE_CLASS: ByteArray = byteArrayOf(0xCA.toByte(), 0xFE.toByte(), 0xBA.toByte(), 0xBE.toByte())
 
 @Suppress("UnstableApiUsage")
 abstract class BaseZipSubjectTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @CheckReturnValue
-    protected fun createAar(name: String, action: AarBuilder.() -> Unit): SimpleZip {
-        val builder = AarBuilderImpl("groupId", "artifactId", "1.0")
-        action(builder)
+  @CheckReturnValue
+  protected fun createAar(name: String, action: AarBuilder.() -> Unit): SimpleZip {
+    val builder = AarBuilderImpl("groupId", "artifactId", "1.0")
+    action(builder)
 
-        val path = temporaryFolder.newFile(name).toPath()
-        path.writeBytes(builder.toLibraryData().content)
+    val path = temporaryFolder.newFile(name).toPath()
+    path.writeBytes(builder.toLibraryData().content)
 
-        return SimpleZip(path)
-    }
+    return SimpleZip(path)
+  }
 
-    @CheckReturnValue
-    protected fun createJar(name: String, action: JarBuilder.() -> Unit): SimpleZip {
-        val builder = JarBuilderImpl()
-        action(builder)
+  @CheckReturnValue
+  protected fun createJar(name: String, action: JarBuilder.() -> Unit): SimpleZip {
+    val builder = JarBuilderImpl()
+    action(builder)
 
-        val path = temporaryFolder.newFile(name).toPath()
-        path.writeBytes(builder.getContent())
+    val path = temporaryFolder.newFile(name).toPath()
+    path.writeBytes(builder.getContent())
 
-        return SimpleZip(path)
-    }
+    return SimpleZip(path)
+  }
 }
 
 fun AssertionError.assert(action: TruthFailureSubject.() -> Unit) {
-    action(ExpectFailure.assertThat(this))
+  action(ExpectFailure.assertThat(this))
 }

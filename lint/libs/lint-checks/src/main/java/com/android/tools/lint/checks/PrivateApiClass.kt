@@ -22,9 +22,8 @@ import java.nio.charset.StandardCharsets
 /**
  * Represents a class and its hidden methods/fields, which are not part of the public SDK.
  *
- * Each member has an attached reflective access [Restriction], corresponding to the platform's
- * runtime behavior (e.g. a reflective call to a denied method is forbidden on all API versions, a
- * call to a maybe allowed method will be allowed with a warning, etc.)
+ * Each member has an attached reflective access [Restriction], corresponding to the platform's runtime behavior (e.g. a reflective call to
+ * a denied method is forbidden on all API versions, a call to a maybe allowed method will be allowed with a warning, etc.)
  */
 class PrivateApiClass(name: String) : ApiClassBase(name) {
 
@@ -57,11 +56,7 @@ class PrivateApiClass(name: String) : ApiClassBase(name) {
     // We don't store the class hierarchy.
   }
 
-  internal override fun writeMemberData(
-    info: Api<out ApiClassBase>,
-    member: String,
-    buffer: ByteBuffer,
-  ) {
+  internal override fun writeMemberData(info: Api<out ApiClassBase>, member: String, buffer: ByteBuffer) {
     val payload = (if (member.indexOf('(') >= 0) methods[member] else fields[member]) ?: return
 
     val signature = member.toByteArray(StandardCharsets.UTF_8)

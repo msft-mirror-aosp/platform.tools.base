@@ -25,50 +25,45 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledFlatTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: SourceDirectories.Flat = mock()
+  private val delegate: SourceDirectories.Flat = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledFlat by lazy {
-        object: AnalyticsEnabledFlat(delegate, stats, FakeObjectFactory.factory) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledFlat by lazy { object : AnalyticsEnabledFlat(delegate, stats, FakeObjectFactory.factory) {} }
 
-    @Test
-    fun getAll() {
-        val provider = mock<Provider<List<Directory>>>()
-        whenever(delegate.all).thenReturn(provider)
+  @Test
+  fun getAll() {
+    val provider = mock<Provider<List<Directory>>>()
+    whenever(delegate.all).thenReturn(provider)
 
-        val providerProxy = proxy.all
-        Truth.assertThat(providerProxy).isEqualTo(provider)
+    val providerProxy = proxy.all
+    Truth.assertThat(providerProxy).isEqualTo(provider)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE)
-        verify(delegate, times(1)).all
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE)
+    verify(delegate, times(1)).all
+  }
 
-    @Test
-    fun getStatic() {
-        val provider = mock<Provider<List<Directory>>>()
-        whenever(delegate.static).thenReturn(provider)
+  @Test
+  fun getStatic() {
+    val provider = mock<Provider<List<Directory>>>()
+    whenever(delegate.static).thenReturn(provider)
 
-        val providerProxy = proxy.static
-        Truth.assertThat(providerProxy).isEqualTo(provider)
+    val providerProxy = proxy.static
+    Truth.assertThat(providerProxy).isEqualTo(provider)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_STATIC_VALUE)
-        verify(delegate, times(1)).static
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_STATIC_VALUE)
+    verify(delegate, times(1)).static
+  }
 }

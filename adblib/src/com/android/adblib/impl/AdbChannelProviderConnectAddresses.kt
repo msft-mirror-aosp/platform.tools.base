@@ -25,97 +25,78 @@ import com.android.adblib.utils.WarningsTracker
 import com.android.adblib.utils.closeOnException
 import com.android.adblib.utils.logInfo
 import com.android.adblib.utils.withSuppressed
-import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import java.nio.channels.AsynchronousSocketChannel
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.withContext
 
 /**
- * An implementation of [AdbServerChannelProvider] that connect to an existing ADB Host running
- * on one of the addresses returned by [socketAddressesSupplier].
+ * An implementation of [AdbServerChannelProvider] that connect to an existing ADB Host running on one of the addresses returned by
+ * [socketAddressesSupplier].
  */
 internal class AdbChannelProviderConnectAddresses(
   private val host: AdbSessionHost,
   /**
-     * Supplier of the list of [InetSocketAddress] this [AdbServerChannelProvider] should connect to
-     * locate an instance of the ADB server. This is invoked on-demand so that the
-     * implementor has the opportunity to choose a port until an actual connection is opened,
-     * i.e. in case the ADB server is started on-demand or via some other dynamic
-     * configuration behavior.
-     */
-    private val socketAddressesSupplier: suspend () -> List<InetSocketAddress>
+   * Supplier of the list of [InetSocketAddress] this [AdbServerChannelProvider] should connect to locate an instance of the ADB server.
+   * This is invoked on-demand so that the implementor has the opportunity to choose a port until an actual connection is opened, i.e. in
+   * case the ADB server is started on-demand or via some other dynamic configuration behavior.
+   */
+  private val socketAddressesSupplier: suspend () -> List<InetSocketAddress>,
 ) : AdbServerChannelProvider {
 
-    private val warningsTracker = WarningsTracker(
-        staleThreshold = Duration.ofMinutes(60),
-        repeatLogPeriod = Duration.ofMinutes(10)
-    )
+  private val warningsTracker = WarningsTracker(staleThreshold = Duration.ofMinutes(60), repeatLogPeriod = Duration.ofMinutes(10))
 
-    override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+  override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
 
-        // Runs code block on the IO Dispatcher to ensure caller is never blocked on this call
-        return withContext(host.ioDispatcher) {
-            host.logger.debug { "Opening ADB connection on local host addresses, timeout=$tracker" }
+    // Runs code block on the IO Dispatcher to ensure caller is never blocked on this call
+    return withContext(host.ioDispatcher) {
+      host.logger.debug { "Opening ADB connection on local host addresses, timeout=$tracker" }
 
-            // Acquire port from supplier before anything else
-            val addresses = socketAddressesSupplier()
-            tracker.throwIfElapsed()
+      // Acquire port from supplier before anything else
+      val addresses = socketAddressesSupplier()
+      tracker.throwIfElapsed()
 
-            // Try all local addresses, and collect all exceptions for later reporting
-            var suppressedExceptions = SuppressedExceptions.init()
-            addresses.forEach { localAddress ->
-                try {
-                    // Attempt to open and connect a channel for the current address
-                    return@withContext openAndConnect(localAddress, tracker)
-                } catch (e: IOException) {
-                    // Suppress `IOException` so that we could connect to other addresses
-                    suppressedExceptions = SuppressedExceptions.add(suppressedExceptions, e)
-                }
-            }
-            // If we reach here, none of the addresses worked, so we bail out and throw
-            // a "combined" exception
-            val message = "Cannot connect to an active ADB server on any of the following " +
-                    "addresses: ${addresses.joinToString { it.toString() }}"
-            val error = IOException(message).withSuppressed(suppressedExceptions)
-            warningsTracker.getLogAction(
-                this@AdbChannelProviderConnectAddresses.toString(),
-                message
-            ).logInfo(host.logger, error) {
-                "Error connecting to local ADB instance"
-            }
-            throw error
+      // Try all local addresses, and collect all exceptions for later reporting
+      var suppressedExceptions = SuppressedExceptions.init()
+      addresses.forEach { localAddress ->
+        try {
+          // Attempt to open and connect a channel for the current address
+          return@withContext openAndConnect(localAddress, tracker)
+        } catch (e: IOException) {
+          // Suppress `IOException` so that we could connect to other addresses
+          suppressedExceptions = SuppressedExceptions.add(suppressedExceptions, e)
         }
+      }
+      // If we reach here, none of the addresses worked, so we bail out and throw
+      // a "combined" exception
+      val message =
+        "Cannot connect to an active ADB server on any of the following " + "addresses: ${addresses.joinToString { it.toString() }}"
+      val error = IOException(message).withSuppressed(suppressedExceptions)
+      warningsTracker.getLogAction(this@AdbChannelProviderConnectAddresses.toString(), message).logInfo(host.logger, error) {
+        "Error connecting to local ADB instance"
+      }
+      throw error
     }
+  }
 
-    private suspend fun openAndConnect(
-        localAddress: InetSocketAddress,
-        tracker: TimeoutTracker
-    ): AdbChannel {
-        // IntelliJ warns about this due to the "throws IOException" signature
-        @Suppress("BlockingMethodInNonBlockingContext")
-        val socketChannel = AsynchronousSocketChannel.open(host.asynchronousChannelGroup)
-        return socketChannel.closeOnException {
-            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
-            socketChannel.setOption(
-                StandardSocketOptions.SO_KEEPALIVE,
-                host.getPropertyValue(SOCKET_CHANNEL_KEEPALIVE)
-            )
+  private suspend fun openAndConnect(localAddress: InetSocketAddress, tracker: TimeoutTracker): AdbChannel {
+    // IntelliJ warns about this due to the "throws IOException" signature
+    @Suppress("BlockingMethodInNonBlockingContext") val socketChannel = AsynchronousSocketChannel.open(host.asynchronousChannelGroup)
+    return socketChannel.closeOnException {
+      socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
+      socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, host.getPropertyValue(SOCKET_CHANNEL_KEEPALIVE))
 
-            val adbChannel = AdbSocketChannelImpl(host, socketChannel)
-            // Since `adbChannel` is a wrapper around `socketChannel`, we don't need a
-            // nested `closeOnException` here. If this `connect()` call fails, the outer
-            // block will correctly close the underlying `socketChannel`, handling all
-            // necessary cleanup.
-            adbChannel.connect(
-                localAddress,
-                tracker.remainingNanos,
-                TimeUnit.NANOSECONDS
-            )
-            adbChannel
-        }
+      val adbChannel = AdbSocketChannelImpl(host, socketChannel)
+      // Since `adbChannel` is a wrapper around `socketChannel`, we don't need a
+      // nested `closeOnException` here. If this `connect()` call fails, the outer
+      // block will correctly close the underlying `socketChannel`, handling all
+      // necessary cleanup.
+      adbChannel.connect(localAddress, tracker.remainingNanos, TimeUnit.NANOSECONDS)
+      adbChannel
     }
+  }
 }

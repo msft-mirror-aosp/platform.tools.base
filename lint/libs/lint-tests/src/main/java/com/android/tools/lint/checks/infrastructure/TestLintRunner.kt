@@ -55,10 +55,9 @@ import org.junit.Assert.assertTrue
 import org.xml.sax.SAXException
 
 /**
- * The actual machinery for running lint tests for a given [task]. This class is tied closely to the
- * [TestLintTask] class, performing a number of operations with(Task) to access package private
- * state; the intent is for the task class to only contain state and setup, and for this class to
- * contain actual test running code.
+ * The actual machinery for running lint tests for a given [task]. This class is tied closely to the [TestLintTask] class, performing a
+ * number of operations with(Task) to access package private state; the intent is for the task class to only contain state and setup, and
+ * for this class to contain actual test running code.
  */
 class TestLintRunner(private val task: TestLintTask) {
   /** Whether the [run] method has already been invoked. */
@@ -81,9 +80,8 @@ class TestLintRunner(private val task: TestLintTask) {
   var currentTestMode: TestMode = TestMode.DEFAULT
 
   /**
-   * Performs the lint check, returning the results of the lint check. Note that this does not
-   * assert anything about the result; for that, you'll want to call [TestLintResult.expect] or one
-   * or more of the other check result methods.
+   * Performs the lint check, returning the results of the lint check. Note that this does not assert anything about the result; for that,
+   * you'll want to call [TestLintResult.expect] or one or more of the other check result methods.
    */
   @CheckReturnValue
   fun run(): TestLintResult {
@@ -113,11 +111,7 @@ class TestLintRunner(private val task: TestLintTask) {
       if (platforms == null) {
         platforms = computePlatforms(checkedIssues)
       }
-      if (
-        projects.implicitReportFrom != null &&
-          platforms.contains(Platform.JDK) &&
-          !platforms.contains(Platform.ANDROID)
-      ) {
+      if (projects.implicitReportFrom != null && platforms.contains(Platform.JDK) && !platforms.contains(Platform.ANDROID)) {
         for (project in projects) {
           project.type = ProjectDescription.Type.JAVA
         }
@@ -144,8 +138,7 @@ class TestLintRunner(private val task: TestLintTask) {
             TestResultState(
                 createClient(),
                 rootDir,
-                "No output because the configured test mode $mode is not " +
-                  "applicable in this project context",
+                "No output because the configured test mode $mode is not " + "applicable in this project context",
                 emptyList(),
                 null,
               )
@@ -165,9 +158,7 @@ class TestLintRunner(private val task: TestLintTask) {
         // locked on Windows. (We'll get a second chance to delete these
         // later, in TestLintResult#cleanup.)
         if (currentPlatform() == PLATFORM_WINDOWS) {
-          tempDir.walkBottomUp().fold(true) { result, it ->
-            !it.path.endsWith(DOT_JAR) && (it.delete() || !it.exists()) && result
-          }
+          tempDir.walkBottomUp().fold(true) { result, it -> !it.path.endsWith(DOT_JAR) && (it.delete() || !it.exists()) && result }
         } else {
           tempDir.deleteRecursively()
         }
@@ -175,11 +166,7 @@ class TestLintRunner(private val task: TestLintTask) {
     }
   }
 
-  private fun getTestModeFiles(
-    mode: TestMode,
-    rootDir: File,
-    projectMap: MutableMap<String, List<File>>,
-  ): Pair<File, List<File>> {
+  private fun getTestModeFiles(mode: TestMode, rootDir: File, projectMap: MutableMap<String, List<File>>): Pair<File, List<File>> {
     // Look up output folder for projects; this allows
     // multiple test types to share a single project tree
     // (for example, UInjectionHost mode does not modify
@@ -212,11 +199,7 @@ class TestLintRunner(private val task: TestLintTask) {
     // For example, the UInjectionHost tests are only relevant
     // if the project contains Kotlin source files.
     val projectList = projects.projects
-    if (
-      !mode.applies(
-        TestModeContext(this, rootDir, projectList, emptyList(), null, results = results)
-      )
-    ) {
+    if (!mode.applies(TestModeContext(this, rootDir, projectList, emptyList(), null, results = results))) {
       notApplicable.add(mode)
       return
     }
@@ -256,8 +239,7 @@ class TestLintRunner(private val task: TestLintTask) {
       val lintClient: TestLintClient = createClient()
       mode.eventListener?.let {
         listener = LintListener { driver, type, _, context ->
-          val testContext =
-            TestModeContext(task, root, projectList, files, clientState, driver, context, results)
+          val testContext = TestModeContext(task, root, projectList, files, clientState, driver, context, results)
           it.invoke(testContext, type, clientState)
         }
         listeners.add(listener)
@@ -293,8 +275,7 @@ class TestLintRunner(private val task: TestLintTask) {
         }
       }
     } finally {
-      val afterState =
-        TestModeContext(this, root, projectList, files, clientState, results = results)
+      val afterState = TestModeContext(this, root, projectList, files, clientState, results = results)
       mode.after(afterState)
       if (listener != null) {
         listeners.remove(listener)
@@ -302,12 +283,7 @@ class TestLintRunner(private val task: TestLintTask) {
     }
   }
 
-  private fun checkLint(
-    client: TestLintClient,
-    rootDir: File,
-    files: List<File>,
-    mode: TestMode,
-  ): TestResultState {
+  private fun checkLint(client: TestLintClient, rootDir: File, files: List<File>, mode: TestMode): TestResultState {
     client.addCleanupDir(rootDir)
     client.setLintTask(task)
     return try {
@@ -326,16 +302,11 @@ class TestLintRunner(private val task: TestLintTask) {
     }
 
     // The test mode is not one of the built-in test modes; just use one of them
-    return task.testModes.firstOrNull()
-      ?: throw RuntimeException("Invalid testModes configuration: ${task.testModes} and $results")
+    return task.testModes.firstOrNull() ?: throw RuntimeException("Invalid testModes configuration: ${task.testModes} and $results")
   }
 
   /** Makes sure that the test output for the two test modes matches */
-  private fun checkConsistentOutput(
-    results: Map<TestMode, TestResultState>,
-    mode: TestMode,
-    first: TestMode,
-  ) {
+  private fun checkConsistentOutput(results: Map<TestMode, TestResultState>, mode: TestMode, first: TestMode) {
     if (mode == first) {
       return
     }
@@ -347,9 +318,7 @@ class TestLintRunner(private val task: TestLintTask) {
     if (!mode.sameOutput(expected, actual, TestMode.OutputKind.REPORT)) {
       val line = "-".repeat(70)
       val expectedLabel = first.description + "\n\n$line\n\n"
-      var actualLabel =
-        mode.description +
-          "\n(To run in isolation, change .run() to .testModes(${mode.fieldName}).run())\n$line\n\n"
+      var actualLabel = mode.description + "\n(To run in isolation, change .run() to .testModes(${mode.fieldName}).run())\n$line\n\n"
       if (mode == TestMode.SUPPRESSIBLE) {
         actualLabel =
           actualLabel.trimEnd() +
@@ -376,22 +345,14 @@ class TestLintRunner(private val task: TestLintTask) {
       if (modifications.isNotEmpty()) {
         val originalFiles = modifications.joinToString("\n") { listFile(it.path, it.before) }
         val modifiedFiles = modifications.joinToString("\n") { listFile(it.path, it.after) }
-        assertEquals(
-          message,
-          "$expectedLabel$expected$originalFiles",
-          "$actualLabel$actual$modifiedFiles",
-        )
+        assertEquals(message, "$expectedLabel$expected$originalFiles", "$actualLabel$actual$modifiedFiles")
       } else {
         assertEquals(message, "$expectedLabel$expected", "$actualLabel$actual")
       }
     }
   }
 
-  private fun getModifications(
-    results: Map<TestMode, TestResultState>,
-    mode: TestMode,
-    resultState: TestResultState,
-  ): List<ChangedFile> {
+  private fun getModifications(results: Map<TestMode, TestResultState>, mode: TestMode, resultState: TestResultState): List<ChangedFile> {
     val changedFiles: MutableList<ChangedFile> = mutableListOf()
     val defaultState = results[TestMode.DEFAULT]
     if (mode.modifiesSources && mode != TestMode.DEFAULT && defaultState != null) {
@@ -406,13 +367,7 @@ class TestLintRunner(private val task: TestLintTask) {
   private class ChangedFile(val path: String, val before: String, val after: String)
 
   // Add non-binary files that differ between the two folders
-  private fun addChangedFiles(
-    changed: MutableList<ChangedFile>,
-    dir1: File,
-    dir2: File,
-    path: String,
-    depth: Int,
-  ) {
+  private fun addChangedFiles(changed: MutableList<ChangedFile>, dir1: File, dir2: File, path: String, depth: Int) {
     val list = dir1.listFiles() ?: return
     for (file1 in list) {
       val name = file1.name
@@ -443,9 +398,8 @@ class TestLintRunner(private val task: TestLintTask) {
   }
 
   /**
-   * Given a result string possibly containing absolute paths to the given directory, replaces the
-   * directory prefixes with `TESTROOT`, and optionally (if configured via TestLinkTask.stripRoot)
-   * makes the path relative to the test root.
+   * Given a result string possibly containing absolute paths to the given directory, replaces the directory prefixes with `TESTROOT`, and
+   * optionally (if configured via TestLinkTask.stripRoot) makes the path relative to the test root.
    */
   fun stripRoot(rootDir: File, path: String): String {
     var s = path
@@ -507,10 +461,9 @@ class TestLintRunner(private val task: TestLintTask) {
   }
 
   /**
-   * Creates lint test projects according to the configured project descriptions. Note that these
-   * are not the same projects that will be used if the [.run] method is called. This method is
-   * intended mainly for testing the lint infrastructure itself. Most detector tests will just want
-   * to use [.run].
+   * Creates lint test projects according to the configured project descriptions. Note that these are not the same projects that will be
+   * used if the [.run] method is called. This method is intended mainly for testing the lint infrastructure itself. Most detector tests
+   * will just want to use [.run].
    *
    * @param keepFiles if true, don't delete the generated temporary project source files
    */
@@ -558,8 +511,7 @@ class TestLintRunner(private val task: TestLintTask) {
 
       // Pick a report-from project to ensure the analysis relative to something
       if (task.reportFrom == null) {
-        val app =
-          projects.firstOrNull { it.type == ProjectDescription.Type.APP } ?: projects.firstOrNull()
+        val app = projects.firstOrNull { it.type == ProjectDescription.Type.APP } ?: projects.firstOrNull()
         app?.let { task.reportFrom(it) }
       }
 

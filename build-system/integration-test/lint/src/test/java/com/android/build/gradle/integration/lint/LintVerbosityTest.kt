@@ -23,49 +23,47 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test testing lint verbosity.
- */
+/** Integration test testing lint verbosity. */
 class LintVerbosityTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                lintOptions {
-                                    abortOnError = false
-                                    quiet = false
-                                    error 'AccidentalOctal'
-                                }
-                                defaultConfig {
-                                    versionCode 010
-                                }
-                            }
-                        """.trimIndent()
-                    )
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
+            android {
+                lintOptions {
+                    abortOnError = false
+                    quiet = false
+                    error 'AccidentalOctal'
+                }
+                defaultConfig {
+                    versionCode 010
+                }
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    @Test
-    fun testQuiet() {
-        // first check that we see "Wrote HTML ..." in stdout if running with --info and quiet=false
-        project.executor().withArgument("--info").run("lintDebug")
-        ScannerSubject.assertThat(project.buildResult.stdout).contains("Wrote HTML report to ")
-        // then set quiet to true and check that stdout doesn't contain "Scanning".
-        TestFileUtils.searchAndReplace(project.buildFile, "quiet = false", "quiet = true")
-        project.executor().withArgument("--info").run("lintDebug")
-        ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("Wrote HTML report to ")
-    }
+  @Test
+  fun testQuiet() {
+    // first check that we see "Wrote HTML ..." in stdout if running with --info and quiet=false
+    project.executor().withArgument("--info").run("lintDebug")
+    ScannerSubject.assertThat(project.buildResult.stdout).contains("Wrote HTML report to ")
+    // then set quiet to true and check that stdout doesn't contain "Scanning".
+    TestFileUtils.searchAndReplace(project.buildFile, "quiet = false", "quiet = true")
+    project.executor().withArgument("--info").run("lintDebug")
+    ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("Wrote HTML report to ")
+  }
 
-    // Regression test for b/187329866
-    @Test
-    fun testErrorMessage() {
-        TestFileUtils.searchAndReplace(project.buildFile, "abortOnError = false", "abortOnError true")
-        project.executor().expectFailure().run("lintDebug").apply {
-            assertErrorContains("Lint found errors in the project; aborting build.")
-        }
-    }
+  // Regression test for b/187329866
+  @Test
+  fun testErrorMessage() {
+    TestFileUtils.searchAndReplace(project.buildFile, "abortOnError = false", "abortOnError true")
+    project.executor().expectFailure().run("lintDebug").apply { assertErrorContains("Lint found errors in the project; aborting build.") }
+  }
 }

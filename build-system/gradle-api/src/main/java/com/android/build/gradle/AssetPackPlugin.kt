@@ -20,12 +20,12 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.BasePlugin
 
-class AssetPackPlugin: Plugin<Project> {
-    override fun apply(project: Project) {
-        project.apply(VERSION_CHECK_PLUGIN_ID)
-        project.plugins.apply(BasePlugin::class.java)
-        project.apply(INTERNAL_PLUGIN_ID)
-    }
+class AssetPackPlugin : Plugin<Project> {
+  override fun apply(project: Project) {
+    project.apply(VERSION_CHECK_PLUGIN_ID)
+    project.plugins.apply(BasePlugin::class.java)
+    project.apply(INTERNAL_PLUGIN_ID)
+  }
 }
 
 private val INTERNAL_PLUGIN_ID = mapOf("plugin" to "com.android.internal.asset-pack")

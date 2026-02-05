@@ -26,10 +26,8 @@ import java.io.IOException
  * [relativePath] path of the file relative to the resource directory, or null if the source file of the resource is not available
  * [configuration] configuration the resource file is associated with
  */
-data class ResourceSourceFileImpl(
-  override val relativePath: String?,
-  override val configuration: RepositoryConfiguration
-): ResourceSourceFile {
+data class ResourceSourceFileImpl(override val relativePath: String?, override val configuration: RepositoryConfiguration) :
+  ResourceSourceFile {
   @Throws(IOException::class)
   override fun serialize(stream: Base128OutputStream, configIndexes: Object2IntMap<String>) {
     stream.writeString(relativePath)
@@ -37,9 +35,7 @@ data class ResourceSourceFileImpl(
   }
 
   companion object {
-    /**
-     * Creates a ResourceSourceFileImpl by reading its contents from the given stream.
-     */
+    /** Creates a ResourceSourceFileImpl by reading its contents from the given stream. */
     @JvmStatic
     @Throws(IOException::class)
     fun deserialize(stream: Base128InputStream, configurations: List<RepositoryConfiguration>): ResourceSourceFileImpl {

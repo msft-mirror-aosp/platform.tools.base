@@ -23,160 +23,151 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /** Test behavior of Packaging.jniLibs.testOnly */
 class JniLibsTestOnlyTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .appendToBuild(
-                """
-                    android {
-                        packaging {
-                            jniLibs {
-                                testOnly += "**/appDslTestOnly.so"
-                            }
-                        }
-                    }
-                    androidComponents {
-                        onVariants(selector().all()) {
-                            packaging.jniLibs.testOnly.add("**/appVariantTestOnly.so")
-                        }
-                    }
-                    """.trimIndent()
-            )
-
-    private val lib =
-        MinimalSubProject.lib("com.example.lib")
-            .appendToBuild(
-                """
-                    android {
-                        packaging {
-                            jniLibs {
-                                testOnly += "**/libDslTestOnly.so"
-                            }
-                        }
-                    }
-                    androidComponents {
-                        onVariants(selector().all()) {
-                            packaging.jniLibs.testOnly.add("**/libVariantTestOnly.so")
-                        }
-                    }
-                    """.trimIndent()
-            )
-
-    private val appTest =
-        MinimalSubProject.test("com.example.apptest")
-            .appendToBuild(
-                """
-                    android {
-                        targetProjectPath = ':app'
-                    }
-                """.trimIndent()
-            )
-
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .subproject(":appTest", appTest)
-                    .dependency(app, lib)
-                    .dependency(appTest, app)
-                    .build()
-            )
-            .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-            .create()
-
-    @Before
-    fun before() {
-        // add native libs to app
-        val appSubproject = project.getSubproject("app")
-        createAbiFile(appSubproject, "main", "appMain.so")
-        createAbiFile(appSubproject, "main", "appDslTestOnly.so")
-        createAbiFile(appSubproject, "main", "appVariantTestOnly.so")
-
-        // add native libs to lib
-        val libSubproject = project.getSubproject("lib")
-        createAbiFile(libSubproject, "main", "libMain.so")
-        createAbiFile(libSubproject, "main", "libDslTestOnly.so")
-        createAbiFile(libSubproject, "main", "libVariantTestOnly.so")
-    }
-
-    @Test
-    fun testTestOnlyForApp() {
-        val appSubproject = project.getSubproject("app")
-        val appTestSubproject = project.getSubproject("appTest")
-
-        project.executor()
-            .run(":app:assembleDebug", ":app:assembleDebugAndroidTest", ":appTest:assembleDebug")
-
-        val apk = appSubproject.getApk(GradleTestProject.ApkType.DEBUG)
-        assertThatApk(apk).contains("lib/x86/appMain.so")
-        assertThatApk(apk).contains("lib/x86/libMain.so")
-        assertThatApk(apk).doesNotContain("lib/x86/appDslTestOnly.so")
-        assertThatApk(apk).doesNotContain("lib/x86/appVariantTestOnly.so")
-        assertThatApk(apk).doesNotContain("lib/x86/libDslTestOnly.so")
-        assertThatApk(apk).doesNotContain("lib/x86/libVariantTestOnly.so")
-
-        val androidTestApk =
-            appSubproject.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThatApk(androidTestApk).contains("lib/x86/appDslTestOnly.so")
-        assertThatApk(androidTestApk).contains("lib/x86/appVariantTestOnly.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/x86/appMain.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/x86/libMain.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/x86/libDslTestOnly.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/x86/libVariantTestOnly.so")
-
-        val appTestApk = appTestSubproject.getApk(GradleTestProject.ApkType.DEBUG)
-        assertThatApk(appTestApk).contains("lib/x86/appDslTestOnly.so")
-        assertThatApk(appTestApk).contains("lib/x86/appVariantTestOnly.so")
-        assertThatApk(appTestApk).doesNotContain("lib/x86/appMain.so")
-        assertThatApk(appTestApk).doesNotContain("lib/x86/libMain.so")
-        assertThatApk(appTestApk).doesNotContain("lib/x86/libDslTestOnly.so")
-        assertThatApk(appTestApk).doesNotContain("lib/x86/libVariantTestOnly.so")
-    }
-
-    @Test
-    fun testTestOnlyForLib() {
-        val libSubproject = project.getSubproject("lib")
-
-        project.executor().run(":lib:assembleDebug", ":lib:assembleDebugAndroidTest")
-
-        libSubproject.assertAar(AarSelector.DEBUG) {
-            jniLibs {
-                // make sure we don't find libDslTestOnly.so or libVariantTestOnly.so
-                containsExactly("x86/libMain.so")
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .appendToBuild(
+        """
+        android {
+            packaging {
+                jniLibs {
+                    testOnly += "**/appDslTestOnly.so"
+                }
             }
         }
-
-        val androidTestApk =
-            libSubproject.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThatApk(androidTestApk).contains("lib/x86/libMain.so")
-        assertThatApk(androidTestApk).contains("lib/x86/libDslTestOnly.so")
-        assertThatApk(androidTestApk).contains("lib/x86/libVariantTestOnly.so")
-    }
-
-    private fun createAbiFile(
-        gradleTestProject: GradleTestProject,
-        srcDirName: String,
-        libName: String
-    ) {
-        val abiFolder =
-            FileUtils.join(gradleTestProject.projectDir, "src", srcDirName, "jniLibs", "x86")
-        FileUtils.mkdirs(abiFolder)
-        JniLibsTestOnlyTest::class.java.getResourceAsStream(
-            "/nativeLibs/unstripped.so"
-        ).use { inputStream ->
-            File(abiFolder, libName).outputStream().use { outputStream ->
-                inputStream.copyTo(outputStream)
+        androidComponents {
+            onVariants(selector().all()) {
+                packaging.jniLibs.testOnly.add("**/appVariantTestOnly.so")
             }
         }
+        """
+          .trimIndent()
+      )
+
+  private val lib =
+    MinimalSubProject.lib("com.example.lib")
+      .appendToBuild(
+        """
+        android {
+            packaging {
+                jniLibs {
+                    testOnly += "**/libDslTestOnly.so"
+                }
+            }
+        }
+        androidComponents {
+            onVariants(selector().all()) {
+                packaging.jniLibs.testOnly.add("**/libVariantTestOnly.so")
+            }
+        }
+        """
+          .trimIndent()
+      )
+
+  private val appTest =
+    MinimalSubProject.test("com.example.apptest")
+      .appendToBuild(
+        """
+        android {
+            targetProjectPath = ':app'
+        }
+        """
+          .trimIndent()
+      )
+
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", lib)
+          .subproject(":appTest", appTest)
+          .dependency(app, lib)
+          .dependency(appTest, app)
+          .build()
+      )
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .create()
+
+  @Before
+  fun before() {
+    // add native libs to app
+    val appSubproject = project.getSubproject("app")
+    createAbiFile(appSubproject, "main", "appMain.so")
+    createAbiFile(appSubproject, "main", "appDslTestOnly.so")
+    createAbiFile(appSubproject, "main", "appVariantTestOnly.so")
+
+    // add native libs to lib
+    val libSubproject = project.getSubproject("lib")
+    createAbiFile(libSubproject, "main", "libMain.so")
+    createAbiFile(libSubproject, "main", "libDslTestOnly.so")
+    createAbiFile(libSubproject, "main", "libVariantTestOnly.so")
+  }
+
+  @Test
+  fun testTestOnlyForApp() {
+    val appSubproject = project.getSubproject("app")
+    val appTestSubproject = project.getSubproject("appTest")
+
+    project.executor().run(":app:assembleDebug", ":app:assembleDebugAndroidTest", ":appTest:assembleDebug")
+
+    val apk = appSubproject.getApk(GradleTestProject.ApkType.DEBUG)
+    assertThatApk(apk).contains("lib/x86/appMain.so")
+    assertThatApk(apk).contains("lib/x86/libMain.so")
+    assertThatApk(apk).doesNotContain("lib/x86/appDslTestOnly.so")
+    assertThatApk(apk).doesNotContain("lib/x86/appVariantTestOnly.so")
+    assertThatApk(apk).doesNotContain("lib/x86/libDslTestOnly.so")
+    assertThatApk(apk).doesNotContain("lib/x86/libVariantTestOnly.so")
+
+    val androidTestApk = appSubproject.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
+    assertThatApk(androidTestApk).contains("lib/x86/appDslTestOnly.so")
+    assertThatApk(androidTestApk).contains("lib/x86/appVariantTestOnly.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/x86/appMain.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/x86/libMain.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/x86/libDslTestOnly.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/x86/libVariantTestOnly.so")
+
+    val appTestApk = appTestSubproject.getApk(GradleTestProject.ApkType.DEBUG)
+    assertThatApk(appTestApk).contains("lib/x86/appDslTestOnly.so")
+    assertThatApk(appTestApk).contains("lib/x86/appVariantTestOnly.so")
+    assertThatApk(appTestApk).doesNotContain("lib/x86/appMain.so")
+    assertThatApk(appTestApk).doesNotContain("lib/x86/libMain.so")
+    assertThatApk(appTestApk).doesNotContain("lib/x86/libDslTestOnly.so")
+    assertThatApk(appTestApk).doesNotContain("lib/x86/libVariantTestOnly.so")
+  }
+
+  @Test
+  fun testTestOnlyForLib() {
+    val libSubproject = project.getSubproject("lib")
+
+    project.executor().run(":lib:assembleDebug", ":lib:assembleDebugAndroidTest")
+
+    libSubproject.assertAar(AarSelector.DEBUG) {
+      jniLibs {
+        // make sure we don't find libDslTestOnly.so or libVariantTestOnly.so
+        containsExactly("x86/libMain.so")
+      }
     }
+
+    val androidTestApk = libSubproject.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
+    assertThatApk(androidTestApk).contains("lib/x86/libMain.so")
+    assertThatApk(androidTestApk).contains("lib/x86/libDslTestOnly.so")
+    assertThatApk(androidTestApk).contains("lib/x86/libVariantTestOnly.so")
+  }
+
+  private fun createAbiFile(gradleTestProject: GradleTestProject, srcDirName: String, libName: String) {
+    val abiFolder = FileUtils.join(gradleTestProject.projectDir, "src", srcDirName, "jniLibs", "x86")
+    FileUtils.mkdirs(abiFolder)
+    JniLibsTestOnlyTest::class.java.getResourceAsStream("/nativeLibs/unstripped.so").use { inputStream ->
+      File(abiFolder, libName).outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+    }
+  }
 }

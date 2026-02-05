@@ -27,52 +27,51 @@ import org.junit.Test
 
 class AnalyticsConfigureOnDemandTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject("app", MinimalSubProject.app())
-                    .subproject("library", MinimalSubProject.lib())
-                    .build()
-            )
-            .enableProfileOutput()
-            .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder().subproject("app", MinimalSubProject.app()).subproject("library", MinimalSubProject.lib()).build()
+      )
+      .enableProfileOutput()
+      .create()
 
-    // Regression test for b//270731522
-    @Test
-    fun testNoWarningIfConfigOnDemandEnabled() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                configurations {
-                    customConfiguration
-                }
+  // Regression test for b//270731522
+  @Test
+  fun testNoWarningIfConfigOnDemandEnabled() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      configurations {
+          customConfiguration
+      }
 
-                dependencies {
-                    customConfiguration project(':library')
-                }
-                abstract class ResolutionTask extends DefaultTask {
-                    @Internal
-                    abstract ConfigurableFileCollection getDeps()
+      dependencies {
+          customConfiguration project(':library')
+      }
+      abstract class ResolutionTask extends DefaultTask {
+          @Internal
+          abstract ConfigurableFileCollection getDeps()
 
-                    @TaskAction
-                    def resolve() {
-                        getDeps().files
-                    }
-                }
+          @TaskAction
+          def resolve() {
+              getDeps().files
+          }
+      }
 
-                tasks.register('resolution', ResolutionTask).configure {
-                    getDeps().from(project.configurations.getByName("customConfiguration").incoming
-                    .artifactView { lenient(true) }.files)
-                }
-            """.trimIndent()
-        )
-        val result = project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withArgument("-Dorg.gradle.configureondemand=true")
-            .run(":app:resolution")
-        ScannerSubject.assertThat(result.stdout).doesNotContain(
-            "GradleBuildProject.Builder should not be accessed")
-    }
+      tasks.register('resolution', ResolutionTask).configure {
+          getDeps().from(project.configurations.getByName("customConfiguration").incoming
+          .artifactView { lenient(true) }.files)
+      }
+      """
+        .trimIndent(),
+    )
+    val result =
+      project
+        .executor()
+        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        .withArgument("-Dorg.gradle.configureondemand=true")
+        .run(":app:resolution")
+    ScannerSubject.assertThat(result.stdout).doesNotContain("GradleBuildProject.Builder should not be accessed")
+  }
 }

@@ -21,15 +21,12 @@ interface DexMethod {
   /** The name of the method (does not include the short descriptor) */
   val name: String
 
-  /**
-   * The method descriptor, using shorty notation:
-   * https://source.android.com/docs/core/runtime/dex-format#used-by-proto_id_item
-   */
+  /** The method descriptor, using shorty notation: https://source.android.com/docs/core/runtime/dex-format#used-by-proto_id_item */
   val shorty: String
 
   /**
-   * The return type of this Method. The shorty descriptor notation does not details the return type
-   * like the JVM descriptor (e.g.: An object is just L). The exact name of the return type is here.
+   * The return type of this Method. The shorty descriptor notation does not details the return type like the JVM descriptor (e.g.: An
+   * object is just L). The exact name of the return type is here.
    */
   val returnType: String
 

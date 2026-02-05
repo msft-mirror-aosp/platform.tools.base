@@ -24,46 +24,36 @@ import com.android.utils.FileUtils
 import java.io.FileOutputStream
 import java.nio.file.Path
 
-/**
- * [D8GlobalSyntheticsConsumer] is used by D8 to write global synthetics to our custom location.
- */
+/** [D8GlobalSyntheticsConsumer] is used by D8 to write global synthetics to our custom location. */
 class D8GlobalSyntheticsConsumer(val globalSyntheticsOutput: Path) : GlobalSyntheticsConsumer {
 
-    override fun accept(
-        data: ByteDataView?,
-        context: ClassReference?,
-        handler: DiagnosticsHandler?
-    ) {
-        if (data == null) return
+  override fun accept(data: ByteDataView?, context: ClassReference?, handler: DiagnosticsHandler?) {
+    if (data == null) return
 
-        // context exist if and only if d8 is running with dexPerClassFile mode
-        val outputFile = if (context != null) {
-            // when context exist, each global file name is computed based on the class that
-            // global synthetics are generated from
-            globalSyntheticsOutput.resolve(
-                // context.binaryName + .class is guaranteed to be the same as classFileRelativePath
-                DexFilePerClassFile
-                    .getGlobalSyntheticOutputRelativePath(context.binaryName + ".class")
-            )
+    // context exist if and only if d8 is running with dexPerClassFile mode
+    val outputFile =
+      if (context != null) {
+          // when context exist, each global file name is computed based on the class that
+          // global synthetics are generated from
+          globalSyntheticsOutput.resolve(
+            // context.binaryName + .class is guaranteed to be the same as
+            // classFileRelativePath
+            DexFilePerClassFile.getGlobalSyntheticOutputRelativePath(context.binaryName + ".class")
+          )
         } else {
-            // when context doesn't exist, globals are output to a single file under
-            // globalSyntheticsOutput directory
-            globalSyntheticsOutput.resolve(bundledGlobalSyntheticsFileName + globalSyntheticsFileExtension)
-        }.toFile()
-
-        FileUtils.mkdirs(outputFile.parentFile)
-        // accept function is only called at most once for given context, so we can rewrite
-        // modified files
-        FileUtils.deleteIfExists(outputFile)
-
-        FileOutputStream(outputFile).buffered().use {
-            it.write(
-                data.buffer,
-                data.offset,
-                data.length
-            )
+          // when context doesn't exist, globals are output to a single file under
+          // globalSyntheticsOutput directory
+          globalSyntheticsOutput.resolve(bundledGlobalSyntheticsFileName + globalSyntheticsFileExtension)
         }
-    }
+        .toFile()
+
+    FileUtils.mkdirs(outputFile.parentFile)
+    // accept function is only called at most once for given context, so we can rewrite
+    // modified files
+    FileUtils.deleteIfExists(outputFile)
+
+    FileOutputStream(outputFile).buffered().use { it.write(data.buffer, data.offset, data.length) }
+  }
 }
 
 private const val bundledGlobalSyntheticsFileName = "global"

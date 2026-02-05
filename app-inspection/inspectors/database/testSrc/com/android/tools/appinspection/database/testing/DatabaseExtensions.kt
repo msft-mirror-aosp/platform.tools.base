@@ -30,9 +30,7 @@ fun SQLiteDatabase.addTable(table: Table) = execSQL(table.toCreateString())
 fun SQLiteConnection.addTable(table: Table) = prepare(table.toCreateString()).use { it.step() }
 
 val SQLiteDatabase.displayName: String
-  get() =
-    if (path != ":memory:") path
-    else ":memory: {hashcode=0x${String.format("%x", this.hashCode())}}"
+  get() = if (path != ":memory:") path else ":memory: {hashcode=0x${String.format("%x", this.hashCode())}}"
 
 val SQLiteDatabase.absolutePath: String
   get() = File(path).absolutePath
@@ -47,18 +45,12 @@ fun Table.toCreateString(): String {
   val primaryKeyColumns = columns.filter { it.isPrimaryKey }
   val primaryKeyPart =
     if (primaryKeyColumns.isEmpty()) ""
-    else
-      primaryKeyColumns
-        .sortedBy { it.primaryKey }
-        .joinToString(prefix = ",PRIMARY KEY(", postfix = ")") { it.name }
+    else primaryKeyColumns.sortedBy { it.primaryKey }.joinToString(prefix = ",PRIMARY KEY(", postfix = ")") { it.name }
 
   return columns.joinToString(
     prefix = "CREATE ${if (isView) "VIEW" else "TABLE"} $name (",
     postfix = "$primaryKeyPart )${if (isView) " AS $viewQuery" else ""};",
   ) {
-    it.name +
-      "${if (isView) "" else " ${it.type}"} " +
-      (if (it.isNotNull) "NOT NULL " else "") +
-      (if (it.isUnique) "UNIQUE " else "")
+    it.name + "${if (isView) "" else " ${it.type}"} " + (if (it.isNotNull) "NOT NULL " else "") + (if (it.isUnique) "UNIQUE " else "")
   }
 }

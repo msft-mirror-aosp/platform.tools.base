@@ -26,12 +26,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
 class DefaultAidl(
-    @get:Internal
-    override val executable: Provider<RegularFile>,
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFile
-    override val framework: Provider<RegularFile>,
-    @get:Input
-    override val version: Provider<String>
+  @get:Internal override val executable: Provider<RegularFile>,
+  @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFile override val framework: Provider<RegularFile>,
+  @get:Input override val version: Provider<String>,
 ) : Aidl
-

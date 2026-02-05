@@ -21,56 +21,40 @@ import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.services.DefaultStatusWriter
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
-import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
+import kotlinx.coroutines.CoroutineScope
 
 /**
- * DeviceCommandHandlers handle commands directed at a device. This includes host-prefix: commands
- * as per the protocol doc, as well as device commands after calling host:transport[-*].
+ * DeviceCommandHandlers handle commands directed at a device. This includes host-prefix: commands as per the protocol doc, as well as
+ * device commands after calling host:transport[-*].
  */
 open class DeviceCommandHandler(@JvmField protected val command: String) : CommandHandler() {
 
-    /**
-     * Processes the command and arguments. If this handler accepts it, it will execute it and
-     * return true.
-     */
-    open fun accept(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        command: String,
-        args: String,
-        statusWriter: StatusWriter = DefaultStatusWriter(socket),
-        shellCommandOutputProvider: (() -> ShellCommandOutput)? = null
-    ): Boolean {
-        return if (this.command == command) {
-            try {
-                invoke(server, socketScope, socket, device, args)
-                true
-            } catch (e: NextHandlerException) {
-                // The handler does not want to handle this command
-                false
-            }
-        } else false
-    }
+  /** Processes the command and arguments. If this handler accepts it, it will execute it and return true. */
+  open fun accept(
+    server: FakeAdbServer,
+    socketScope: CoroutineScope,
+    socket: Socket,
+    device: DeviceState,
+    command: String,
+    args: String,
+    statusWriter: StatusWriter = DefaultStatusWriter(socket),
+    shellCommandOutputProvider: (() -> ShellCommandOutput)? = null,
+  ): Boolean {
+    return if (this.command == command) {
+      try {
+        invoke(server, socketScope, socket, device, args)
+        true
+      } catch (e: NextHandlerException) {
+        // The handler does not want to handle this command
+        false
+      }
+    } else false
+  }
 
-    /**
-     * Invokes this command. This method is only called if the handler accepts the command with its
-     * arguments.
-     */
-    open operator fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-    }
+  /** Invokes this command. This method is only called if the handler accepts the command with its arguments. */
+  open operator fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {}
 
-    /**
-     * Exception thrown by [DeviceCommandHandler] implementations that want to pass the
-     * command to the next handler in line.
-     */
-    class NextHandlerException : UnsupportedOperationException()
+  /** Exception thrown by [DeviceCommandHandler] implementations that want to pass the command to the next handler in line. */
+  class NextHandlerException : UnsupportedOperationException()
 }

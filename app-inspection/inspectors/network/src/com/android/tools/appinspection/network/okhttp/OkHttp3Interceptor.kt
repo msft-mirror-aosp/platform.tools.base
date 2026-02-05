@@ -35,10 +35,8 @@ import okio.sink
 import okio.source
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport.OKHTTP3
 
-class OkHttp3Interceptor(
-  private val trackerFactory: HttpTrackerFactory,
-  private val interceptionRuleService: InterceptionRuleService,
-) : Interceptor {
+class OkHttp3Interceptor(private val trackerFactory: HttpTrackerFactory, private val interceptionRuleService: InterceptionRuleService) :
+  Interceptor {
 
   override fun intercept(chain: Interceptor.Chain): Response {
     val request = chain.request()
@@ -85,11 +83,7 @@ class OkHttp3Interceptor(
     return tracker
   }
 
-  private fun trackResponse(
-    tracker: HttpConnectionTracker,
-    request: Request,
-    response: Response,
-  ): Response {
+  private fun trackResponse(tracker: HttpConnectionTracker, request: Request, response: Response): Response {
     val fields = mutableMapOf<String?, List<String>>()
     fields.putAll(response.headers.toMultimap())
     fields[FIELD_RESPONSE_STATUS_CODE] = listOf(response.code.toString())
@@ -101,10 +95,7 @@ class OkHttp3Interceptor(
         NetworkResponse(response.code, fields, body.source().inputStream()),
       )
 
-    tracker.trackResponseHeaders(
-      interceptedResponse.responseCode,
-      interceptedResponse.responseHeaders,
-    )
+    tracker.trackResponseHeaders(interceptedResponse.responseCode, interceptedResponse.responseHeaders)
     val source = tracker.trackResponseBody(interceptedResponse.body).source().buffer()
 
     val responseBody = source.safeAsResponseBody(body.contentType(), body.contentLength())
@@ -127,28 +118,16 @@ class OkHttp3Interceptor(
 /**
  * A safe way to call [BufferedSource.asResponseBody]
  *
- * Try new `asResponseBody` first. If app is using an old version of OkHttp3, use the deprecated
- * `create` method.
+ * Try new `asResponseBody` first. If app is using an old version of OkHttp3, use the deprecated `create` method.
  *
- * Note that it's not possible to call the deprecated method directly because Kotlin assumes it's in
- * a companion object which doesn't exist in the old Java implementation.
+ * Note that it's not possible to call the deprecated method directly because Kotlin assumes it's in a companion object which doesn't exist
+ * in the old Java implementation.
  */
-private fun BufferedSource.safeAsResponseBody(
-  contentType: MediaType?,
-  contentLength: Long,
-): ResponseBody {
+private fun BufferedSource.safeAsResponseBody(contentType: MediaType?, contentLength: Long): ResponseBody {
   return try {
     asResponseBody(contentType, contentLength)
   } catch (e: Throwable) {
-    val method =
-      ResponseBody::class
-        .java
-        .getDeclaredMethod(
-          "create",
-          MediaType::class.java,
-          Long::class.java,
-          BufferedSource::class.java,
-        )
+    val method = ResponseBody::class.java.getDeclaredMethod("create", MediaType::class.java, Long::class.java, BufferedSource::class.java)
     method.invoke(null, contentType, contentLength, this) as ResponseBody
   }
 }
@@ -156,11 +135,10 @@ private fun BufferedSource.safeAsResponseBody(
 /**
  * A safe way to call [Headers.headersOf]
  *
- * Try new `headersOf` first. If app is using an old version of OkHttp3, use the deprecated `of`
- * method.
+ * Try new `headersOf` first. If app is using an old version of OkHttp3, use the deprecated `of` method.
  *
- * Note that it's not possible to call the deprecated method directly because Kotlin assumes it's in
- * a companion object which doesn't exist in the old Java implementation.
+ * Note that it's not possible to call the deprecated method directly because Kotlin assumes it's in a companion object which doesn't exist
+ * in the old Java implementation.
  */
 private fun headersOf(vararg namesAndValues: String): Headers {
   return try {

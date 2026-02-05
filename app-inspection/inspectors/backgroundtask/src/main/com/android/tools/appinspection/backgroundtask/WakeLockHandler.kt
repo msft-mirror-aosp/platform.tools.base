@@ -48,22 +48,19 @@ private const val TAG = "BackgroundInspector"
 /** A handler class that adds necessary hooks to track events for wake locks. */
 interface WakeLockHandler {
 
-  /**
-   * Entry hook for [PowerManager.newWakeLock(int, String)]. Captures the flags and tag parameters.
-   */
+  /** Entry hook for [PowerManager.newWakeLock(int, String)]. Captures the flags and tag parameters. */
   fun onNewWakeLockEntry(levelAndFlags: Int, tag: String)
 
   /**
-   * Exit hook for [PowerManager#newWakeLock(int, String)]. Associates wake lock instance with the
-   * previously captured flags and myTag parameters.
+   * Exit hook for [PowerManager#newWakeLock(int, String)]. Associates wake lock instance with the previously captured flags and myTag
+   * parameters.
    */
   fun onNewWakeLockExit(wakeLock: WakeLock): WakeLock
 
   /**
    * Wrapper method for [WakeLock.acquire].
    *
-   * Since [WakeLock.acquire] does not call [WakeLock.acquire] (vice versa), this will not cause
-   * double-instrumentation.
+   * Since [WakeLock.acquire] does not call [WakeLock.acquire] (vice versa), this will not cause double-instrumentation.
    *
    * @param wakeLock the wrapped [WakeLock] instance.
    * @param timeout the timeout parameter passed to the original method.
@@ -71,15 +68,14 @@ interface WakeLockHandler {
   fun onWakeLockAcquired(wakeLock: WakeLock, timeout: Long)
 
   /**
-   * Entry hook for [WakeLock.release(int)]. Capture the flags passed to the method and the "this"
-   * instance so the exit hook can retrieve them back.
+   * Entry hook for [WakeLock.release(int)]. Capture the flags passed to the method and the "this" instance so the exit hook can retrieve
+   * them back.
    */
   fun onWakeLockReleasedEntry(wakeLock: WakeLock, flag: Int)
 
   /**
-   * Add exit hook for [WakeLock.release(int)]. [WakeLock.isHeld()] may be updated in the method, so
-   * we should retrieve the value in an exit hook. Then we send the held state along with the flags
-   * from the entry hook to Studio Profiler.
+   * Add exit hook for [WakeLock.release(int)]. [WakeLock.isHeld()] may be updated in the method, so we should retrieve the value in an exit
+   * hook. Then we send the held state along with the flags from the entry hook to Studio Profiler.
    */
   fun onWakeLockReleasedExit()
 }
@@ -93,16 +89,15 @@ class WakeLockHandlerImpl(private val connection: Connection) : WakeLockHandler 
   private data class ReleaseParams(val wakeLock: WakeLock, val flag: Int)
 
   /**
-   * Use a thread-local variable for wake lock creation parameters, so a value can be temporarily
-   * stored when we enter a wakelock's constructor and retrieved when we exit it. Using a
-   * ThreadLocal protects against the situation when multiple threads create wake locks at the same
-   * time.
+   * Use a thread-local variable for wake lock creation parameters, so a value can be temporarily stored when we enter a wakelock's
+   * constructor and retrieved when we exit it. Using a ThreadLocal protects against the situation when multiple threads create wake locks
+   * at the same time.
    */
   private var newWakeLockData by threadLocal<CreationParams?> { null }
 
   /**
-   * Use a thread-local variable for wake lock release parameters, so a value can be temporarily
-   * stored when we enter the release method and retrieved when we exit it.
+   * Use a thread-local variable for wake lock release parameters, so a value can be temporarily stored when we enter the release method and
+   * retrieved when we exit it.
    */
   private val releaseWakeLockData = ThreadLocal<ReleaseParams>()
 
@@ -126,10 +121,7 @@ class WakeLockHandlerImpl(private val connection: Connection) : WakeLockHandler 
 
   override fun onWakeLockAcquired(wakeLock: WakeLock, timeout: Long) {
     val eventId = eventIdMap.getOrPut(wakeLock) { BackgroundTaskUtil.nextId() }
-    val creationParams =
-      wakeLockCreationParamsMap.getOrElse(wakeLock) {
-        CreationParams(wakeLock.getFlags(), wakeLock.getTag())
-      }
+    val creationParams = wakeLockCreationParamsMap.getOrElse(wakeLock) { CreationParams(wakeLock.getFlags(), wakeLock.getTag()) }
     connection.sendBackgroundTaskEvent(eventId) {
       stacktrace = getStackTrace(1)
       wakeLockAcquiredBuilder.apply {
@@ -165,10 +157,7 @@ class WakeLockHandlerImpl(private val connection: Connection) : WakeLockHandler 
       stacktrace = getStackTrace(2)
       wakeLockReleasedBuilder.apply {
         if (releaseParams.flag and RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY != 0) {
-          addFlags(
-            BackgroundTaskInspectorProtocol.WakeLockReleased.ReleaseFlag
-              .RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY
-          )
+          addFlags(BackgroundTaskInspectorProtocol.WakeLockReleased.ReleaseFlag.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY)
         }
         isHeld = releaseParams.wakeLock.isHeld
       }

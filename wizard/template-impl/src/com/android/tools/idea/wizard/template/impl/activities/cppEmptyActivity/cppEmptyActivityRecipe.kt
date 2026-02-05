@@ -36,7 +36,7 @@ fun RecipeExecutor.generateCppEmptyActivity(
   layoutName: String,
   isLauncher: Boolean,
   packageName: PackageName,
-  cppFlags: String
+  cppFlags: String,
 ) {
   val (projectData, srcOut) = moduleData
   val useAndroidX = projectData.androidXSupport
@@ -45,10 +45,7 @@ fun RecipeExecutor.generateCppEmptyActivity(
   addDependency("com.android.support:appcompat-v7:${moduleData.apis.appCompatVersion}.+")
   setCppOptions(cppFlags = cppFlags, cppPath = "src/main/cpp/CMakeLists.txt", cppVersion = DEFAULT_CMAKE_VERSION)
 
-  generateManifest(
-    moduleData , activityClass, packageName, isLauncher, false,
-    generateActivityTitle = false
-  )
+  generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false)
 
   addAllKotlinDependencies(moduleData)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
@@ -59,32 +56,35 @@ fun RecipeExecutor.generateCppEmptyActivity(
 
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
   val libraryName = packageName.deriveNativeLibraryName()
-  val simpleActivity = when (projectData.language) {
-    Language.Kotlin -> cppEmptyActivityKt(
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      activityClass = activityClass,
-      layoutName = layoutName,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported,
-      libraryName = libraryName,
-    )
-    Language.Java -> cppEmptyActivityJava(
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      activityClass = activityClass,
-      layoutName = layoutName,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported,
-      libraryName = libraryName,
-    )
-  }
+  val simpleActivity =
+    when (projectData.language) {
+      Language.Kotlin ->
+        cppEmptyActivityKt(
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          activityClass = activityClass,
+          layoutName = layoutName,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+          libraryName = libraryName,
+        )
+      Language.Java ->
+        cppEmptyActivityJava(
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          activityClass = activityClass,
+          layoutName = layoutName,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+          libraryName = libraryName,
+        )
+    }
   save(simpleActivity, simpleActivityPath)
 
   val nativeSrcOut = moduleData.rootDir.resolve("src/main/cpp")
   val nativeLibCpp = "native-lib.cpp"
   save(nativeLibCpp(packageName, activityClass), nativeSrcOut.resolve(nativeLibCpp))
-    save(cMakeListsTxt(nativeLibCpp, libraryName), nativeSrcOut.resolve("CMakeLists.txt"))
+  save(cMakeListsTxt(nativeLibCpp, libraryName), nativeSrcOut.resolve("CMakeLists.txt"))
 
   open(simpleActivityPath)
 }

@@ -28,17 +28,19 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentType
 import org.gradle.api.file.DirectoryProperty
 
-internal abstract class TestedVariantDslInfoImpl internal constructor(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    dataProvider: ManifestDataProvider,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    extension: InternalTestedExtension
-) : VariantDslInfoImpl(
+internal abstract class TestedVariantDslInfoImpl
+internal constructor(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  dataProvider: ManifestDataProvider,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  extension: InternalTestedExtension,
+) :
+  VariantDslInfoImpl(
     componentIdentity,
     componentType,
     defaultConfig,
@@ -47,11 +49,12 @@ internal abstract class TestedVariantDslInfoImpl internal constructor(
     dataProvider,
     services,
     buildDirectory,
-    extension
-), TestedVariantDslInfo {
+    extension,
+  ),
+  TestedVariantDslInfo {
 
-    override val testFixtures: TestFixtures = extension.testFixtures
+  override val testFixtures: TestFixtures = extension.testFixtures
 
-    override val testInstrumentationRunnerArguments: Map<String, String>
-        get() = mergedFlavor.testInstrumentationRunnerArguments
+  override val testInstrumentationRunnerArguments: Map<String, String>
+    get() = mergedFlavor.testInstrumentationRunnerArguments
 }

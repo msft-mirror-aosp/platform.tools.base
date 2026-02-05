@@ -31,13 +31,18 @@ fun scrollActivityJava(
   menuName: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val newModuleImportBlock = renderIf(isNewModule) {"""
+  val newModuleImportBlock =
+    renderIf(isNewModule) {
+      """
 import android.view.Menu;
 import android.view.MenuItem;
-  """}
-  val newModuleBlock = renderIf(isNewModule) {"""
+  """
+    }
+  val newModuleBlock =
+    renderIf(isNewModule) {
+      """
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -58,13 +63,17 @@ import android.view.MenuItem;
         }
         return super.onOptionsItemSelected(item);
     }
-  """}
-  val applicationPackageBlock = renderIf(applicationPackage != null) {"import ${applicationPackage}.R;"}
+  """
+    }
+  val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${applicationPackage}.R;" }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
 
   return """package ${packageName};
 
@@ -92,18 +101,18 @@ ${renderIf(isViewBindingSupported) {"""
         Toolbar toolbar = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "toolbar")};
+          id = "toolbar",)};
         setSupportActionBar(toolbar);
         CollapsingToolbarLayout toolBarLayout = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "toolbar_layout")};
+          id = "toolbar_layout",)};
         toolBarLayout.setTitle(getTitle());
 
         FloatingActionButton fab = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fab")};
+          id = "fab",)};
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

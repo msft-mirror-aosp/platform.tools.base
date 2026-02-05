@@ -171,15 +171,7 @@ private fun appendExample(
 
   val incidentsWithShiftedLineNumbers = incidents.map { shiftedLineNumbers[it] ?: it }
 
-  appendExample(
-    file,
-    className,
-    methodName,
-    incidentsWithShiftedLineNumbers,
-    filesWithoutComments,
-    primaryIssue,
-    issueData,
-  )
+  appendExample(file, className, methodName, incidentsWithShiftedLineNumbers, filesWithoutComments, primaryIssue, issueData)
 }
 
 private fun appendExample(
@@ -258,10 +250,7 @@ private fun appendExample(
         line = stripComments(line, DOT_XML)
       }
       json.append("        \"lineContents\": \"${line.trim().escapeJson()}\",\n")
-      val message =
-        incident.message.escapeJson().let {
-          if (it.lastOrNull()?.isLetterOrDigit() == true) "$it." else it
-        }
+      val message = incident.message.escapeJson().let { if (it.lastOrNull()?.isLetterOrDigit() == true) "$it." else it }
       json.append("        \"message\": \"$message\"\n")
       json.append("      }")
       json.toString()
@@ -297,12 +286,7 @@ private fun appendExample(
     sb.append("    \"library\": \"built-in\",\n")
   }
 
-  val languages =
-    primaryIncidents
-      .mapNotNull { pathToMarkdownLanguage(it.path) }
-      .toSet()
-      .sorted()
-      .joinToString(", ")
+  val languages = primaryIncidents.mapNotNull { pathToMarkdownLanguage(it.path) }.toSet().sorted().joinToString(", ")
   if (languages.isNotBlank()) {
     sb.append("    \"languages\": \"${languages.escapeJson()}\",\n")
   }
@@ -312,9 +296,7 @@ private fun appendExample(
     sb.append("\n    ],\n")
   }
   sb.append("    \"android-specific\": \"${primaryIssue.isAndroidSpecific()}\",\n")
-  sb.append(
-    "    \"source\": \"${className.substringAfterLast('.').escapeJson()}.${methodName.escapeJson()}\"\n"
-  )
+  sb.append("    \"source\": \"${className.substringAfterLast('.').escapeJson()}.${methodName.escapeJson()}\"\n")
 
   sb.append("}")
 
@@ -336,8 +318,7 @@ private fun exampleIncludesHints(files: List<Pair<String, String>>, primaryIssue
       val windowSize = 10
       val sourceWindowStart = max(0, group.range.first - windowSize)
       val sourceWindowEnd = min(source.length, group.range.last + windowSize)
-      val sourceWindow =
-        "..." + source.substring(sourceWindowStart, sourceWindowEnd).replace("\n", "\\n") + "..."
+      val sourceWindow = "..." + source.substring(sourceWindowStart, sourceWindowEnd).replace("\n", "\\n") + "..."
       println(
         "WARNING: Test file $path for ${primaryIssue.id} may be leaking problem through names: `${matchResult.value}` in `$sourceWindow`"
       )

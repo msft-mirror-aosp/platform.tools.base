@@ -19,65 +19,52 @@ package com.android.build.gradle.internal.r8
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.createJarContents
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.readFromJar
 import com.android.testutils.ZipContents
+import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.test.assertEquals
 
 /** Unit test for [TargetedR8Rules]. */
 @RunWith(Parameterized::class)
-class TargetedR8RulesTest(
-    val filterOutGlobalRules: Boolean
-) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "globalOptionsDisallowed={0}")
-        fun globalOptionsDisallowed() = listOf(true, false)
-    }
+class TargetedR8RulesTest(val filterOutGlobalRules: Boolean) {
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "globalOptionsDisallowed={0}") fun globalOptionsDisallowed() = listOf(true, false)
+  }
 
-    @get:Rule
-    val tmpDir = TemporaryFolder()
+  @get:Rule val tmpDir = TemporaryFolder()
 
-    private fun exampleShrinkRules(): Map<String, String> {
-        return mapOf(
-            "META-INF/com.android.tools/r8/r8.ext" to "# R8 rules",
-            "META-INF/com.android.tools/r8-from-8.2.0/r8-from-8.2.0.ext" to "# R8-from-8.2.0 rules",
-            "META-INF/com.android.tools/r8-from-8.0.0-upto-8.2.0/r8-from-8.0.0-upto-8.2.0.ext" to "# R8-from-8.0.0-upto-8.2.0 rules",
-            "META-INF/com.android.tools/r8-upto-8.0.0/r8-upto-8.0.0.ext" to "# R8-upto-8.0.0 rules",
-            "META-INF/proguard/proguard.pro" to "# Legacy Proguard rules"
-        ).mapValues {
-            // add -dontoptimize which should be filtered out when filterOutGlobalRules = true
-            it.value + System.lineSeparator() + "-dontoptimize" + System.lineSeparator()
-        }
-    }
+  private fun exampleShrinkRules(): Map<String, String> {
+    return mapOf(
+        "META-INF/com.android.tools/r8/r8.ext" to "# R8 rules",
+        "META-INF/com.android.tools/r8-from-8.2.0/r8-from-8.2.0.ext" to "# R8-from-8.2.0 rules",
+        "META-INF/com.android.tools/r8-from-8.0.0-upto-8.2.0/r8-from-8.0.0-upto-8.2.0.ext" to "# R8-from-8.0.0-upto-8.2.0 rules",
+        "META-INF/com.android.tools/r8-upto-8.0.0/r8-upto-8.0.0.ext" to "# R8-upto-8.0.0 rules",
+        "META-INF/proguard/proguard.pro" to "# Legacy Proguard rules",
+      )
+      .mapValues {
+        // add -dontoptimize which should be filtered out when filterOutGlobalRules = true
+        it.value + System.lineSeparator() + "-dontoptimize" + System.lineSeparator()
+      }
+  }
 
-    @Test
-    fun `test producing and consuming targeted R8 rules`() {
-        val r8RulesContentsAtProducer: Map<String, String> = exampleShrinkRules()
-        val jarFile = tmpDir.root.resolve("lib.jar")
-        ZipContents(r8RulesContentsAtProducer.mapValues { it.value.toByteArray() })
-            .writeToFile(jarFile)
+  @Test
+  fun `test producing and consuming targeted R8 rules`() {
+    val r8RulesContentsAtProducer: Map<String, String> = exampleShrinkRules()
+    val jarFile = tmpDir.root.resolve("lib.jar")
+    ZipContents(r8RulesContentsAtProducer.mapValues { it.value.toByteArray() }).writeToFile(jarFile)
 
-        val r8RulesAtConsumer: TargetedR8Rules = readFromJar(
-            jarFile,
-            isClassesJarInAar = false,
-            shouldRemoveBannedGlobals = filterOutGlobalRules
-        )
-        val r8RulesContentsAtConsumer: Map<String, String> =
-            r8RulesAtConsumer.createJarContents().mapValues { it.value.decodeToString() }
+    val r8RulesAtConsumer: TargetedR8Rules =
+      readFromJar(jarFile, isClassesJarInAar = false, shouldRemoveBannedGlobals = filterOutGlobalRules)
+    val r8RulesContentsAtConsumer: Map<String, String> = r8RulesAtConsumer.createJarContents().mapValues { it.value.decodeToString() }
 
-        val expectedRules = if (filterOutGlobalRules) {
-            r8RulesContentsAtProducer.mapValues {
-                it.value.replace(
-                    "-dontoptimize",
-                    "# REMOVED CONSUMER RULE: -dontoptimize"
-                )
-            }
-        } else {
-            r8RulesContentsAtProducer
-        }
-        assertEquals(expectedRules, r8RulesContentsAtConsumer)
-    }
+    val expectedRules =
+      if (filterOutGlobalRules) {
+        r8RulesContentsAtProducer.mapValues { it.value.replace("-dontoptimize", "# REMOVED CONSUMER RULE: -dontoptimize") }
+      } else {
+        r8RulesContentsAtProducer
+      }
+    assertEquals(expectedRules, r8RulesContentsAtConsumer)
+  }
 }

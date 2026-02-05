@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.scrollActivity.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -32,15 +32,20 @@ fun scrollActivityKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val newModuleImportBlock = renderIf(isNewModule) {"""
+  val newModuleImportBlock =
+    renderIf(isNewModule) {
+      """
 import android.view.Menu
 import android.view.MenuItem
-  """}
+  """
+    }
 
-  val newModuleBlock = renderIf(isNewModule) {"""
+  val newModuleBlock =
+    renderIf(isNewModule) {
+      """
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.${menuName}, menu)
@@ -57,12 +62,16 @@ import android.view.MenuItem
             else -> super.onOptionsItemSelected(item)
         }
     }
-  """}
+  """
+    }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """package ${escapeKotlinIdentifier(packageName)}
 
@@ -88,12 +97,12 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "toolbar_layout",
-          className = "CollapsingToolbarLayout")}.title = title
+          className = "CollapsingToolbarLayout",)}.title = title
         ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "fab",
-          className = "FloatingActionButton")}.setOnClickListener { view ->
+          className = "FloatingActionButton",)}.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null)
                     .setAnchorView(R.id.fab).show()

@@ -37,8 +37,7 @@ import org.jetbrains.uast.USuperExpression
 class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ForbiddenStudioCallDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ForbiddenStudioCallDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     const val ADD_TO_STDLIB_PACKAGE_FQ_NAME = "org.jetbrains.kotlin.utils.addToStdlib"
     private const val KOTLIN_JS_PACKAGE_PREFIX = "org.jetbrains.kotlin.js."
@@ -182,8 +181,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UCallExpression::class.java, UImportStatement::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UCallExpression::class.java, UImportStatement::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
     return object : UElementHandler() {
@@ -191,20 +189,13 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         val reference = node.importReference
         val name = reference?.sourcePsi?.text
         if (name != null && name.startsWith(KOTLIN_JS_PACKAGE_PREFIX)) {
-          context.report(
-            KOTLIN_JS_PACKAGE,
-            node,
-            context.getLocation(reference),
-            "Avoid using methods from the `kotlin.js` package",
-          )
+          context.report(KOTLIN_JS_PACKAGE, node, context.getLocation(reference), "Avoid using methods from the `kotlin.js` package")
         }
       }
 
       override fun visitCallExpression(node: UCallExpression) {
         val resolved = node.resolve() ?: return
-        if (
-          context.evaluator.getPackage(resolved)?.qualifiedName == ADD_TO_STDLIB_PACKAGE_FQ_NAME
-        ) {
+        if (context.evaluator.getPackage(resolved)?.qualifiedName == ADD_TO_STDLIB_PACKAGE_FQ_NAME) {
           context.report(
             ADD_TO_STDLIB_USAGE,
             node,
@@ -217,16 +208,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames(): List<String> =
-    listOf(
-      "intern",
-      "copy",
-      "when",
-      "addArtifact",
-      "applyPlugin",
-      "addPlatformArtifact",
-      "isEAP",
-      "dispose",
-    )
+    listOf("intern", "copy", "when", "addArtifact", "applyPlugin", "addPlatformArtifact", "isEAP", "dispose")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // String#intern
@@ -280,10 +262,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
       )
     }
     // Application.isEAP
-    if (
-      method.name == "isEAP" &&
-        context.evaluator.isMemberInClass(method, "com.intellij.openapi.application.Application")
-    ) {
+    if (method.name == "isEAP" && context.evaluator.isMemberInClass(method, "com.intellij.openapi.application.Application")) {
       context.report(
         IS_EAP,
         node,
@@ -297,10 +276,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
     // DependenciesModel#addArtifact/addPlatformArtifact
     if (
       (method.name == "addArtifact" || method.name == "addPlatformArtifact") &&
-        context.evaluator.isMemberInClass(
-          method,
-          "com.android.tools.idea.gradle.dsl.api.dependencies.DependenciesModel",
-        )
+        context.evaluator.isMemberInClass(method, "com.android.tools.idea.gradle.dsl.api.dependencies.DependenciesModel")
     ) {
       context.report(
         ADD_DEPENDENCY,
@@ -312,10 +288,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
     // PluginsModel#applyPlugin
     if (
       (method.name == "applyPlugin" || method.name == "addPlatformArtifact") &&
-        context.evaluator.isMemberInClass(
-          method,
-          "com.android.tools.idea.gradle.dsl.api.settings.PluginsModel",
-        )
+        context.evaluator.isMemberInClass(method, "com.android.tools.idea.gradle.dsl.api.settings.PluginsModel")
     ) {
       context.report(
         ADD_DEPENDENCY,

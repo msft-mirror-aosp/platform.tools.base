@@ -21,8 +21,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 @Incubating
-class PrivacySandboxSdkPlugin: Plugin<Project> {
-    override fun apply(project: Project) {
-        project.apply(mapOf("plugin" to "com.android.internal.privacy-sandbox-sdk"))
-    }
+class PrivacySandboxSdkPlugin : Plugin<Project> {
+  override fun apply(project: Project) {
+    project.apply(mapOf("plugin" to "com.android.internal.privacy-sandbox-sdk"))
+  }
 }

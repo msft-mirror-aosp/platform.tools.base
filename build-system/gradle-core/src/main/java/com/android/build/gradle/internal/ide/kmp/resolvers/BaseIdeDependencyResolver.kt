@@ -23,50 +23,35 @@ import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
-/**
- * Base class for shared logic between kmp IDE dependency resolvers.
- */
+/** Base class for shared logic between kmp IDE dependency resolvers. */
 internal abstract class BaseIdeDependencyResolver(
-    protected val libraryResolver: LibraryResolver,
-    protected val sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>
+  protected val libraryResolver: LibraryResolver,
+  protected val sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
 ) {
 
-    protected fun getArtifactsForComponent(
-        component: KmpComponentCreationConfig,
-        artifactType: AndroidArtifacts.ArtifactType,
-        configType: AndroidArtifacts.ConsumedConfigType,
-        componentFilter: ((ComponentIdentifier) -> Boolean)?
-    ): ArtifactCollection = if (configType == AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH) {
-        component
-            .variantDependencies
-            .compileClasspath
-            .incoming
-            .artifactView { config ->
-                config.lenient(true)
+  protected fun getArtifactsForComponent(
+    component: KmpComponentCreationConfig,
+    artifactType: AndroidArtifacts.ArtifactType,
+    configType: AndroidArtifacts.ConsumedConfigType,
+    componentFilter: ((ComponentIdentifier) -> Boolean)?,
+  ): ArtifactCollection =
+    if (configType == AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH) {
+      component.variantDependencies.compileClasspath.incoming
+        .artifactView { config ->
+          config.lenient(true)
 
-                componentFilter?.let {
-                    config.componentFilter(it)
-                }
-                config.attributes.attribute(
-                    AndroidArtifacts.ARTIFACT_TYPE,
-                    artifactType.type
-                )
-            }.artifacts
+          componentFilter?.let { config.componentFilter(it) }
+          config.attributes.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+        }
+        .artifacts
     } else {
-        component
-            .variantDependencies
-            .runtimeClasspath
-            .incoming
-            .artifactView { config ->
-                config.lenient(true)
+      component.variantDependencies.runtimeClasspath.incoming
+        .artifactView { config ->
+          config.lenient(true)
 
-                componentFilter?.let {
-                    config.componentFilter(it)
-                }
-                config.attributes.attribute(
-                    AndroidArtifacts.ARTIFACT_TYPE,
-                    artifactType.type
-                )
-            }.artifacts
+          componentFilter?.let { config.componentFilter(it) }
+          config.attributes.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+        }
+        .artifacts
     }
 }

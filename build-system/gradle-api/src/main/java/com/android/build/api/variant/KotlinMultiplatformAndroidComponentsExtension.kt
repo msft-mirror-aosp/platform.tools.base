@@ -22,9 +22,10 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
  * Components extension for KMP Android Gradle Plugin related components.
  *
  * This is the `androidComponents` block when the `com.android.kotlin.multiplatform.library` plugin is applied.
- *
  */
-interface KotlinMultiplatformAndroidComponentsExtension : AndroidComponentsExtension<
+interface KotlinMultiplatformAndroidComponentsExtension :
+  AndroidComponentsExtension<
     KotlinMultiplatformAndroidLibraryExtension,
     KotlinMultiplatformAndroidVariantBuilder,
-    KotlinMultiplatformAndroidVariant>
+    KotlinMultiplatformAndroidVariant,
+  >

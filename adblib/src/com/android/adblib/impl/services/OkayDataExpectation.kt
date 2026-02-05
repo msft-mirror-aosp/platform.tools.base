@@ -16,14 +16,14 @@
 package com.android.adblib.impl.services
 
 /**
- * Defines what kind of data an ADB query is expected to send after an "OKAY" response.
- * See [AdbServiceRunner.runHostDeviceQuery] and [AdbServiceRunner.runHostQuery].
+ * Defines what kind of data an ADB query is expected to send after an "OKAY" response. See [AdbServiceRunner.runHostDeviceQuery] and
+ * [AdbServiceRunner.runHostQuery].
  */
 internal enum class OkayDataExpectation {
-    /** Data is always expected to be present */
-    EXPECTED,
-    /** No data is expected to be present */
-    NOT_EXPECTED,
-    /** Data is sometimes present, sometimes not */
-    OPTIONAL,
+  /** Data is always expected to be present */
+  EXPECTED,
+  /** No data is expected to be present */
+  NOT_EXPECTED,
+  /** Data is sometimes present, sometimes not */
+  OPTIONAL,
 }

@@ -19,26 +19,26 @@ package com.android.build.gradle.internal.core.dsl.impl.features
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.gradle.internal.core.dsl.features.UnitTestOptionsDslInfo
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl
-import com.android.build.gradle.internal.dsl.DynamicFeatureExtensionImpl
 import com.android.build.gradle.internal.dsl.CommonExtensionImpl
+import com.android.build.gradle.internal.dsl.DynamicFeatureExtensionImpl
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.TestExtensionImpl
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import org.gradle.api.tasks.testing.Test
 
-internal class UnitTestOptionsDslInfoImpl(
-    private val extension: CommonExtensionImpl<*, *, *>,
-): UnitTestOptionsDslInfo {
-    override val isReturnDefaultValues: Boolean
-        get() = extension.testOptions.unitTests.isReturnDefaultValues
-    override fun applyConfiguration(task: Test) {
-        when (extension) {
-            is ApplicationExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
-            is LibraryExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
-            is DynamicFeatureExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
-            is TestExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
-        }
+internal class UnitTestOptionsDslInfoImpl(private val extension: CommonExtensionImpl<*, *, *>) : UnitTestOptionsDslInfo {
+  override val isReturnDefaultValues: Boolean
+    get() = extension.testOptions.unitTests.isReturnDefaultValues
+
+  override fun applyConfiguration(task: Test) {
+    when (extension) {
+      is ApplicationExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
+      is LibraryExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
+      is DynamicFeatureExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
+      is TestExtensionImpl -> extension.testOptions.unitTests.applyConfiguration(task)
     }
-    override val targetSdkVersion: AndroidVersion?
-        get() = extension.testOptions.run { createTargetSdkVersion(targetSdk, targetSdkPreview) }
+  }
+
+  override val targetSdkVersion: AndroidVersion?
+    get() = extension.testOptions.run { createTargetSdkVersion(targetSdk, targetSdkPreview) }
 }

@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.DependenciesInfo
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 
-/**
- * DSL options for specifying whether to include SDK dependency information in APKs and Bundles.
- */
-abstract class DependenciesInfoImpl: DependenciesInfo {
+/** DSL options for specifying whether to include SDK dependency information in APKs and Bundles. */
+abstract class DependenciesInfoImpl : DependenciesInfo {
 
-    @WithLazyInitialization
-    @Suppress("unused") // call injected in the constructor by the dsl decorator
-    protected fun lazyInit() {
-        includeInApk = true
-        includeInBundle = true
-    }
+  @WithLazyInitialization
+  @Suppress("unused") // call injected in the constructor by the dsl decorator
+  protected fun lazyInit() {
+    includeInApk = true
+    includeInBundle = true
+  }
 }

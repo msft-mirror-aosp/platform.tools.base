@@ -31,46 +31,36 @@ import org.mockito.quality.Strictness
 
 class AnalyticsEnabledHostTestBuilderTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: HostTestBuilder = mock()
+  private val delegate: HostTestBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledHostTestBuilder by lazy {
-        object: AnalyticsEnabledHostTestBuilder(delegate, stats) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledHostTestBuilder by lazy { object : AnalyticsEnabledHostTestBuilder(delegate, stats) {} }
 
-    @Test
-    fun enable() {
-        proxy.enable = true
+  @Test
+  fun enable() {
+    proxy.enable = true
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.UNIT_TEST_ENABLED_VALUE)
-        verify(delegate)
-            .enable = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.UNIT_TEST_ENABLED_VALUE)
+    verify(delegate).enable = true
+  }
 
-    @Test
-    fun enableCodeCoverage() {
-        proxy.enableCodeCoverage = true
+  @Test
+  fun enableCodeCoverage() {
+    proxy.enableCodeCoverage = true
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE)
-        verify(delegate)
-            .enableCodeCoverage = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE)
+    verify(delegate).enableCodeCoverage = true
+  }
 
-    @Test
-    fun includeAndroidResources() {
-        proxy.includeAndroidResources = true
+  @Test
+  fun includeAndroidResources() {
+    proxy.includeAndroidResources = true
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TEST_SUITE_INCLUDE_ANDROID_RESOURCES_VALUE)
-        verify(delegate)
-            .includeAndroidResources = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.TEST_SUITE_INCLUDE_ANDROID_RESOURCES_VALUE)
+    verify(delegate).includeAndroidResources = true
+  }
 }

@@ -65,25 +65,25 @@ class ResolveCheckerTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                src/test/pkg/Test.kt:4: Error:
-                Couldn't resolve this import [LintError]
-                                    import invalid.Cls // ERROR
-                                           ~~~~~~~~~~~
+        src/test/pkg/Test.kt:4: Error:
+        Couldn't resolve this import [LintError]
+                            import invalid.Cls // ERROR
+                                   ~~~~~~~~~~~
 
-                This usually means that the unit test needs to declare a stub file or
-                placeholder with the expected signature such that type resolving works.
+        This usually means that the unit test needs to declare a stub file or
+        placeholder with the expected signature such that type resolving works.
 
-                If this import is immaterial to the test, either delete it, or mark
-                this unit test as allowing resolution errors by setting
-                `allowCompilationErrors()`.
+        If this import is immaterial to the test, either delete it, or mark
+        this unit test as allowing resolution errors by setting
+        `allowCompilationErrors()`.
 
-                (This check only enforces import references, not all references, so if
-                it doesn't matter to the detector, you can just remove the import but
-                leave references to the class in the code.)
+        (This check only enforces import references, not all references, so if
+        it doesn't matter to the detector, you can just remove the import but
+        leave references to the class in the code.)
 
-                For more information, see the "Library Dependencies and Stubs" section in
-                https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
-                """
+        For more information, see the "Library Dependencies and Stubs" section in
+        https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
+        """
           .trimIndent(),
         e.message?.replace(" \n", "\n")?.dos2unix()?.trim(),
       )
@@ -114,24 +114,24 @@ class ResolveCheckerTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                src/test/pkg/Test.java:6: Error:
-                Couldn't resolve this reference [LintError]
-                                            Object o2 = MenuItem.SHOW_AS_ACTION_ALWAYS; // ERROR
-                                                                 ~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:6: Error:
+        Couldn't resolve this reference [LintError]
+                                    Object o2 = MenuItem.SHOW_AS_ACTION_ALWAYS; // ERROR
+                                                         ~~~~~~~~~~~~~~~~~~~~~
 
-                The tested detector returns `SHOW_AS_ACTION_ALWAYS` from `getApplicableReferenceNames()`,
-                which means this reference is probably relevant to the test, but when the
-                reference cannot be resolved, lint won't invoke `visitReference` on it.
-                This usually means that the unit test needs to declare a stub file or
-                placeholder with the expected signature such that type resolving works.
+        The tested detector returns `SHOW_AS_ACTION_ALWAYS` from `getApplicableReferenceNames()`,
+        which means this reference is probably relevant to the test, but when the
+        reference cannot be resolved, lint won't invoke `visitReference` on it.
+        This usually means that the unit test needs to declare a stub file or
+        placeholder with the expected signature such that type resolving works.
 
-                If this reference is immaterial to the test, either delete it, or mark
-                this unit test as allowing resolution errors by setting
-                `allowCompilationErrors()`.
+        If this reference is immaterial to the test, either delete it, or mark
+        this unit test as allowing resolution errors by setting
+        `allowCompilationErrors()`.
 
-                For more information, see the "Library Dependencies and Stubs" section in
-                https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
-                """
+        For more information, see the "Library Dependencies and Stubs" section in
+        https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
+        """
           .trimIndent(),
         e.message?.replace(" \n", "\n")?.dos2unix()?.trim(),
       )
@@ -161,24 +161,24 @@ class ResolveCheckerTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                src/test/pkg/test.kt:5: Error:
-                Couldn't resolve this call [LintError]
-                                        android.widget.Toast.makeText() // OK
-                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:5: Error:
+        Couldn't resolve this call [LintError]
+                                android.widget.Toast.makeText() // OK
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                The tested detector returns `makeText` from `getApplicableMethodNames()`,
-                which means this reference is probably relevant to the test, but when the
-                call cannot be resolved, lint won't invoke `visitMethodCall` on it.
-                This usually means that the unit test needs to declare a stub file or
-                placeholder with the expected signature such that type resolving works.
+        The tested detector returns `makeText` from `getApplicableMethodNames()`,
+        which means this reference is probably relevant to the test, but when the
+        call cannot be resolved, lint won't invoke `visitMethodCall` on it.
+        This usually means that the unit test needs to declare a stub file or
+        placeholder with the expected signature such that type resolving works.
 
-                If this call is immaterial to the test, either delete it, or mark
-                this unit test as allowing resolution errors by setting
-                `allowCompilationErrors()`.
+        If this call is immaterial to the test, either delete it, or mark
+        this unit test as allowing resolution errors by setting
+        `allowCompilationErrors()`.
 
-                For more information, see the "Library Dependencies and Stubs" section in
-                https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
-                """
+        For more information, see the "Library Dependencies and Stubs" section in
+        https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
+        """
           .trimIndent(),
         e.message?.replace(" \n", "\n")?.dos2unix()?.trim(),
       )
@@ -214,24 +214,24 @@ class ResolveCheckerTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                src/test/pkg/TestActivity.java:11: Error:
-                Couldn't resolve this constructor call [LintError]
-                                            Intent intent2 = new Intent(null); // ERROR
-                                                             ~~~~~~~~~~~~~~~~
+        src/test/pkg/TestActivity.java:11: Error:
+        Couldn't resolve this constructor call [LintError]
+                                    Intent intent2 = new Intent(null); // ERROR
+                                                     ~~~~~~~~~~~~~~~~
 
-                The tested detector returns `android.content.Intent` from `getApplicableConstructorTypes()`,
-                which means this reference is probably relevant to the test, but when the
-                constructor call cannot be resolved, lint won't invoke `visitConstructor` on it.
-                This usually means that the unit test needs to declare a stub file or
-                placeholder with the expected signature such that type resolving works.
+        The tested detector returns `android.content.Intent` from `getApplicableConstructorTypes()`,
+        which means this reference is probably relevant to the test, but when the
+        constructor call cannot be resolved, lint won't invoke `visitConstructor` on it.
+        This usually means that the unit test needs to declare a stub file or
+        placeholder with the expected signature such that type resolving works.
 
-                If this constructor call is immaterial to the test, either delete it, or mark
-                this unit test as allowing resolution errors by setting
-                `allowCompilationErrors()`.
+        If this constructor call is immaterial to the test, either delete it, or mark
+        this unit test as allowing resolution errors by setting
+        `allowCompilationErrors()`.
 
-                For more information, see the "Library Dependencies and Stubs" section in
-                https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
-                """
+        For more information, see the "Library Dependencies and Stubs" section in
+        https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
+        """
           .trimIndent(),
         e.message?.replace(" \n", "\n")?.dos2unix()?.trim(),
       )
@@ -500,16 +500,10 @@ class ResolveCheckerTest {
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       JavaPsiFacade.getInstance(context.project.ideaProject!!)
-        .findClass(
-          "test.pkg.lib.LibAnnotationKotlin",
-          GlobalSearchScope.allScope(context.project.ideaProject!!),
-        )!!
+        .findClass("test.pkg.lib.LibAnnotationKotlin", GlobalSearchScope.allScope(context.project.ideaProject!!))!!
 
       JavaPsiFacade.getInstance(context.project.ideaProject!!)
-        .findClass(
-          "test.pkg.lib.LibAnnotationJava",
-          GlobalSearchScope.allScope(context.project.ideaProject!!),
-        )!!
+        .findClass("test.pkg.lib.LibAnnotationJava", GlobalSearchScope.allScope(context.project.ideaProject!!))!!
     }
 
     companion object {

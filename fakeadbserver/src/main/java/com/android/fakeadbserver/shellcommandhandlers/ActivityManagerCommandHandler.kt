@@ -21,25 +21,24 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class ActivityManagerCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType,"am") {
+class ActivityManagerCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "am") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
 
-        // Save command to logs so tests can consult them.
-        device.addAmLog(shellCommandArgs ?: "")
+    // Save command to logs so tests can consult them.
+    device.addAmLog(shellCommandArgs ?: "")
 
-        // Create a service request
-        val params = mutableListOf("activity")
-        params.addAll(shellCommandArgs?.split(" ") ?: emptyList())
-        device.serviceManager.processCommand(params, shellCommandOutput)
-    }
+    // Create a service request
+    val params = mutableListOf("activity")
+    params.addAll(shellCommandArgs?.split(" ") ?: emptyList())
+    device.serviceManager.processCommand(params, shellCommandOutput)
+  }
 }

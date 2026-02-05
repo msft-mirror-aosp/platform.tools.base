@@ -18,19 +18,19 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetBundleTest: VariantApiBaseTest(TestType.Script)  {
-    @Test
-    fun getBundleTest() {
-        given {
-            tasksToInvoke.add(":app:debugDisplayBundleFile")
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class GetBundleTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun getBundleTest() {
+    given {
+      tasksToInvoke.add(":app:debugDisplayBundleFile")
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -66,29 +66,31 @@ class GetBundleTest: VariantApiBaseTest(TestType.Script)  {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Artifacts.get in Kotlin
-
-This sample shows how to obtain the bundle file from the AGP.
-The [onVariants] block will wire the [DisplayBundleFile] input property (bundleFile) by using
-the Artifacts.get call with the right SingleArtifact
-`bundleFile.set(artifacts.get(SingleArtifact.BUNDLE))`
-## To Run
-./gradlew debugDisplayBundleFile
-expected result : "Got the Bundle ...." message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Got the Bundle")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Artifacts.get in Kotlin
+
+        This sample shows how to obtain the bundle file from the AGP.
+        The [onVariants] block will wire the [DisplayBundleFile] input property (bundleFile) by using
+        the Artifacts.get call with the right SingleArtifact
+        `bundleFile.set(artifacts.get(SingleArtifact.BUNDLE))`
+        ## To Run
+        ./gradlew debugDisplayBundleFile
+        expected result : "Got the Bundle ...." message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Got the Bundle")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

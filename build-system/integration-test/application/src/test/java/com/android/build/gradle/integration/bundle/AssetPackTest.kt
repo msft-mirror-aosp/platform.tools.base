@@ -23,104 +23,74 @@ import org.junit.Test
 
 class AssetPackTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidJavaApplication {
-            android {
-                assetPacks += listOf(
-                    ":assetPackOne",
-                    ":assetPackTwo",
-                    ":assetPackA",
-                    ":assetPackAA",
-                    ":assetPackA:assetPackAB"
-                )
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidJavaApplication {
+        android { assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":assetPackA", ":assetPackAA", ":assetPackA:assetPackAB") }
+      }
+      assetPack(":assetPackOne") {
+        assetPack {
+          packName.set("assetPackOne")
+          dynamicDelivery {
+            deliveryType.set("fast-follow")
+            instantDeliveryType.set("on-demand")
+          }
         }
-        assetPack(":assetPackOne") {
-            assetPack {
-                packName.set("assetPackOne")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                    instantDeliveryType.set("on-demand")
-                }
-            }
-            files.add(
-                "src/main/assets/assetFileOne.txt",
-                """This is an asset file from asset pack one."""
-            )
+        files.add("src/main/assets/assetFileOne.txt", """This is an asset file from asset pack one.""")
+      }
+      assetPack(":assetPackTwo") {
+        assetPack {
+          packName.set("assetPackTwo")
+          dynamicDelivery { deliveryType.set("fast-follow") }
         }
-        assetPack(":assetPackTwo") {
-            assetPack {
-                packName.set("assetPackTwo")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                }
-            }
-            files.add(
-                "src/main/assets/assetFileTwo.txt",
-                """This is an asset file from asset pack two."""
-            )
+        files.add("src/main/assets/assetFileTwo.txt", """This is an asset file from asset pack two.""")
+      }
+      assetPack(":assetPackA") {
+        assetPack {
+          packName.set("assetPackA")
+          dynamicDelivery { deliveryType.set("fast-follow") }
         }
-        assetPack(":assetPackA") {
-            assetPack {
-                packName.set("assetPackA")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                }
-            }
-            files.add(
-                "src/main/assets/assetFileA.txt",
-                """This is an asset file from asset pack A."""
-            )
+        files.add("src/main/assets/assetFileA.txt", """This is an asset file from asset pack A.""")
+      }
+      assetPack(":assetPackAA") {
+        assetPack {
+          packName.set("assetPackAA")
+          dynamicDelivery { deliveryType.set("fast-follow") }
         }
-        assetPack(":assetPackAA") {
-            assetPack {
-                packName.set("assetPackAA")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                }
-            }
-            files.add(
-                "src/main/assets/assetFileAA.txt",
-                """This is an asset file from asset pack AA."""
-            )
+        files.add("src/main/assets/assetFileAA.txt", """This is an asset file from asset pack AA.""")
+      }
+      assetPack(":assetPackA:assetPackAB") {
+        assetPack {
+          packName.set("assetPackAB")
+          dynamicDelivery { deliveryType.set("fast-follow") }
         }
-        assetPack(":assetPackA:assetPackAB") {
-            assetPack {
-                packName.set("assetPackAB")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                }
-            }
-            files.add(
-                "src/main/assets/assetFileAB.txt",
-                """This is an asset file from asset pack AB."""
-            )
-        }
+        files.add("src/main/assets/assetFileAB.txt", """This is an asset file from asset pack AB.""")
+      }
     }
 
-    @Test
-    fun buildDebugBundle() {
-        val build = rule.build
-        build.executor.run(":app:bundleDebug")
-        build.androidApplication().assertAab(AabSelector.DEBUG) {
-            contains(
-                "/assetPackOne/assets/assetFileOne.txt",
-                "/assetPackOne/manifest/AndroidManifest.xml",
-                "/assetPackOne/assets.pb",
-                "/assetPackTwo/assets/assetFileTwo.txt",
-                "/assetPackTwo/manifest/AndroidManifest.xml",
-                "/assetPackTwo/assets.pb",
-                "/assetPackA/assets/assetFileA.txt",
-                "/assetPackA/manifest/AndroidManifest.xml",
-                "/assetPackA/assets.pb",
-                "/assetPackAA/assets/assetFileAA.txt",
-                "/assetPackAA/manifest/AndroidManifest.xml",
-                "/assetPackAA/assets.pb",
-                "/assetPackAB/assets/assetFileAB.txt",
-                "/assetPackAB/manifest/AndroidManifest.xml",
-                "/assetPackAB/assets.pb"
-            )
-        }
+  @Test
+  fun buildDebugBundle() {
+    val build = rule.build
+    build.executor.run(":app:bundleDebug")
+    build.androidApplication().assertAab(AabSelector.DEBUG) {
+      contains(
+        "/assetPackOne/assets/assetFileOne.txt",
+        "/assetPackOne/manifest/AndroidManifest.xml",
+        "/assetPackOne/assets.pb",
+        "/assetPackTwo/assets/assetFileTwo.txt",
+        "/assetPackTwo/manifest/AndroidManifest.xml",
+        "/assetPackTwo/assets.pb",
+        "/assetPackA/assets/assetFileA.txt",
+        "/assetPackA/manifest/AndroidManifest.xml",
+        "/assetPackA/assets.pb",
+        "/assetPackAA/assets/assetFileAA.txt",
+        "/assetPackAA/manifest/AndroidManifest.xml",
+        "/assetPackAA/assets.pb",
+        "/assetPackAB/assets/assetFileAB.txt",
+        "/assetPackAB/manifest/AndroidManifest.xml",
+        "/assetPackAB/assets.pb",
+      )
     }
+  }
 }

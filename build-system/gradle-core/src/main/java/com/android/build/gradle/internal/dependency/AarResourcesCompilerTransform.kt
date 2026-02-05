@@ -25,6 +25,10 @@ import com.android.build.gradle.internal.services.registerAaptService
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.xml.AndroidManifestParser
+import java.io.BufferedInputStream
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -33,62 +37,51 @@ import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Nested
-import java.io.BufferedInputStream
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 @CacheableTransform
-abstract class AarResourcesCompilerTransform :
-    TransformAction<AarResourcesCompilerTransform.Parameters> {
+abstract class AarResourcesCompilerTransform : TransformAction<AarResourcesCompilerTransform.Parameters> {
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val primaryInput: Provider<FileSystemLocation>
+  @get:Classpath @get:InputArtifact abstract val primaryInput: Provider<FileSystemLocation>
 
-    override fun transform(transformOutputs: TransformOutputs) {
-        val inputFile = primaryInput.get().asFile
-        val manifest = inputFile.resolve(SdkConstants.FN_ANDROID_MANIFEST_XML)
-        val outputDir = transformOutputs.dir(getPackage(manifest.toPath()))
-        outputDir.mkdirs()
+  override fun transform(transformOutputs: TransformOutputs) {
+    val inputFile = primaryInput.get().asFile
+    val manifest = inputFile.resolve(SdkConstants.FN_ANDROID_MANIFEST_XML)
+    val outputDir = transformOutputs.dir(getPackage(manifest.toPath()))
+    outputDir.mkdirs()
 
-        val resourceDir = File(inputFile, FD_RES)
+    val resourceDir = File(inputFile, FD_RES)
 
-        val resourceFolders = if (resourceDir.exists()) {
-            resourceDir.listFiles { dir, name ->
-                dir.isDirectory && !name.startsWith(FD_RES_VALUES)
-            }
-        } else {
-            arrayOf<File>()
-        }
+    val resourceFolders =
+      if (resourceDir.exists()) {
+        resourceDir.listFiles { dir, name -> dir.isDirectory && !name.startsWith(FD_RES_VALUES) }
+      } else {
+        arrayOf<File>()
+      }
 
-        val requestList = ArrayList<CompileResourceRequest>()
-        resourceFolders?.forEach { folder ->
-            folder?.listFiles()?.forEach {
-                // TODO(b/130160921): Add compile options
-                requestList.add(
-                    CompileResourceRequest(
-                        it,
-                        outputDir,
-                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(
-                            "Relative path support to be added by I8e7aa064cf381314eff2a248ada2d8ecedbfb1a5")
-                    )
-                )
-            }
-        }
-
-        val aapt2ServiceKey = parameters.aapt2.registerAaptService()
-        // TODO(b/152323103) errorFormatMode should be implicit
-        runAapt2Compile(parameters.aapt2, requestList, false)
+    val requestList = ArrayList<CompileResourceRequest>()
+    resourceFolders?.forEach { folder ->
+      folder?.listFiles()?.forEach {
+        // TODO(b/130160921): Add compile options
+        requestList.add(
+          CompileResourceRequest(
+            it,
+            outputDir,
+            resourcePathEncoding =
+              ResourcePathEncoding.AbsoluteNotRelocatable("Relative path support to be added by I8e7aa064cf381314eff2a248ada2d8ecedbfb1a5"),
+          )
+        )
+      }
     }
 
-    private fun getPackage(manifest: Path): String =
-        BufferedInputStream(Files.newInputStream(manifest)).use {
-            AndroidManifestParser.parse(it).`package`
-        }
+    val aapt2ServiceKey = parameters.aapt2.registerAaptService()
+    // TODO(b/152323103) errorFormatMode should be implicit
+    runAapt2Compile(parameters.aapt2, requestList, false)
+  }
 
-    interface Parameters : GenericTransformParameters {
-        @get:Nested
-        val aapt2: Aapt2Input
-    }
+  private fun getPackage(manifest: Path): String =
+    BufferedInputStream(Files.newInputStream(manifest)).use { AndroidManifestParser.parse(it).`package` }
+
+  interface Parameters : GenericTransformParameters {
+    @get:Nested val aapt2: Aapt2Input
+  }
 }

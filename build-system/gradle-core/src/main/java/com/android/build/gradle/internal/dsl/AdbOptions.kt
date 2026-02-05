@@ -21,16 +21,13 @@ import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 /** Options for the adb tool. */
-abstract class AdbOptions @Inject constructor(
-    dslServices: DslServices,
-) : com.android.builder.model.AdbOptions,
-    com.android.build.api.dsl.AdbOptions,
-    Installation {
+abstract class AdbOptions @Inject constructor(dslServices: DslServices) :
+  com.android.builder.model.AdbOptions, com.android.build.api.dsl.AdbOptions, Installation {
 
-    abstract override val installOptions: MutableList<String>
-    abstract override var timeOutInMs: Int
+  abstract override val installOptions: MutableList<String>
+  abstract override var timeOutInMs: Int
 
-    open fun timeOutInMs(timeOutInMs: Int) {
-        this.timeOutInMs = timeOutInMs
-    }
+  open fun timeOutInMs(timeOutInMs: Int) {
+    this.timeOutInMs = timeOutInMs
+  }
 }

@@ -30,15 +30,14 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 
 /**
- * Context receivers are currently an experimental feature, so we want to limit their adoption for
- * the time being. Historically, context receivers were restricted at the compiler level for Android
- * Studio but with the IntelliJ 2023.3 merge we have to allow it for the K2 analysis API.
+ * Context receivers are currently an experimental feature, so we want to limit their adoption for the time being. Historically, context
+ * receivers were restricted at the compiler level for Android Studio but with the IntelliJ 2023.3 merge we have to allow it for the K2
+ * analysis API.
  */
 class ContextReceiverDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ContextReceiverDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ContextReceiverDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -64,8 +63,7 @@ class ContextReceiverDetector : Detector(), SourceCodeScanner {
     return object : UElementHandler() {
       override fun visitFile(node: UFile) {
         val ktFile = node.sourcePsi as? KtFile ?: return
-        PsiTreeUtil.findChildrenOfType(ktFile, KtContextReceiver::class.java).forEach {
-          contextReceiver ->
+        PsiTreeUtil.findChildrenOfType(ktFile, KtContextReceiver::class.java).forEach { contextReceiver ->
           context.report(
             ISSUE,
             contextReceiver,

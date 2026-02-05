@@ -3,8 +3,8 @@ package com.android.aaptcompiler
 import com.android.aaptcompiler.android.ResTableConfig
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import kotlin.test.assertFailsWith
+import org.junit.Test
 
 class ConfigDescriptionTest {
 
@@ -43,12 +43,9 @@ class ConfigDescriptionTest {
     Truth.assertThat(frenchLandscape).isNotNull()
     Truth.assertThat(frenchLandscape.toString()).isEqualTo("fr-land")
 
-    val longConfig =
-      testParse("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav")
+    val longConfig = testParse("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav")
     Truth.assertThat(longConfig).isNotNull()
-    Truth.assertThat(longConfig.toString())
-      .isEqualTo(
-        "mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav-v13")
+    Truth.assertThat(longConfig.toString()).isEqualTo("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav-v13")
   }
 
   @Test
@@ -87,15 +84,13 @@ class ConfigDescriptionTest {
   fun testParsingRoundQualifier() {
     val roundConfig = testParse("round")
     Truth.assertThat(roundConfig).isNotNull()
-    Truth.assertThat(roundConfig!!.layoutRound())
-      .isEqualTo(ResTableConfig.SCREEN_LAYOUT2.SCREENROUND_YES)
+    Truth.assertThat(roundConfig!!.layoutRound()).isEqualTo(ResTableConfig.SCREEN_LAYOUT2.SCREENROUND_YES)
     Truth.assertThat(roundConfig.sdkVersion).isEqualTo(23)
     Truth.assertThat(roundConfig.toString()).isEqualTo("round-v23")
 
     val notRoundConfig = testParse("notround")
     Truth.assertThat(notRoundConfig).isNotNull()
-    Truth.assertThat(notRoundConfig!!.layoutRound())
-      .isEqualTo(ResTableConfig.SCREEN_LAYOUT2.SCREENROUND_NO)
+    Truth.assertThat(notRoundConfig!!.layoutRound()).isEqualTo(ResTableConfig.SCREEN_LAYOUT2.SCREENROUND_NO)
     Truth.assertThat(notRoundConfig.sdkVersion).isEqualTo(23)
     Truth.assertThat(notRoundConfig.toString()).isEqualTo("notround-v23")
   }
@@ -104,15 +99,13 @@ class ConfigDescriptionTest {
   fun testWideColorGamutQualifier() {
     val wideConfig = testParse("widecg")
     Truth.assertThat(wideConfig).isNotNull()
-    Truth.assertThat(wideConfig!!.wideColorGamut())
-      .isEqualTo(ResTableConfig.COLOR_MODE.WIDE_GAMUT_YES)
+    Truth.assertThat(wideConfig!!.wideColorGamut()).isEqualTo(ResTableConfig.COLOR_MODE.WIDE_GAMUT_YES)
     Truth.assertThat(wideConfig.sdkVersion).isEqualTo(26)
     Truth.assertThat(wideConfig.toString()).isEqualTo("widecg-v26")
 
     val noWideConfig = testParse("nowidecg")
     Truth.assertThat(noWideConfig).isNotNull()
-    Truth.assertThat(noWideConfig!!.wideColorGamut())
-      .isEqualTo(ResTableConfig.COLOR_MODE.WIDE_GAMUT_NO)
+    Truth.assertThat(noWideConfig!!.wideColorGamut()).isEqualTo(ResTableConfig.COLOR_MODE.WIDE_GAMUT_NO)
     Truth.assertThat(noWideConfig.sdkVersion).isEqualTo(26)
     Truth.assertThat(noWideConfig.toString()).isEqualTo("nowidecg-v26")
   }
@@ -154,26 +147,15 @@ class ConfigDescriptionTest {
     assertFailsWith<Exception> { parse("300x200-v.37") }
   }
 
-    @Test
-    fun testParseValidVersionQualifier() {
-        assertThat(parse("v34"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
-        assertThat(parse("v0"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 0, minorVersion = 0)))
-        assertThat(parse("v34.0"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
-        assertThat(parse("v19876"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
-        assertThat(parse("v19876.000"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
-        assertThat(parse("v19876.23450"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
-        assertThat(parse("v019876.023450"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
-        assertThat(parse("v34.1"))
-            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 1)))
-
-
-    }
-
+  @Test
+  fun testParseValidVersionQualifier() {
+    assertThat(parse("v34")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
+    assertThat(parse("v0")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 0, minorVersion = 0)))
+    assertThat(parse("v34.0")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
+    assertThat(parse("v19876")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
+    assertThat(parse("v19876.000")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
+    assertThat(parse("v19876.23450")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
+    assertThat(parse("v019876.023450")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
+    assertThat(parse("v34.1")).isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 1)))
+  }
 }

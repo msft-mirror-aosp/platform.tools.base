@@ -21,5 +21,5 @@ import com.squareup.javapoet.TypeSpec
 
 /** Inject a method for a class. */
 abstract class MethodInjector : CodeInjector<TypeSpec.Builder, TensorInfo> {
-    abstract override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo)
+  abstract override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo)
 }

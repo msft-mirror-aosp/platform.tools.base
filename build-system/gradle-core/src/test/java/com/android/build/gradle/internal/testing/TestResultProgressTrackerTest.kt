@@ -17,157 +17,116 @@
 package com.android.build.gradle.internal.testing
 
 import com.google.common.truth.Truth.assertThat
-import com.google.protobuf.Message
-import com.google.protobuf.TextFormat
+import java.util.Timer
 import org.gradle.api.logging.Logger
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
-import java.util.Timer
 
-class TestResultProgressTrackerTest  {
+class TestResultProgressTrackerTest {
 
-    private var capturedDelay: Long? = null
-    private var capturedAction: (() -> Unit)? = null
+  private var capturedDelay: Long? = null
+  private var capturedAction: (() -> Unit)? = null
 
-    private val mockTimer: Timer = mock()
+  private val mockTimer: Timer = mock()
 
-    private val mockLogger: Logger = mock()
+  private val mockLogger: Logger = mock()
 
-    @Before
-    fun setup() {
-        capturedDelay = null
-        capturedAction = null
+  @Before
+  fun setup() {
+    capturedDelay = null
+    capturedAction = null
+  }
+
+  private fun timerFactory(delay: Long, action: () -> Unit): Timer {
+
+    capturedDelay = delay
+    capturedAction = action
+
+    return mockTimer
+  }
+
+  @Test
+  fun testSuiteStatus_getStatus() {
+
+    val status = TestResultProgressTracker.TestSuiteStatus("myDevice")
+
+    status.scheduleTests(10)
+
+    assertThat(status.getStatus()).isEqualTo("myDevice Tests 0/10 completed. (0 skipped) (0 failed)")
+
+    status.addCompletedTest()
+    assertThat(status.getStatus()).isEqualTo("myDevice Tests 1/10 completed. (0 skipped) (0 failed)")
+
+    status.addSkippedTest()
+    assertThat(status.getStatus()).isEqualTo("myDevice Tests 2/10 completed. (1 skipped) (0 failed)")
+
+    status.addFailedTest()
+    status.addFailedTest()
+    assertThat(status.getStatus()).isEqualTo("myDevice Tests 4/10 completed. (1 skipped) (2 failed)")
+  }
+
+  @Test
+  fun onTestSuiteStarted_startsTimer() {
+    val progressTracker = TestResultProgressTracker("testDevice", 200L, mockLogger, ::timerFactory)
+
+    assertThat(capturedDelay).isEqualTo(null)
+
+    progressTracker.onTestSuiteStarted(10)
+
+    assertThat(capturedDelay).isEqualTo(200L)
+    assertThat(progressTracker.status.getStatus()).isEqualTo("testDevice Tests 0/10 completed. (0 skipped) (0 failed)")
+  }
+
+  @Test
+  fun onTestSuiteFinished_cancelsTimer() {
+    val progressTracker = TestResultProgressTracker("testDevice", 200L, mockLogger, ::timerFactory)
+
+    progressTracker.onTestSuiteStarted(1)
+
+    verify(mockTimer, never()).cancel()
+
+    progressTracker.onTestSuiteFinished()
+
+    verify(mockTimer, times(1)).cancel()
+  }
+
+  @Test
+  fun logStatus_verifyTimerAction() {
+    val progressTracker = TestResultProgressTracker("testDevice", 200L, mockLogger, ::timerFactory)
+
+    progressTracker.onTestSuiteStarted(4)
+
+    progressTracker.onTestPassed()
+
+    // should log the test status.
+    capturedAction!!.invoke()
+
+    progressTracker.onTestFailed()
+
+    capturedAction!!.invoke()
+
+    progressTracker.onTestSkipped()
+
+    capturedAction!!.invoke()
+
+    progressTracker.onTestPassed()
+
+    capturedAction!!.invoke()
+
+    progressTracker.onTestSuiteFinished()
+
+    inOrder(mockLogger, mockTimer).also {
+      it.verify(mockLogger).lifecycle("testDevice Tests 1/4 completed. (0 skipped) (0 failed)")
+      it.verify(mockLogger).lifecycle("testDevice Tests 2/4 completed. (0 skipped) (1 failed)")
+      it.verify(mockLogger).lifecycle("testDevice Tests 3/4 completed. (1 skipped) (1 failed)")
+      it.verify(mockLogger).lifecycle("testDevice Tests 4/4 completed. (1 skipped) (1 failed)")
+      it.verify(mockTimer).cancel()
+      it.verify(mockLogger).lifecycle("Finished 4 tests on testDevice")
     }
-
-    private fun timerFactory(delay: Long, action: () -> Unit): Timer {
-
-        capturedDelay = delay
-        capturedAction = action
-
-        return mockTimer;
-    }
-
-
-    @Test
-    fun testSuiteStatus_getStatus() {
-
-        val status = TestResultProgressTracker.TestSuiteStatus("myDevice")
-
-        status.scheduleTests(10)
-
-        assertThat(status.getStatus()).isEqualTo(
-            "myDevice Tests 0/10 completed. (0 skipped) (0 failed)"
-        )
-
-        status.addCompletedTest()
-        assertThat(status.getStatus()).isEqualTo(
-            "myDevice Tests 1/10 completed. (0 skipped) (0 failed)"
-        )
-
-        status.addSkippedTest()
-        assertThat(status.getStatus()).isEqualTo(
-            "myDevice Tests 2/10 completed. (1 skipped) (0 failed)"
-        )
-
-        status.addFailedTest()
-        status.addFailedTest()
-        assertThat(status.getStatus()).isEqualTo(
-            "myDevice Tests 4/10 completed. (1 skipped) (2 failed)"
-        )
-    }
-
-    @Test
-    fun onTestSuiteStarted_startsTimer() {
-        val progressTracker = TestResultProgressTracker(
-            "testDevice",
-            200L,
-            mockLogger,
-            ::timerFactory
-        )
-
-        assertThat(capturedDelay).isEqualTo(null)
-
-        progressTracker.onTestSuiteStarted(10)
-
-        assertThat(capturedDelay).isEqualTo(200L)
-        assertThat(progressTracker.status.getStatus()).isEqualTo(
-            "testDevice Tests 0/10 completed. (0 skipped) (0 failed)"
-        )
-    }
-
-    @Test
-    fun onTestSuiteFinished_cancelsTimer() {
-        val progressTracker = TestResultProgressTracker(
-            "testDevice",
-            200L,
-            mockLogger,
-            ::timerFactory
-        )
-
-        progressTracker.onTestSuiteStarted(1)
-
-        verify(mockTimer, never()).cancel()
-
-        progressTracker.onTestSuiteFinished()
-
-        verify(mockTimer, times(1)).cancel()
-    }
-
-    @Test
-    fun logStatus_verifyTimerAction() {
-        val progressTracker = TestResultProgressTracker(
-            "testDevice",
-            200L,
-            mockLogger,
-            ::timerFactory
-        )
-
-        progressTracker.onTestSuiteStarted(4)
-
-        progressTracker.onTestPassed()
-
-        // should log the test status.
-        capturedAction!!.invoke()
-
-        progressTracker.onTestFailed()
-
-        capturedAction!!.invoke()
-
-        progressTracker.onTestSkipped()
-
-        capturedAction!!.invoke()
-
-        progressTracker.onTestPassed()
-
-        capturedAction!!.invoke()
-
-        progressTracker.onTestSuiteFinished()
-
-        inOrder(mockLogger, mockTimer).also {
-            it.verify(mockLogger).lifecycle(
-                "testDevice Tests 1/4 completed. (0 skipped) (0 failed)"
-            )
-            it.verify(mockLogger).lifecycle(
-                "testDevice Tests 2/4 completed. (0 skipped) (1 failed)"
-            )
-            it.verify(mockLogger).lifecycle(
-                "testDevice Tests 3/4 completed. (1 skipped) (1 failed)"
-            )
-            it.verify(mockLogger).lifecycle(
-                "testDevice Tests 4/4 completed. (1 skipped) (1 failed)"
-            )
-            it.verify(mockTimer).cancel()
-            it.verify(mockLogger).lifecycle(
-                "Finished 4 tests on testDevice"
-            )
-        }
-    }
+  }
 }

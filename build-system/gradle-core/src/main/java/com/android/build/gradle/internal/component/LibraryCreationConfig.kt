@@ -16,4 +16,4 @@
 
 package com.android.build.gradle.internal.component
 
-interface LibraryCreationConfig: VariantCreationConfig, AarCreationConfig, PublishableCreationConfig, TargetSdkAwareConfig
+interface LibraryCreationConfig : VariantCreationConfig, AarCreationConfig, PublishableCreationConfig, TargetSdkAwareConfig

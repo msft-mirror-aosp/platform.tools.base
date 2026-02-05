@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.res.values
 
-
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="fragment_horizontal_margin">16dp</dimen>

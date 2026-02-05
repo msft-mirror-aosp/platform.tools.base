@@ -16,19 +16,12 @@
 
 package com.android.build.api.variant
 
-/**
- * [Variant] that optionally have [AndroidTest] component.
- */
+/** [Variant] that optionally have [AndroidTest] component. */
 interface HasAndroidTest {
 
-    /**
-     * Variant's [AndroidTest] configuration, or null if android tests are disabled for this
-     * variant.
-     */
-    val androidTest: AndroidTest?
+  /** Variant's [AndroidTest] configuration, or null if android tests are disabled for this variant. */
+  val androidTest: AndroidTest?
 
-    /**
-     * Variant's packagingOptions, initialized by the corresponding global DSL element.
-     */
-    val packaging: TestedComponentPackaging
+  /** Variant's packagingOptions, initialized by the corresponding global DSL element. */
+  val packaging: TestedComponentPackaging
 }

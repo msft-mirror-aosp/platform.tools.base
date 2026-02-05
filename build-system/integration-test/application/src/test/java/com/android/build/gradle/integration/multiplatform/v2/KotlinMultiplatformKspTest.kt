@@ -26,40 +26,40 @@ import org.junit.Test
 
 class KotlinMultiplatformKspTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withGradleOptions {
-            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-        }.from {
-            androidKotlinMultiplatformLibrary(":shared", createMinimumProject = false) {
-                applyPlugin(PluginType.KSP)
-                android {
-                    namespace = "com.shared.android"
-                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withGradleOptions { withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON) }
+      .from {
+        androidKotlinMultiplatformLibrary(":shared", createMinimumProject = false) {
+          applyPlugin(PluginType.KSP)
+          android {
+            namespace = "com.shared.android"
+            compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
-                    withDeviceTest {}
-                    withHostTest {}
-                }
-                dependencies {
-                    add("kspAndroid", "com.google.dagger:hilt-compiler:2.40.1")
-                    add("kspAndroidDeviceTest", "com.google.dagger:hilt-compiler:2.40.1")
-                    add("kspAndroidHostTest", "com.google.dagger:hilt-compiler:2.40.1")
-                }
-            }
+            withDeviceTest {}
+            withHostTest {}
+          }
+          dependencies {
+            add("kspAndroid", "com.google.dagger:hilt-compiler:2.40.1")
+            add("kspAndroidDeviceTest", "com.google.dagger:hilt-compiler:2.40.1")
+            add("kspAndroidHostTest", "com.google.dagger:hilt-compiler:2.40.1")
+          }
         }
+      }
 
-    @Ignore("b/456678483")
-    @Test
-    fun testRunningKsp() {
-        val build = rule.build
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:kspAndroidMain")
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:kspAndroidDeviceTest")
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:kspAndroidHostTest")
-    }
+  @Ignore("b/456678483")
+  @Test
+  fun testRunningKsp() {
+    val build = rule.build
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:kspAndroidMain")
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:kspAndroidDeviceTest")
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:kspAndroidHostTest")
+  }
 }

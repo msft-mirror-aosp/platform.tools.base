@@ -22,61 +22,53 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
-import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth
+import kotlin.io.path.readText
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.readText
 
 class DynamicFeatureNamespaceTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidJavaApplication {
-            android {
-                defaultConfig {
-                    applicationId = "com.example.test"
-                }
-                dynamicFeatures.add(DEFAULT_FEATURE_PATH)
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidJavaApplication {
+        android {
+          defaultConfig { applicationId = "com.example.test" }
+          dynamicFeatures.add(DEFAULT_FEATURE_PATH)
         }
-        androidFeature {
-            android {
-                namespace = "com.example.test.feature"
-            }
+      }
+      androidFeature {
+        android { namespace = "com.example.test.feature" }
 
-            dependencies {
-                implementation(project(DEFAULT_APP_PATH))
-            }
-        }
+        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+      }
     }
 
-    @Test
-    fun `intermediate feature manifest should have feature's namespace as package`() {
-        val build = rule.build
+  @Test
+  fun `intermediate feature manifest should have feature's namespace as package`() {
+    val build = rule.build
 
-        build.executor.run(":feature:processManifestDebugForFeature")
+    build.executor.run(":feature:processManifestDebugForFeature")
 
-        val manifestFile =
-            build.androidFeature().intermediatesDir
-                .resolve("metadata_feature_manifest/debug/processManifestDebugForFeature/$ANDROID_MANIFEST_XML")
+    val manifestFile =
+      build
+        .androidFeature()
+        .intermediatesDir
+        .resolve("metadata_feature_manifest/debug/processManifestDebugForFeature/$ANDROID_MANIFEST_XML")
 
-        val document =
-            XmlUtils.parseDocument(manifestFile.readText(), false)
-        Truth.assertThat(document.documentElement.hasAttribute(ATTR_PACKAGE)).isTrue()
-        Truth.assertThat(document.documentElement.getAttribute(ATTR_PACKAGE))
-            .isEqualTo("com.example.test.feature")
-    }
+    val document = XmlUtils.parseDocument(manifestFile.readText(), false)
+    Truth.assertThat(document.documentElement.hasAttribute(ATTR_PACKAGE)).isTrue()
+    Truth.assertThat(document.documentElement.getAttribute(ATTR_PACKAGE)).isEqualTo("com.example.test.feature")
+  }
 
-    @Test
-    fun `app manifest should have applicationId as package`() {
-        val build = rule.build
+  @Test
+  fun `app manifest should have applicationId as package`() {
+    val build = rule.build
 
-        build.executor.run(":app:assembleDebug")
+    build.executor.run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            applicationId().isEqualTo("com.example.test")
-        }
-    }
+    build.androidApplication().assertApk(ApkSelector.DEBUG) { applicationId().isEqualTo("com.example.test") }
+  }
 }

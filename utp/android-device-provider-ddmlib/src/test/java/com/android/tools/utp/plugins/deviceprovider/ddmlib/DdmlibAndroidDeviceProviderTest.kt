@@ -34,77 +34,70 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.anyLong
+import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 
-/**
- * Unit tests for [DdmlibAndroidDeviceProvider].
- */
+/** Unit tests for [DdmlibAndroidDeviceProvider]. */
 class DdmlibAndroidDeviceProviderTest {
 
-    @get:Rule
-    val mockitoJUnitRule = MockitoJUnit.rule()
+  @get:Rule val mockitoJUnitRule = MockitoJUnit.rule()
 
-    @Mock
-    private lateinit var mockDeviceFinder: DdmlibAndroidDeviceFinder
+  @Mock private lateinit var mockDeviceFinder: DdmlibAndroidDeviceFinder
 
-    private lateinit var environmentProto: EnvironmentProto.Environment
-    private lateinit var testSetupProto: SetupProto.TestSetup
-    private lateinit var androidSdkProto: AndroidSdkProto.AndroidSdk
+  private lateinit var environmentProto: EnvironmentProto.Environment
+  private lateinit var testSetupProto: SetupProto.TestSetup
+  private lateinit var androidSdkProto: AndroidSdkProto.AndroidSdk
 
-    @Before
-    fun setup() {
-        environmentProto = EnvironmentProto.Environment.getDefaultInstance()
-        testSetupProto = SetupProto.TestSetup.getDefaultInstance()
-        androidSdkProto = AndroidSdkProto.AndroidSdk.getDefaultInstance()
-    }
+  @Before
+  fun setup() {
+    environmentProto = EnvironmentProto.Environment.getDefaultInstance()
+    testSetupProto = SetupProto.TestSetup.getDefaultInstance()
+    androidSdkProto = AndroidSdkProto.AndroidSdk.getDefaultInstance()
+  }
 
-    private fun createProvider(localConfig: LocalAndroidDeviceProvider): DdmlibAndroidDeviceProvider {
-        val config = DdmlibAndroidDeviceProviderConfig.newBuilder().apply {
-            localAndroidDeviceProviderConfig = Any.pack(localConfig)
-            uninstallIncompatibleApks = false
-        }.build()
-        val provider = DdmlibAndroidDeviceProvider(mockDeviceFinder)
-        val mockContext = mock<Context>()
-        `when`(mockContext[Context.CONFIG_KEY]).thenReturn(DeviceProviderConfigImpl(
-            environmentProto, testSetupProto, androidSdkProto, Any.pack(config)))
-        provider.configure(mockContext)
-        return provider
-    }
-
-    private fun createProvider(serial: String): DdmlibAndroidDeviceProvider {
-        return createProvider(LocalAndroidDeviceProvider.newBuilder().apply {
-            this.serial = serial
-        }.build())
-    }
-
-    @Test
-    fun noDevicesFoundThrowsDeviceProviderException() {
-        val provider = createProvider("serial-1234")
-
-        assertThrows(DeviceProviderException::class.java) {
-            provider.provideDevice()
+  private fun createProvider(localConfig: LocalAndroidDeviceProvider): DdmlibAndroidDeviceProvider {
+    val config =
+      DdmlibAndroidDeviceProviderConfig.newBuilder()
+        .apply {
+          localAndroidDeviceProviderConfig = Any.pack(localConfig)
+          uninstallIncompatibleApks = false
         }
-    }
+        .build()
+    val provider = DdmlibAndroidDeviceProvider(mockDeviceFinder)
+    val mockContext = mock<Context>()
+    `when`(mockContext[Context.CONFIG_KEY])
+      .thenReturn(DeviceProviderConfigImpl(environmentProto, testSetupProto, androidSdkProto, Any.pack(config)))
+    provider.configure(mockContext)
+    return provider
+  }
 
-    @Test
-    fun deviceFound() {
-        val mockAvdData = mock<AvdData>()
-        `when`(mockAvdData.name).thenReturn("mockAvdName")
-        val mockDevice = mock<IDevice>()
-        `when`(mockDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
-        `when`(mockDevice.serialNumber).thenReturn("serial-1234")
-        `when`(mockDeviceFinder.findDevice(
-                eq("serial-1234"),
-                anyInt(), anyLong(), anyLong(), anyLong())).thenReturn(mockDevice)
-        val provider = createProvider("serial-1234")
+  private fun createProvider(serial: String): DdmlibAndroidDeviceProvider {
+    return createProvider(LocalAndroidDeviceProvider.newBuilder().apply { this.serial = serial }.build())
+  }
 
-        val controller = provider.provideDevice()
+  @Test
+  fun noDevicesFoundThrowsDeviceProviderException() {
+    val provider = createProvider("serial-1234")
 
-        assertThat(controller).isNotNull()
-    }
+    assertThrows(DeviceProviderException::class.java) { provider.provideDevice() }
+  }
+
+  @Test
+  fun deviceFound() {
+    val mockAvdData = mock<AvdData>()
+    `when`(mockAvdData.name).thenReturn("mockAvdName")
+    val mockDevice = mock<IDevice>()
+    `when`(mockDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
+    `when`(mockDevice.serialNumber).thenReturn("serial-1234")
+    `when`(mockDeviceFinder.findDevice(eq("serial-1234"), anyInt(), anyLong(), anyLong(), anyLong())).thenReturn(mockDevice)
+    val provider = createProvider("serial-1234")
+
+    val controller = provider.provideDevice()
+
+    assertThat(controller).isNotNull()
+  }
 }

@@ -26,66 +26,68 @@ import org.junit.Test
 
 class InstantAppValidationTest {
 
-    @get:Rule
-    val project = GradleRule.from {
-        androidApplication {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  @get:Rule
+  val project =
+    GradleRule.from {
+      androidApplication {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-            android {
-                namespace = "com.example.baseModule"
-                dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-                defaultConfig {
-                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    minSdk = 19
-                }
-            }
+        android {
+          namespace = "com.example.baseModule"
+          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
+          defaultConfig {
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            minSdk = 19
+          }
         }
-        androidFeature(DEFAULT_FEATURE_PATH) {
-            dependencies {
-                implementation(project(":app"))
-            }
-        }
-            .files.update("src/main/AndroidManifest.xml").replaceWith(
-                //language=xml
-                """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
-                             <dist:module dist:instant="true" />
-                        </manifest>
-                    """.trimIndent()
-            )
-
-    }
-
-    @Test
-    fun testInstantAppWarning() {
-        val build = project.build
-        val result = build.executor.run(":app:assemble")
-        result.assertOutputContains("is declared as Instant App")
-        result.assertOutputContains("Instant Apps support will be removed by Google Play in December 2025. ")
-    }
-
-    @Test
-    fun testNoInstantAppWarning() {
-        val build = project.build
-        build.androidFeature().files.update("src/main/AndroidManifest.xml").replaceWith(
-            //language=xml
-            """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
-                           <dist:module dist:onDemand="true" dist:title="ABC">
-                                  <dist:fusing dist:include="true" />
-                           </dist:module>
-                        </manifest>
-                    """.trimIndent()
+      }
+      androidFeature(DEFAULT_FEATURE_PATH) { dependencies { implementation(project(":app")) } }
+        .files
+        .update("src/main/AndroidManifest.xml")
+        .replaceWith(
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
+               <dist:module dist:instant="true" />
+          </manifest>
+          """
+            .trimIndent()
         )
-        val result = build.executor.run(":app:assemble")
-        result.assertOutputDoesNotContain("is declared as Instant App")
-        result.assertOutputDoesNotContain("Instant Apps support will be removed by Google Play in December 2025. ")
-        val feature = build.androidFeature()
-        val mergedManifestFile = feature.resolve(MERGED_MANIFEST)
-            .resolve("debug/processDebugMainManifest/AndroidManifest.xml")
-            .toFile()
-        Truth.assertThat(mergedManifestFile.readText()).contains("dist:title=\"ABC\"")
     }
+
+  @Test
+  fun testInstantAppWarning() {
+    val build = project.build
+    val result = build.executor.run(":app:assemble")
+    result.assertOutputContains("is declared as Instant App")
+    result.assertOutputContains("Instant Apps support will be removed by Google Play in December 2025. ")
+  }
+
+  @Test
+  fun testNoInstantAppWarning() {
+    val build = project.build
+    build
+      .androidFeature()
+      .files
+      .update("src/main/AndroidManifest.xml")
+      .replaceWith(
+        // language=xml
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
+           <dist:module dist:onDemand="true" dist:title="ABC">
+                  <dist:fusing dist:include="true" />
+           </dist:module>
+        </manifest>
+        """
+          .trimIndent()
+      )
+    val result = build.executor.run(":app:assemble")
+    result.assertOutputDoesNotContain("is declared as Instant App")
+    result.assertOutputDoesNotContain("Instant Apps support will be removed by Google Play in December 2025. ")
+    val feature = build.androidFeature()
+    val mergedManifestFile = feature.resolve(MERGED_MANIFEST).resolve("debug/processDebugMainManifest/AndroidManifest.xml").toFile()
+    Truth.assertThat(mergedManifestFile.readText()).contains("dist:title=\"ABC\"")
+  }
 }

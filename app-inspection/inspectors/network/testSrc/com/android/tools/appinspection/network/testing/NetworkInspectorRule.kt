@@ -29,8 +29,7 @@ internal class NetworkInspectorRule(val autoStart: Boolean = true) : ExternalRes
   val connection = FakeConnection()
   val environment = FakeEnvironment()
   val trafficStatsProvider = FakeTrafficStatsProvider()
-  val inspector =
-    NetworkInspector(connection, environment, trafficStatsProvider, speedDataIntervalMs = 10)
+  val inspector = NetworkInspector(connection, environment, trafficStatsProvider, speedDataIntervalMs = 10)
 
   override fun before() {
     if (autoStart) {
@@ -42,9 +41,7 @@ internal class NetworkInspectorRule(val autoStart: Boolean = true) : ExternalRes
     var response: Response = Response.getDefaultInstance()
     inspector.onReceiveCommand(
       NetworkInspectorProtocol.Command.newBuilder()
-        .setStartInspectionCommand(
-          NetworkInspectorProtocol.StartInspectionCommand.getDefaultInstance()
-        )
+        .setStartInspectionCommand(NetworkInspectorProtocol.StartInspectionCommand.getDefaultInstance())
         .build()
         .toByteArray(),
       object : Inspector.CommandCallback {

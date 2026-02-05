@@ -16,6 +16,4 @@
 
 package com.android.build.api.dsl
 
-interface KotlinMultiplatformAndroidHostTestCompilation:
-    KotlinMultiplatformAndroidHostTest,
-    KotlinMultiplatformAndroidCompilation
+interface KotlinMultiplatformAndroidHostTestCompilation : KotlinMultiplatformAndroidHostTest, KotlinMultiplatformAndroidCompilation

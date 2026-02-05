@@ -28,8 +28,7 @@ interface Widget<T>
  * Represents an UI element which has underlying [parameter].
  *
  * Usually parameters and widgets have 1-1 relationship but there are exceptions:
- * * Some [Parameter]s may have no widget because they pass data implicitly and don't need user
- *   input.
+ * * Some [Parameter]s may have no widget because they pass data implicitly and don't need user input.
  * * Some [Widget]s may have no underlying [Parameter] (e.g. [Separator])
  */
 sealed class ParameterWidget<T>(val parameter: Parameter<T>) : Widget<T>
@@ -50,8 +49,7 @@ class LanguageWidget : Widget<String>
 /**
  * [Widget] for selecting package.
  *
- * Looks like combination of [TextFieldWidget] and [EnumWidget] (use can both write and choose from
- * drop down menu).
+ * Looks like combination of [TextFieldWidget] and [EnumWidget] (use can both write and choose from drop down menu).
  */
 data class PackageNameWidget(val p: StringParameter) : ParameterWidget<String>(p)
 

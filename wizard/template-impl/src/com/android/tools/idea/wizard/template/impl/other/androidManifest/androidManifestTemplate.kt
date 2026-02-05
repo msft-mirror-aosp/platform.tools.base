@@ -61,11 +61,7 @@ val androidManifestTemplate
     // This is an invisible parameter to pass data from [WizardTemplateData] to the recipe.
     val sourceProviderName = invisibleSourceProviderNameParameter
 
-    widgets(
-      CheckBoxWidget(remapFolder),
-      TextFieldWidget(newLocation),
-      TextFieldWidget(sourceProviderName)
-    )
+    widgets(CheckBoxWidget(remapFolder), TextFieldWidget(newLocation), TextFieldWidget(sourceProviderName))
 
     thumb {
       // TODO(b/147126989)
@@ -76,4 +72,3 @@ val androidManifestTemplate
       androidManifestRecipe(data as ModuleTemplateData, remapFolder.value, newLocation.value) { sourceProviderName.suggest()!! }
     }
   }
-

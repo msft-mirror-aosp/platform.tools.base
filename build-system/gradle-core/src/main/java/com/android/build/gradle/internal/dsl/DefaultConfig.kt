@@ -24,23 +24,18 @@ import com.android.resources.Density
 import com.google.common.collect.Sets
 import javax.inject.Inject
 
-/** DSL object for the defaultConfig object.  */
+/** DSL object for the defaultConfig object. */
 // Exposed in the DSL.
 abstract class DefaultConfig @Inject constructor(name: String, dslServices: DslServices) :
-    BaseFlavor(name, dslServices),
-    ApplicationDefaultConfig,
-    DynamicFeatureDefaultConfig,
-    LibraryDefaultConfig,
-    TestDefaultConfig {
+  BaseFlavor(name, dslServices), ApplicationDefaultConfig, DynamicFeatureDefaultConfig, LibraryDefaultConfig, TestDefaultConfig {
 
-    init {
-        val densities = Density.getRecommendedValuesForDevice()
-        val strings: MutableSet<String> =
-            Sets.newHashSetWithExpectedSize(densities.size)
-        for (density in densities) {
-            strings.add(density.resourceValue)
-        }
-        vectorDrawables.setGeneratedDensities(strings)
-        vectorDrawables.useSupportLibrary = false
+  init {
+    val densities = Density.getRecommendedValuesForDevice()
+    val strings: MutableSet<String> = Sets.newHashSetWithExpectedSize(densities.size)
+    for (density in densities) {
+      strings.add(density.resourceValue)
     }
+    vectorDrawables.setGeneratedDensities(strings)
+    vectorDrawables.useSupportLibrary = false
+  }
 }

@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("ModelContainerUtils")
+
 package com.android.build.gradle.integration.common.utils
 
 import com.android.SdkConstants.GRADLE_PATH_SEPARATOR
@@ -28,50 +29,33 @@ import com.google.common.collect.ImmutableList
  * @param projectToVariantName a function that returns the variant for a given project.
  */
 fun ModelContainerV2.getGenerateSourcesCommands(projectToVariantName: (String) -> String): List<String> {
-    val commands = ImmutableList.builder<String>()
+  val commands = ImmutableList.builder<String>()
 
-    for ((projectPath, project) in  this.rootInfoMap) {
-        val variant = project.androidProject!!.getVariantByName(projectToVariantName(projectPath))
-        variant.mainArtifact.sourceGenTaskName?.let {
-            commands.add(
-                createCommandTask(
-                    projectPath,
-                    it
-                )
-            )
-        }
-        variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]?.let {
-            it.sourceGenTaskName?.let { taskName ->
-                commands.add(
-                    createCommandTask(
-                        projectPath,
-                        taskName
-                    )
-                )
-            }
-        }
-        variant.hostTestArtifacts.forEach { (_, v) ->
-            for (taskName in v.ideSetupTaskNames) {
-                commands.add(createCommandTask(projectPath, taskName))
-            }
-        }
+  for ((projectPath, project) in this.rootInfoMap) {
+    val variant = project.androidProject!!.getVariantByName(projectToVariantName(projectPath))
+    variant.mainArtifact.sourceGenTaskName?.let { commands.add(createCommandTask(projectPath, it)) }
+    variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]?.let {
+      it.sourceGenTaskName?.let { taskName -> commands.add(createCommandTask(projectPath, taskName)) }
     }
-    return commands.build()
+    variant.hostTestArtifacts.forEach { (_, v) ->
+      for (taskName in v.ideSetupTaskNames) {
+        commands.add(createCommandTask(projectPath, taskName))
+      }
+    }
+  }
+  return commands.build()
 }
 
 /**
- * Returns the generates sources commands for all projects for the debug variant.
- * These are the commands studio will call after sync.
+ * Returns the generates sources commands for all projects for the debug variant. These are the commands studio will call after sync.
  *
  * For example, for a project with a single app subproject these might be:
- *  * :app:generateDebugSources
- *  * :app:generateDebugAndroidTestSources
- *  * :app:mockableAndroidJar
- *  * :app:prepareDebugUnitTestDependencies
- *
+ * * :app:generateDebugSources
+ * * :app:generateDebugAndroidTestSources
+ * * :app:mockableAndroidJar
+ * * :app:prepareDebugUnitTestDependencies
  */
-fun ModelContainerV2.getDebugGenerateSourcesCommands() =
-    getGenerateSourcesCommands { _ -> "debug" }
+fun ModelContainerV2.getDebugGenerateSourcesCommands() = getGenerateSourcesCommands { _ -> "debug" }
 
 private fun createCommandTask(projectPath: String, taskName: String) =
-    if (projectPath == GRADLE_PATH_SEPARATOR) ":$taskName" else "$projectPath:$taskName"
+  if (projectPath == GRADLE_PATH_SEPARATOR) ":$taskName" else "$projectPath:$taskName"

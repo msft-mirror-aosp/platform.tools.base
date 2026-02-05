@@ -24,41 +24,29 @@ import com.android.tools.build.libraries.metadata.Repository
 import com.google.protobuf.Int32Value
 
 internal fun appDependencies(buildAction: ADBuilder.() -> Unit): AppDependencies =
-    AppDependencies.newBuilder().also { ADBuilder(it).apply(buildAction) }.build()
+  AppDependencies.newBuilder().also { ADBuilder(it).apply(buildAction) }.build()
 
 /* Convenience DSL for concise [AppDependencies] initialization */
 internal class ADBuilder(private val wrappedValue: AppDependencies.Builder) {
 
-    fun addLibrary(groupId: String, artifactId: String, version: String)
-            : Library.Builder =
-        wrappedValue.addLibraryBuilder().apply {
-            mavenLibraryBuilder.setGroupId(groupId).setArtifactId(artifactId).setVersion(version)
-        }
+  fun addLibrary(groupId: String, artifactId: String, version: String): Library.Builder =
+    wrappedValue.addLibraryBuilder().apply { mavenLibraryBuilder.setGroupId(groupId).setArtifactId(artifactId).setVersion(version) }
 
-    fun Library.Builder.setRepoIndex(value: Int): Library.Builder =
-        setRepoIndex(Int32Value.of(value))
+  fun Library.Builder.setRepoIndex(value: Int): Library.Builder = setRepoIndex(Int32Value.of(value))
 
-    fun addModuleDeps(moduleName: String, vararg dependencyIndices: Int)
-            : ModuleDependencies.Builder =
-        wrappedValue.addModuleDependenciesBuilder().apply {
-            setModuleName(moduleName)
-            dependencyIndices.forEach { addDependencyIndex(it) }
-        }
+  fun addModuleDeps(moduleName: String, vararg dependencyIndices: Int): ModuleDependencies.Builder =
+    wrappedValue.addModuleDependenciesBuilder().apply {
+      setModuleName(moduleName)
+      dependencyIndices.forEach { addDependencyIndex(it) }
+    }
 
-    fun addLibraryDeps(libraryIndex: Int, vararg libraryDepIndices: Int)
-            : LibraryDependencies.Builder =
-        wrappedValue.addLibraryDependenciesBuilder().apply {
-            setLibraryIndex(libraryIndex)
-            libraryDepIndices.forEach { addLibraryDepIndex(it) }
-        }
+  fun addLibraryDeps(libraryIndex: Int, vararg libraryDepIndices: Int): LibraryDependencies.Builder =
+    wrappedValue.addLibraryDependenciesBuilder().apply {
+      setLibraryIndex(libraryIndex)
+      libraryDepIndices.forEach { addLibraryDepIndex(it) }
+    }
 
-    fun addMavenRepository(url: String): Repository.Builder =
-        wrappedValue.addRepositoriesBuilder().apply {
-            mavenRepoBuilder.url = url
-        }
+  fun addMavenRepository(url: String): Repository.Builder = wrappedValue.addRepositoriesBuilder().apply { mavenRepoBuilder.url = url }
 
-    fun addIvyRepository(url: String): Repository.Builder =
-        wrappedValue.addRepositoriesBuilder().apply {
-            ivyRepoBuilder.url = url
-        }
+  fun addIvyRepository(url: String): Repository.Builder = wrappedValue.addRepositoriesBuilder().apply { ivyRepoBuilder.url = url }
 }

@@ -18,10 +18,10 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Named
 
-interface ExecutionProfile: Named {
-    /** Specify R8 execution options. */
-    val r8: ToolOptions
+interface ExecutionProfile : Named {
+  /** Specify R8 execution options. */
+  val r8: ToolOptions
 
-    /** Specify R8 execution options. */
-    fun r8(action: ToolOptions.() -> Unit)
+  /** Specify R8 execution options. */
+  fun r8(action: ToolOptions.() -> Unit)
 }

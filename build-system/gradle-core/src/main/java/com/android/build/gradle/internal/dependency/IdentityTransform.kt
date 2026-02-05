@@ -28,38 +28,32 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Transform from one artifact type to another artifact type without changing the artifact's
- * contents.
- */
+/** Transform from one artifact type to another artifact type without changing the artifact's contents. */
 @DisableCachingByDefault
 abstract class IdentityTransform : TransformAction<IdentityTransform.Parameters> {
 
-    interface Parameters : GenericTransformParameters {
+  interface Parameters : GenericTransformParameters {
 
-        /**
-         * Whether to create an empty output directory if the input file/directory does not exist.
-         *
-         * Example use case: A Java library subproject without any classes publishes but does not
-         * create the classes directory, but we still need to transform it.
-         */
-        @get:Input
-        @get:Optional // false by default if not set
-        val acceptNonExistentInputFile: Property<Boolean>
+    /**
+     * Whether to create an empty output directory if the input file/directory does not exist.
+     *
+     * Example use case: A Java library subproject without any classes publishes but does not create the classes directory, but we still
+     * need to transform it.
+     */
+    @get:Input
+    @get:Optional // false by default if not set
+    val acceptNonExistentInputFile: Property<Boolean>
+  }
+
+  @get:PathSensitive(PathSensitivity.ABSOLUTE) @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
+
+  override fun transform(transformOutputs: TransformOutputs) {
+    val input = inputArtifact.get().asFile
+    when {
+      input.isDirectory -> transformOutputs.dir(input)
+      input.isFile -> transformOutputs.file(input)
+      parameters.acceptNonExistentInputFile.getOrElse(false) -> transformOutputs.dir("empty")
+      else -> throw IllegalArgumentException("File/directory does not exist: ${input.absolutePath}")
     }
-
-    @get:PathSensitive(PathSensitivity.ABSOLUTE)
-    @get:InputArtifact
-    abstract val inputArtifact: Provider<FileSystemLocation>
-
-    override fun transform(transformOutputs: TransformOutputs) {
-        val input = inputArtifact.get().asFile
-        when {
-            input.isDirectory -> transformOutputs.dir(input)
-            input.isFile -> transformOutputs.file(input)
-            parameters.acceptNonExistentInputFile.getOrElse(false) -> transformOutputs.dir("empty")
-            else -> throw IllegalArgumentException(
-                "File/directory does not exist: ${input.absolutePath}")
-        }
-    }
+  }
 }

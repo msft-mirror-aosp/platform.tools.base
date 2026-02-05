@@ -26,72 +26,48 @@ import org.junit.Rule
 import org.junit.Test
 
 class CompileSdkViaSettingsInAppModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-        }
-        androidApplication(createMinimumProject = false) {
-            android {
-                namespace = "com.example.app"
-            }
-            files.setupMinimumManifest()
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
+      }
+      androidApplication(createMinimumProject = false) {
+        android { namespace = "com.example.app" }
+        files.setupMinimumManifest()
+      }
     }
 
-    @Test
-    fun `test compileTarget`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test compileTarget`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidDsl = result.container.getProject().androidDsl
-            ?: throw RuntimeException("Failed to get AndroidDsl Model")
+    val androidDsl = result.container.getProject().androidDsl ?: throw RuntimeException("Failed to get AndroidDsl Model")
 
-        Truth.assertWithMessage("compile target hash")
-            .that(androidDsl.compileTarget)
-            .isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
-    }
+    Truth.assertWithMessage("compile target hash").that(androidDsl.compileTarget).isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
+  }
 }
 
 /**
- * This tests uses a reference project where the compile SDK is set through the settings
- * plugin to 30.
+ * This tests uses a reference project where the compile SDK is set through the settings plugin to 30.
  *
- * Then the project is changed to override this at the project level with the current default
- * API level.
+ * Then the project is changed to override this at the project level with the current default API level.
  */
-class CompileSdkViaSettingsOverriddenInAppModelTest: ReferenceModelComparator(
+class CompileSdkViaSettingsOverriddenInAppModelTest :
+  ReferenceModelComparator(
     referenceConfig = {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                compileSdk = 30
-            }
-        }
-        androidApplication(createMinimumProject = false) {
-            android {
-                namespace = "com.example.app"
-            }
-        }
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { compileSdk = 30 }
+      }
+      androidApplication(createMinimumProject = false) { android { namespace = "com.example.app" } }
     },
-    deltaConfig = {
-        androidApplication {
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+    deltaConfig = { androidApplication { android { compileSdk = DEFAULT_COMPILE_SDK_VERSION } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

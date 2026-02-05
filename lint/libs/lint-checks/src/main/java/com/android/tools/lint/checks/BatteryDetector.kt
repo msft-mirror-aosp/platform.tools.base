@@ -41,12 +41,7 @@ import org.w3c.dom.Element
 class BatteryDetector : ResourceXmlDetector(), SourceCodeScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-      Implementation(
-        BatteryDetector::class.java,
-        EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
-        Scope.MANIFEST_SCOPE,
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(BatteryDetector::class.java, EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE), Scope.MANIFEST_SCOPE, Scope.JAVA_FILE_SCOPE)
 
     /** Issues that negatively affect battery life. */
     @JvmField
@@ -96,10 +91,7 @@ class BatteryDetector : ResourceXmlDetector(), SourceCodeScanner {
       context.report(incident, constraint = targetSdkAtLeast(24))
     }
 
-    if (
-      "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" == name &&
-        context.project.targetSdkVersion.featureLevel >= 23
-    ) {
+    if ("android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" == name && context.project.targetSdkVersion.featureLevel >= 23) {
       val incident =
         Incident(
           ISSUE,
@@ -126,14 +118,9 @@ class BatteryDetector : ResourceXmlDetector(), SourceCodeScanner {
     }
   }
 
-  override fun getApplicableReferenceNames(): List<String> =
-    listOf("ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
+  override fun getApplicableReferenceNames(): List<String> = listOf("ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     val evaluator = context.evaluator
     if (
       referenced is PsiField &&

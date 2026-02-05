@@ -83,9 +83,7 @@ class UImplicitCallExpressionTest {
               if (receiver != null) {
                 sb.append("${receiver.sourcePsi?.text ?: ""}.")
               }
-              sb.append(
-                "$name(${node.valueArguments.joinToString(",") { it.sourcePsi?.text ?: "" }})\n"
-              )
+              sb.append("$name(${node.valueArguments.joinToString(",") { it.sourcePsi?.text ?: "" }})\n")
               if (node is UImplicitCallExpression) {
                 sb.append("  from \"${node.sourcePsi?.text}\"\n")
               }
@@ -96,24 +94,24 @@ class UImplicitCallExpressionTest {
 
         assertEquals(
           """
-                resource.get(1,2,3)
-                  from "resource[1, 2, 3]"
-                resource.set(1,2,3,"hello")
-                  from "resource[1, 2, 3] = "hello""
-                resource.contains(color)
-                  from "color in resource"
-                resource.contains(string)
-                  from "string !in resource"
-                resource.times(string)
-                  from "resource * string"
-                resource.rangeTo(string)
-                  from "resource..string"
-                resource.combine(resource2)
-                resource.combine(resource2)
-                  from "resource combine resource2"
-                div(resource,color)
-                  from "resource / color"
-                """
+          resource.get(1,2,3)
+            from "resource[1, 2, 3]"
+          resource.set(1,2,3,"hello")
+            from "resource[1, 2, 3] = "hello""
+          resource.contains(color)
+            from "color in resource"
+          resource.contains(string)
+            from "string !in resource"
+          resource.times(string)
+            from "resource * string"
+          resource.rangeTo(string)
+            from "resource..string"
+          resource.combine(resource2)
+          resource.combine(resource2)
+            from "resource combine resource2"
+          div(resource,color)
+            from "resource / color"
+          """
             .trimIndent()
             .trim(),
           sb.toString().trim(),
@@ -153,10 +151,7 @@ class UImplicitCallExpressionTest {
               found = true
               assertEquals("test[string, sb]", node.sourcePsi?.text)
               val resolved = node.resolveOperator()
-              assertEquals(
-                "operator fun get(key: Int, key2: List<CharSequence>) {}",
-                resolved?.text,
-              )
+              assertEquals("operator fun get(key: Int, key2: List<CharSequence>) {}", resolved?.text)
               return super.visitArrayAccessExpression(node)
             }
           }

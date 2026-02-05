@@ -35,71 +35,77 @@ import org.junit.runners.JUnit4
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
-/**
- * Unit test for [GradleAndroidTestResultListener].
- */
+/** Unit test for [GradleAndroidTestResultListener]. */
 @RunWith(JUnit4::class)
 class GradleAndroidTestResultListenerTest {
 
-    @get:Rule var temporaryFolder = TemporaryFolder()
+  @get:Rule var temporaryFolder = TemporaryFolder()
 
-    private val capturedRequests = mutableListOf<TestResultEvent>()
-    private val testListener = GradleAndroidTestResultListener { event ->
-        capturedRequests.add(event)
-    }
+  private val capturedRequests = mutableListOf<TestResultEvent>()
+  private val testListener = GradleAndroidTestResultListener { event -> capturedRequests.add(event) }
 
-    @Before
-    fun setUp() {
-        val config = Any.pack(GradleAndroidTestResultListenerConfig.newBuilder().apply {
+  @Before
+  fun setUp() {
+    val config =
+      Any.pack(
+        GradleAndroidTestResultListenerConfig.newBuilder()
+          .apply {
             deviceId = "deviceIdString"
             utpResultProtoOutputFilePath = temporaryFolder.newFile().absolutePath
-        }.build())
-        val protoConfig = object: ProtoConfig {
-            override val configProto: Any
-                get() = config
-            override val configResource: ExtensionProto.ConfigResource?
-                get() = null
-        }
+          }
+          .build()
+      )
+    val protoConfig =
+      object : ProtoConfig {
+        override val configProto: Any
+          get() = config
 
-        val context = mock(Context::class.java)
-        `when`(context[Context.CONFIG_KEY]).thenReturn(protoConfig)
+        override val configResource: ExtensionProto.ConfigResource?
+          get() = null
+      }
 
-        testListener.configure(context)
+    val context = mock(Context::class.java)
+    `when`(context[Context.CONFIG_KEY]).thenReturn(protoConfig)
+
+    testListener.configure(context)
+  }
+
+  @Test
+  fun testSuiteFinishedSuccessfully() {
+    testListener.apply {
+      beforeTestSuite(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
+      beforeTest(null)
+      afterTest(TestResult.getDefaultInstance())
+      afterTestSuite(TestSuiteResult.getDefaultInstance())
     }
 
-    @Test
-    fun testSuiteFinishedSuccessfully() {
-        testListener.apply {
-            beforeTestSuite(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
-            beforeTest(null)
-            afterTest(TestResult.getDefaultInstance())
-            afterTestSuite(TestSuiteResult.getDefaultInstance())
-        }
-
-        assertThat(capturedRequests).containsExactly(
-            TestResultEvent.newBuilder().apply {
-                deviceId = "deviceIdString"
-                testSuiteStartedBuilder.apply {
-                    testSuiteMetadata = Any.pack(
-                            TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
-                }
-            }.build(),
-            TestResultEvent.newBuilder().apply {
-                deviceId = "deviceIdString"
-                testCaseStarted = TestResultEvent.TestCaseStarted.getDefaultInstance()
-            }.build(),
-            TestResultEvent.newBuilder().apply {
-                deviceId = "deviceIdString"
-                testCaseFinishedBuilder.apply {
-                    testCaseResult = Any.pack(TestResult.getDefaultInstance())
-                }
-            }.build(),
-            TestResultEvent.newBuilder().apply {
-                deviceId = "deviceIdString"
-                testSuiteFinishedBuilder.apply {
-                    testSuiteResult = Any.pack(TestSuiteResult.getDefaultInstance())
-                }
-            }.build()
-        ).inOrder()
-    }
+    assertThat(capturedRequests)
+      .containsExactly(
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testSuiteStartedBuilder.apply { testSuiteMetadata = Any.pack(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance()) }
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testCaseStarted = TestResultEvent.TestCaseStarted.getDefaultInstance()
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testCaseFinishedBuilder.apply { testCaseResult = Any.pack(TestResult.getDefaultInstance()) }
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testSuiteFinishedBuilder.apply { testSuiteResult = Any.pack(TestSuiteResult.getDefaultInstance()) }
+          }
+          .build(),
+      )
+      .inOrder()
+  }
 }

@@ -21,37 +21,31 @@ import com.android.server.adb.protos.DevicesProto
 import java.net.Socket
 import java.nio.ByteBuffer
 
-class ServerStatusCommandHandler :  SimpleHostCommandHandler("server-status") {
+class ServerStatusCommandHandler : SimpleHostCommandHandler("server-status") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        val stream = responseSocket.getOutputStream()
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    val stream = responseSocket.getOutputStream()
 
-        val status =  DevicesProto.AdbServerStatus.newBuilder()
-        status.usbBackend = DevicesProto.AdbServerStatus.UsbBackend.LIBUSB
-        status.usbBackendForced = true
-        status.mdnsBackend = DevicesProto.AdbServerStatus.MdnsBackend.OPENSCREEN
-        status.mdnsBackendForced = true
-        status.version = "35.0.2"
-        status.executableAbsolutePath = "/path/to/adb"
-        status.logAbsolutePath = "/tmp/adb.log"
-        status.os = System.getProperty("os.name")
-        status.traceLevel = "all"
-        status.burstMode = true
-        status.mdnsEnabled = true
-        status.keystorePath = "/path/to/keystore"
-        status.knownHostsPath = "/path/to/knownhosts"
+    val status = DevicesProto.AdbServerStatus.newBuilder()
+    status.usbBackend = DevicesProto.AdbServerStatus.UsbBackend.LIBUSB
+    status.usbBackendForced = true
+    status.mdnsBackend = DevicesProto.AdbServerStatus.MdnsBackend.OPENSCREEN
+    status.mdnsBackendForced = true
+    status.version = "35.0.2"
+    status.executableAbsolutePath = "/path/to/adb"
+    status.logAbsolutePath = "/tmp/adb.log"
+    status.os = System.getProperty("os.name")
+    status.traceLevel = "all"
+    status.burstMode = true
+    status.mdnsEnabled = true
+    status.keystorePath = "/path/to/keystore"
+    status.knownHostsPath = "/path/to/knownhosts"
 
-        writeOkay(stream)
-        val statusBytes = ByteBuffer.wrap(status.build().toByteArray())
-        write4ByteHexIntString(stream, statusBytes.remaining())
-        stream.write(statusBytes.array())
-        stream.flush()
-        return false
-    }
+    writeOkay(stream)
+    val statusBytes = ByteBuffer.wrap(status.build().toByteArray())
+    write4ByteHexIntString(stream, statusBytes.remaining())
+    stream.write(statusBytes.array())
+    stream.flush()
+    return false
+  }
 }
-

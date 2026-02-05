@@ -54,6 +54,9 @@ import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Iterables
+import java.io.File
+import java.nio.file.Files
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
@@ -72,306 +75,261 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.Incremental
 import org.gradle.work.InputChanges
 import org.gradle.workers.WorkerExecutor
-import java.io.File
-import java.nio.file.Files
-import javax.inject.Inject
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION, secondaryTaskCategories = [TaskCategory.ANDROID_RESOURCES])
 abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
 
-    @get:OutputDirectory
-    abstract val compiledDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val compiledDirectory: DirectoryProperty
 
-    // Merged resources directory.
-    @get:Incremental
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val inputDirectory: DirectoryProperty
+  // Merged resources directory.
+  @get:Incremental @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val inputDirectory: DirectoryProperty
 
-    @get:Incremental
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val navigationResources: DirectoryProperty
+  @get:Incremental @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val navigationResources: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val manifestFiles: DirectoryProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val manifestFiles: DirectoryProperty
 
-    /** A file collection of the directories containing the compiled dependencies resource files. */
-    @get:Incremental
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
+  /** A file collection of the directories containing the compiled dependencies resource files. */
+  @get:Incremental
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val compiledDependenciesResources: ConfigurableFileCollection
+
+  @get:Nested abstract val aapt2: Aapt2Input
+
+  // Not an input as it doesn't affect task outputs
+  @get:Internal abstract val mergeBlameFolder: DirectoryProperty
+
+  @get:Internal abstract val localResSourceMap: RegularFileProperty
+
+  @get:Internal abstract val dependencyResSourceMaps: ConfigurableFileCollection
+
+  @get:Nested abstract val androidJarInput: AndroidJarInput
+
+  private lateinit var manifestMergeBlameFile: Provider<RegularFile>
+
+  override fun doTaskAction(inputChanges: InputChanges) {
+    val manifestsOutputs =
+      BuiltArtifactsLoaderImpl().load(manifestFiles) ?: throw RuntimeException("Cannot load manifests from $manifestFiles")
+    val manifestFile = Iterables.getOnlyElement(manifestsOutputs.elements).outputFile
+
+    workerExecutor.noIsolation().submit(Action::class.java) { params ->
+      params.initializeFromBaseTask(this)
+      params.androidJar.set(androidJarInput.getAndroidJar().get())
+      params.aapt2.set(aapt2)
+      params.inputs.set(inputChanges.getChangesInSerializableForm(listOf(inputDirectory, navigationResources)))
+      params.manifestFile.set(File(manifestFile))
+      params.compiledDependenciesResources.from(compiledDependenciesResources)
+      params.manifestMergeBlameFile.set(manifestMergeBlameFile)
+      params.compiledDirectory.set(compiledDirectory)
+      params.mergeBlameFolder.set(mergeBlameFolder)
+      params.localResSourceSetMap.set(localResSourceMap)
+      params.dependencyResSourceSetMaps.setFrom(dependencyResSourceMaps)
+    }
+  }
+
+  protected abstract class Params : ProfileAwareWorkAction.Parameters() {
+    abstract val androidJar: RegularFileProperty
+    @get:Nested abstract val aapt2: Property<Aapt2Input>
+    abstract val inputs: Property<SerializableInputChanges>
+    abstract val manifestFile: RegularFileProperty
     abstract val compiledDependenciesResources: ConfigurableFileCollection
-
-    @get:Nested
-    abstract val aapt2: Aapt2Input
-
-    // Not an input as it doesn't affect task outputs
-    @get:Internal
+    abstract val manifestMergeBlameFile: RegularFileProperty
+    abstract val compiledDirectory: DirectoryProperty
     abstract val mergeBlameFolder: DirectoryProperty
+    abstract val localResSourceSetMap: RegularFileProperty
+    abstract val dependencyResSourceSetMaps: ConfigurableFileCollection
+  }
 
-    @get:Internal
-    abstract val localResSourceMap: RegularFileProperty
+  /** Compiles and links the resources of the library. */
+  protected abstract class Action : ProfileAwareWorkAction<Params>() {
 
-    @get:Internal
-    abstract val dependencyResSourceMaps: ConfigurableFileCollection
+    @get:Inject abstract val workerExecutor: WorkerExecutor
 
-    @get:Nested
-    abstract val androidJarInput: AndroidJarInput
+    override fun run() {
+      val tempOutput = parameters.compiledDirectory.get().asFile
+      val compiledResources = tempOutput.resolve("compiled")
+      Files.createDirectories(compiledResources.toPath())
 
-    private lateinit var manifestMergeBlameFile: Provider<RegularFile>
-
-    override fun doTaskAction(inputChanges: InputChanges) {
-        val manifestsOutputs = BuiltArtifactsLoaderImpl().load(manifestFiles)
-            ?: throw RuntimeException("Cannot load manifests from $manifestFiles")
-        val manifestFile = Iterables.getOnlyElement(manifestsOutputs.elements).outputFile
-
-        workerExecutor.noIsolation().submit(Action::class.java) { params ->
-            params.initializeFromBaseTask(this)
-            params.androidJar.set(androidJarInput.getAndroidJar().get())
-            params.aapt2.set(aapt2)
-            params.inputs.set(inputChanges.getChangesInSerializableForm(listOf(inputDirectory, navigationResources)))
-            params.manifestFile.set(File(manifestFile))
-            params.compiledDependenciesResources.from(compiledDependenciesResources)
-            params.manifestMergeBlameFile.set(manifestMergeBlameFile)
-            params.compiledDirectory.set(compiledDirectory)
-            params.mergeBlameFolder.set(mergeBlameFolder)
-            params.localResSourceSetMap.set(localResSourceMap)
-            params.dependencyResSourceSetMaps.setFrom(dependencyResSourceMaps)
+      val aapt2Input = parameters.aapt2.get()
+      val moduleOnlyResSourceSetMap = readFromSourceSetPathsFile(parameters.localResSourceSetMap.get().asFile)
+      WorkerExecutorResourceCompilationService(
+          projectPath = parameters.projectPath,
+          taskOwner = parameters.taskOwner.get(),
+          analyticsService = parameters.analyticsService,
+          workerExecutor = workerExecutor,
+          aapt2Input = aapt2Input,
+        )
+        .use { compilationService ->
+          compileResources(
+            inputs = parameters.inputs.get(),
+            outDirectory = compiledResources,
+            compilationService = compilationService,
+            mergeBlameFolder = parameters.mergeBlameFolder.get().asFile,
+            resourcePathEncoding = ResourcePathEncoding.Relative(moduleOnlyResSourceSetMap),
+          )
         }
+
+      val resSourceSetMap = mergeIdentifiedSourceSetFiles(parameters.dependencyResSourceSetMaps.files.toList()) + moduleOnlyResSourceSetMap
+
+      val compiledDependenciesResourcesDirs = parameters.compiledDependenciesResources.reversed()
+      val linkedApk = tempOutput.resolve("linked.apk")
+      val config =
+        buildAaptPackageConfig(
+          linkedApk,
+          compiledDependenciesResourcesDirs,
+          compiledResources,
+          ResourcePathEncoding.Relative(resSourceSetMap),
+        )
+
+      workerExecutor.await() // All compilation must be done before linking.
+      try {
+        processResources(
+          aapt = aapt2Input.getLeasingAapt2(),
+          aaptConfig = config,
+          rJar = null,
+          logger = Logging.getLogger(this::class.java),
+          errorFormatMode = aapt2Input.aapt2DaemonBuildService.get().parameters.errorFormatMode.get(),
+        )
+      } finally {
+        Files.deleteIfExists(linkedApk.toPath())
+      }
     }
 
-    protected abstract class Params : ProfileAwareWorkAction.Parameters() {
-        abstract val androidJar: RegularFileProperty
-        @get:Nested
-        abstract val aapt2: Property<Aapt2Input>
-        abstract val inputs: Property<SerializableInputChanges>
-        abstract val manifestFile: RegularFileProperty
-        abstract val compiledDependenciesResources: ConfigurableFileCollection
-        abstract val manifestMergeBlameFile: RegularFileProperty
-        abstract val compiledDirectory: DirectoryProperty
-        abstract val mergeBlameFolder: DirectoryProperty
-        abstract val localResSourceSetMap: RegularFileProperty
-        abstract val dependencyResSourceSetMaps: ConfigurableFileCollection
+    private fun buildAaptPackageConfig(
+      linkedApk: File,
+      compiledDependenciesResourcesDirs: List<File>,
+      compiledResources: File,
+      relativeResourcePathEncoding: ResourcePathEncoding.Relative,
+    ): AaptPackageConfig =
+      with(parameters) {
+        AaptPackageConfig.Builder()
+          .setManifestFile(manifestFile = manifestFile.get().asFile)
+          .setResourceOutputApk(linkedApk)
+          .addResourceDir(resourceDir = compiledResources)
+          .addResourceDirectories(compiledDependenciesResourcesDirs)
+          .setLibrarySymbolTableFiles(ImmutableSet.of())
+          .setOptions(AaptOptions())
+          .setComponentType(ComponentTypeImpl.LIBRARY)
+          .setAndroidTarget(androidJar = androidJar.get().asFile)
+          .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
+          .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
+          .setIdentifiedSourceSetMap(relativeResourcePathEncoding.identifiedSourceSetMap)
+          .build()
+      }
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<VerifyLibraryResourcesTask, ComponentCreationConfig>(creationConfig),
+    AndroidResourcesTaskCreationAction by AndroidResourcesTaskCreationActionImpl(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("verify", "Resources")
+
+    override val type: Class<VerifyLibraryResourcesTask>
+      get() = VerifyLibraryResourcesTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<VerifyLibraryResourcesTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider = taskProvider, property = VerifyLibraryResourcesTask::compiledDirectory)
+        .on(InternalArtifactType.VERIFIED_LIBRARY_RESOURCES)
     }
+
+    /** Configure the given newly-created task object. */
+    override fun configure(task: VerifyLibraryResourcesTask) {
+      super.configure(task)
+
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.MERGED_RES, task.inputDirectory)
+
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.UPDATED_NAVIGATION_XML, task.navigationResources)
+
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.AAPT_FRIENDLY_MERGED_MANIFESTS, task.manifestFiles)
+      task.mergeBlameFolder.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.MERGED_RES_BLAME_FOLDER))
+
+      task.manifestMergeBlameFile = creationConfig.artifacts.get(InternalArtifactType.MANIFEST_MERGE_BLAME_FILE)
+
+      if (androidResourcesCreationConfig.isPrecompileDependenciesResourcesEnabled) {
+        task.compiledDependenciesResources.fromDisallowChanges(
+          creationConfig.variantDependencies.getArtifactFileCollection(
+            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+            AndroidArtifacts.ArtifactScope.ALL,
+            AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES,
+          )
+        )
+        val dependencySourceMaps =
+          creationConfig.variantDependencies.getArtifactFileCollection(RUNTIME_CLASSPATH, ALL, ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING)
+        task.dependencyResSourceMaps.setFrom(dependencySourceMaps)
+        task.dependsOn(dependencySourceMaps)
+      }
+
+      creationConfig.services.initializeAapt2Input(task.aapt2, task)
+      task.androidJarInput.initialize(task, creationConfig)
+
+      val sourceSetMap = creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+      task.localResSourceMap.setDisallowChanges(sourceSetMap)
+      task.dependsOn(sourceSetMap)
+    }
+  }
+
+  companion object {
 
     /**
-     * Compiles and links the resources of the library.
+     * Compiles new or changed files and removes files that were compiled from the removed files.
+     *
+     * Should only be called when using AAPT2.
+     *
+     * @param inputs the new, changed or modified files that need to be compiled or removed.
+     * @param outDirectory the directory containing compiled resources.
+     * @param compilationService AAPT tool to execute the resource compiling
+     * @param analyticsService the build service to record execution spans
+     * @param resourcePathEncoding Source resource path encoding to be written to resource.
      */
-    protected abstract class Action : ProfileAwareWorkAction<Params>() {
-
-        @get:Inject
-        abstract val workerExecutor: WorkerExecutor
-
-        override fun run() {
-            val tempOutput = parameters.compiledDirectory.get().asFile
-            val compiledResources = tempOutput.resolve("compiled")
-            Files.createDirectories(compiledResources.toPath())
-
-            val aapt2Input = parameters.aapt2.get()
-            val moduleOnlyResSourceSetMap =
-                readFromSourceSetPathsFile(parameters.localResSourceSetMap.get().asFile)
-            WorkerExecutorResourceCompilationService(
-                projectPath = parameters.projectPath,
-                taskOwner = parameters.taskOwner.get(),
-                analyticsService = parameters.analyticsService,
-                workerExecutor = workerExecutor,
-                aapt2Input = aapt2Input
-            ).use { compilationService ->
-
-                compileResources(
-                    inputs = parameters.inputs.get(),
-                    outDirectory = compiledResources,
-                    compilationService = compilationService,
-                    mergeBlameFolder = parameters.mergeBlameFolder.get().asFile,
-                    resourcePathEncoding = ResourcePathEncoding.Relative(moduleOnlyResSourceSetMap)
-                )
-            }
-
-            val resSourceSetMap =
-                mergeIdentifiedSourceSetFiles(
-                    parameters.dependencyResSourceSetMaps.files.toList()
-                ) + moduleOnlyResSourceSetMap
-
-            val compiledDependenciesResourcesDirs =
-                parameters.compiledDependenciesResources.reversed()
-            val linkedApk = tempOutput.resolve("linked.apk")
-            val config = buildAaptPackageConfig(
-                linkedApk,
-                compiledDependenciesResourcesDirs,
-                compiledResources,
-                ResourcePathEncoding.Relative(resSourceSetMap)
-            )
-
-            workerExecutor.await() // All compilation must be done before linking.
-            try {
-                processResources(
-                    aapt = aapt2Input.getLeasingAapt2(),
-                    aaptConfig = config,
-                    rJar = null,
-                    logger = Logging.getLogger(this::class.java),
-                    errorFormatMode = aapt2Input.aapt2DaemonBuildService.get().parameters.errorFormatMode.get()
-                )
-            } finally {
-                Files.deleteIfExists(linkedApk.toPath())
-            }
-        }
-
-        private fun buildAaptPackageConfig(
-            linkedApk: File,
-            compiledDependenciesResourcesDirs: List<File>,
-            compiledResources: File,
-            relativeResourcePathEncoding: ResourcePathEncoding.Relative
-        ): AaptPackageConfig = with(parameters) {
-            AaptPackageConfig.Builder()
-                .setManifestFile(manifestFile = manifestFile.get().asFile)
-                .setResourceOutputApk(linkedApk)
-                .addResourceDir(resourceDir = compiledResources)
-                .addResourceDirectories(compiledDependenciesResourcesDirs)
-                .setLibrarySymbolTableFiles(ImmutableSet.of())
-                .setOptions(AaptOptions())
-                .setComponentType(ComponentTypeImpl.LIBRARY)
-                .setAndroidTarget(androidJar = androidJar.get().asFile)
-                .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
-                .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
-                .setIdentifiedSourceSetMap(relativeResourcePathEncoding.identifiedSourceSetMap)
-                .build()
-        }
-    }
-
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<VerifyLibraryResourcesTask, ComponentCreationConfig>(
-        creationConfig
-    ), AndroidResourcesTaskCreationAction by AndroidResourcesTaskCreationActionImpl(
-        creationConfig
+    @JvmStatic
+    @VisibleForTesting
+    fun compileResources(
+      inputs: SerializableInputChanges,
+      outDirectory: File,
+      compilationService: ResourceCompilationService,
+      mergeBlameFolder: File,
+      resourcePathEncoding: ResourcePathEncoding,
     ) {
-
-        override val name: String
-            get() = computeTaskName("verify", "Resources")
-        override val type: Class<VerifyLibraryResourcesTask>
-            get() = VerifyLibraryResourcesTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<VerifyLibraryResourcesTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider = taskProvider,
-                property = VerifyLibraryResourcesTask::compiledDirectory
-            ).on(InternalArtifactType.VERIFIED_LIBRARY_RESOURCES)
+      for (change in inputs.changes) {
+        // Accept only files in subdirectories of the merged resources directory.
+        // Ignore files and directories directly under the merged resources directory.
+        val dirName = change.normalizedPath.substringBeforeLast('/', "")
+        if (dirName.isEmpty() || dirName.contains('/')) {
+          continue
         }
 
-        /** Configure the given newly-created task object.  */
-        override fun configure(
-            task: VerifyLibraryResourcesTask
-        ) {
-            super.configure(task)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.MERGED_RES,
-                task.inputDirectory
-            )
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.UPDATED_NAVIGATION_XML,
-                task.navigationResources
-            )
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.AAPT_FRIENDLY_MERGED_MANIFESTS,
-                task.manifestFiles
-            )
-            task.mergeBlameFolder.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.MERGED_RES_BLAME_FOLDER))
-
-            task.manifestMergeBlameFile = creationConfig.artifacts.get(
-                InternalArtifactType.MANIFEST_MERGE_BLAME_FILE
-            )
-
-            if (androidResourcesCreationConfig.isPrecompileDependenciesResourcesEnabled) {
-                task.compiledDependenciesResources.fromDisallowChanges(
-                    creationConfig.variantDependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
-                    ))
-                val dependencySourceMaps = creationConfig.variantDependencies.getArtifactFileCollection(
-                    RUNTIME_CLASSPATH,
-                    ALL,
-                    ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING,
+        when (change.fileStatus) {
+          FileStatus.NEW,
+          FileStatus.CHANGED ->
+            // If the file is NEW or CHANGED we need to compile it into the output
+            // directory. AAPT2 overwrites files in case they were CHANGED so no need to
+            // remove the corresponding file.
+            try {
+              val request =
+                CompileResourceRequest(
+                  change.file,
+                  outDirectory,
+                  dirName,
+                  isPseudoLocalize = false,
+                  isPngCrunching = false,
+                  mergeBlameFolder = mergeBlameFolder,
+                  resourcePathEncoding = resourcePathEncoding,
                 )
-                task.dependencyResSourceMaps.setFrom(dependencySourceMaps)
-                task.dependsOn(dependencySourceMaps)
+              compilationService.submitCompile(request)
+            } catch (e: Exception) {
+              throw AaptException("Failed to compile file ${change.file.absolutePath}", e)
             }
 
-            creationConfig.services.initializeAapt2Input(task.aapt2, task)
-            task.androidJarInput.initialize(task, creationConfig)
-
-            val sourceSetMap =
-                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
-            task.localResSourceMap.setDisallowChanges(sourceSetMap)
-            task.dependsOn(sourceSetMap)
+          FileStatus.REMOVED ->
+            // If the file was REMOVED we need to remove the corresponding file from the
+            // output directory.
+            FileUtils.deleteIfExists(File(outDirectory, Aapt2RenamingConventions.compilationRename(change.file)))
         }
+      }
     }
-
-    companion object {
-
-        /**
-         * Compiles new or changed files and removes files that were compiled from the removed files.
-         *
-         *
-         * Should only be called when using AAPT2.
-         *
-         * @param inputs the new, changed or modified files that need to be compiled or removed.
-         * @param outDirectory the directory containing compiled resources.
-         * @param compilationService AAPT tool to execute the resource compiling
-         * @param analyticsService the build service to record execution spans
-         * @param resourcePathEncoding Source resource path encoding to be written to resource.
-         */
-        @JvmStatic
-        @VisibleForTesting
-        fun compileResources(
-            inputs: SerializableInputChanges,
-            outDirectory: File,
-            compilationService: ResourceCompilationService,
-            mergeBlameFolder: File,
-            resourcePathEncoding: ResourcePathEncoding
-        ) {
-            for (change in inputs.changes) {
-                // Accept only files in subdirectories of the merged resources directory.
-                // Ignore files and directories directly under the merged resources directory.
-                val dirName = change.normalizedPath.substringBeforeLast('/', "")
-                if (dirName.isEmpty() || dirName.contains('/')) {
-                    continue
-                }
-
-                when (change.fileStatus) {
-                    FileStatus.NEW, FileStatus.CHANGED ->
-                        // If the file is NEW or CHANGED we need to compile it into the output
-                        // directory. AAPT2 overwrites files in case they were CHANGED so no need to
-                        // remove the corresponding file.
-                        try {
-                            val request = CompileResourceRequest(
-                                change.file,
-                                outDirectory,
-                                dirName,
-                                isPseudoLocalize = false,
-                                isPngCrunching = false,
-                                mergeBlameFolder = mergeBlameFolder,
-                                resourcePathEncoding = resourcePathEncoding
-                            )
-                            compilationService.submitCompile(request)
-                        } catch (e: Exception) {
-                            throw AaptException("Failed to compile file ${change.file.absolutePath}", e)
-                        }
-
-                    FileStatus.REMOVED ->
-                        // If the file was REMOVED we need to remove the corresponding file from the
-                        // output directory.
-                        FileUtils.deleteIfExists(
-                            File(outDirectory, Aapt2RenamingConventions.compilationRename(change.file))
-                        )
-                }
-            }
-        }
-    }
+  }
 }

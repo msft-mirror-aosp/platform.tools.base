@@ -24,6 +24,9 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.options.Version
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
+import java.io.FileOutputStream
+import java.nio.file.Files
+import javax.inject.Inject
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.SetProperty
@@ -33,70 +36,53 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
 
-import java.io.FileOutputStream
-import java.nio.file.Files
-import javax.inject.Inject
-
 /*
 Anchor task with validating resource folder overlapping.
 */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION)
-abstract class ValidateResourcesTask @Inject constructor(
-    @get:Internal
-    val projectLayout: ProjectLayout
-) : NonIncrementalTask() {
+abstract class ValidateResourcesTask @Inject constructor(@get:Internal val projectLayout: ProjectLayout) : NonIncrementalTask() {
 
-    @get:Nested
-    abstract val resources: SetProperty<DependencyResourcesComputer.ResourceSourceSetInput>
+  @get:Nested abstract val resources: SetProperty<DependencyResourcesComputer.ResourceSourceSetInput>
 
-    @get:OutputFile
-    abstract val validationReportFile: RegularFileProperty
+  @get:OutputFile abstract val validationReportFile: RegularFileProperty
 
-    override fun doTaskAction() {
-        verifyNestedResources().let { verificationResult ->
-            FileOutputStream(validationReportFile.get().asFile).use {
-                it.write(verificationResult.toByteArray(Charsets.UTF_8))
-            }
+  override fun doTaskAction() {
+    verifyNestedResources().let { verificationResult ->
+      FileOutputStream(validationReportFile.get().asFile).use { it.write(verificationResult.toByteArray(Charsets.UTF_8)) }
+    }
+  }
+
+  /**
+   * Method checks if any resource folders are nested inside others. For example folder a and a/b. Warning will be shown once we find such
+   * situation.
+   */
+  private fun verifyNestedResources(): String {
+    val fileCollection = resources.get().map { it.sourceDirectories }
+    val dirs =
+      fileCollection.flatten().map {
+        if (Files.isSymbolicLink(it.toPath())) Files.readSymbolicLink(it.toPath()).normalize().toFile() else it.normalize()
+      }
+
+    val rootDir = projectLayout.projectDirectory.asFile
+    val map = mutableMapOf<String, MutableList<String>>()
+    for (dirA in dirs) {
+      for (dirB in dirs) {
+        if (!FileUtils.isSameFile(dirA, dirB) && FileUtils.isFileInDirectory(dirA, dirB)) {
+          val pivotRelative = if (FileUtils.isFileInDirectory(dirB, rootDir)) dirB.relativeTo(rootDir) else dirB
+          val nestedRelative = if (FileUtils.isFileInDirectory(dirA, rootDir)) dirA.relativeTo(rootDir) else dirA
+          map.getOrPut(pivotRelative.toString()) { mutableListOf() }.add(nestedRelative.toString())
         }
+      }
     }
 
-    /**
-     * Method checks if any resource folders are nested inside others. For example folder a and a/b.
-     * Warning will be shown once we find such situation.
-     */
-    private fun verifyNestedResources(): String {
-        val fileCollection = resources.get().map { it.sourceDirectories }
-        val dirs = fileCollection.flatten()
-            .map {
-                if (Files.isSymbolicLink(it.toPath()))
-                    Files.readSymbolicLink(it.toPath()).normalize().toFile()
-                else
-                    it.normalize()
-            }
-
-        val rootDir = projectLayout.projectDirectory.asFile
-        val map = mutableMapOf<String, MutableList<String>>()
-        for (dirA in dirs) {
-            for (dirB in dirs) {
-                if (!FileUtils.isSameFile(dirA, dirB) && FileUtils.isFileInDirectory(dirA, dirB)) {
-                    val pivotRelative =
-                        if (FileUtils.isFileInDirectory(dirB, rootDir)) dirB.relativeTo(rootDir) else dirB
-                    val nestedRelative =
-                        if (FileUtils.isFileInDirectory(dirA, rootDir)) dirA.relativeTo(rootDir) else dirA
-                    map.getOrPut(pivotRelative.toString()) { mutableListOf() }
-                        .add(nestedRelative.toString())
-                }
-            }
-        }
-
-        if(map.isNotEmpty()){
-            val mapString = map.flatMap { keyValue ->
-                listOf("+ ${keyValue.key}", *keyValue.value.map { "-- $it" }.toTypedArray(), "")
-            }.joinToString("\n")
-            val output = "Nested resources detected.\n" +
-                    mapString +
-                """
+    if (map.isNotEmpty()) {
+      val mapString =
+        map.flatMap { keyValue -> listOf("+ ${keyValue.key}", *keyValue.value.map { "-- $it" }.toTypedArray(), "") }.joinToString("\n")
+      val output =
+        "Nested resources detected.\n" +
+          mapString +
+          """
 
                 Nested resources means you have layout like this:
                 res.srcDirs = [
@@ -110,50 +96,48 @@ abstract class ValidateResourcesTask @Inject constructor(
                     'src/main/res/category2'
                 ]
                 This Warning will be transformed into Error in version ${Version.VERSION_9_0}
-             """.trimIndent()
-            logger.warn(output)
-            return output
-        }
-        return "0 Warning/Error"
+             """
+            .trimIndent()
+      logger.warn(output)
+      return output
+    }
+    return "0 Warning/Error"
+  }
+
+  internal class CreateAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<ValidateResourcesTask, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String = computeTaskName("generate", "Resources")
+
+    override val type: Class<ValidateResourcesTask> = ValidateResourcesTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ValidateResourcesTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ValidateResourcesTask::validationReportFile)
+        .withName(VALIDATION_RESULT_FILE_NAME)
+        .on(InternalArtifactType.NESTED_RESOURCES_VALIDATION_REPORT)
     }
 
-    internal class CreateAction(
-        creationConfig: ComponentCreationConfig,
-    ) :  VariantTaskCreationAction<ValidateResourcesTask, ComponentCreationConfig>(creationConfig) {
+    override fun configure(task: ValidateResourcesTask) {
+      super.configure(task)
 
-        override val name: String = computeTaskName("generate", "Resources")
+      creationConfig.sources.res { resSources ->
+        val resourceMap = resSources.getVariantSourcesWithFilter { !it.isGenerated }
 
-        override val type: Class<ValidateResourcesTask> = ValidateResourcesTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<ValidateResourcesTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ValidateResourcesTask::validationReportFile
-            ).withName(VALIDATION_RESULT_FILE_NAME)
-                .on(InternalArtifactType.NESTED_RESOURCES_VALIDATION_REPORT)
-        }
-
-        override fun configure(task: ValidateResourcesTask) {
-            super.configure(task)
-
-            creationConfig.sources.res { resSources ->
-                val resourceMap = resSources.getVariantSourcesWithFilter { !it.isGenerated }
-
-                resourceMap.forEach { (_, providerOfDirectories) ->
-                    task.resources.add(creationConfig.services.newInstance(
-                        DependencyResourcesComputer.ResourceSourceSetInput::class.java
-                    )
-                        .also { it.sourceDirectories.fromDisallowChanges(providerOfDirectories) })
-                }
+        resourceMap.forEach { (_, providerOfDirectories) ->
+          task.resources.add(
+            creationConfig.services.newInstance(DependencyResourcesComputer.ResourceSourceSetInput::class.java).also {
+              it.sourceDirectories.fromDisallowChanges(providerOfDirectories)
             }
-            task.resources.disallowChanges()
-
+          )
         }
+      }
+      task.resources.disallowChanges()
     }
+  }
 
-    companion object {
-        internal const val VALIDATION_RESULT_FILE_NAME = "nestedResourcesValidationReport.txt"
-    }
-
+  companion object {
+    internal const val VALIDATION_RESULT_FILE_NAME = "nestedResourcesValidationReport.txt"
+  }
 }

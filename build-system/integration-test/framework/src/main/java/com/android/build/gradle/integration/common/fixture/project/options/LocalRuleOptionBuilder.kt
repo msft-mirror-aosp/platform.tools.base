@@ -24,49 +24,47 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 /**
  * class to configure gradle options inside a test method. see [GradleRule.configure]
  *
- * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [build] method
- * must be called at the end to write the test and return a [GradleBuild]
+ * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [build] method must be called at the
+ * end to write the test and return a [GradleBuild]
  */
 @GradleDefinitionDsl
-class LocalRuleOptionBuilder internal constructor(
-    private val gradleRule: GradleRule,
-    private val ruleOptionBuilder: DefaultRuleOptionBuilder
-): RuleOptionBuilder {
-    private val delegate = DefaultRuleOptionBuilder()
+class LocalRuleOptionBuilder
+internal constructor(private val gradleRule: GradleRule, private val ruleOptionBuilder: DefaultRuleOptionBuilder) : RuleOptionBuilder {
+  private val delegate = DefaultRuleOptionBuilder()
 
-    val build: GradleBuild
-        get() {
-            ruleOptionBuilder.mergeWith(delegate)
-            return gradleRule.build
-        }
-
-    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
-        ruleOptionBuilder.mergeWith(delegate)
-        return gradleRule.build(action)
+  val build: GradleBuild
+    get() {
+      ruleOptionBuilder.mergeWith(delegate)
+      return gradleRule.build
     }
 
-    override fun disableBrokenBuiltInKotlinOptOutChecks(): LocalRuleOptionBuilder {
-        delegate.disableBrokenBuiltInKotlinOptOutChecks()
-        return this
-    }
+  fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
+    ruleOptionBuilder.mergeWith(delegate)
+    return gradleRule.build(action)
+  }
 
-    override fun disableBrokenNewDslOptOutChecks(): LocalRuleOptionBuilder {
-        delegate.disableBrokenNewDslOptOutChecks()
-        return this
-    }
+  override fun disableBrokenBuiltInKotlinOptOutChecks(): LocalRuleOptionBuilder {
+    delegate.disableBrokenBuiltInKotlinOptOutChecks()
+    return this
+  }
 
-    override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withGradleLocation(action)
-        return this
-    }
+  override fun disableBrokenNewDslOptOutChecks(): LocalRuleOptionBuilder {
+    delegate.disableBrokenNewDslOptOutChecks()
+    return this
+  }
 
-    override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withGradleOptions(action)
-        return this
-    }
+  override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {
+    delegate.withGradleLocation(action)
+    return this
+  }
 
-    override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withSdk(action)
-        return this
-    }
+  override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): LocalRuleOptionBuilder {
+    delegate.withGradleOptions(action)
+    return this
+  }
+
+  override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): LocalRuleOptionBuilder {
+    delegate.withSdk(action)
+    return this
+  }
 }

@@ -23,30 +23,22 @@ import org.junit.Rule
 import org.junit.Test
 
 class CompileRClassTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("compileRClasses")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("compileRClasses").create()
 
-    @Test
-    fun cannotAccessTransitiveResourceWhenImplementationDependency() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("dependencyLib").ktsBuildFile,
-            """api(project(":transitiveDependencyLib"))""",
-            """implementation(project(":transitiveDependencyLib"))""",
-        )
-        val result = project.executor()
-            .expectFailure()
-            .run(":lib:compileDebugAndroidTestKotlin")
+  @Test
+  fun cannotAccessTransitiveResourceWhenImplementationDependency() {
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("dependencyLib").ktsBuildFile,
+      """api(project(":transitiveDependencyLib"))""",
+      """implementation(project(":transitiveDependencyLib"))""",
+    )
+    val result = project.executor().expectFailure().run(":lib:compileDebugAndroidTestKotlin")
 
-        ScannerSubject.assertThat(result.stderr).contains(
-            "Unresolved reference 'transitiveDependencyLib'."
-        )
-    }
+    ScannerSubject.assertThat(result.stderr).contains("Unresolved reference 'transitiveDependencyLib'.")
+  }
 
-    @Test
-    fun transitiveResourceAccessWhenApiDependency() {
-        project.executor()
-            .run(":lib:compileDebugAndroidTestKotlin")
-    }
+  @Test
+  fun transitiveResourceAccessWhenApiDependency() {
+    project.executor().run(":lib:compileDebugAndroidTestKotlin")
+  }
 }

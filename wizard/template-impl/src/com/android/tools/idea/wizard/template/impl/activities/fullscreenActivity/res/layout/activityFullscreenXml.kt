@@ -20,11 +20,7 @@ import com.android.tools.idea.wizard.template.ThemesData
 import com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.res.values.getFullscreenButtonBarStyle
 import com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.res.values.getFullscreenContainerThemeOverlay
 
-fun activityFullscreenXml(
-  activityClass: String,
-  packageName: String,
-  themesData: ThemesData
-) =
+fun activityFullscreenXml(activityClass: String, packageName: String, themesData: ThemesData) =
   """<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:theme="@style/${getFullscreenContainerThemeOverlay(themesData.overlay.name)}"

@@ -31,67 +31,69 @@ import org.junit.rules.TemporaryFolder
 /** Testing [CopyDexOutput] worker action which copies input dex files and global synthetics to output. */
 class CopyDexOutputTest {
 
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun testDexCopyOnly() {
-        val inputA = tmp.newFolder().also {
-            it.resolve("classes.dex").createNewFile()
-            it.resolve("do_not_copy").createNewFile()
+  @Test
+  fun testDexCopyOnly() {
+    val inputA =
+      tmp.newFolder().also {
+        it.resolve("classes.dex").createNewFile()
+        it.resolve("do_not_copy").createNewFile()
+      }
+    val inputB =
+      tmp.newFolder().also { dir ->
+        dir.resolve("subdir").also {
+          it.mkdir()
+          it.resolve("classes.dex").createNewFile()
         }
-        val inputB = tmp.newFolder().also {dir ->
-            dir.resolve("subdir").also {
-                it.mkdir()
-                it.resolve("classes.dex").createNewFile()
-            }
+      }
+    val output = tmp.newFolder()
+    object : CopyDexOutput() {
+        override fun getParameters(): Params {
+          return object : Params() {
+            override val inputDirs = FakeConfigurableFileCollection(inputA, inputB)
+            override val outputDexDir = FakeObjectFactory.factory.directoryProperty().fileValue(output)
+            override val outputGlobalSynthetics = FakeObjectFactory.factory.directoryProperty().fileValue(tmp.newFolder())
+            override val projectPath = FakeGradleProperty("projectName")
+            override val taskOwner = FakeGradleProperty("taskOwner")
+            override val workerKey = FakeGradleProperty("workerKey")
+            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
+          }
         }
-        val output = tmp.newFolder()
-        object: CopyDexOutput() {
-            override fun getParameters(): Params {
-                return object: Params() {
-                    override val inputDirs = FakeConfigurableFileCollection(inputA, inputB)
-                    override val outputDexDir = FakeObjectFactory.factory.directoryProperty().fileValue(output)
-                    override val outputGlobalSynthetics = FakeObjectFactory.factory.directoryProperty().fileValue(tmp.newFolder())
-                    override val projectPath = FakeGradleProperty("projectName")
-                    override val taskOwner = FakeGradleProperty("taskOwner")
-                    override val workerKey = FakeGradleProperty("workerKey")
-                    override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(
-                        FakeNoOpAnalyticsService()
-                    )
-                }
-            }
-        }.execute()
-        assertThat(output.list()).asList().containsExactly("classes_ext_0.dex", "classes_ext_1.dex")
-    }
+      }
+      .execute()
+    assertThat(output.list()).asList().containsExactly("classes_ext_0.dex", "classes_ext_1.dex")
+  }
 
-    @Test
-    fun testDexAndGlobalSyntheticsCopyOnly() {
-        val inputA = tmp.newFolder().also {
-            it.resolve("classes.dex").createNewFile()
-            it.resolve("do_not_copy").createNewFile()
+  @Test
+  fun testDexAndGlobalSyntheticsCopyOnly() {
+    val inputA =
+      tmp.newFolder().also {
+        it.resolve("classes.dex").createNewFile()
+        it.resolve("do_not_copy").createNewFile()
+      }
+    val inputB =
+      tmp.newFolder().also { dir ->
+        dir.resolve(computeGlobalSyntheticsDirName(dir)).createNewFile()
+        dir.resolve("classes.dex").createNewFile()
+      }
+    val outputDex = tmp.newFolder()
+    val globalSynthetic = tmp.newFolder()
+    object : CopyDexOutput() {
+        override fun getParameters(): Params {
+          return object : Params() {
+            override val inputDirs = FakeConfigurableFileCollection(inputA, inputB)
+            override val outputDexDir = FakeObjectFactory.factory.directoryProperty().fileValue(outputDex)
+            override val outputGlobalSynthetics = FakeObjectFactory.factory.directoryProperty().fileValue(globalSynthetic)
+            override val projectPath = FakeGradleProperty("projectName")
+            override val taskOwner = FakeGradleProperty("taskOwner")
+            override val workerKey = FakeGradleProperty("workerKey")
+            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
+          }
         }
-        val inputB = tmp.newFolder().also { dir ->
-            dir.resolve(computeGlobalSyntheticsDirName(dir)).createNewFile()
-            dir.resolve("classes.dex").createNewFile()
-        }
-        val outputDex = tmp.newFolder()
-        val globalSynthetic = tmp.newFolder()
-        object: CopyDexOutput() {
-            override fun getParameters(): Params {
-                return object: Params() {
-                    override val inputDirs = FakeConfigurableFileCollection(inputA, inputB)
-                    override val outputDexDir = FakeObjectFactory.factory.directoryProperty().fileValue(outputDex)
-                    override val outputGlobalSynthetics = FakeObjectFactory.factory.directoryProperty().fileValue(globalSynthetic)
-                    override val projectPath = FakeGradleProperty("projectName")
-                    override val taskOwner = FakeGradleProperty("taskOwner")
-                    override val workerKey = FakeGradleProperty("workerKey")
-                    override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-                }
-            }
-        }.execute()
-        assertThat(outputDex.list()).asList().containsExactly("classes_ext_0.dex", "classes_ext_1.dex")
-        assertThat(globalSynthetic.list()).asList().containsExactly("global_synthetics_0")
-    }
+      }
+      .execute()
+    assertThat(outputDex.list()).asList().containsExactly("classes_ext_0.dex", "classes_ext_1.dex")
+    assertThat(globalSynthetic.list()).asList().containsExactly("global_synthetics_0")
+  }
 }

@@ -16,9 +16,9 @@
 package com.android.adblib
 
 enum class MdnsStatus {
-    /** mDNS support is enabled */
-    Enabled,
+  /** mDNS support is enabled */
+  Enabled,
 
-    /** mDNS is not supported, or mDNS support is disabled */
-    Disabled,
+  /** mDNS is not supported, or mDNS support is disabled */
+  Disabled,
 }

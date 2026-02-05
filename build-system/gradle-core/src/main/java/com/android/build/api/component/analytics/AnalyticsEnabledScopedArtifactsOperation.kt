@@ -21,6 +21,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifactsOperation
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
@@ -29,50 +30,36 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import javax.inject.Inject
 
-open class AnalyticsEnabledScopedArtifactsOperation<T: Task> @Inject constructor(
-    val delegate: ScopedArtifactsOperation<T>,
-    val stats: GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory,
-): ScopedArtifactsOperation<T> {
+open class AnalyticsEnabledScopedArtifactsOperation<T : Task>
+@Inject
+constructor(val delegate: ScopedArtifactsOperation<T>, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) :
+  ScopedArtifactsOperation<T> {
 
-    override fun <ArtifactT> toAppend(
-        to: ArtifactT,
-        with: (T) -> Property<out FileSystemLocation>
-    ) where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Appendable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE
-        delegate.toAppend(to, with)
-    }
+  override fun <ArtifactT> toAppend(to: ArtifactT, with: (T) -> Property<out FileSystemLocation>)
+    where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Appendable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE
+    delegate.toAppend(to, with)
+  }
 
-    override fun toGet(
-        type: ScopedArtifact,
-        inputJars: (T) -> ListProperty<RegularFile>,
-        inputDirectories: (T) -> ListProperty<Directory>
-    ) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE
-        delegate.toGet(type, inputJars, inputDirectories)
-    }
+  override fun toGet(type: ScopedArtifact, inputJars: (T) -> ListProperty<RegularFile>, inputDirectories: (T) -> ListProperty<Directory>) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE
+    delegate.toGet(type, inputJars, inputDirectories)
+  }
 
-    override fun <ArtifactT> toTransform(
-        type: ArtifactT,
-        inputJars: (T) -> ListProperty<RegularFile>,
-        inputDirectories: (T) -> ListProperty<Directory>,
-        into: (T) -> RegularFileProperty
-    ) where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Transformable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE
-        delegate.toTransform(type, inputJars, inputDirectories, into)
-    }
+  override fun <ArtifactT> toTransform(
+    type: ArtifactT,
+    inputJars: (T) -> ListProperty<RegularFile>,
+    inputDirectories: (T) -> ListProperty<Directory>,
+    into: (T) -> RegularFileProperty,
+  ) where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Transformable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE
+    delegate.toTransform(type, inputJars, inputDirectories, into)
+  }
 
-    override fun <ArtifactT> toReplace(
-        type: ArtifactT,
-        into: (T) -> RegularFileProperty
-    ) where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Replaceable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE
-        delegate.toReplace(type, into)
-    }
+  override fun <ArtifactT> toReplace(type: ArtifactT, into: (T) -> RegularFileProperty)
+    where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Replaceable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE
+    delegate.toReplace(type, into)
+  }
 }

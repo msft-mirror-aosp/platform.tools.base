@@ -22,43 +22,38 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 
 class ArtifactMetadataProcessor {
 
-    companion object {
+  companion object {
 
-        /**
-         * It would be great to use [kotlin.reflect.KClass.sealedSubclasses] to get all the
-         * artifacts types that have [InternalArtifactType.finalizingArtifact] set. However, the API
-         * uses reflection and is slow, therefore you must give the list of annotated types here.
-         *
-         * There is a test that will ensure that all annotated types are present in this list.
-         */
-        val internalTypesFinalizingArtifacts: List<InternalArtifactType<*>> = listOf(
-            InternalArtifactType.APK_IDE_REDIRECT_FILE,
-            InternalArtifactType.BUNDLE_IDE_REDIRECT_FILE,
-            InternalArtifactType.APK_FROM_BUNDLE_IDE_REDIRECT_FILE
-        )
+    /**
+     * It would be great to use [kotlin.reflect.KClass.sealedSubclasses] to get all the artifacts types that have
+     * [InternalArtifactType.finalizingArtifact] set. However, the API uses reflection and is slow, therefore you must give the list of
+     * annotated types here.
+     *
+     * There is a test that will ensure that all annotated types are present in this list.
+     */
+    val internalTypesFinalizingArtifacts: List<InternalArtifactType<*>> =
+      listOf(
+        InternalArtifactType.APK_IDE_REDIRECT_FILE,
+        InternalArtifactType.BUNDLE_IDE_REDIRECT_FILE,
+        InternalArtifactType.APK_FROM_BUNDLE_IDE_REDIRECT_FILE,
+      )
 
-        fun wireAllFinalizedBy(component: ComponentCreationConfig) {
-            internalTypesFinalizingArtifacts.forEach { kClass ->
-                handleFinalizedByForType(component, kClass)
-            }
-        }
-
-        private fun handleFinalizedByForType(
-            component: ComponentCreationConfig,
-            artifact: InternalArtifactType<*>
-        ) {
-            artifact.finalizingArtifact.forEach { artifactFinalizedBy ->
-                val artifactContainer = when (artifactFinalizedBy) {
-                    is Artifact.Single -> component.artifacts.getArtifactContainer(artifactFinalizedBy)
-                    is Artifact.Multiple -> component.artifacts.getArtifactContainer(artifactFinalizedBy)
-                    else -> throw RuntimeException("Unhandled artifact type : $artifactFinalizedBy")
-                }
-                artifactContainer.getTaskProviders().forEach { taskProvider ->
-                    taskProvider.configure {
-                        it.finalizedBy(component.artifacts.get(artifact))
-                    }
-                }
-            }
-        }
+    fun wireAllFinalizedBy(component: ComponentCreationConfig) {
+      internalTypesFinalizingArtifacts.forEach { kClass -> handleFinalizedByForType(component, kClass) }
     }
+
+    private fun handleFinalizedByForType(component: ComponentCreationConfig, artifact: InternalArtifactType<*>) {
+      artifact.finalizingArtifact.forEach { artifactFinalizedBy ->
+        val artifactContainer =
+          when (artifactFinalizedBy) {
+            is Artifact.Single -> component.artifacts.getArtifactContainer(artifactFinalizedBy)
+            is Artifact.Multiple -> component.artifacts.getArtifactContainer(artifactFinalizedBy)
+            else -> throw RuntimeException("Unhandled artifact type : $artifactFinalizedBy")
+          }
+        artifactContainer.getTaskProviders().forEach { taskProvider ->
+          taskProvider.configure { it.finalizedBy(component.artifacts.get(artifact)) }
+        }
+      }
+    }
+  }
 }

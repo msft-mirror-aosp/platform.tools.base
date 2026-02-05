@@ -18,15 +18,15 @@ package com.android.tools.screenshot
 
 import com.android.tools.preview.multipreview.PreviewMethod
 import com.android.tools.screenshot.renderer.Renderer
+import java.io.File
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
-import java.io.File
 
 data class PreviewScreenshotExecutionContext(
-    val executionListener: EngineExecutionListener,
-    val methodNameToPreview: Map<String, PreviewMethod>,
-    val previewImageOutputDir: File,
-    val previewDiffImageOutputDir: File,
-    val referenceImageDir: File,
-    val renderer: Renderer? = null,
+  val executionListener: EngineExecutionListener,
+  val methodNameToPreview: Map<String, PreviewMethod>,
+  val previewImageOutputDir: File,
+  val previewDiffImageOutputDir: File,
+  val referenceImageDir: File,
+  val renderer: Renderer? = null,
 ) : EngineExecutionContext

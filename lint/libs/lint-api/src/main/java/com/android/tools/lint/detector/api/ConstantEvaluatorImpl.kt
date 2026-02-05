@@ -142,7 +142,8 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
               when (node.operator) {
                 UastBinaryOperator.LOGICAL_OR -> operands.logicalOr()
                 UastBinaryOperator.LOGICAL_AND -> operands.logicalAnd()
-                // TODO Wrong below. ConstantEvaluator can't be used to check referential equality.
+                // TODO Wrong below. ConstantEvaluator can't be used to check referential
+                // equality.
                 UastBinaryOperator.IDENTITY_EQUALS,
                 UastBinaryOperator.EQUALS -> operands.ifAll<Any>()?.isOrdered(Any::equals)
                 UastBinaryOperator.IDENTITY_NOT_EQUALS,
@@ -168,8 +169,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
         } ?: node.evaluate()
       node is UBinaryExpressionWithType ->
         when (node.operationKind) {
-          UastBinaryExpressionWithTypeKind.TypeCast.INSTANCE ->
-            evaluate(node.operand).tryToNum(node.type)
+          UastBinaryExpressionWithTypeKind.TypeCast.INSTANCE -> evaluate(node.operand).tryToNum(node.type)
           else -> null
         }
       node is UReferenceExpression ->
@@ -177,9 +177,11 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           when {
             resolved is PsiVariable -> {
               when {
-                // References to enum constants are resolved to constructor calls, and accesses to
+                // References to enum constants are resolved to constructor calls, and accesses
+                // to
                 // their properties are resolved to
-                // parameters in these calls, and so to handle this case we evaluate the argument
+                // parameters in these calls, and so to handle this case we evaluate the
+                // argument
                 // corresponding to the parameter
                 resolved is PsiParameter && node is UQualifiedReferenceExpression ->
                   ((node.receiver as? UResolvable)?.resolveToUElement() as? UEnumConstant)
@@ -192,9 +194,11 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 resolved !is PsiField ->
                   findLastValue(resolved, node, evaluator).let { value ->
                     when {
-                      // Special return value: the variable *was* assigned something but we don't
+                      // Special return value: the variable *was* assigned something but we
+                      // don't
                       // know
-                      // the value. In that case we should not continue to look at the initializer
+                      // the value. In that case we should not continue to look at the
+                      // initializer
                       // since the initial value is no longer relevant.
                       value == LastAssignmentFinder.LastAssignmentValueUnknown -> null
                       surroundedByVariableCheck(node, resolved) -> null
@@ -210,27 +214,22 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                     ?.takeUnless { it == -1 }
                 else ->
                   resolved.computeConstantValue()
-                    ?: resolved.getAllowedInitializer()?.let(::evaluate)?.takeUnless {
-                      surroundedByVariableCheck(node, resolved)
-                    }
+                    ?: resolved.getAllowedInitializer()?.let(::evaluate)?.takeUnless { surroundedByVariableCheck(node, resolved) }
                     ?: (resolved as? KtLightField)?.let(::evaluate)
               }
             }
             node is UQualifiedReferenceExpression -> {
-              fun UExpression.simpleRefId(): String? =
-                tryOn(USimpleNameReferenceExpression::identifier)
+              fun UExpression.simpleRefId(): String? = tryOn(USimpleNameReferenceExpression::identifier)
 
               val selector = node.selector
               when {
-                node.receiver.simpleRefId() == "kotlin" ->
-                  evaluate(selector) // such as kotlin.IntArray(x)
+                node.receiver.simpleRefId() == "kotlin" -> evaluate(selector) // such as kotlin.IntArray(x)
                 selector is USimpleNameReferenceExpression -> {
                   val receiver =
                     node.receiver.let { r ->
                       when {
                         // "kotlin.<N>Array".size ?
-                        r is UQualifiedReferenceExpression &&
-                          r.receiver.simpleRefId() == "kotlin" -> r.selector
+                        r is UQualifiedReferenceExpression && r.receiver.simpleRefId() == "kotlin" -> r.selector
                         else -> r
                       }
                     }
@@ -255,8 +254,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 selector is UCallExpression -> {
                   val receiver = node.receiver
                   when {
-                    selector.methodName == "trimIndent" ->
-                      evaluate(receiver).tryOn(String::trimIndent)
+                    selector.methodName == "trimIndent" -> evaluate(receiver).tryOn(String::trimIndent)
                     selector.methodName == "trimMargin" ->
                       evaluate(receiver)?.tryOn { s: String ->
                         val prefix =
@@ -269,9 +267,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                     // In String#format attempt to pick out at least the formatting string.
                     // In theory we could also evaluate all the arguments and try passing them
                     // in but there's some risk of invalid formatting string combinations.
-                    selector.methodName == "format" &&
-                      evaluator.allowUnknown &&
-                      selector.valueArguments.size >= 2 -> {
+                    selector.methodName == "format" && evaluator.allowUnknown && selector.valueArguments.size >= 2 -> {
                       val (first, second) = selector.valueArguments
                       evaluate(
                         when (first.getExpressionType()?.canonicalText) {
@@ -305,13 +301,11 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       node.isNewArrayWithInitializer() -> evalAsArray(node as UCallExpression)
       node is UCallExpression ->
         getMethodName(node)?.let { name ->
-          fun <A> withFixedSize(k: (Int) -> A): A? =
-            evaluateFirstArg(node)?.tryOn(Number::toInt)?.let(k)
+          fun <A> withFixedSize(k: (Int) -> A): A? = evaluateFirstArg(node)?.tryOn(Number::toInt)?.let(k)
 
           fun freshObjArray() =
             when (val type = node.getExpressionType()) {
-              is PsiArrayType ->
-                withFixedSize { freshArray(type.deepComponentType, it, type.arrayDimensions) }
+              is PsiArrayType -> withFixedSize { freshArray(type.deepComponentType, it, type.arrayDimensions) }
               else -> null
             }
           when {
@@ -319,8 +313,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             name == "arrayOfNulls" -> freshObjArray()
             !node.isConstructorCall() -> null
             name == "Array" -> freshObjArray()
-            name in kotlinPrimArrayFixedArgConstructors ->
-              withFixedSize { n -> freshArray(kotlinPrimArrayTypeByConstructor[name]!!, n, 1) }
+            name in kotlinPrimArrayFixedArgConstructors -> withFixedSize { n -> freshArray(kotlinPrimArrayTypeByConstructor[name]!!, n, 1) }
             else -> null
           }
         }
@@ -349,8 +342,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       else -> null
     }
 
-  private fun evaluateFirstArg(call: UCallExpression) =
-    call.valueArguments.firstOrNull()?.let(::evaluate)
+  private fun evaluateFirstArg(call: UCallExpression) = call.valueArguments.firstOrNull()?.let(::evaluate)
 
   private fun evalAsArray(call: UCallExpression): Any? =
     (call.getExpressionType() as? PsiArrayType)
@@ -364,11 +356,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       elems.size > 40 -> freshArray(elemType, elems.size, 1)
       else ->
         elems
-          .map { arg ->
-            eval(arg).also {
-              if (!evaluator.allowUnknown && it == null) return null /* Inconclusive */
-            }
-          }
+          .map { arg -> eval(arg).also { if (!evaluator.allowUnknown && it == null) return null /* Inconclusive */ } }
           .reifiedAsArray(elemType)
     }
 
@@ -422,8 +410,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             else -> null
           }
         }
-      is PsiTypeCastExpression ->
-        evaluate(node.operand).let { v -> node.castType?.type?.let(v::tryToNum) ?: v }
+      is PsiTypeCastExpression -> evaluate(node.operand).let { v -> node.castType?.type?.let(v::tryToNum) ?: v }
       is PsiReference ->
         when (val resolved = (node as PsiReference).resolve()) {
           is PsiField ->
@@ -436,8 +423,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                   ?.let(::evaluate)
                   ?.let(::getArraySize)
                   ?.takeUnless { it == -1 }
-              else ->
-                resolved.computeConstantValue() ?: resolved.getAllowedInitializer()?.let(::evaluate)
+              else -> resolved.computeConstantValue() ?: resolved.getAllowedInitializer()?.let(::evaluate)
             }
           // TODO: Clamp value as is done for UAST?
           is PsiLocalVariable -> findLastAssignment(node, resolved)?.let(::evaluate)
@@ -456,8 +442,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 // want to do that.
                 freshArray(type.deepComponentType, size, type.getArrayDimensions())
               }
-              else ->
-                evalAsArray(initializer.initializers.asList(), type.deepComponentType, ::evaluate)
+              else -> evalAsArray(initializer.initializers.asList(), type.deepComponentType, ::evaluate)
             }
           else -> null
         }
@@ -493,22 +478,16 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           // Property with no custom getter or setter? If it has an initializer
           // it might be
           // No setter: might be a constant not declared as such
-          (!origin.isVar && origin.getter == null && origin.setter == null)) ->
-        origin.initializer?.let(::evaluate)
+          (!origin.isVar && origin.getter == null && origin.setter == null)) -> origin.initializer?.let(::evaluate)
       else -> null
     }
 
   private fun PsiVariable.getAllowedInitializer() =
     initializer?.takeIf {
-      evaluator.allowFieldInitializers ||
-        (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
+      evaluator.allowFieldInitializers || (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
     }
 
-  private data class PrimArrayType(
-    val constructorName: String,
-    val varargConstructorName: String,
-    val type: PsiPrimitiveType,
-  )
+  private data class PrimArrayType(val constructorName: String, val varargConstructorName: String, val type: PsiPrimitiveType)
 
   private fun surroundedByVariableCheck(node: UElement?, variable: PsiVariable): Boolean {
     // See if it looks like the value has been clamped locally, e.g.
@@ -530,9 +509,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
     val found = AtomicBoolean()
     element.accept(
       object : AbstractUastVisitor() {
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
+        override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
           if (variable == node.resolve()) {
             found.set(true)
           }
@@ -592,11 +569,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
     fun evaluateString(context: JavaContext?, element: UElement, allowUnknown: Boolean): String? =
       runEvaluator(allowUnknown, element, ConstantEvaluator::evaluate)
 
-    private inline fun <X, reified T> runEvaluator(
-      allowUnknown: Boolean,
-      expr: X,
-      eval: ConstantEvaluator.(X) -> Any?,
-    ): T? =
+    private inline fun <X, reified T> runEvaluator(allowUnknown: Boolean, expr: X, eval: ConstantEvaluator.(X) -> Any?): T? =
       with(ConstantEvaluator().apply { if (allowUnknown) allowUnknowns() }) { eval(expr) as? T }
 
     /** Returns true if the node is pointing to an array literal */
@@ -644,36 +617,25 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
         else -> -1
       }
 
-    fun findLastAssignment(
-      usage: PsiElement,
-      variable: PsiVariable,
-      allowNonConst: Boolean = false,
-    ): PsiExpression? =
+    fun findLastAssignment(usage: PsiElement, variable: PsiVariable, allowNonConst: Boolean = false): PsiExpression? =
       variable.name?.let { targetName ->
-        data class Exact<T>(
-          val value: T
-        ) // `Exact(null)` means definitely don't know, and stop looking further
+        data class Exact<T>(val value: T) // `Exact(null)` means definitely don't know, and stop looking further
 
         fun check(stm: PsiStatement): Exact<PsiExpression?>? =
           when (stm) {
-            is PsiDeclarationStatement ->
-              variable.initializer.takeIf { variable in stm.declaredElements }?.let(::Exact)
+            is PsiDeclarationStatement -> variable.initializer.takeIf { variable in stm.declaredElements }?.let(::Exact)
             is PsiExpressionStatement ->
               (stm.expression as? PsiAssignmentExpression)
                 ?.let { expression ->
                   (expression.lExpression as? PsiReferenceExpression)?.let { lhs ->
-                    expression.rExpression.takeIf {
-                      targetName == lhs.referenceName && lhs.qualifier == null
-                    }
+                    expression.rExpression.takeIf { targetName == lhs.referenceName && lhs.qualifier == null }
                   }
                 }
                 ?.let(::Exact)
             is PsiIfStatement -> {
               fun find(stm: PsiBlockStatement): Exact<PsiExpression?>? =
                 stm.codeBlock.statements.lastOrNull()?.let { last ->
-                  findLastAssignment(last, variable, true)?.let { asn ->
-                    Exact(asn.takeIf { allowNonConst })
-                  }
+                  findLastAssignment(last, variable, true)?.let { asn -> Exact(asn.takeIf { allowNonConst }) }
                 }
               stm.thenBranch.tryOn(::find) ?: stm.elseBranch.tryOn(::find)
             }
@@ -710,13 +672,10 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
         PrimArrayType("DoubleArray", "doubleArrayOf", PsiTypes.doubleType()),
         PrimArrayType("BooleanArray", "booleanArrayOf", PsiTypes.booleanType()),
       )
-    private val kotlinPrimArrayFixedArgConstructors =
-      kotlinPrimArrayTypes.map(PrimArrayType::constructorName)
-    private val kotlinPrimArrayVarargConstructors =
-      kotlinPrimArrayTypes.map(PrimArrayType::varargConstructorName)
+    private val kotlinPrimArrayFixedArgConstructors = kotlinPrimArrayTypes.map(PrimArrayType::constructorName)
+    private val kotlinPrimArrayVarargConstructors = kotlinPrimArrayTypes.map(PrimArrayType::varargConstructorName)
     private val kotlinPrimArrayTypeByConstructor =
-      kotlinPrimArrayTypes.associate { (k, _, t) -> k to t } +
-        kotlinPrimArrayTypes.associate { (_, k, t) -> k to t }
+      kotlinPrimArrayTypes.associate { (k, _, t) -> k to t } + kotlinPrimArrayTypes.associate { (_, k, t) -> k to t }
   }
 
   internal class LastAssignmentFinder(
@@ -778,16 +737,10 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       super.afterVisitElement(node)
     }
 
-    /**
-     * Special marker value from [findLastValue] to indicate that a node was assigned to, but the
-     * value is unknown
-     */
+    /** Special marker value from [findLastValue] to indicate that a node was assigned to, but the value is unknown */
     internal object LastAssignmentValueUnknown : Any()
 
-    private fun UElement.hasLevel() =
-      this !is UBlockExpression &&
-        this !is UDeclarationsExpression &&
-        this !is UParenthesizedExpression
+    private fun UElement.hasLevel() = this !is UBlockExpression && this !is UDeclarationsExpression && this !is UParenthesizedExpression
   }
 }
 
@@ -796,20 +749,12 @@ sealed class ArrayReference {
   abstract val dimensions: Int
   protected abstract val className: String
 
-  private data class ByClass(
-    private val type: Class<*>,
-    override val size: Int,
-    override val dimensions: Int,
-  ) : ArrayReference() {
+  private data class ByClass(private val type: Class<*>, override val size: Int, override val dimensions: Int) : ArrayReference() {
     override val className
       get() = type.toString()
   }
 
-  private data class ByName(
-    override val className: String,
-    override val size: Int,
-    override val dimensions: Int,
-  ) : ArrayReference()
+  private data class ByName(override val className: String, override val size: Int, override val dimensions: Int) : ArrayReference()
 
   override fun toString(): String =
     StringBuilder("Array Reference: $className").let { sb ->
@@ -819,13 +764,9 @@ sealed class ArrayReference {
     }
 
   companion object {
-    @JvmStatic
-    fun of(klass: Class<*>, size: Int, dimensions: Int): ArrayReference =
-      ByClass(klass, size, dimensions)
+    @JvmStatic fun of(klass: Class<*>, size: Int, dimensions: Int): ArrayReference = ByClass(klass, size, dimensions)
 
-    @JvmStatic
-    fun of(name: String, size: Int, dimensions: Int): ArrayReference =
-      ByName(name, size, dimensions)
+    @JvmStatic fun of(name: String, size: Int, dimensions: Int): ArrayReference = ByName(name, size, dimensions)
   }
 }
 
@@ -839,8 +780,7 @@ private fun <T : Comparable<T>> T.le(that: T) = this <= that
 
 private fun <T> T.notEquals(that: T) = this != that
 
-private inline fun <X, reified T : X, A : Any> X.tryOn(crossinline f: (T) -> A?): A? =
-  (this as? T)?.let(f)
+private inline fun <X, reified T : X, A : Any> X.tryOn(crossinline f: (T) -> A?): A? = (this as? T)?.let(f)
 
 @JvmInline
 private value class ArgList<out X>(val values: List<X>) {
@@ -850,21 +790,17 @@ private value class ArgList<out X>(val values: List<X>) {
       else -> null
     }
 
-  fun <T : Any> mapOrNull(transform: (X) -> T?): ArgList<T>? =
-    ArgList(values.map { transform(it) ?: return@mapOrNull null })
+  fun <T : Any> mapOrNull(transform: (X) -> T?): ArgList<T>? = ArgList(values.map { transform(it) ?: return@mapOrNull null })
 
   inline fun <reified T> ifAny(): ArgList<X>? = takeIf { values.any { it is T } }
 
-  inline fun <reified T> ifAll(): ArgList<T>? =
-    (takeIf { values.all { it is T } })?.let { this as ArgList<T> }
+  inline fun <reified T> ifAll(): ArgList<T>? = (takeIf { values.all { it is T } })?.let { this as ArgList<T> }
 
   inline fun ifAny(p: (X) -> Boolean): ArgList<X>? = takeIf { values.any(p) }
 
   inline fun ifAll(p: (X) -> Boolean): ArgList<X>? = takeIf { values.all(p) }
 
-  inline fun ifFirst(p: (X) -> Boolean): ArgList<X>? = takeIf {
-    values.firstOrNull()?.let(p) == true
-  }
+  inline fun ifFirst(p: (X) -> Boolean): ArgList<X>? = takeIf { values.firstOrNull()?.let(p) == true }
 
   inline fun <T> split(onSplit: (X, ArgList<X>) -> T): T? =
     when {
@@ -874,14 +810,11 @@ private value class ArgList<out X>(val values: List<X>) {
 
   inline fun <A> join(f: (List<X>) -> A): A = f(values)
 
-  fun <T : Any> reduceOn(onElem: (X) -> T, f: (T, T) -> T): T? =
-    values.asSequence().map(onElem).reduceOrNull(f)
+  fun <T : Any> reduceOn(onElem: (X) -> T, f: (T, T) -> T): T? = values.asSequence().map(onElem).reduceOrNull(f)
 
-  fun <R, T> foldOn(onElem: (X) -> T, init: R, op: (R, T) -> R): R =
-    values.asSequence().map(onElem).fold(init, op)
+  fun <R, T> foldOn(onElem: (X) -> T, init: R, op: (R, T) -> R): R = values.asSequence().map(onElem).fold(init, op)
 
-  inline fun isOrdered(ordered: (X, X) -> Boolean) =
-    values.asSequence().zipWithNext().all { (l, r) -> ordered(l, r) }
+  inline fun isOrdered(ordered: (X, X) -> Boolean) = values.asSequence().zipWithNext().all { (l, r) -> ordered(l, r) }
 
   inline fun <T> isOrderedOn(noinline prop: (X) -> T, ordered: (T, T) -> Boolean) =
     values.asSequence().map(prop).zipWithNext().all { (l, r) -> ordered(l, r) }
@@ -906,29 +839,18 @@ private fun ArgList<Any?>.reduceAsNumbers(
       ?: it.ifAny<Int>()?.reduceOn(Number::toInt, opInt)
   }
 
-private fun ArgList<Any?>.reduceAsInts(
-  opLong: (Long, Long) -> Long,
-  opInt: (Int, Int) -> Int,
-): Number? =
-  mapOrNull(::tryCoerceToNum)?.let {
-    it.ifAny<Long>()?.reduceOn(Number::toLong, opLong)
-      ?: it.ifAny<Int>()?.reduceOn(Number::toInt, opInt)
-  }
+private fun ArgList<Any?>.reduceAsInts(opLong: (Long, Long) -> Long, opInt: (Int, Int) -> Int): Number? =
+  mapOrNull(::tryCoerceToNum)?.let { it.ifAny<Long>()?.reduceOn(Number::toLong, opLong) ?: it.ifAny<Int>()?.reduceOn(Number::toInt, opInt) }
 
-private inline fun ArgList<Any?>.isOrdered(
-  onDouble: (Double, Double) -> Boolean,
-  onLong: (Long, Long) -> Boolean,
-) =
+private inline fun ArgList<Any?>.isOrdered(onDouble: (Double, Double) -> Boolean, onLong: (Long, Long) -> Boolean) =
   mapOrNull(::tryCoerceToNum)?.let {
     (it.ifAny<Float>() ?: it.ifAny<Double>())?.isOrderedOn(Number::toDouble, onDouble)
       ?: (it.ifAny<Int>() ?: it.ifAny<Long>())?.isOrderedOn(Number::toLong, onLong)
   }
 
-private fun ArgList<Any?>.logicalOr() =
-  ifAll<Boolean>()?.reduce(Boolean::or) ?: ifAny(true::equals)?.const(true)
+private fun ArgList<Any?>.logicalOr() = ifAll<Boolean>()?.reduce(Boolean::or) ?: ifAny(true::equals)?.const(true)
 
-private fun ArgList<Any?>.logicalAnd() =
-  ifAll<Boolean>()?.reduce(Boolean::and) ?: ifAny(false::equals)?.const(false)
+private fun ArgList<Any?>.logicalAnd() = ifAll<Boolean>()?.reduce(Boolean::and) ?: ifAny(false::equals)?.const(false)
 
 private fun Any?.tryInv() =
   when (this) {
@@ -980,23 +902,19 @@ private fun ArgList<Any?>.plus(allowUnknown: Boolean) =
       ?.let { args ->
         when {
           allowUnknown -> args.join { it.asSequence().filterNotNull().joinToString(separator = "") }
-          else ->
-            args.ifAll { it is String || it is Char }?.join { it.joinToString(separator = "") }
+          else -> args.ifAll { it is String || it is Char }?.join { it.joinToString(separator = "") }
         }
       }
 
-private fun ArgList<Any?>.times() =
-  reduceAsNumbers(Double::times, Float::times, Long::times, Int::times)
+private fun ArgList<Any?>.times() = reduceAsNumbers(Double::times, Float::times, Long::times, Int::times)
 
-private fun ArgList<Any?>.minus() =
-  reduceAsNumbers(Double::minus, Float::minus, Long::minus, Int::minus)
+private fun ArgList<Any?>.minus() = reduceAsNumbers(Double::minus, Float::minus, Long::minus, Int::minus)
 
 private fun ArgList<Any?>.bitwiseOr() = logicalOr() ?: reduceAsInts(Long::or, Int::or)
 
 private fun ArgList<Any?>.bitwiseAnd() = logicalAnd() ?: reduceAsInts(Long::and, Int::and)
 
-private fun ArgList<Any?>.bitwiseXor() =
-  ifAll<Boolean>()?.reduce(Boolean::xor) ?: reduceAsInts(Long::xor, Int::xor)
+private fun ArgList<Any?>.bitwiseXor() = ifAll<Boolean>()?.reduce(Boolean::xor) ?: reduceAsInts(Long::xor, Int::xor)
 
 private fun ArgList<Any?>.div() =
   ifFirst { it == 0 }?.const(0)
@@ -1023,8 +941,7 @@ private fun ArgList<Any?>.shift(onLong: (Long, Int) -> Long, onInt: (Int, Int) -
     }
   }
 
-private fun isType(type: PsiType, name: String) =
-  (type as? PsiClassType)?.resolve()?.qualifiedName == name
+private fun isType(type: PsiType, name: String) = (type as? PsiClassType)?.resolve()?.qualifiedName == name
 
 private fun List<Any?>.reifiedAsArray(elemType: PsiType): Any? =
   when {
@@ -1039,25 +956,20 @@ private fun List<Any?>.reifiedAsArray(elemType: PsiType): Any? =
     isType(elemType, TYPE_OBJECT) -> Array(size) { this[it] }
     isType(elemType, TYPE_STRING) -> Array(size) { this[it] as? String }
     else -> {
-      tailrec fun widen(src: Class<*>, tgt: Class<*>): Class<*> =
-        if (src.isAssignableFrom(tgt)) src else widen(src.superclass, tgt)
+      tailrec fun widen(src: Class<*>, tgt: Class<*>): Class<*> = if (src.isAssignableFrom(tgt)) src else widen(src.superclass, tgt)
       asSequence().mapNotNull { it?.javaClass }.reduceOrNull(::widen)?.let(::reifiedAsArray)
     }
   }
 
 private fun List<Any?>.reifiedAsArray(klass: Class<*>): Array<*> =
-  (this as java.util.Collection<Any?>).toArray { n ->
-    java.lang.reflect.Array.newInstance(klass, n) as Array<*>
-  }
+  (this as java.util.Collection<Any?>).toArray { n -> java.lang.reflect.Array.newInstance(klass, n) as Array<*> }
 
-private inline fun <reified A, X> Any.asArray(
-  crossinline indices: (A) -> IntRange,
-  crossinline get: (A, Int) -> X,
-): ((Int) -> X?)? = (this as? A)?.let { { if (it in indices(this)) get(this, it) else null } }
+private inline fun <reified A, X> Any.asArray(crossinline indices: (A) -> IntRange, crossinline get: (A, Int) -> X): ((Int) -> X?)? =
+  (this as? A)?.let { { if (it in indices(this)) get(this, it) else null } }
 
 /**
- * When evaluating expressions that resolve to arrays, this is the largest array size we'll
- * initialize; for larger arrays we'll return a [ArrayReference] instead
+ * When evaluating expressions that resolve to arrays, this is the largest array size we'll initialize; for larger arrays we'll return a
+ * [ArrayReference] instead
  */
 private const val LARGEST_LITERAL_ARRAY = 12
 

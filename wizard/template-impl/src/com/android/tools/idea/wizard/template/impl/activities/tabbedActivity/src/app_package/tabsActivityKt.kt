@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -30,13 +30,16 @@ fun tabsActivityKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """package ${escapeKotlinIdentifier(packageName)}
 
@@ -64,17 +67,17 @@ ${renderIf(isViewBindingSupported) {"""
         val viewPager: ViewPager = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "view_pager")}
+          id = "view_pager",)}
         viewPager.adapter = sectionsPagerAdapter
         val tabs: TabLayout = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "tabs")}
+          id = "tabs",)}
         tabs.setupWithViewPager(viewPager)
         val fab: FloatingActionButton = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fab")}
+          id = "fab",)}
 
         fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)

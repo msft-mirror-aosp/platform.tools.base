@@ -17,14 +17,13 @@
 package com.android.builder.model.v2.ide
 
 /**
- * Describes some transformation of either .class file or .dex file. Typically, this means that
- * javac or kotlinc output has been additionally processed in some way, or that DEX output has been
- * modified.
+ * Describes some transformation of either .class file or .dex file. Typically, this means that javac or kotlinc output has been
+ * additionally processed in some way, or that DEX output has been modified.
  */
 enum class BytecodeTransformation(val description: String) {
-    JACOCO_INSTRUMENTATION("Jacoco offline instrumentation"),
-    MODIFIES_PROJECT_CLASS_FILES("Modified class files in Gradle project"),
-    MODIFIES_ALL_CLASS_FILES("Modified class files in Gradle project and all dependencies"),
-    ASM_API_PROJECT("ASM instrumentation in Gradle project"),
-    ASM_API_ALL("ASM instrumentation for all dependencies"),
+  JACOCO_INSTRUMENTATION("Jacoco offline instrumentation"),
+  MODIFIES_PROJECT_CLASS_FILES("Modified class files in Gradle project"),
+  MODIFIES_ALL_CLASS_FILES("Modified class files in Gradle project and all dependencies"),
+  ASM_API_PROJECT("ASM instrumentation in Gradle project"),
+  ASM_API_ALL("ASM instrumentation for all dependencies"),
 }

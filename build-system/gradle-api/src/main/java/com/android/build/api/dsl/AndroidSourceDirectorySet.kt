@@ -18,54 +18,44 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Named
 
-/**
- * An AndroidSourceDirectorySet represents a set of directory inputs for an Android project.
- */
+/** An AndroidSourceDirectorySet represents a set of directory inputs for an Android project. */
 interface AndroidSourceDirectorySet : Named {
 
-    /**
-     * A concise name for the source directory (typically used to identify it in a collection).
-     */
-    override fun getName(): String
+  /** A concise name for the source directory (typically used to identify it in a collection). */
+  override fun getName(): String
 
-    /**
-     * Adds the given source directory to this set.
-     *
-     * @param srcDir The source directory. This is evaluated as [org.gradle.api.Project.file]
-     *
-     * This method has a return value for legacy reasons.
-     */
-    @Deprecated("Use `directories` mutable set instead")
-    fun srcDir(srcDir: Any): Any
+  /**
+   * Adds the given source directory to this set.
+   *
+   * @param srcDir The source directory. This is evaluated as [org.gradle.api.Project.file]
+   *
+   * This method has a return value for legacy reasons.
+   */
+  @Deprecated("Use `directories` mutable set instead") fun srcDir(srcDir: Any): Any
 
-    /**
-     * Allows to add source directories as path strings to this set.
-     * `Directories` provides `MutableSet` style access to all
-     * source directories that are added via set itself or variety of `srcDirs` methods.
-     *
-     * Note that tasks or buildscript may add more directories, so you should not read this property
-     * and use Variant API instead.
-     */
-    val directories: MutableSet<String>
+  /**
+   * Allows to add source directories as path strings to this set. `Directories` provides `MutableSet` style access to all source
+   * directories that are added via set itself or variety of `srcDirs` methods.
+   *
+   * Note that tasks or buildscript may add more directories, so you should not read this property and use Variant API instead.
+   */
+  val directories: MutableSet<String>
 
-    /**
-     * Adds the given source directories to this set.
-     *
-     * @param srcDirs The source directories. These are evaluated as [org.gradle.api.Project.files]
-     *
-     * This method has a return value for legacy reasons.
-     */
-    @Deprecated("Use `directories` mutable set instead")
-    fun srcDirs(vararg srcDirs: Any): Any
+  /**
+   * Adds the given source directories to this set.
+   *
+   * @param srcDirs The source directories. These are evaluated as [org.gradle.api.Project.files]
+   *
+   * This method has a return value for legacy reasons.
+   */
+  @Deprecated("Use `directories` mutable set instead") fun srcDirs(vararg srcDirs: Any): Any
 
-    /**
-     * Sets the source directories for this set.
-     *
-     * @param srcDirs The source directories. These are evaluated as for
-     * [org.gradle.api.Project.files]
-     *
-     *  This method has a return value for legacy reasons.
-     */
-    @Deprecated("Use `directories` mutable set instead")
-    fun setSrcDirs(srcDirs: Iterable<*>): Any
+  /**
+   * Sets the source directories for this set.
+   *
+   * @param srcDirs The source directories. These are evaluated as for [org.gradle.api.Project.files]
+   *
+   *   This method has a return value for legacy reasons.
+   */
+  @Deprecated("Use `directories` mutable set instead") fun setSrcDirs(srcDirs: Iterable<*>): Any
 }

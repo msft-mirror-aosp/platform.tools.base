@@ -18,13 +18,11 @@ package com.android.build.api
 
 class DeprecatedApiUpdater {
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            DeprecatedApiTest.getApiTester().updateFile(
-                "tools/base/build-system/gradle-api/src/test/resources/com/android/build/api"
-            )
-        }
+    @JvmStatic
+    fun main(args: Array<String>) {
+      DeprecatedApiTest.getApiTester().updateFile("tools/base/build-system/gradle-api/src/test/resources/com/android/build/api")
     }
+  }
 }

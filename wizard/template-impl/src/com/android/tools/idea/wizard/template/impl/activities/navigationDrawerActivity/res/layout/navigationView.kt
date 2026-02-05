@@ -17,12 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerA
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun navigationViewXml(
-  appBarLayoutName: String,
-  navHeaderLayoutName: String,
-  drawerMenu: String,
-  useAndroidX: Boolean
-) = """
+fun navigationViewXml(appBarLayoutName: String, navHeaderLayoutName: String, drawerMenu: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.v4.widget.DrawerLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

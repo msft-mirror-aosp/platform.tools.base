@@ -24,10 +24,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaVariableSymbol
 import org.jetbrains.kotlin.name.ClassId
 
-/**
- * A [PsiMember] declaration provider for a given scope. Can be created via
- * [KotlinPsiDeclarationProviderFactory].
- */
+/** A [PsiMember] declaration provider for a given scope. Can be created via [KotlinPsiDeclarationProviderFactory]. */
 internal abstract class KotlinPsiDeclarationProvider {
   /**
    * Gets a collection of [PsiClass] by [ClassId]
@@ -42,14 +39,9 @@ internal abstract class KotlinPsiDeclarationProvider {
 }
 
 internal abstract class KotlinPsiDeclarationProviderFactory {
-  abstract fun createPsiDeclarationProvider(
-    searchScope: GlobalSearchScope
-  ): KotlinPsiDeclarationProvider
+  abstract fun createPsiDeclarationProvider(searchScope: GlobalSearchScope): KotlinPsiDeclarationProvider
 }
 
-internal fun Project.createPsiDeclarationProvider(
-  searchScope: GlobalSearchScope
-): KotlinPsiDeclarationProvider? =
+internal fun Project.createPsiDeclarationProvider(searchScope: GlobalSearchScope): KotlinPsiDeclarationProvider? =
   // TODO: avoid using fail-safe service loading once the factory has an easy-to-register ctor.
-  getServiceIfCreated(KotlinPsiDeclarationProviderFactory::class.java)
-    ?.createPsiDeclarationProvider(searchScope)
+  getServiceIfCreated(KotlinPsiDeclarationProviderFactory::class.java)?.createPsiDeclarationProvider(searchScope)

@@ -23,199 +23,193 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests that [JacocoTransform] performs the expected actions when there are file changes.
- */
+/** Tests that [JacocoTransform] performs the expected actions when there are file changes. */
 class JacocoIncrementalTransformTest {
 
-    @get:Rule
-    val project = GradleRule.from {
-        androidApplication {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  @get:Rule
+  val project =
+    GradleRule.from {
+      androidApplication {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-            android {
-                namespace = "com.agpTest.appWithCoverage"
-                defaultConfig {
-                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    minSdk = 24
+        android {
+          namespace = "com.agpTest.appWithCoverage"
+          defaultConfig {
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            minSdk = 24
+          }
+          buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
+          files {
+            // The presence of an androidTest causes the JacocoTransform to select
+            // AndroidArtifacts.ArtifactType.CLASSES (allowing for the transform to run
+            // incrementally) rather than consuming AndroidArtifacts.ArtifactType.CLASSES_JAR.
+            add(
+              "src/androidTest/java/com/agpTest/agpWithCoverage/ExampleInstrumentedTest.kt",
+              """
+              package com.agpTest.appWithCoverage
 
-                }
-                buildTypes {
-                    named("debug") {
-                        it.enableAndroidTestCoverage = true
-                    }
-                }
-                files {
-                    // The presence of an androidTest causes the JacocoTransform to select
-                    // AndroidArtifacts.ArtifactType.CLASSES (allowing for the transform to run
-                    // incrementally) rather than consuming AndroidArtifacts.ArtifactType.CLASSES_JAR.
-                    add("src/androidTest/java/com/agpTest/agpWithCoverage/ExampleInstrumentedTest.kt",
-                        """
-                        package com.agpTest.appWithCoverage
+              import androidx.test.platform.app.InstrumentationRegistry
+              import androidx.test.ext.junit.runners.AndroidJUnit4
 
-                        import androidx.test.platform.app.InstrumentationRegistry
-                        import androidx.test.ext.junit.runners.AndroidJUnit4
+              import org.junit.Test
+              import org.junit.runner.RunWith
 
-                        import org.junit.Test
-                        import org.junit.runner.RunWith
+              import org.junit.Assert.*
 
-                        import org.junit.Assert.*
-
-                        @RunWith(AndroidJUnit4::class)
-                        class ExampleInstrumentedTest {
-                            @Test
-                            fun useAppContext() {
-                                // Context of the app under test.
-                                val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-                                assertEquals("com.agpTest.appWithCoverage", appContext.packageName)
-                            }
-                        }
-                        """.trimIndent())
-                }
-                dependencies {
-                    implementation(project(AndroidProjectDefinition.DEFAULT_LIB_PATH))
-                    androidTestImplementation("com.android.support.test:runner:1.0.1")
-                    androidTestImplementation("com.android.support.test.espresso:espresso-core:3.0.1")
-                }
-            }
+              @RunWith(AndroidJUnit4::class)
+              class ExampleInstrumentedTest {
+                  @Test
+                  fun useAppContext() {
+                      // Context of the app under test.
+                      val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+                      assertEquals("com.agpTest.appWithCoverage", appContext.packageName)
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+          dependencies {
+            implementation(project(AndroidProjectDefinition.DEFAULT_LIB_PATH))
+            androidTestImplementation("com.android.support.test:runner:1.0.1")
+            androidTestImplementation("com.android.support.test.espresso:espresso-core:3.0.1")
+          }
         }
-        androidLibrary {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                namespace = "com.agpTest.libWithClasses"
-                buildTypes {
-                    named("debug") {
-                        it.enableAndroidTestCoverage = true
-                    }
-                }
-            }
-            files {
-                add(
-                    "src/main/java/com/agpTest/libWithClasses/A.kt",
-                    //language=kotlin
-                    """
-                    package com.agpTest.libWithClasses
-
-                    class A {}
-                """.trimIndent()
-                )
-                add(
-                    "src/main/java/com/agpTest/libWithClasses/B.kt",
-                    //language=kotlin
-                    """
-                    package com.agpTest.libWithClasses
-
-                    class B {}
-                """.trimIndent()
-                )
-                add(
-                    "src/main/java/com/agpTest/libWithClasses/C.kt",
-                    //language=kotlin
-                    """
-                    package com.agpTest.libWithClasses
-
-                    class C {}
-                """.trimIndent()
-                )
-            }
+      }
+      androidLibrary {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+        android {
+          namespace = "com.agpTest.libWithClasses"
+          buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
         }
+        files {
+          add(
+            "src/main/java/com/agpTest/libWithClasses/A.kt",
+            // language=kotlin
+            """
+            package com.agpTest.libWithClasses
+
+            class A {}
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/agpTest/libWithClasses/B.kt",
+            // language=kotlin
+            """
+            package com.agpTest.libWithClasses
+
+            class B {}
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/agpTest/libWithClasses/C.kt",
+            // language=kotlin
+            """
+            package com.agpTest.libWithClasses
+
+            class C {}
+            """
+              .trimIndent(),
+          )
+        }
+      }
     }
 
-    @Test
-    fun testAddingClassIncrementally() {
-        val build = project.build
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/")
-                .containsExactly(
-                    "A",
-                    "A$\$ExternalSynthetic\$Condy0",
-                    "B",
-                    "B$\$ExternalSynthetic\$Condy0",
-                    "C",
-                    "C$\$ExternalSynthetic\$Condy0",
-                    "R"
-                )
-        }
-        build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt").append(
-            "\nfun bar() {}"
+  @Test
+  fun testAddingClassIncrementally() {
+    val build = project.build
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly(
+          "A",
+          "A$\$ExternalSynthetic\$Condy0",
+          "B",
+          "B$\$ExternalSynthetic\$Condy0",
+          "C",
+          "C$\$ExternalSynthetic\$Condy0",
+          "R",
         )
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/")
-                .containsExactly(
-                    "A",
-                    "A$\$ExternalSynthetic\$Condy0",
-                    "B",
-                    "B$\$ExternalSynthetic\$Condy0",
-                    "BKt",
-                    "BKt$\$ExternalSynthetic\$Condy0",
-                    "C",
-                    "C$\$ExternalSynthetic\$Condy0",
-                    "R"
-                )
-        }
     }
-
-
-    // Regression test for b/390736538 and b/393549309
-    @Test
-    fun testRemovingClassIncrementally() {
-        val build = project.build
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
-                "A",
-                "A$\$ExternalSynthetic\$Condy0",
-                "B",
-                "B$\$ExternalSynthetic\$Condy0",
-                "C",
-                "C$\$ExternalSynthetic\$Condy0",
-                "R"
-            )
-        }
-        build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
-                "B",
-                "B$\$ExternalSynthetic\$Condy0",
-                "C",
-                "C$\$ExternalSynthetic\$Condy0",
-                "R"
-            )
-        }
+    build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt").append("\nfun bar() {}")
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly(
+          "A",
+          "A$\$ExternalSynthetic\$Condy0",
+          "B",
+          "B$\$ExternalSynthetic\$Condy0",
+          "BKt",
+          "BKt$\$ExternalSynthetic\$Condy0",
+          "C",
+          "C$\$ExternalSynthetic\$Condy0",
+          "R",
+        )
     }
+  }
 
-    @Test
-    fun testModifyingClassIncrementally() {
-        val build = project.build
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
-                "A",
-                "A$\$ExternalSynthetic\$Condy0",
-                "B",
-                "B$\$ExternalSynthetic\$Condy0",
-                "C",
-                "C$\$ExternalSynthetic\$Condy0",
-                "R"
-            )
-        }
-        // Remove file that impacts file ordering.
-        build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
-        build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt")
-            .searchAndReplace("class B {}", """class B { fun bar () {} }""")
-        build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
-                "B",
-                "B$\$ExternalSynthetic\$Condy0",
-                "C",
-                "C$\$ExternalSynthetic\$Condy0",
-                "R"
-            )
-            secondaryDexes().classDefinition("com/agpTest/libWithClasses/B").methods().contains("bar")
-        }
+  // Regression test for b/390736538 and b/393549309
+  @Test
+  fun testRemovingClassIncrementally() {
+    val build = project.build
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly(
+          "A",
+          "A$\$ExternalSynthetic\$Condy0",
+          "B",
+          "B$\$ExternalSynthetic\$Condy0",
+          "C",
+          "C$\$ExternalSynthetic\$Condy0",
+          "R",
+        )
     }
+    build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly("B", "B$\$ExternalSynthetic\$Condy0", "C", "C$\$ExternalSynthetic\$Condy0", "R")
+    }
+  }
+
+  @Test
+  fun testModifyingClassIncrementally() {
+    val build = project.build
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly(
+          "A",
+          "A$\$ExternalSynthetic\$Condy0",
+          "B",
+          "B$\$ExternalSynthetic\$Condy0",
+          "C",
+          "C$\$ExternalSynthetic\$Condy0",
+          "R",
+        )
+    }
+    // Remove file that impacts file ordering.
+    build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
+    build
+      .androidLibrary()
+      .files
+      .update("src/main/java/com/agpTest/libWithClasses/B.kt")
+      .searchAndReplace("class B {}", """class B { fun bar () {} }""")
+    build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .subPackage("com/agpTest/libWithClasses/")
+        .containsExactly("B", "B$\$ExternalSynthetic\$Condy0", "C", "C$\$ExternalSynthetic\$Condy0", "R")
+      secondaryDexes().classDefinition("com/agpTest/libWithClasses/B").methods().contains("bar")
+    }
+  }
 }

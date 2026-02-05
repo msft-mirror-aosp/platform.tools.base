@@ -59,8 +59,7 @@ class TestingManagerTest {
       `when`(get(any(), any())).thenReturn(mockMatrixGet)
       `when`(create(any(), any())).thenReturn(mockMatrixCreate)
     }
-    val projects =
-      mock<Testing.Projects>().apply { `when`(testMatrices()).thenReturn(testMatrixClient) }
+    val projects = mock<Testing.Projects>().apply { `when`(testMatrices()).thenReturn(testMatrixClient) }
     testClient.apply {
       `when`(projects()).thenReturn(projects)
       `when`(testEnvironmentCatalog()).thenReturn(mockCatalog)
@@ -136,9 +135,7 @@ class TestingManagerTest {
     val testEnvironment: TestEnvironmentCatalog = mock()
 
     val androidCatalog: AndroidDeviceCatalog =
-      mock<AndroidDeviceCatalog>().also {
-        `when`(testEnvironment.androidDeviceCatalog).thenReturn(it)
-      }
+      mock<AndroidDeviceCatalog>().also { `when`(testEnvironment.androidDeviceCatalog).thenReturn(it) }
 
     `when`(mockCatalogGet.execute()).thenReturn(testEnvironment)
 

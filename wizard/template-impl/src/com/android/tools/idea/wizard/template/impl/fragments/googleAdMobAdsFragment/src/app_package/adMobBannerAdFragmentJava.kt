@@ -29,13 +29,16 @@ fun adMobBannerAdFragmentJava(
   layoutName: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
 package ${packageName};
@@ -82,7 +85,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "ad_view",
-          parentView = "view")};
+          parentView = "view",)};
         AdRequest adRequest = new AdRequest.Builder()
                 .setRequestAgent("android_studio:ad_template").build();
         adView.loadAd(adRequest);

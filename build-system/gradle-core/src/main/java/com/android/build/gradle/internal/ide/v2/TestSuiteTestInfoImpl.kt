@@ -21,16 +21,11 @@ import com.android.builder.model.v2.ide.TestSuiteTarget
 import com.android.builder.model.v2.ide.TestSuiteTestInfo
 import java.io.Serializable
 
-/**
- * Implementation of [TestSuiteTestInfo] for serialization via the Tooling API.
- */
-data class TestSuiteTestInfoImpl(
-    override val junitInfo: JUnitEngineInfo,
-    override val targets: Map<String, TestSuiteTarget>
-): TestSuiteTestInfo, Serializable {
+/** Implementation of [TestSuiteTestInfo] for serialization via the Tooling API. */
+data class TestSuiteTestInfoImpl(override val junitInfo: JUnitEngineInfo, override val targets: Map<String, TestSuiteTarget>) :
+  TestSuiteTestInfo, Serializable {
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

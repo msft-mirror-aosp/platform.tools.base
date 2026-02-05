@@ -31,7 +31,6 @@ private val LOG_LEVELS =
 
 private fun ShadowLog.LogItem.getLevel() = LOG_LEVELS[type]
 
-private fun ShadowLog.LogItem.toLine() =
-  "${getLevel()}: $tag: $msg (${throwable::class.java.simpleName})"
+private fun ShadowLog.LogItem.toLine() = "${getLevel()}: $tag: $msg (${throwable::class.java.simpleName})"
 
 internal fun getLogLines() = ShadowLog.getLogsForTag("SqliteInspector").map { it.toLine() }

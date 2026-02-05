@@ -18,12 +18,7 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
-@Suppress(
-  "CallToPrintStackTrace",
-  "ConstantValue",
-  "CatchMayIgnoreException",
-  "RedundantSuppression",
-)
+@Suppress("CallToPrintStackTrace", "ConstantValue", "CatchMayIgnoreException", "RedundantSuppression")
 class WakelockDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector {
     return WakelockDetector()

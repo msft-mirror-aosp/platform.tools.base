@@ -27,11 +27,11 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-              res/values/styles.xml:10: Warning: Disabling swipe-to-dismiss is generally not recommended for Wear applications [WearBackNavigation]
-                     <item name="android:windowSwipeToDismiss">false</item>
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-              0 errors, 1 warnings
-            """
+        res/values/styles.xml:10: Warning: Disabling swipe-to-dismiss is generally not recommended for Wear applications [WearBackNavigation]
+               <item name="android:windowSwipeToDismiss">false</item>
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
           .trimIndent()
       )
       .expectFixDiffs(
@@ -39,7 +39,7 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
         Autofix for res/values/styles.xml line 10: Delete `android:windowSwipeToDismiss` from theme:
         @@ -10 +10
         -        <item name="android:windowSwipeToDismiss">false</item>
-      """
+        """
           .trimIndent()
       )
   }
@@ -48,20 +48,20 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
     xml(
       "res/values/styles.xml",
       """
-          <resources>
+       <resources>
 
-            <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-                <item name="colorPrimary">@color/colorPrimary</item>
-                <item name="colorAccent">@color/colorAccent</item>
-                <item name="android:windowSwipeToDismiss">true</item>
-            </style>
+         <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+             <item name="colorPrimary">@color/colorPrimary</item>
+             <item name="colorAccent">@color/colorAccent</item>
+             <item name="android:windowSwipeToDismiss">true</item>
+         </style>
 
-            <style name="SubTheme" parent="AppTheme">
-                <item name="android:windowSwipeToDismiss">false</item>
-            </style>
+         <style name="SubTheme" parent="AppTheme">
+             <item name="android:windowSwipeToDismiss">false</item>
+         </style>
 
-         </resources>
-        """
+      </resources>
+      """
         .trimIndent(),
     )
 
@@ -69,19 +69,19 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
     manifest(
       // language=xml
       """
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="test.pkg">
-               <uses-sdk android:minSdkVersion="30" />
-               <uses-feature android:name="android.hardware.type.watch" />
-              <application
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="@string/app_name">
-                  <activity android:name=".MainActivity"
-                      android:theme="@style/AppTheme" />
-              </application>
-          </manifest>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="test.pkg">
+           <uses-sdk android:minSdkVersion="30" />
+           <uses-feature android:name="android.hardware.type.watch" />
+          <application
+              android:icon="@mipmap/ic_launcher"
+              android:label="@string/app_name">
+              <activity android:name=".MainActivity"
+                  android:theme="@style/AppTheme" />
+          </application>
+      </manifest>
+      """
         .trimIndent()
     )
 }

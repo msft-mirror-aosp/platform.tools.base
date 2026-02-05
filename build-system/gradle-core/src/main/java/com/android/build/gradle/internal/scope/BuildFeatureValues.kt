@@ -17,45 +17,42 @@
 package com.android.build.gradle.internal.scope
 
 /**
- * Allows access to the final values of
- * [com.android.build.api.dsl.ApplicationBuildFeatures]
- * [com.android.build.api.dsl.DynamicFeatureBuildFeatures]
- * [com.android.build.api.dsl.LibraryBuildFeatures]
+ * Allows access to the final values of [com.android.build.api.dsl.ApplicationBuildFeatures]
+ * [com.android.build.api.dsl.DynamicFeatureBuildFeatures] [com.android.build.api.dsl.LibraryBuildFeatures]
  * [com.android.build.api.dsl.TestBuildFeatures]
  *
  * This is a union of all above interfaces to simplify things internally.
  *
- * The values returned take into account default values coming via
- * [com.android.build.gradle.options.BooleanOption]
+ * The values returned take into account default values coming via [com.android.build.gradle.options.BooleanOption]
  */
 interface BuildFeatureValues {
-    // ------------------
-    // Common flags
+  // ------------------
+  // Common flags
 
-    val aidl: Boolean
-    val compose: Boolean
-    val buildConfig: Boolean
-    val dataBinding: Boolean
-    val mlModelBinding: Boolean
-    val prefab: Boolean
-    val renderScript: Boolean
-    val resValues: Boolean
-    val shaders: Boolean
-    val viewBinding: Boolean
+  val aidl: Boolean
+  val compose: Boolean
+  val buildConfig: Boolean
+  val dataBinding: Boolean
+  val mlModelBinding: Boolean
+  val prefab: Boolean
+  val renderScript: Boolean
+  val resValues: Boolean
+  val shaders: Boolean
+  val viewBinding: Boolean
 
-    // ------------------
-    // Application flags
+  // ------------------
+  // Application flags
 
-    // ------------------
-    // Dynamic-Feature flags
+  // ------------------
+  // Dynamic-Feature flags
 
-    // ------------------
-    // Library flags
+  // ------------------
+  // Library flags
 
-    val buildType: Boolean
-    val androidResources: Boolean
-    val prefabPublishing: Boolean
+  val buildType: Boolean
+  val androidResources: Boolean
+  val prefabPublishing: Boolean
 
-    // ------------------
-    // Test flags
+  // ------------------
+  // Test flags
 }

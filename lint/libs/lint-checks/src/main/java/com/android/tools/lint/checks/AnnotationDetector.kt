@@ -136,13 +136,11 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 /** Checks annotations to make sure they are valid */
 class AnnotationDetector : Detector(), SourceCodeScanner {
   /**
-   * Set of fields we've already warned about [.FLAG_STYLE] for; these can be referenced multiple
-   * times, so we should only flag them once
+   * Set of fields we've already warned about [.FLAG_STYLE] for; these can be referenced multiple times, so we should only flag them once
    */
   private var warnedFlags: MutableSet<PsiElement>? = null
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UAnnotation::class.java, USwitchExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UAnnotation::class.java, USwitchExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
     return AnnotationChecker(context)
@@ -176,10 +174,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           context.getLocation(node)
         }
       val annotated = node.getParentOfType<UAnnotated>(true) ?: return
-      val hasTarget =
-        context.evaluator.getAllAnnotations(annotated).any {
-          it.qualifiedName == KOTLIN_ANNOTATION_TARGET_FQN
-        }
+      val hasTarget = context.evaluator.getAllAnnotations(annotated).any { it.qualifiedName == KOTLIN_ANNOTATION_TARGET_FQN }
       val fix: LintFix
       val message =
         if (hasTarget) {
@@ -187,19 +182,12 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           "Do not use `@java.lang.annotation.Target` here; it will cause the annotation to not be allowed on **any** element " +
             "types from Java"
         } else {
-          fix =
-            fix()
-              .replace()
-              .text(JAVA_ANNOTATION_TARGET_FQN)
-              .with("Target")
-              .range(context.getLocation(node))
-              .build()
+          fix = fix().replace().text(JAVA_ANNOTATION_TARGET_FQN).with("Target").range(context.getLocation(node)).build()
           "Use `@kotlin.annotation.Target`, not `@java.lang.annotation.Target` here; these targets will be ignored from Kotlin " +
             "and the annotation will not be allowed on **any** element types from Java"
         }
       // TODO: Use new issue type? This isn't really the right one.
-      val incident =
-        Incident(ANNOTATION_USAGE, node, location, message, fix).overrideSeverity(Severity.ERROR)
+      val incident = Incident(ANNOTATION_USAGE, node, location, message, fix).overrideSeverity(Severity.ERROR)
       context.report(incident)
     }
 
@@ -243,21 +231,13 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           .autoFix(true, true)
           .build()
 
-      context.report(
-        USE_REQUIRES_API,
-        annotation,
-        context.getNameLocation(annotation),
-        message,
-        fix,
-      )
+      context.report(USE_REQUIRES_API, annotation, context.getNameLocation(annotation), message, fix)
     }
 
     private fun checkSuppressAnnotation(annotation: UAnnotation) {
       val parent = skipParenthesizedExprUp(annotation.uastParent) ?: return
       // Only flag local variables and parameters (not classes, fields and methods)
-      if (
-        parent !is UDeclarationsExpression && parent !is ULocalVariable && parent !is UParameter
-      ) {
+      if (parent !is UDeclarationsExpression && parent !is ULocalVariable && parent !is UParameter) {
         return
       }
 
@@ -313,8 +293,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               from > to
             } else {
               checkTargetType(annotation, type, TYPE_FLOAT, TYPE_DOUBLE)
-              val from =
-                getDoubleAttribute(context, annotation, ATTR_FROM, Double.NEGATIVE_INFINITY)
+              val from = getDoubleAttribute(context, annotation, ATTR_FROM, Double.NEGATIVE_INFINITY)
               val to = getDoubleAttribute(context, annotation, ATTR_TO, Double.POSITIVE_INFINITY)
               from > to
             }
@@ -344,19 +323,9 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               "Invalid size range: the `min` attribute must be less than " + "the `max` attribute",
             )
           } else if (multiple < 1) {
-            context.report(
-              ANNOTATION_USAGE,
-              annotation,
-              context.getLocation(annotation),
-              "The size multiple must be at least 1",
-            )
+            context.report(ANNOTATION_USAGE, annotation, context.getLocation(annotation), "The size multiple must be at least 1")
           } else if (exact < 0 && exact != unset.toLong() || min < 0 && min != Long.MIN_VALUE) {
-            context.report(
-              ANNOTATION_USAGE,
-              annotation,
-              context.getLocation(annotation),
-              "The size can't be negative",
-            )
+            context.report(ANNOTATION_USAGE, annotation, context.getLocation(annotation), "The size can't be negative")
           }
         }
         GRAVITY_INT_ANNOTATION.isEquals(type) -> {
@@ -398,8 +367,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
                 ANNOTATION_USAGE,
                 annotation,
                 context.getLocation(annotation),
-                "For methods, permission annotation should specify one " +
-                  "of `value`, `anyOf` or `allOf`",
+                "For methods, permission annotation should specify one " + "of `value`, `anyOf` or `allOf`",
               )
             } else if (set > 1) {
               context.report(
@@ -435,10 +403,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
                 return
               }
           val values = attributeValue.asSourceString()
-          if (
-            values.contains("SUBCLASSES") &&
-              skipParenthesizedExprUp(annotation.uastParent) is UClass
-          ) {
+          if (values.contains("SUBCLASSES") && skipParenthesizedExprUp(annotation.uastParent) is UClass) {
             context.report(
               ANNOTATION_USAGE,
               annotation,
@@ -462,12 +427,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           val parent = skipParenthesizedExprUp(annotation.uastParent)
           if (parent is UMethod) {
             if (parent.isFinal) {
-              context.report(
-                ANNOTATION_USAGE,
-                annotation,
-                context.getLocation(annotation),
-                "`@EmptySuper` is pointless on a final method",
-              )
+              context.report(ANNOTATION_USAGE, annotation, context.getLocation(annotation), "`@EmptySuper` is pointless on a final method")
             }
           }
           // We don't warn if this method body isn't empty because you can legitimately
@@ -477,12 +437,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
         type == OPEN_FOR_TESTING_ANNOTATION -> {
           // Make sure on Kotlin and method or class
           if (!isKotlin(annotation.lang)) {
-            context.report(
-              ANNOTATION_USAGE,
-              annotation,
-              context.getLocation(annotation),
-              "`@OpenForTesting` only applies to Kotlin APIs",
-            )
+            context.report(ANNOTATION_USAGE, annotation, context.getLocation(annotation), "`@OpenForTesting` only applies to Kotlin APIs")
           }
         }
         type == RETURN_THIS_ANNOTATION -> {
@@ -490,10 +445,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           val parent = skipParenthesizedExprUp(annotation.uastParent)
           if (parent is UMethod) {
             val returnType = parent.returnType
-            if (
-              !parent.isConstructor &&
-                (PsiTypes.voidType() == returnType || returnType is PsiPrimitiveType)
-            ) {
+            if (!parent.isConstructor && (PsiTypes.voidType() == returnType || returnType is PsiPrimitiveType)) {
               context.report(
                 ANNOTATION_USAGE,
                 annotation,
@@ -543,41 +495,18 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       }
 
       if (className?.evaluateString() == "TODO" && !context.driver.isIsolated()) {
-        context.report(
-          ANNOTATION_USAGE,
-          annotation,
-          context.getLocation(className),
-          "Specify a real `$attribute2`",
-        )
+        context.report(ANNOTATION_USAGE, annotation, context.getLocation(className), "Specify a real `$attribute2`")
       }
     }
 
     private fun checkKeepAnnotations(annotation: UAnnotation, type: String) {
       enforceAlternativeAttributes(annotation, type, "classConstant", "className", required = true)
       if (type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_FIELD_FQN) {
-        enforceAlternativeAttributes(
-          annotation,
-          type,
-          "fieldType",
-          "fieldTypeName",
-          required = false,
-        )
+        enforceAlternativeAttributes(annotation, type, "fieldType", "fieldTypeName", required = false)
       } else {
-        enforceAlternativeAttributes(
-          annotation,
-          type,
-          "parameterTypes",
-          "parameterTypeNames",
-          required = false,
-        )
+        enforceAlternativeAttributes(annotation, type, "parameterTypes", "parameterTypeNames", required = false)
         if (type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_METHOD_FQN) {
-          enforceAlternativeAttributes(
-            annotation,
-            type,
-            "returnType",
-            "returnTypeName",
-            required = false,
-          )
+          enforceAlternativeAttributes(annotation, type, "returnType", "returnTypeName", required = false)
         }
       }
     }
@@ -612,32 +541,20 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           val sdkVersion = getAnnotationLongValue(a, "extension", -1).toInt()
           if (sdkVersion == -1) {
             val location = context.getLocation(a)
-            context.report(
-              ANNOTATION_USAGE,
-              a,
-              location,
-              "Must specify an extension `sdk` id attribute",
-            )
+            context.report(ANNOTATION_USAGE, a, location, "Must specify an extension `sdk` id attribute")
             return
           }
           val extensionVersion = getAnnotationLongValue(a, "version", -1).toInt()
           if (extensionVersion == -1) {
             val location = context.getLocation(a)
-            context.report(
-              ANNOTATION_USAGE,
-              a,
-              location,
-              "Must specify an extension `version` level attribute",
-            )
+            context.report(ANNOTATION_USAGE, a, location, "Must specify an extension `version` level attribute")
             return
           }
           // Report error if either one is -1 (unspecified)
           levels.add(Triple(a, sdkVersion, extensionVersion))
         } else if (REQUIRES_API_ANNOTATION.isEquals(qualifiedName)) {
           val sdkVersion =
-            getAnnotationLongValue(a, "api", -1L)
-              .let { if (it != -1L) it else getAnnotationLongValue(a, ATTR_VALUE, -1L) }
-              .toInt()
+            getAnnotationLongValue(a, "api", -1L).let { if (it != -1L) it else getAnnotationLongValue(a, ATTR_VALUE, -1L) }.toInt()
           if (sdkVersion == -1) {
             // Already validated elsewhere (in checkRequiresApi)
             return
@@ -656,12 +573,8 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
         if (prev != null) {
           if (prev.second - triple.second > 1 && WARN_ABOUT_EXTENSION_LEVEL_GAPS) {
             // Report gap
-            val location =
-              getAttributeValueLocation(context, triple.first, "extension")
-                ?: context.getLocation(triple.first)
-            location.secondary =
-              getAttributeValueLocation(context, prev.first, "extension")
-                ?: context.getLocation(prev.first)
+            val location = getAttributeValueLocation(context, triple.first, "extension") ?: context.getLocation(triple.first)
+            location.secondary = getAttributeValueLocation(context, prev.first, "extension") ?: context.getLocation(prev.first)
             location.secondary?.setMessage("Previous level", false)
             context.report(
               ANNOTATION_USAGE,
@@ -670,35 +583,18 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               "There should not be a gap in SDK extension levels; missing ${prev.second - 1}",
             )
             return
-          } else if (
-            triple.second == prev.second && triple.first.qualifiedName == prev.first.qualifiedName
-          ) {
+          } else if (triple.second == prev.second && triple.first.qualifiedName == prev.first.qualifiedName) {
             // Duplicate - only okay if qualified names are different (e.g. specifying
             // both @RequiresApi and @RequiresExtension
-            val location =
-              getAttributeValueLocation(context, triple.first, "extension")
-                ?: context.getLocation(triple.first)
-            location.secondary =
-              getAttributeValueLocation(context, prev.first, "extension")
-                ?: context.getLocation(prev.first)
+            val location = getAttributeValueLocation(context, triple.first, "extension") ?: context.getLocation(triple.first)
+            location.secondary = getAttributeValueLocation(context, prev.first, "extension") ?: context.getLocation(prev.first)
             location.secondary?.setMessage("Previous level", false)
-            context.report(
-              ANNOTATION_USAGE,
-              triple.first,
-              location,
-              "Repeated SDK extension level ${triple.second}",
-            )
+            context.report(ANNOTATION_USAGE, triple.first, location, "Repeated SDK extension level ${triple.second}")
           } else if (
-            prev.third > triple.third &&
-              triple.second != prev.second &&
-              triple.first.qualifiedName == REQUIRES_EXTENSION_ANNOTATION
+            prev.third > triple.third && triple.second != prev.second && triple.first.qualifiedName == REQUIRES_EXTENSION_ANNOTATION
           ) {
-            val location =
-              getAttributeValueLocation(context, triple.first, "version")
-                ?: context.getLocation(triple.first)
-            location.secondary =
-              getAttributeValueLocation(context, prev.first, "version")
-                ?: context.getLocation(prev.first)
+            val location = getAttributeValueLocation(context, triple.first, "version") ?: context.getLocation(triple.first)
+            location.secondary = getAttributeValueLocation(context, prev.first, "version") ?: context.getLocation(prev.first)
             location.secondary?.setMessage("Previous version", false)
             context.report(
               ANNOTATION_USAGE,
@@ -712,11 +608,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun getAttributeValueLocation(
-      context: JavaContext,
-      annotation: UAnnotation,
-      name: String,
-    ): Location? {
+    private fun getAttributeValueLocation(context: JavaContext, annotation: UAnnotation, name: String): Location? {
       val attribute = annotation.findDeclaredAttributeValue(name) ?: return null
       return context.getLocation(attribute)
     }
@@ -738,8 +630,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       if (parentElement.getParentOfType<PsiClass>(strict = true) != null) {
         return
       }
-      val visibility =
-        getVisibilityNotForTesting(annotation, getVisibility(parentElement as PsiMember))
+      val visibility = getVisibilityNotForTesting(annotation, getVisibility(parentElement as PsiMember))
 
       if (visibility == VISIBILITY_PRIVATE || visibility == VISIBILITY_PROTECTED) {
         context.report(
@@ -827,9 +718,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
             return
           }
         } else if (parent is UMethod) {
-          if (parent.isConstructor)
-            context.evaluator.getClassType(parent.getContainingUClass()?.javaPsi)
-          else parent.returnType
+          if (parent.isConstructor) context.evaluator.getClassType(parent.getContainingUClass()?.javaPsi) else parent.returnType
         } else if (parent is UVariable) {
           // Field or local variable or parameter
           if (parent.typeReference == null) {
@@ -844,10 +733,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       var type = parentType ?: return
       var originalType = type
 
-      if (
-        type is PsiClassType &&
-          type.getCanonicalText().startsWith("kotlin.properties.ReadWriteProperty")
-      ) {
+      if (type is PsiClassType && type.getCanonicalText().startsWith("kotlin.properties.ReadWriteProperty")) {
         var unknownDelegateType = true
         if (parent is UVariable) {
           val parameters = type.parameters
@@ -918,17 +804,9 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
             typeName == getAutoBoxedType(TYPE_SHORT)) && (type1 == TYPE_INT || type1 == TYPE_LONG)
         ) {
           return
-        } else if (
-          type2 == null &&
-            type1 == TYPE_INT &&
-            (typeName == TYPE_LONG || typeName == getAutoBoxedType(TYPE_LONG))
-        ) {
+        } else if (type2 == null && type1 == TYPE_INT && (typeName == TYPE_LONG || typeName == getAutoBoxedType(TYPE_LONG))) {
           return
-        } else if (
-          type2 == null &&
-            type1 == TYPE_LONG &&
-            (typeName == TYPE_INT || typeName == getAutoBoxedType(TYPE_INT))
-        ) {
+        } else if (type2 == null && type1 == TYPE_LONG && (typeName == TYPE_INT || typeName == getAutoBoxedType(TYPE_INT))) {
           return
         }
         val expectedTypes: String =
@@ -969,10 +847,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           else -> false
         }
       for (case in node.body.expressions) {
-        if (
-          case is USwitchClauseExpressionWithBody &&
-            case.caseValues.any(UExpression::isDefaultSwitchCaseValue)
-        ) {
+        if (case is USwitchClauseExpressionWithBody && case.caseValues.any(UExpression::isDefaultSwitchCaseValue)) {
           if (case.caseValues.size == 1 && case.body.isSimpleThrow()) break
           return
         }
@@ -1047,11 +922,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       val evaluator = context.evaluator
       val annotations = evaluator.getAnnotations(owner, true)
       val uAnnotations =
-        evaluator.filterRelevantAnnotations(
-          annotations,
-          expression,
-          setOf(INT_DEF_ANNOTATION.oldName(), INT_DEF_ANNOTATION.newName()),
-        )
+        evaluator.filterRelevantAnnotations(annotations, expression, setOf(INT_DEF_ANNOTATION.oldName(), INT_DEF_ANNOTATION.newName()))
       return findTypeDef(uAnnotations)
     }
 
@@ -1174,9 +1045,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           val resolved = constant.resolve()
           // Don't try to check complied code.
           if (resolved !is PsiCompiledElement && resolved is PsiField) {
-            val initializer =
-              UastFacade.getInitializerBody(resolved)?.skipParenthesizedExprDown()
-                as? ULiteralExpression ?: continue
+            val initializer = UastFacade.getInitializerBody(resolved)?.skipParenthesizedExprDown() as? ULiteralExpression ?: continue
             val o = initializer.value as? Number ?: continue
             val value = o.toLong()
             // Allow -1, 0 and 1. You can write 1 as "1 << 0" but IntelliJ for
@@ -1209,22 +1078,9 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           return
         }
         val operator = if (isKotlin(resolved.language)) "shl" else "<<"
-        val message =
-          String.format(
-            Locale.US,
-            "Consider declaring this constant using 1 %s %d instead",
-            operator,
-            shift,
-          )
-        val replace =
-          String.format(Locale.ROOT, "1%s %s %d", if (o is Long) "L" else "", operator, shift)
-        val fix =
-          fix()
-            .replace()
-            .sharedName("Change declaration to $operator")
-            .with(replace)
-            .autoFix()
-            .build()
+        val message = String.format(Locale.US, "Consider declaring this constant using 1 %s %d instead", operator, shift)
+        val replace = String.format(Locale.ROOT, "1%s %s %d", if (o is Long) "L" else "", operator, shift)
+        val fix = fix().replace().sharedName("Change declaration to $operator").with(replace).autoFix().build()
         val location = context.getLocation(initializer)
         context.report(FLAG_STYLE, initializer, location, message, fix)
       }
@@ -1236,10 +1092,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       // Special-case the ApiDetector issue, since it does both source file analysis
       // only on field references, and class file analysis on the rest, so we allow
       // annotations outside of methods only on fields
-      if (
-        issue != null && !issue.implementation.scope.contains(Scope.JAVA_FILE) ||
-          issue === ApiDetector.UNSUPPORTED
-      ) {
+      if (issue != null && !issue.implementation.scope.contains(Scope.JAVA_FILE) || issue === ApiDetector.UNSUPPORTED) {
         // This issue doesn't have AST access: annotations are not
         // available for local variables or parameters
         val scope = getAnnotationScope(node)
@@ -1256,10 +1109,8 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       return true
     }
 
-    private inner class SwitchChecker(
-      private val switchExpression: USwitchExpression,
-      allowedValues: List<UExpression>,
-    ) : AbstractUastVisitor() {
+    private inner class SwitchChecker(private val switchExpression: USwitchExpression, allowedValues: List<UExpression>) :
+      AbstractUastVisitor() {
       private val allowedValues: List<UExpression>?
       private val fields: MutableList<Any>
       private val seenValues: MutableList<Int?>
@@ -1310,8 +1161,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               var found = removeFieldFromList(fields, resolved)
               if (!found) {
                 // Look for local alias
-                val initializer =
-                  UastFacade.getInitializerBody(resolved)?.skipParenthesizedExprDown()
+                val initializer = UastFacade.getInitializerBody(resolved)?.skipParenthesizedExprDown()
                 if (initializer is UReferenceExpression) {
                   resolved = initializer.resolve()
                   if (resolved is PsiField) {
@@ -1326,9 +1176,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
                 }
               } else {
                 // Sanity check in case the default statement does not appear last
-                if (
-                  resolved != null && allowedValues.any { resolved.isEquivalentTo(it.tryResolve()) }
-                ) {
+                if (resolved != null && allowedValues.any { resolved.isEquivalentTo(it.tryResolve()) }) {
                   return true
                 }
 
@@ -1390,9 +1238,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               location = context.getLocation(keyword)
             }
           }
-          val message =
-            "Switch statement on an `int` with known associated constant missing case " +
-              displayConstants(list)
+          val message = "Switch statement on an `int` with known associated constant missing case " + displayConstants(list)
           context.report(SWITCH_TYPE_DEF, switchExpression, location, message, fix)
         }
       }
@@ -1485,13 +1331,11 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Returns the node to use as the scope for the given annotation node. You can't annotate an
-   * annotation itself (with `@SuppressLint`), but you should be able to place an annotation next to
-   * it, as a sibling, to only suppress the error on this annotated element, not the whole
+   * Returns the node to use as the scope for the given annotation node. You can't annotate an annotation itself (with `@SuppressLint`), but
+   * you should be able to place an annotation next to it, as a sibling, to only suppress the error on this annotated element, not the whole
    * surrounding class.
    */
-  private fun getAnnotationScope(node: UAnnotation): UElement =
-    node.getParentOfType(UAnnotation::class.java, true) ?: node
+  private fun getAnnotationScope(node: UAnnotation): UElement = node.getParentOfType(UAnnotation::class.java, true) ?: node
 
   private fun removeFieldFromList(fields: List<Any>, resolvedField: PsiField): Boolean {
     for (field in fields) {
@@ -1527,8 +1371,8 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
     private const val KOTLIN_ANNOTATION_TARGET_FQN = "kotlin.annotation.Target"
 
     /**
-     * Feature temporarily disabled while we settle whether we expect people to specify all
-     * extension levels or whether specifying the lowest one implies the other dessert extensions.
+     * Feature temporarily disabled while we settle whether we expect people to specify all extension levels or whether specifying the
+     * lowest one implies the other dessert extensions.
      */
     const val WARN_ABOUT_EXTENSION_LEVEL_GAPS = false
 
@@ -1666,42 +1510,20 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
 
 const val SECURITY_EXCEPTION = "java.lang.SecurityException"
 
-@JvmField
-val CHECK_RESULT_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "CheckResult")
-@JvmField
-val UI_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "UiThread")
-@JvmField
-val MAIN_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "MainThread")
-@JvmField
-val WORKER_THREAD_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "WorkerThread")
-@JvmField
-val BINDER_THREAD_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "BinderThread")
-@JvmField
-val ANY_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "AnyThread")
-@JvmField
-val VISIBLE_FOR_TESTING_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "VisibleForTesting")
-@JvmField
-val HALF_FLOAT_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "HalfFloat")
+@JvmField val CHECK_RESULT_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "CheckResult")
+@JvmField val UI_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "UiThread")
+@JvmField val MAIN_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "MainThread")
+@JvmField val WORKER_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "WorkerThread")
+@JvmField val BINDER_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "BinderThread")
+@JvmField val ANY_THREAD_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "AnyThread")
+@JvmField val VISIBLE_FOR_TESTING_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "VisibleForTesting")
+@JvmField val HALF_FLOAT_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "HalfFloat")
 @JvmField val SIZE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "Size")
-@JvmField
-val FLOAT_RANGE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "FloatRange")
-@JvmField
-val RESTRICT_TO_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RestrictTo")
-@JvmField
-val INT_RANGE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "IntRange")
-@JvmField
-val PERMISSION_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RequiresPermission")
-@JvmField
-val PERMISSION_ANNOTATION_READ: AndroidxName = AndroidxName.of(PERMISSION_ANNOTATION, "Read")
-@JvmField
-val PERMISSION_ANNOTATION_WRITE: AndroidxName = AndroidxName.of(PERMISSION_ANNOTATION, "Write")
-@JvmField
-val REQUIRES_FEATURE_ANNOTATION: AndroidxName =
-  AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RequiresFeature")
-@JvmField
-val GRAVITY_INT_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "GravityInt")
+@JvmField val FLOAT_RANGE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "FloatRange")
+@JvmField val RESTRICT_TO_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RestrictTo")
+@JvmField val INT_RANGE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "IntRange")
+@JvmField val PERMISSION_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RequiresPermission")
+@JvmField val PERMISSION_ANNOTATION_READ: AndroidxName = AndroidxName.of(PERMISSION_ANNOTATION, "Read")
+@JvmField val PERMISSION_ANNOTATION_WRITE: AndroidxName = AndroidxName.of(PERMISSION_ANNOTATION, "Write")
+@JvmField val REQUIRES_FEATURE_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "RequiresFeature")
+@JvmField val GRAVITY_INT_ANNOTATION: AndroidxName = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "GravityInt")

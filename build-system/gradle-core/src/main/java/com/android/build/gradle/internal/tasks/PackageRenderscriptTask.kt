@@ -32,42 +32,32 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.RENDERSCRIPT, secondaryTaskCategories = [TaskCategory.ZIPPING])
 abstract class PackageRenderscriptTask : Sync(), VariantTask {
 
-    @get:OutputDirectory
-    abstract val headersDir: DirectoryProperty
+  @get:OutputDirectory abstract val headersDir: DirectoryProperty
 
-    @Internal
-    override lateinit var variantName: String
+  @Internal override lateinit var variantName: String
 
-    class CreationAction(creationConfig: VariantCreationConfig) :
-        VariantTaskCreationAction<PackageRenderscriptTask, VariantCreationConfig>(
-            creationConfig
-        ) {
+  class CreationAction(creationConfig: VariantCreationConfig) :
+    VariantTaskCreationAction<PackageRenderscriptTask, VariantCreationConfig>(creationConfig) {
 
-        override val name: String
-            get() = computeTaskName("package", "Renderscript")
-        override val type: Class<PackageRenderscriptTask>
-            get() = PackageRenderscriptTask::class.java
+    override val name: String
+      get() = computeTaskName("package", "Renderscript")
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<PackageRenderscriptTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                PackageRenderscriptTask::headersDir
-            ).withName("out").on(InternalArtifactType.RENDERSCRIPT_HEADERS)
-        }
+    override val type: Class<PackageRenderscriptTask>
+      get() = PackageRenderscriptTask::class.java
 
-        override fun configure(
-            task: PackageRenderscriptTask
-        ) {
-            super.configure(task)
-
-            creationConfig.sources.renderscript {
-                task.from(it.all).include("**/*.rsh")
-            }
-            task.into(task.headersDir)
-        }
+    override fun handleProvider(taskProvider: TaskProvider<PackageRenderscriptTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, PackageRenderscriptTask::headersDir)
+        .withName("out")
+        .on(InternalArtifactType.RENDERSCRIPT_HEADERS)
     }
-}
 
+    override fun configure(task: PackageRenderscriptTask) {
+      super.configure(task)
+
+      creationConfig.sources.renderscript { task.from(it.all).include("**/*.rsh") }
+      task.into(task.headersDir)
+    }
+  }
+}

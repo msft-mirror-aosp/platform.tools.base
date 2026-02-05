@@ -22,111 +22,80 @@ import android.content.Intent
 import com.android.tools.appinspection.common.threadLocal
 
 /**
- * Method name for [PendingIntent.getActivity(Context, int, Intent, int, Bundle)] to capture the
- * [Intent] used to create a [PendingIntent] that starts an [android.app.Activity].
+ * Method name for [PendingIntent.getActivity(Context, int, Intent, int, Bundle)] to capture the [Intent] used to create a [PendingIntent]
+ * that starts an [android.app.Activity].
  */
 const val GET_ACTIVITY_METHOD_NAME =
-  "getActivity" +
-    "(Landroid/content/Context;ILandroid/content/Intent;I" +
-    "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
+  "getActivity" + "(Landroid/content/Context;ILandroid/content/Intent;I" + "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
 
 /**
- * Method name for [PendingIntent.getActivities(Context, int, Intent[], int, Bundle)] to capture the
- * [Intent] used to create a [PendingIntent] that starts an [android.app.Activity].
+ * Method name for [PendingIntent.getActivities(Context, int, Intent[], int, Bundle)] to capture the [Intent] used to create a
+ * [PendingIntent] that starts an [android.app.Activity].
  */
 const val GET_ACTIVITIES_METHOD_NAME =
-  "getActivities" +
-    "(Landroid/content/Context;I[Landroid/content/Intent;I" +
-    "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
+  "getActivities" + "(Landroid/content/Context;I[Landroid/content/Intent;I" + "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
 
 /**
- * Method name for [PendingIntent#getService(Context, int, Intent, int)] to capture the [Intent]
- * used to create a [PendingIntent] that starts an [android.app.Service].
+ * Method name for [PendingIntent#getService(Context, int, Intent, int)] to capture the [Intent] used to create a [PendingIntent] that
+ * starts an [android.app.Service].
  */
-const val GET_SERVICE_METHOD_NAME =
-  "getService" +
-    "(Landroid/content/Context;ILandroid/content/Intent;I)" +
-    "Landroid/app/PendingIntent;"
+const val GET_SERVICE_METHOD_NAME = "getService" + "(Landroid/content/Context;ILandroid/content/Intent;I)" + "Landroid/app/PendingIntent;"
 
 /**
- * Method name for [PendingIntent#getForegroundService(Context, int, Intent, int)] to capture the
- * [Intent] used to create a [PendingIntent] that starts an [android.app.Service].
+ * Method name for [PendingIntent#getForegroundService(Context, int, Intent, int)] to capture the [Intent] used to create a [PendingIntent]
+ * that starts an [android.app.Service].
  */
 const val GET_FOREGROUND_SERVICE_METHOD_NAME =
-  "getForegroundService" +
-    "(Landroid/content/Context;ILandroid/content/Intent;I)" +
-    "Landroid/app/PendingIntent;"
+  "getForegroundService" + "(Landroid/content/Context;ILandroid/content/Intent;I)" + "Landroid/app/PendingIntent;"
 
 /**
- * Method name for [PendingIntent.getBroadcast(Context, int, Intent, int)] to capture the [Intent]
- * used to create a [PendingIntent] that starts an [android.content.BroadcastReceiver].
+ * Method name for [PendingIntent.getBroadcast(Context, int, Intent, int)] to capture the [Intent] used to create a [PendingIntent] that
+ * starts an [android.content.BroadcastReceiver].
  */
 const val GET_BROADCAST_METHOD_NAME =
-  "getBroadcast" +
-    "(Landroid/content/Context;ILandroid/content/Intent;I)" +
-    "Landroid/app/PendingIntent;"
+  "getBroadcast" + "(Landroid/content/Context;ILandroid/content/Intent;I)" + "Landroid/app/PendingIntent;"
 
 /**
- * Method name for [Instrumentation.callActivityOnCreate(Activity, Bundle)] to capture Activity
- * Intent.
+ * Method name for [Instrumentation.callActivityOnCreate(Activity, Bundle)] to capture Activity Intent.
  *
  * Due to b/77549390, instrumenting [Activity] causes Transport to crash. So we add the hook to
- * [Instrumentation#callActivityOnCreate(Activity, Bundle)], which calls
- * [Activity#onCreate(Bundle)].
+ * [Instrumentation#callActivityOnCreate(Activity, Bundle)], which calls [Activity#onCreate(Bundle)].
  */
-const val CALL_ACTIVITY_ON_CREATE_METHOD_NAME =
-  "callActivityOnCreate(Landroid/app/Activity;Landroid/os/Bundle;)V"
+const val CALL_ACTIVITY_ON_CREATE_METHOD_NAME = "callActivityOnCreate(Landroid/app/Activity;Landroid/os/Bundle;)V"
 
 /**
- * Method name for [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)] to
- * capture Activity Intent.
+ * Method name for [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)] to capture Activity Intent.
  *
  * Due to b/77549390, instrumenting [Activity] causes Profiler to crash. So we add the hook to
- * [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)], which calls
- * [Activity#onCreate(Bundle, PersistableBundle)].
+ * [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)], which calls [Activity#onCreate(Bundle, PersistableBundle)].
  */
 const val CALL_ACTIVITY_ON_CREATE_PERSISTABLE_BUNDLE_METHOD_NAME =
-  "callActivityOnCreate" +
-    "(Landroid/app/Activity;Landroid/os/Bundle;Landroid/" +
-    "os/PersistableBundle;)V"
+  "callActivityOnCreate" + "(Landroid/app/Activity;Landroid/os/Bundle;Landroid/" + "os/PersistableBundle;)V"
 
 /** Method name for [IntentService.onStartCommand(Intent, int, int)] to capture Service Intent. */
 const val ON_START_COMMAND_METHOD_NAME = "onStartCommand(Landroid/content/Intent;II)I"
 
 /**
- * Method name for [ActivityThread.handleReceiver(ReceiverData)] to capture a ReceiverData
- * containing the needed [Intent]. The [Intent] field in ReceiverData is not properly set at the
- * beginning of the method, so we need to wait until [SET_PENDING_RESULT_METHOD_NAME] being called
- * to capture the [Intent].
+ * Method name for [ActivityThread.handleReceiver(ReceiverData)] to capture a ReceiverData containing the needed [Intent]. The [Intent]
+ * field in ReceiverData is not properly set at the beginning of the method, so we need to wait until [SET_PENDING_RESULT_METHOD_NAME] being
+ * called to capture the [Intent].
  */
-const val HANDLE_RECEIVER_METHOD_NAME =
-  "handleReceiver(Landroid/app/ActivityThread\$ReceiverData;)V"
+const val HANDLE_RECEIVER_METHOD_NAME = "handleReceiver(Landroid/app/ActivityThread\$ReceiverData;)V"
+
+/** Method name for [ActivityThread.handleServiceArgs(ServiceArgsData) ] to capture a ServiceArgsData containing the needed [Intent].. */
+const val HANDLE_SERVICE_METHOD_NAME = "handleServiceArgs(Landroid/app/ActivityThread\$ServiceArgsData;)V"
 
 /**
- * Method name for [ActivityThread.handleServiceArgs(ServiceArgsData) ] to capture a ServiceArgsData
- * containing the needed [Intent]..
+ * Method name for [android.content.BroadcastReceiver.setPendingResult(PendingResult)]. If the `PendingResult` is same with the ReceiverData
+ * captured from method [HANDLE_RECEIVER_METHOD_NAME], it is safe to say that the method is called from `android.app.ActivityThread` and we
+ * can extract the [Intent] properly.
  */
-const val HANDLE_SERVICE_METHOD_NAME =
-  "handleServiceArgs(Landroid/app/ActivityThread\$ServiceArgsData;)V"
-
-/**
- * Method name for [android.content.BroadcastReceiver.setPendingResult(PendingResult)]. If the
- * `PendingResult` is same with the ReceiverData captured from method [HANDLE_RECEIVER_METHOD_NAME],
- * it is safe to say that the method is called from `android.app.ActivityThread` and we can extract
- * the [Intent] properly.
- */
-const val SET_PENDING_RESULT_METHOD_NAME =
-  "setPendingResult(Landroid/content/BroadcastReceiver\$PendingResult;)V"
+const val SET_PENDING_RESULT_METHOD_NAME = "setPendingResult(Landroid/content/BroadcastReceiver\$PendingResult;)V"
 
 /** A handler class that adds necessary hooks to track [Intent] and its related [PendingIntent]. */
 interface PendingIntentHandler {
 
-  fun onIntentCapturedEntry(
-    type: PendingIntentType,
-    requestCode: Int,
-    intents: Array<Intent>,
-    flags: Int,
-  )
+  fun onIntentCapturedEntry(type: PendingIntentType, requestCode: Int, intents: Array<Intent>, flags: Int)
 
   fun onIntentCapturedExit(pendingIntent: PendingIntent): PendingIntent
 
@@ -137,26 +106,17 @@ interface PendingIntentHandler {
   fun onReceiverDataResult(data: Any)
 }
 
-class PendingIntentHandlerImpl(
-  private val alarmHandler: AlarmHandler,
-  private val intentRegistry: IntentRegistry,
-) : PendingIntentHandler {
+class PendingIntentHandlerImpl(private val alarmHandler: AlarmHandler, private val intentRegistry: IntentRegistry) : PendingIntentHandler {
 
   /**
-   * ReceiverData captured from handleReceiver to find the correct calling of method
-   * setPendingResult.
+   * ReceiverData captured from handleReceiver to find the correct calling of method setPendingResult.
    *
    * @see HANDLE_RECEIVER_METHOD_NAME
    * @see SET_PENDING_RESULT_METHOD_NAME
    */
   private var receiverData by threadLocal<Any?> { null }
 
-  override fun onIntentCapturedEntry(
-    type: PendingIntentType,
-    requestCode: Int,
-    intents: Array<Intent>,
-    flags: Int,
-  ) {
+  override fun onIntentCapturedEntry(type: PendingIntentType, requestCode: Int, intents: Array<Intent>, flags: Int) {
     intentRegistry.setCurrentInfo(type, requestCode, intents.toList(), flags)
   }
 

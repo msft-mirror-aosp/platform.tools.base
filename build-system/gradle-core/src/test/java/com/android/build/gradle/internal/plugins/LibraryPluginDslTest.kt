@@ -30,240 +30,216 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Tests for the public DSL of the Lib plugin ('com.android.library')  */
+/** Tests for the public DSL of the Lib plugin ('com.android.library') */
 class LibraryPluginDslTest {
-    @get:Rule
-    var projectDirectory: TemporaryFolder = TemporaryFolder()
+  @get:Rule var projectDirectory: TemporaryFolder = TemporaryFolder()
 
-    private lateinit var plugin: LibraryPlugin
-    private lateinit var android: LibraryExtension
-    private lateinit var project: Project
+  private lateinit var plugin: LibraryPlugin
+  private lateinit var android: LibraryExtension
+  private lateinit var project: Project
 
-    @Before
-    fun setUp() {
-        project = TestProjects.builder(projectDirectory.newFolder("project").toPath())
-            .withPlugin(TestProjects.Plugin.LIBRARY)
-            .build()
-        android = project.extensions.getByType(LibraryExtension::class.java)
-        android.compileSdk {
-            version = release(TestConstants.COMPILE_SDK_VERSION)
-        }
-        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
-        android.namespace = "com.example.namespace"
-        android.buildFeatures {
-            aidl = true
-        }
-        plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
+  @Before
+  fun setUp() {
+    project = TestProjects.builder(projectDirectory.newFolder("project").toPath()).withPlugin(TestProjects.Plugin.LIBRARY).build()
+    android = project.extensions.getByType(LibraryExtension::class.java)
+    android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
+    android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+    android.namespace = "com.example.namespace"
+    android.buildFeatures { aidl = true }
+    plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
+  }
+
+  @Test
+  fun testBasic() {
+    plugin.createAndroidTasks(project)
+    val checker = LibraryVariantCreationConfigChecker(plugin)
+    val variants = checker.mainVariants
+    Truth.assertThat(variants).hasSize(2)
+
+    val testVariants = checker.testComponents
+    Truth.assertThat(testVariants).hasSize(2)
+
+    checker.checkTestedVariant("debug", "debugAndroidTest")
+    checker.checkNonTestedVariant("release")
+  }
+
+  @Test
+  fun testNewBuildType() {
+    android.buildTypes.create("custom")
+    plugin.createAndroidTasks(project)
+    val checker = LibraryVariantCreationConfigChecker(plugin)
+
+    val variants = checker.mainVariants
+
+    Truth.assertThat(variants).hasSize(3)
+
+    val testVariants = checker.testComponents
+    Truth.assertThat(testVariants).hasSize(2)
+
+    checker.checkTestedVariant("debug", "debugAndroidTest")
+    checker.checkNonTestedVariant("release")
+    checker.checkNonTestedVariant("custom")
+  }
+
+  @Test
+  fun testNewBuildType_testBuildType() {
+    android.buildTypes.create("custom")
+    android.testBuildType = "custom"
+    plugin.createAndroidTasks(project)
+    val checker = LibraryVariantCreationConfigChecker(plugin)
+
+    val variants = checker.mainVariants
+    Truth.assertThat(variants).hasSize(3)
+
+    val testVariants = checker.testComponents
+    Truth.assertThat(testVariants).hasSize(2)
+
+    checker.checkTestedVariant("custom", "customAndroidTest")
+    checker.checkNonTestedVariant("release")
+    checker.checkNonTestedVariant("debug")
+  }
+
+  /** test that debug build type maps to the SigningConfig object as the signingConfig container */
+  @Test
+  fun testDebugSigningConfig() {
+    android.signingConfigs.getByName("debug") { debug: com.android.build.api.dsl.SigningConfig -> debug.storePassword = "foo" }
+
+    val signingConfig = android.buildTypes.getByName("debug").signingConfig
+
+    Assert.assertNotNull(signingConfig)
+    Assert.assertEquals(android.signingConfigs.getByName("debug"), signingConfig)
+    Assert.assertEquals("foo", signingConfig?.storePassword)
+  }
+
+  @Test
+  fun testResourceShrinker() {
+    val debug = android.buildTypes.getByName("debug")
+    try {
+      debug.isShrinkResources = true
+      Assert.fail("Expected resource shrinker error")
+    } catch (e: EvalIssueException) {
+      Truth.assertThat(e).hasMessageThat().isEqualTo("Resource shrinker cannot be used for libraries.")
+    }
+    debug.isShrinkResources = false
+    plugin.createAndroidTasks(project)
+  }
+
+  @Test
+  fun testLegacyCompileSdkVersion() {
+    android.compileSdk = 36
+    android.compileSdkMinor = 0
+    android.compileSdkExtension = 18
+    android.compileSdk {
+      assertThat(version?.apiLevel).isEqualTo(36)
+      assertThat(version?.minorApiLevel).isEqualTo(0)
+      assertThat(version?.sdkExtension).isEqualTo(18)
     }
 
-    @Test
-    fun testBasic() {
-        plugin.createAndroidTasks(project)
-        val checker = LibraryVariantCreationConfigChecker(plugin)
-        val variants = checker.mainVariants
-        Truth.assertThat(variants).hasSize(2)
+    android.compileSdkVersion(30)
+    android.compileSdk { assertThat(version?.apiLevel).isEqualTo(30) }
 
-        val testVariants = checker.testComponents
-        Truth.assertThat(testVariants).hasSize(2)
-
-        checker.checkTestedVariant(
-            "debug", "debugAndroidTest")
-        checker.checkNonTestedVariant("release")
+    android.compileSdkVersion("android-S")
+    android.compileSdk {
+      assertThat(version?.apiLevel).isEqualTo(30)
+      assertThat(version?.codeName).isEqualTo("S")
     }
 
-    @Test
-    fun testNewBuildType() {
-        android.buildTypes.create("custom")
-        plugin.createAndroidTasks(project)
-        val checker = LibraryVariantCreationConfigChecker(plugin)
-
-        val variants = checker.mainVariants
-
-        Truth.assertThat(variants).hasSize(3)
-
-        val testVariants = checker.testComponents
-        Truth.assertThat(testVariants).hasSize(2)
-
-        checker.checkTestedVariant(
-            "debug", "debugAndroidTest")
-        checker.checkNonTestedVariant("release")
-        checker.checkNonTestedVariant("custom")
+    android.compileSdkPreview = "Tiramisu"
+    android.compileSdk {
+      assertThat(version?.apiLevel).isEqualTo(32)
+      assertThat(version?.codeName).isEqualTo("Tiramisu")
     }
 
-    @Test
-    fun testNewBuildType_testBuildType() {
-        android.buildTypes.create("custom")
-        android.testBuildType = "custom"
-        plugin.createAndroidTasks(project)
-        val checker = LibraryVariantCreationConfigChecker(plugin)
+    android.compileSdkAddon("vendor_foo", "name_bar", 30)
+    android.compileSdk {
+      assertThat(version?.apiLevel).isEqualTo(30)
+      assertThat(version?.vendorName).isEqualTo("vendor_foo")
+      assertThat(version?.addonName).isEqualTo("name_bar")
+    }
+  }
 
-        val variants = checker.mainVariants
-        Truth.assertThat(variants).hasSize(3)
+  @Test
+  fun testCompileSdkVersion() {
+    android.compileSdk {
+      version = release(20)
+      assertThat(version?.apiLevel).isEqualTo(20)
 
-        val testVariants = checker.testComponents
-        Truth.assertThat(testVariants).hasSize(2)
-
-        checker.checkTestedVariant(
-            "custom", "customAndroidTest")
-        checker.checkNonTestedVariant("release")
-        checker.checkNonTestedVariant("debug")
+      // test not assigning to version
+      release(30)
+      assertThat(version?.apiLevel).isEqualTo(20)
     }
 
-    /**
-     * test that debug build type maps to the SigningConfig object as the signingConfig container
-     */
-    @Test
-    fun testDebugSigningConfig() {
-        android.signingConfigs.getByName("debug") { debug: com.android.build.api.dsl.SigningConfig ->
-            debug.storePassword = "foo"
+    android.compileSdk {
+      version =
+        release(36) {
+          minorApiLevel = 0
+          sdkExtension = 18
         }
-
-        val signingConfig =
-            android.buildTypes.getByName("debug").signingConfig
-
-        Assert.assertNotNull(signingConfig)
-        Assert.assertEquals(android.signingConfigs.getByName("debug"), signingConfig)
-        Assert.assertEquals("foo", signingConfig?.storePassword)
+      assertThat(version?.apiLevel).isEqualTo(36)
+      assertThat(version?.minorApiLevel).isEqualTo(0)
+      assertThat(version?.sdkExtension).isEqualTo(18)
     }
 
-    @Test
-    fun testResourceShrinker() {
-        val debug = android.buildTypes.getByName("debug")
-        try {
-            debug.isShrinkResources = true
-            Assert.fail("Expected resource shrinker error")
-        } catch (e: EvalIssueException) {
-            Truth.assertThat(e)
-                .hasMessageThat()
-                .isEqualTo("Resource shrinker cannot be used for libraries.")
-        }
-        debug.isShrinkResources = false
-        plugin.createAndroidTasks(project)
+    android.compileSdk {
+      version = release(37) { sdkExtension = 20 }
+      assertThat(version?.apiLevel).isEqualTo(37)
+      assertThat(version?.minorApiLevel).isEqualTo(null)
+      assertThat(version?.sdkExtension).isEqualTo(20)
     }
 
-    @Test
-    fun testLegacyCompileSdkVersion() {
-        android.compileSdk = 36
-        android.compileSdkMinor = 0
-        android.compileSdkExtension = 18
-        android.compileSdk {
-            assertThat(version?.apiLevel).isEqualTo(36)
-            assertThat(version?.minorApiLevel).isEqualTo(0)
-            assertThat(version?.sdkExtension).isEqualTo(18)
-        }
-
-        android.compileSdkVersion(30)
-        android.compileSdk {
-            assertThat(version?.apiLevel).isEqualTo(30)
-        }
-
-        android.compileSdkVersion("android-S")
-        android.compileSdk {
-            assertThat(version?.apiLevel).isEqualTo(30)
-            assertThat(version?.codeName).isEqualTo("S")
-        }
-
-        android.compileSdkPreview = "Tiramisu"
-        android.compileSdk {
-            assertThat(version?.apiLevel).isEqualTo(32)
-            assertThat(version?.codeName).isEqualTo("Tiramisu")
-        }
-
-        android.compileSdkAddon("vendor_foo", "name_bar", 30)
-        android.compileSdk {
-            assertThat(version?.apiLevel).isEqualTo(30)
-            assertThat(version?.vendorName).isEqualTo("vendor_foo")
-            assertThat(version?.addonName).isEqualTo("name_bar")
-        }
+    android.compileSdk {
+      version = preview("Tiramisu")
+      assertThat(version?.apiLevel).isEqualTo(32)
+      assertThat(version?.codeName).isEqualTo("Tiramisu")
     }
 
-    @Test
-    fun testCompileSdkVersion() {
-        android.compileSdk {
-            version = release(20)
-            assertThat(version?.apiLevel).isEqualTo(20)
-
-            // test not assigning to version
-            release(30)
-            assertThat(version?.apiLevel).isEqualTo(20)
-        }
-
-        android.compileSdk {
-            version = release(36) {
-                minorApiLevel = 0
-                sdkExtension = 18
-            }
-            assertThat(version?.apiLevel).isEqualTo(36)
-            assertThat(version?.minorApiLevel).isEqualTo(0)
-            assertThat(version?.sdkExtension).isEqualTo(18)
-        }
-
-        android.compileSdk {
-            version = release(37) {
-                sdkExtension = 20
-            }
-            assertThat(version?.apiLevel).isEqualTo(37)
-            assertThat(version?.minorApiLevel).isEqualTo(null)
-            assertThat(version?.sdkExtension).isEqualTo(20)
-        }
-
-        android.compileSdk {
-            version = preview("Tiramisu")
-            assertThat(version?.apiLevel).isEqualTo(32)
-            assertThat(version?.codeName).isEqualTo("Tiramisu")
-        }
-
-        android.compileSdk {
-            version = addon("vendor_foo", "name_bar", 30)
-            assertThat(version?.apiLevel).isEqualTo(30)
-            assertThat(version?.codeName).isEqualTo(null)
-            assertThat(version?.vendorName).isEqualTo("vendor_foo")
-            assertThat(version?.addonName).isEqualTo("name_bar")
-        }
+    android.compileSdk {
+      version = addon("vendor_foo", "name_bar", 30)
+      assertThat(version?.apiLevel).isEqualTo(30)
+      assertThat(version?.codeName).isEqualTo(null)
+      assertThat(version?.vendorName).isEqualTo("vendor_foo")
+      assertThat(version?.addonName).isEqualTo("name_bar")
     }
+  }
 
-    @Test
-    fun testLegacyMinSdkVersion() {
-        android.defaultConfig {
-            minSdk = 20
-            minSdk {
-                assertThat(version?.apiLevel).isEqualTo(20)
-            }
+  @Test
+  fun testLegacyMinSdkVersion() {
+    android.defaultConfig {
+      minSdk = 20
+      minSdk { assertThat(version?.apiLevel).isEqualTo(20) }
 
-            minSdkVersion(34)
-            minSdk {
-                assertThat(version?.apiLevel).isEqualTo(34)
-            }
+      minSdkVersion(34)
+      minSdk { assertThat(version?.apiLevel).isEqualTo(34) }
 
-            minSdkVersion("S")
-            minSdk {
-                assertThat(version?.apiLevel).isEqualTo(30)
-                assertThat(version?.codeName).isEqualTo("S")
-            }
+      minSdkVersion("S")
+      minSdk {
+        assertThat(version?.apiLevel).isEqualTo(30)
+        assertThat(version?.codeName).isEqualTo("S")
+      }
 
-            minSdkPreview = "Tiramisu"
-            minSdk {
-                assertThat(version?.apiLevel).isEqualTo(32)
-                assertThat(version?.codeName).isEqualTo("Tiramisu")
-            }
-        }
+      minSdkPreview = "Tiramisu"
+      minSdk {
+        assertThat(version?.apiLevel).isEqualTo(32)
+        assertThat(version?.codeName).isEqualTo("Tiramisu")
+      }
     }
+  }
 
-    @Test
-    fun testMinSdkVersion() {
-        android.defaultConfig.minSdk {
-            version = release(20)
-            assertThat(version?.apiLevel).isEqualTo(20)
+  @Test
+  fun testMinSdkVersion() {
+    android.defaultConfig.minSdk {
+      version = release(20)
+      assertThat(version?.apiLevel).isEqualTo(20)
 
-            version = preview("Tiramisu")
-            assertThat(version?.apiLevel).isEqualTo(32)
-            assertThat(version?.codeName).isEqualTo("Tiramisu")
-        }
+      version = preview("Tiramisu")
+      assertThat(version?.apiLevel).isEqualTo(32)
+      assertThat(version?.codeName).isEqualTo("Tiramisu")
     }
+  }
 
-    companion object {
-        init {
-            importOfflineMavenRepo()
-        }
+  companion object {
+    init {
+      importOfflineMavenRepo()
     }
+  }
 }

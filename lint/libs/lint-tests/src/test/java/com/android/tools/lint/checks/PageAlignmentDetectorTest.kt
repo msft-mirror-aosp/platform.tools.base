@@ -166,10 +166,7 @@ class PageAlignmentDetectorTest : AbstractCheckTest() {
             jniLibX86,
             // Make a second unique library so we can check multiple transitive
             // libraries not found directly referenced in the build file
-            base64gzip(
-              jniLibArm64v8a.targetRelativePath.replace("/tensorflow-lite/", "/tensorflow-lite2/"),
-              jniLibArm64v8aEncoded,
-            ),
+            base64gzip(jniLibArm64v8a.targetRelativePath.replace("/tensorflow-lite/", "/tensorflow-lite2/"), jniLibArm64v8aEncoded),
           )
           .withDependencyGraph(
             """

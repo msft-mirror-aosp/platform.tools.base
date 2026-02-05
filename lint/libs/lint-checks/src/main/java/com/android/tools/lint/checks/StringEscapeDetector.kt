@@ -84,16 +84,10 @@ class StringEscapeDetector : ResourceXmlDetector() {
   }
 
   /**
-   * Check the XML for the string format. This is a port of portions of the code in
-   * frameworks/base/libs/androidfw/ResourceTypes.cpp (and in particular, the stringToValue and
-   * collectString methods)
+   * Check the XML for the string format. This is a port of portions of the code in frameworks/base/libs/androidfw/ResourceTypes.cpp (and in
+   * particular, the stringToValue and collectString methods)
    */
-  private fun checkXmlEscapes(
-    context: XmlContext,
-    textNode: Node,
-    element: Element,
-    string: String,
-  ) {
+  private fun checkXmlEscapes(context: XmlContext, textNode: Node, element: Element, string: String) {
     var s = 0
     var len = string.length
     val n = len
@@ -119,11 +113,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
         if (c == '\\') {
           break
         }
-        if (
-          quoted.code == 0 &&
-            c.isWhitespace() &&
-            (c != ' ' || p == n - 1 || string[p + 1].isWhitespace())
-        ) {
+        if (quoted.code == 0 && c.isWhitespace() && (c != ' ' || p == n - 1 || string[p + 1].isWhitespace())) {
           break
         }
         if (c == '"' && (quoted.code == 0 || quoted == '"')) {
@@ -139,8 +129,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
           // such that the error is more visually prominent/evident in
           // the source editor.
           val location = context.getLocation(textNode, p, len)
-          val fix =
-            fix().name("Escape Apostrophe").replace().pattern("[^\\\\]?(')").with("\\'").build()
+          val fix = fix().name("Escape Apostrophe").replace().pattern("[^\\\\]?(')").with("\\'").build()
           context.report(STRING_ESCAPING, element, location, "Apostrophe not preceded by \\\\", fix)
           return
         }
@@ -183,12 +172,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
                   val h = string[p]
                   if ((h < '0' || h > '9') && (h < 'a' || h > 'f') && (h < 'A' || h > 'F')) {
                     val location = context.getLocation(textNode, p, p + 1)
-                    context.report(
-                      STRING_ESCAPING,
-                      element,
-                      location,
-                      "Bad character in \\\\u unicode escape sequence",
-                    )
+                    context.report(STRING_ESCAPING, element, location, "Bad character in \\\\u unicode escape sequence")
                     return
                   }
                 }

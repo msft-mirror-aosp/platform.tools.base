@@ -89,8 +89,7 @@ internal class KlibLightFakeFacadeClass(
       KlibLightFakeFacadeClass(callableSymbol, kaModule, psiManager, containingFile)
     }
 
-  override fun toString(): String =
-    "${KlibLightFakeFacadeClass::class.java.simpleName}:${callableSymbolPointer}"
+  override fun toString(): String = "${KlibLightFakeFacadeClass::class.java.simpleName}:${callableSymbolPointer}"
 
   private val _classId: ClassId?
     get() =
@@ -136,20 +135,16 @@ internal class KlibLightFakeFacadeClass(
     )
 
   override fun getSuperClass(): PsiClass? {
-    return JavaPsiFacade.getInstance(project)
-      .findClass(CommonClassNames.JAVA_LANG_OBJECT, resolveScope)
+    return JavaPsiFacade.getInstance(project).findClass(CommonClassNames.JAVA_LANG_OBJECT, resolveScope)
   }
 
   override fun getInterfaces(): Array<out PsiClass> = PsiClass.EMPTY_ARRAY
 
-  override fun getSupers(): Array<out PsiClass> =
-    superClass?.let { arrayOf(it) } ?: PsiClass.EMPTY_ARRAY
+  override fun getSupers(): Array<out PsiClass> = superClass?.let { arrayOf(it) } ?: PsiClass.EMPTY_ARRAY
 
-  override fun getSuperTypes(): Array<out PsiClassType> =
-    arrayOf(PsiType.getJavaLangObject(manager, resolveScope))
+  override fun getSuperTypes(): Array<out PsiClassType> = arrayOf(PsiType.getJavaLangObject(manager, resolveScope))
 
-  override fun getNameIdentifier(): PsiIdentifier? =
-    _classId?.shortClassName?.identifier?.let { KtLightIdentifier(this, null, it) }
+  override fun getNameIdentifier(): PsiIdentifier? = _classId?.shortClassName?.identifier?.let { KtLightIdentifier(this, null, it) }
 
   override fun getScope(): PsiElement? = containingFile
 
@@ -170,8 +165,7 @@ internal class KlibLightFakeFacadeClass(
 
   override fun getModifierList(): PsiModifierList = _modifierList
 
-  override fun hasModifierProperty(name: @NonNls String) =
-    name == PsiModifier.PUBLIC || name == PsiModifier.FINAL
+  override fun hasModifierProperty(name: @NonNls String) = name == PsiModifier.PUBLIC || name == PsiModifier.FINAL
 
   override fun isDeprecated() = false
 

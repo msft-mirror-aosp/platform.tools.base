@@ -18,21 +18,19 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class ResValuesApiTests: VariantApiBaseTest(
-    TestType.Script
-) {
-    @Test
-    fun addCustomResValueField() {
-        given {
-            tasksToInvoke.add("compileDebugSources")
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class ResValuesApiTests : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun addCustomResValueField() {
+    given {
+      tasksToInvoke.add("compileDebugSources")
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             import com.android.build.api.variant.ResValue
 
             plugins {
@@ -49,55 +47,59 @@ class ResValuesApiTests: VariantApiBaseTest(
                         ResValue(name, "Variant Name"))
                 }
             }
-                """.trimIndent()
-                testingElements.addManifest(this)
-                addSource(
-                    "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
-                    //language=kotlin
-                    """
-                    package com.android.build.example.minimal
-
-                    import android.app.Activity
-                    import android.os.Bundle
-                    import android.widget.TextView
-
-                    class MainActivity : Activity() {
-                        override fun onCreate(savedInstanceState: Bundle?) {
-                            super.onCreate(savedInstanceState)
-                            val label = TextView(this)
-                            label.setText("Hello ${'$'}{R.string.VariantName}")
-                            setContentView(label)
-                        }
-                    }
-                    """.trimIndent())
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Adding a ResValue field in Kotlin
+            .trimIndent()
+        testingElements.addManifest(this)
+        addSource(
+          "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
+          // language=kotlin
+          """
+          package com.android.build.example.minimal
 
-This sample shows how to add a Resource value known at configuration time.
+          import android.app.Activity
+          import android.os.Bundle
+          import android.widget.TextView
 
-The added field is used in the MainActivity.kt file.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+          class MainActivity : Activity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  val label = TextView(this)
+                  label.setText("Hello ${'$'}{R.string.VariantName}")
+                  setContentView(label)
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Adding a ResValue field in Kotlin
 
-    @Test
-    fun addCustomResValueFromTask() {
-        given {
-            tasksToInvoke.add("compileDebugSources")
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+        This sample shows how to add a Resource value known at configuration time.
+
+        The added field is used in the MainActivity.kt file.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
+
+  @Test
+  fun addCustomResValueFromTask() {
+    given {
+      tasksToInvoke.add("compileDebugSources")
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -130,44 +132,48 @@ The added field is used in the MainActivity.kt file.
                             ResValue(task.gitVersionOutputFile.get().asFile.readText(Charsets.UTF_8), "git version")
                         })
                 }
-            }""".trimIndent()
-                testingElements.addManifest(this)
-                addSource(
-                    "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
-                    //language=kotlin
-                    """
-            package com.android.build.example.minimal
+            }"""
+            .trimIndent()
+        testingElements.addManifest(this)
+        addSource(
+          "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
+          // language=kotlin
+          """
+          package com.android.build.example.minimal
 
-            import android.app.Activity
-            import android.os.Bundle
-            import android.widget.TextView
+          import android.app.Activity
+          import android.os.Bundle
+          import android.widget.TextView
 
-            class MainActivity : Activity() {
-                override fun onCreate(savedInstanceState: Bundle?) {
-                    super.onCreate(savedInstanceState)
-                    val label = TextView(this)
-                    label.setText("Hello ${'$'}{R.string.GitVersion}")
-                    setContentView(label)
-                }
-            }
-            """.trimIndent())
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Adding a ResValue field in Kotlin
-
-This sample shows how to add a resource value for which the value is not known at
-configuration time and will be calculated by a Task.
-
-The added field is used in the MainActivity.kt file.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+          class MainActivity : Activity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  val label = TextView(this)
+                  label.setText("Hello ${'$'}{R.string.GitVersion}")
+                  setContentView(label)
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Adding a ResValue field in Kotlin
+
+        This sample shows how to add a resource value for which the value is not known at
+        configuration time and will be calculated by a Task.
+
+        The added field is used in the MainActivity.kt file.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

@@ -21,61 +21,46 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 
 /** Contains attributes of different types. */
-class AndroidAttributes @JvmOverloads constructor(
-    val stringAttributes: Map<Attribute<String>, String> = emptyMap(),
-    val namedAttributes: Map<Attribute<out Named>, Named> = emptyMap(),
+class AndroidAttributes
+@JvmOverloads
+constructor(
+  val stringAttributes: Map<Attribute<String>, String> = emptyMap(),
+  val namedAttributes: Map<Attribute<out Named>, Named> = emptyMap(),
 ) {
 
-    constructor(stringAttribute: Pair<Attribute<String>, String>) : this(mapOf(stringAttribute))
+  constructor(stringAttribute: Pair<Attribute<String>, String>) : this(mapOf(stringAttribute))
 
-    operator fun plus(other: AndroidAttributes?): AndroidAttributes {
-        return if (other == null) {
-            this
-        } else {
-            stringAttributes.keys.intersect(other.stringAttributes.keys).let {
-                check(it.isEmpty()) { "Can't add 2 AndroidAttributes instances because they share the same attributes: $it" }
-            }
-            namedAttributes.keys.intersect(other.namedAttributes.keys).let {
-                check(it.isEmpty()) { "Can't add 2 AndroidAttributes instances because they share the same attributes: $it" }
-            }
-            AndroidAttributes(
-                stringAttributes + other.stringAttributes,
-                namedAttributes + other.namedAttributes
-            )
-        }
+  operator fun plus(other: AndroidAttributes?): AndroidAttributes {
+    return if (other == null) {
+      this
+    } else {
+      stringAttributes.keys.intersect(other.stringAttributes.keys).let {
+        check(it.isEmpty()) { "Can't add 2 AndroidAttributes instances because they share the same attributes: $it" }
+      }
+      namedAttributes.keys.intersect(other.namedAttributes.keys).let {
+        check(it.isEmpty()) { "Can't add 2 AndroidAttributes instances because they share the same attributes: $it" }
+      }
+      AndroidAttributes(stringAttributes + other.stringAttributes, namedAttributes + other.namedAttributes)
     }
+  }
 
-    fun addAttributesToContainer(container: AttributeContainer) {
-        for ((key, value) in stringAttributes) {
-            container.attribute(key, value)
-        }
-        namedAttributes.forEach { (attribute, value) ->
-            addAttributeToContainer(container, attribute, value)
-        }
+  fun addAttributesToContainer(container: AttributeContainer) {
+    for ((key, value) in stringAttributes) {
+      container.attribute(key, value)
     }
+    namedAttributes.forEach { (attribute, value) -> addAttributeToContainer(container, attribute, value) }
+  }
 
-    private fun<T: Named> addAttributeToContainer(
-        container: AttributeContainer,
-        attribute: Attribute<T>,
-        value: Named
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        container.attribute(
-            attribute,
-            value as T
-        )
-    }
+  private fun <T : Named> addAttributeToContainer(container: AttributeContainer, attribute: Attribute<T>, value: Named) {
+    @Suppress("UNCHECKED_CAST") container.attribute(attribute, value as T)
+  }
 
-    /** Returns a string listing all the attributes. */
-    fun toAttributeMapString(): String {
-        val stringAttrs = stringAttributes.entries.sortedBy { it.key.name }.fold("") { it, entry ->
-            "$it-A${entry.key.name}=${entry.value}"
-        }
-        val namedAttrs = namedAttributes.entries.sortedBy { it.key.name }.fold("") { it, entry ->
-            "$it-A${entry.key.name}=${entry.value}"
-        }
-        return stringAttrs + namedAttrs
-    }
+  /** Returns a string listing all the attributes. */
+  fun toAttributeMapString(): String {
+    val stringAttrs = stringAttributes.entries.sortedBy { it.key.name }.fold("") { it, entry -> "$it-A${entry.key.name}=${entry.value}" }
+    val namedAttrs = namedAttributes.entries.sortedBy { it.key.name }.fold("") { it, entry -> "$it-A${entry.key.name}=${entry.value}" }
+    return stringAttrs + namedAttrs
+  }
 
-    override fun toString() = toAttributeMapString()
+  override fun toString() = toAttributeMapString()
 }

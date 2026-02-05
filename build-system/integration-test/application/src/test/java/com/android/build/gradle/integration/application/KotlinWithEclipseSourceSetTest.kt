@@ -16,28 +16,24 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-/** Assemble tests for kotlin.  */
+/** Assemble tests for kotlin. */
 @Category(SmokeTests::class)
 class KotlinWithEclipseSourceSetTest {
-    @get:Rule
-    var project: GradleTestProject =
-        GradleTestProject.builder().fromTestProject("kotlinWithEclipseSourceSet")
-            .create()
+  @get:Rule var project: GradleTestProject = GradleTestProject.builder().fromTestProject("kotlinWithEclipseSourceSet").create()
 
-    @Test
-    @Throws(Exception::class)
-    fun apkContents() {
-        project.executor().run("clean", "app:assembleDebug")
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).isNotNull()
-        assertThat(apk).doesNotContain("/com/sample/kotlin_source_leak/MainActivity.kt")
-    }
+  @Test
+  @Throws(Exception::class)
+  fun apkContents() {
+    project.executor().run("clean", "app:assembleDebug")
+    val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(apk).isNotNull()
+    assertThat(apk).doesNotContain("/com/sample/kotlin_source_leak/MainActivity.kt")
+  }
 }

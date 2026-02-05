@@ -63,9 +63,7 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
           1
         }
     } else {
-      if (
-        !context.evaluator.isMemberInSubClassOf(method, "androidx.core.content.ContextKt", false)
-      ) {
+      if (!context.evaluator.isMemberInSubClassOf(method, "androidx.core.content.ContextKt", false)) {
         return
       }
 
@@ -94,9 +92,7 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
             "rely on this convention)"
         context.report(ISSUE, node, context.getLocation(expression), message)
       }
-    } else if (
-      context.evaluator.extendsClass(psiClass, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)
-    ) {
+    } else if (context.evaluator.extendsClass(psiClass, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
       val outer = cls.getParentOfType(UClass::class.java, true) ?: return
       @Suppress("UElementAsPsi") val layoutClassName = outer.name
       val expectedName = layoutClassName + "_Layout"
@@ -112,8 +108,7 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(CustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(CustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Mismatched style and class names */
     @JvmField

@@ -28,24 +28,21 @@ import javax.lang.model.element.Modifier
 
 /** Injects a get method to get List<Category>. */
 class AxisLabelsListGetMethodInjector : MethodInjector() {
-    override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
-        val returnType = getOutputParameterType(tensorInfo)
-        val methodSpec = MethodSpec.methodBuilder(
-            MlNames.formatGetterName(
-                tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)
-            )
+  override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
+    val returnType = getOutputParameterType(tensorInfo)
+    val methodSpec =
+      MethodSpec.methodBuilder(MlNames.formatGetterName(tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)))
+        .addModifiers(Modifier.PUBLIC)
+        .addAnnotation(ClassNames.NON_NULL)
+        .returns(returnType)
+        .addStatement(
+          "return new \$T(\$L, \$L.process(\$L)).getCategoryList()",
+          ClassNames.TENSOR_LABEL,
+          getIdentifierFromFileName(tensorInfo.fileName),
+          getProcessorName(tensorInfo),
+          tensorInfo.identifierName,
         )
-            .addModifiers(Modifier.PUBLIC)
-            .addAnnotation(ClassNames.NON_NULL)
-            .returns(returnType)
-            .addStatement(
-                "return new \$T(\$L, \$L.process(\$L)).getCategoryList()",
-                ClassNames.TENSOR_LABEL,
-                getIdentifierFromFileName(tensorInfo.fileName),
-                getProcessorName(tensorInfo),
-                tensorInfo.identifierName
-            )
-            .build()
-        classBuilder.addMethod(methodSpec)
-    }
+        .build()
+    classBuilder.addMethod(methodSpec)
+  }
 }

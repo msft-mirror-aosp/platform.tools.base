@@ -17,6 +17,10 @@
 package com.android.build.gradle.internal.fixtures
 
 import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
+import java.io.File
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import java.net.URLClassLoader
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.ClassLoaderWorkerSpec
@@ -33,288 +37,204 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
-import java.io.File
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import java.net.URLClassLoader
 
 /**
- * Fake implementation of [WorkerExecutor]. [ObjectFactory] is used to instantiate parameters,
- * while [tmpDir] is used to output generated decorated classes.
+ * Fake implementation of [WorkerExecutor]. [ObjectFactory] is used to instantiate parameters, while [tmpDir] is used to output generated
+ * decorated classes.
  */
 open class FakeGradleWorkExecutor(
-    objectFactory: ObjectFactory,
-    tmpDir: File,
-    injectableService: List<FakeInjectableService> = emptyList(),
-    private val executionMode: ExecutionMode = ExecutionMode.RUNNING
+  objectFactory: ObjectFactory,
+  tmpDir: File,
+  injectableService: List<FakeInjectableService> = emptyList(),
+  private val executionMode: ExecutionMode = ExecutionMode.RUNNING,
 ) : WorkerExecutor {
 
-    private val workQueue =
-        FakeGradleWorkQueue(
-            executionMode,
-            objectFactory,
-            tmpDir.resolve("generatedClasses"),
-            injectableService
-        )
+  private val workQueue = FakeGradleWorkQueue(executionMode, objectFactory, tmpDir.resolve("generatedClasses"), injectableService)
 
-    val capturedParameters: List<WorkParameters>
-        get() {
-            check(executionMode == ExecutionMode.CAPTURING) { "Recording params is possible only in capturing mode." }
-            return workQueue.capturedParameters
-        }
-
-    override fun noIsolation(): WorkQueue {
-        return workQueue
+  val capturedParameters: List<WorkParameters>
+    get() {
+      check(executionMode == ExecutionMode.CAPTURING) { "Recording params is possible only in capturing mode." }
+      return workQueue.capturedParameters
     }
 
-    override fun classLoaderIsolation(): WorkQueue {
-        check(executionMode == ExecutionMode.CAPTURING)
-        return workQueue
-    }
+  override fun noIsolation(): WorkQueue {
+    return workQueue
+  }
 
-    override fun processIsolation(): WorkQueue {
-        check(executionMode == ExecutionMode.CAPTURING)
-        return workQueue
-    }
+  override fun classLoaderIsolation(): WorkQueue {
+    check(executionMode == ExecutionMode.CAPTURING)
+    return workQueue
+  }
 
-    override fun noIsolation(action: Action<in WorkerSpec?>): WorkQueue {
-        TODO()
-    }
+  override fun processIsolation(): WorkQueue {
+    check(executionMode == ExecutionMode.CAPTURING)
+    return workQueue
+  }
 
-    override fun classLoaderIsolation(action: Action<in ClassLoaderWorkerSpec?>): WorkQueue {
-        check(executionMode == ExecutionMode.CAPTURING)
-        return workQueue
-    }
+  override fun noIsolation(action: Action<in WorkerSpec?>): WorkQueue {
+    TODO()
+  }
 
-    override fun processIsolation(action: Action<in ProcessWorkerSpec?>): WorkQueue {
-        check(executionMode == ExecutionMode.CAPTURING)
-        return workQueue
-    }
+  override fun classLoaderIsolation(action: Action<in ClassLoaderWorkerSpec?>): WorkQueue {
+    check(executionMode == ExecutionMode.CAPTURING)
+    return workQueue
+  }
 
-    override fun await() {
-        // do nothing as we execute all actions on submit
-    }
+  override fun processIsolation(action: Action<in ProcessWorkerSpec?>): WorkQueue {
+    check(executionMode == ExecutionMode.CAPTURING)
+    return workQueue
+  }
+
+  override fun await() {
+    // do nothing as we execute all actions on submit
+  }
 }
 
-class FakeInjectableService(
-    val methodReference: Method,
-    val implementation: Any
-)
+class FakeInjectableService(val methodReference: Method, val implementation: Any)
 
 enum class ExecutionMode {
-    // Run work actions
-    RUNNING,
+  // Run work actions
+  RUNNING,
 
-    // Just record parameters used for launching work actions
-    CAPTURING,
+  // Just record parameters used for launching work actions
+  CAPTURING,
 }
 
 /** Runs workers actions by directly instantiating worker actions and worker action parameters. */
 private class FakeGradleWorkQueue(
-    private val executionMode: ExecutionMode,
-    private val objectFactory: ObjectFactory,
-    private val generatedClassesOutput: File,
-    private val injectableService: List<FakeInjectableService>
+  private val executionMode: ExecutionMode,
+  private val objectFactory: ObjectFactory,
+  private val generatedClassesOutput: File,
+  private val injectableService: List<FakeInjectableService>,
 ) : WorkQueue {
 
-    val capturedParameters = mutableListOf<WorkParameters>()
+  val capturedParameters = mutableListOf<WorkParameters>()
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : WorkParameters> submit(
-        aClass: Class<out WorkAction<T>>,
-        action: Action<in T>
-    ) {
-        val parameterTypeName =
-            (aClass.genericSuperclass as? ParameterizedType
-                ?: aClass.genericInterfaces.single() as ParameterizedType).actualTypeArguments[0].typeName
-        if (aClass.constructors.single().parameterCount != 0) {
-            // we should just instantiate it and pass in all params + services
-            runWorkAction(parameterTypeName, action, aClass)
-        } else {
-            val workerActionName = aClass.name.replace(".", "/")
-            val bytes =
-                aClass.classLoader.getResourceAsStream("$workerActionName.class")
-                    .use { it!!.readBytes() }
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : WorkParameters> submit(aClass: Class<out WorkAction<T>>, action: Action<in T>) {
+    val parameterTypeName =
+      (aClass.genericSuperclass as? ParameterizedType ?: aClass.genericInterfaces.single() as ParameterizedType)
+        .actualTypeArguments[0]
+        .typeName
+    if (aClass.constructors.single().parameterCount != 0) {
+      // we should just instantiate it and pass in all params + services
+      runWorkAction(parameterTypeName, action, aClass)
+    } else {
+      val workerActionName = aClass.name.replace(".", "/")
+      val bytes = aClass.classLoader.getResourceAsStream("$workerActionName.class").use { it!!.readBytes() }
 
-            val reader = ClassReader(bytes)
-            val cw = ClassWriter(0)
-            reader.accept(WorkerActionDecorator(cw, parameterTypeName, injectableService), 0)
+      val reader = ClassReader(bytes)
+      val cw = ClassWriter(0)
+      reader.accept(WorkerActionDecorator(cw, parameterTypeName, injectableService), 0)
 
-            generatedClassesOutput.resolve("$workerActionName$CLASS_SUFFIX.class").also {
-                it.parentFile.mkdirs()
-                it.writeBytes(cw.toByteArray())
-            }
-            URLClassLoader(
-                arrayOf(generatedClassesOutput.toURI().toURL()),
-                aClass.classLoader
-            ).use { classloader ->
-                val actualClass = classloader.loadClass(aClass.name + CLASS_SUFFIX)
-                runWorkAction(parameterTypeName, action, actualClass)
-            }
-        }
+      generatedClassesOutput.resolve("$workerActionName$CLASS_SUFFIX.class").also {
+        it.parentFile.mkdirs()
+        it.writeBytes(cw.toByteArray())
+      }
+      URLClassLoader(arrayOf(generatedClassesOutput.toURI().toURL()), aClass.classLoader).use { classloader ->
+        val actualClass = classloader.loadClass(aClass.name + CLASS_SUFFIX)
+        runWorkAction(parameterTypeName, action, actualClass)
+      }
     }
+  }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : WorkParameters> runWorkAction(
-        parameterTypeName: String?,
-        action: Action<in T>,
-        actualClass: Class<out Any>
-    ) {
-        // initialize and configure parameters
-        val parametersInstance =
-            objectFactory.newInstance(this::class.java.classLoader.loadClass(parameterTypeName)) as T
-        action.execute(parametersInstance)
+  @Suppress("UNCHECKED_CAST")
+  private fun <T : WorkParameters> runWorkAction(parameterTypeName: String?, action: Action<in T>, actualClass: Class<out Any>) {
+    // initialize and configure parameters
+    val parametersInstance = objectFactory.newInstance(this::class.java.classLoader.loadClass(parameterTypeName)) as T
+    action.execute(parametersInstance)
 
-        when (executionMode) {
-            ExecutionMode.CAPTURING -> capturedParameters.add(parametersInstance)
-            ExecutionMode.RUNNING -> {
-                // create and run worker action
-                val allConstructorArgs =
-                    (listOf(parametersInstance) + injectableService.map { it.implementation }).toTypedArray()
-                val newInstance = objectFactory.newInstance(actualClass, *allConstructorArgs)
-                (newInstance as WorkAction<*>).execute()
-            }
-        }
+    when (executionMode) {
+      ExecutionMode.CAPTURING -> capturedParameters.add(parametersInstance)
+      ExecutionMode.RUNNING -> {
+        // create and run worker action
+        val allConstructorArgs = (listOf(parametersInstance) + injectableService.map { it.implementation }).toTypedArray()
+        val newInstance = objectFactory.newInstance(actualClass, *allConstructorArgs)
+        (newInstance as WorkAction<*>).execute()
+      }
     }
+  }
 
-    @Throws(WorkerExecutionException::class)
-    override fun await() {
-        // do nothing as we execute all actions on submit
-    }
+  @Throws(WorkerExecutionException::class)
+  override fun await() {
+    // do nothing as we execute all actions on submit
+  }
 }
 
 /**
- * Generates decorated class for worker action. The generated class does not have abstract
- * [WorkAction.getParameters] method, and instead it has a constructor which accepts
- * [parameterDescriptor] as argument.
+ * Generates decorated class for worker action. The generated class does not have abstract [WorkAction.getParameters] method, and instead it
+ * has a constructor which accepts [parameterDescriptor] as argument.
  */
-class WorkerActionDecorator(
-    classWriter: ClassWriter,
-    paramsType: String,
-    private val injectableService: List<FakeInjectableService>
-) :
-    ClassVisitor(ASM_API_VERSION, classWriter) {
+class WorkerActionDecorator(classWriter: ClassWriter, paramsType: String, private val injectableService: List<FakeInjectableService>) :
+  ClassVisitor(ASM_API_VERSION, classWriter) {
 
-    private val parameterDescriptor = binaryToDescriptor(paramsType)
+  private val parameterDescriptor = binaryToDescriptor(paramsType)
 
-    lateinit var generatedClassName: String
+  lateinit var generatedClassName: String
 
-    override fun visit(
-        version: Int,
-        access: Int,
-        name: String?,
-        signature: String?,
-        superName: String?,
-        interfaces: Array<out String>?
-    ) {
-        generatedClassName = name + CLASS_SUFFIX
+  override fun visit(version: Int, access: Int, name: String?, signature: String?, superName: String?, interfaces: Array<out String>?) {
+    generatedClassName = name + CLASS_SUFFIX
 
-        val fieldAndDescriptors = mutableListOf<Pair<String, String>>()
-        synthesizeFieldAndMethod("getParameters", WorkParameters::class.java.name).also {
-            fieldAndDescriptors.add(it)
-        }
-        injectableService.forEach {
-            fieldAndDescriptors.add(
-                synthesizeFieldAndMethod(
-                    it.methodReference.name,
-                    it.methodReference.returnType.name
-                )
-            )
-        }
-
-        val constructorArgs = fieldAndDescriptors.joinToString(separator = "") { it.second }
-
-        // add new constructor for parameters and all injectable services
-        super.visitMethod(
-            Opcodes.ACC_PUBLIC,
-            "<init>",
-            "($constructorArgs)V",
-            null,
-            null
-        ).apply {
-            visitAnnotation("Ljavax/inject/Inject;", true)
-            visitCode()
-            visitVarInsn(Opcodes.ALOAD, 0)
-            visitMethodInsn(Opcodes.INVOKESPECIAL, name, "<init>", "()V", false)
-
-            fieldAndDescriptors.forEachIndexed { index, fieldAndDescriptor ->
-                visitVarInsn(Opcodes.ALOAD, 0) // load this
-                visitVarInsn(Opcodes.ALOAD, (index + 1)) // load constructor argument
-                visitFieldInsn(
-                    Opcodes.PUTFIELD,
-                    generatedClassName,
-                    fieldAndDescriptor.first,
-                    fieldAndDescriptor.second
-                );
-            }
-            visitInsn(Opcodes.RETURN)
-            visitMaxs(2, 1 + fieldAndDescriptors.size)
-            visitEnd()
-        }
-
-        super.visit(
-            version,
-            access,
-            generatedClassName,
-            signature,
-            name,
-            interfaces
-        )
+    val fieldAndDescriptors = mutableListOf<Pair<String, String>>()
+    synthesizeFieldAndMethod("getParameters", WorkParameters::class.java.name).also { fieldAndDescriptors.add(it) }
+    injectableService.forEach {
+      fieldAndDescriptors.add(synthesizeFieldAndMethod(it.methodReference.name, it.methodReference.returnType.name))
     }
 
-    private fun synthesizeFieldAndMethod(
-        methodName: String,
-        returnValueType: String
-    ): Pair<String, String> {
-        val descriptor = binaryToDescriptor(returnValueType)
-        val fieldName = methodName + "_field"
-        super.visitField(Opcodes.ACC_PRIVATE, fieldName, descriptor, null, null)
+    val constructorArgs = fieldAndDescriptors.joinToString(separator = "") { it.second }
 
-        super.visitMethod(
-            Opcodes.ACC_PUBLIC,
-            methodName,
-            "()$descriptor",
-            null,
-            null
-        ).apply {
-            visitVarInsn(Opcodes.ALOAD, 0)
-            visitFieldInsn(
-                Opcodes.GETFIELD,
-                generatedClassName,
-                fieldName,
-                descriptor
-            )
-            visitInsn(Opcodes.ARETURN)
-            visitMaxs(1, 1)
-            visitEnd()
-        }
-        return Pair(fieldName, descriptor)
+    // add new constructor for parameters and all injectable services
+    super.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "($constructorArgs)V", null, null).apply {
+      visitAnnotation("Ljavax/inject/Inject;", true)
+      visitCode()
+      visitVarInsn(Opcodes.ALOAD, 0)
+      visitMethodInsn(Opcodes.INVOKESPECIAL, name, "<init>", "()V", false)
+
+      fieldAndDescriptors.forEachIndexed { index, fieldAndDescriptor ->
+        visitVarInsn(Opcodes.ALOAD, 0) // load this
+        visitVarInsn(Opcodes.ALOAD, (index + 1)) // load constructor argument
+        visitFieldInsn(Opcodes.PUTFIELD, generatedClassName, fieldAndDescriptor.first, fieldAndDescriptor.second)
+      }
+      visitInsn(Opcodes.RETURN)
+      visitMaxs(2, 1 + fieldAndDescriptors.size)
+      visitEnd()
     }
 
-    private fun binaryToDescriptor(binaryName: String): String =
-        "L" + binaryName.replace(".", "/") + ";"
+    super.visit(version, access, generatedClassName, signature, name, interfaces)
+  }
 
-    override fun visitField(
-        access: Int,
-        name: String?,
-        descriptor: String?,
-        signature: String?,
-        value: Any?
-    ): FieldVisitor? {
-        // do not add any other fields
-        return null
-    }
+  private fun synthesizeFieldAndMethod(methodName: String, returnValueType: String): Pair<String, String> {
+    val descriptor = binaryToDescriptor(returnValueType)
+    val fieldName = methodName + "_field"
+    super.visitField(Opcodes.ACC_PRIVATE, fieldName, descriptor, null, null)
 
-    override fun visitMethod(
-        access: Int,
-        name: String?,
-        descriptor: String?,
-        signature: String?,
-        exceptions: Array<out String>?
-    ): MethodVisitor? {
-        // do not add any other methods to the generated class
-        return null
+    super.visitMethod(Opcodes.ACC_PUBLIC, methodName, "()$descriptor", null, null).apply {
+      visitVarInsn(Opcodes.ALOAD, 0)
+      visitFieldInsn(Opcodes.GETFIELD, generatedClassName, fieldName, descriptor)
+      visitInsn(Opcodes.ARETURN)
+      visitMaxs(1, 1)
+      visitEnd()
     }
+    return Pair(fieldName, descriptor)
+  }
+
+  private fun binaryToDescriptor(binaryName: String): String = "L" + binaryName.replace(".", "/") + ";"
+
+  override fun visitField(access: Int, name: String?, descriptor: String?, signature: String?, value: Any?): FieldVisitor? {
+    // do not add any other fields
+    return null
+  }
+
+  override fun visitMethod(
+    access: Int,
+    name: String?,
+    descriptor: String?,
+    signature: String?,
+    exceptions: Array<out String>?,
+  ): MethodVisitor? {
+    // do not add any other methods to the generated class
+    return null
+  }
 }
 
 private const val CLASS_SUFFIX = "_WithParams"

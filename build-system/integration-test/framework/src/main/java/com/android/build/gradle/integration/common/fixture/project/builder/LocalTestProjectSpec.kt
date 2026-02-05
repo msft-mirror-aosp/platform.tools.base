@@ -23,15 +23,13 @@ package com.android.build.gradle.integration.common.fixture.project.builder
  */
 interface LocalTestProjectSpec {
 
-    /**
-     * the name of the on-disk project.
-     *
-     * This is the name of the folder containing the project
-     */
-    val projectName: String
+  /**
+   * the name of the on-disk project.
+   *
+   * This is the name of the folder containing the project
+   */
+  val projectName: String
 
-    /**
-     * An action to configure the project
-     */
-    val configAction: GradleBuildDefinition.() -> Unit
+  /** An action to configure the project */
+  val configAction: GradleBuildDefinition.() -> Unit
 }

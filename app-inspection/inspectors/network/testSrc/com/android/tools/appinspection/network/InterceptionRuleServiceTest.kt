@@ -40,9 +40,7 @@ class InterceptionRuleServiceTest {
         response.copy(
           responseBody =
             InterceptedResponseBody.SuccessfulResponseBody(
-              "${response.body.bufferedReader().use { it.readText() }}${c}"
-                .toByteArray()
-                .inputStream()
+              "${response.body.bufferedReader().use { it.readText() }}${c}".toByteArray().inputStream()
             )
         )
     }
@@ -52,8 +50,7 @@ class InterceptionRuleServiceTest {
     assertThat(result).isEqualTo(expected)
   }
 
-  private fun intercept(service: InterceptionRuleServiceImpl) =
-    service.interceptResponse(defaultConnection, startingResponse)
+  private fun intercept(service: InterceptionRuleServiceImpl) = service.interceptResponse(defaultConnection, startingResponse)
 
   @Test
   fun `add rule adds new rules in service`() {

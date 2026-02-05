@@ -24,55 +24,53 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import org.gradle.api.Project
 
-class TestSuiteTaskManager(
-    project: Project,
-    globalConfig: GlobalTaskCreationConfig,
-): TaskManager(project, globalConfig) {
+class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
-    override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
-        get() = setOf()
+  override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
+    get() = setOf()
 
-    fun createTasks(creationConfig: TestSuiteCreationConfig) {
-        // first create all tasks related to processing the source folders.
-        val allSourcesProcessingTasks = creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->
-            testSuiteSourceContainer.createTasks(creationConfig.services, creationConfig)
-        }
-        creationConfig.targets
-            .filter { it.value.enabled }
-            .forEach { mapEntry ->
-                val target = mapEntry.value
-                val testSuiteTestTask = taskFactory.register(
-                    TestSuiteTestTask.CreationAction(creationConfig, target)
-                )
-                val context = object : TestTaskContext {
-                    override val targetName: String
-                        get() = target.name
-                    override val suiteName: String
-                        get() = creationConfig.name
-                    override val targetedVariant: String
-                        get() = creationConfig.testedVariant.name
-                    override val targetedDevices: Collection<String>
-                        get() = target.targetDevices
+  fun createTasks(creationConfig: TestSuiteCreationConfig) {
+    // first create all tasks related to processing the source folders.
+    val allSourcesProcessingTasks =
+      creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->
+        testSuiteSourceContainer.createTasks(creationConfig.services, creationConfig)
+      }
+    creationConfig.targets
+      .filter { it.value.enabled }
+      .forEach { mapEntry ->
+        val target = mapEntry.value
+        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target))
+        val context =
+          object : TestTaskContext {
+            override val targetName: String
+              get() = target.name
 
-                    override fun toString(): String {
-                        return super.toString() + "targetName:$targetName, suiteName:$suiteName," +
-                                " targetedVariant:$targetedVariant, " +
-                                "devices = ${targetedDevices.joinToString(separator = ":")}"
-                    }
-                }
-                creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
+            override val suiteName: String
+              get() = creationConfig.name
 
-                // add sources processing dependencies
-                allSourcesProcessingTasks.forEach { sourceProcessingTask ->
-                    testSuiteTestTask.dependsOn(sourceProcessingTask)
-                }
+            override val targetedVariant: String
+              get() = creationConfig.testedVariant.name
 
-                // Adds GMD Setup task dependency.
-                target.targetDevices.forEach { targetDeviceName ->
-                    val targetDevice = creationConfig.global.androidTestOptions
-                        .managedDevices.localDevices.getByName(targetDeviceName)
-                    testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
-                }
+            override val targetedDevices: Collection<String>
+              get() = target.targetDevices
+
+            override fun toString(): String {
+              return super.toString() +
+                "targetName:$targetName, suiteName:$suiteName," +
+                " targetedVariant:$targetedVariant, " +
+                "devices = ${targetedDevices.joinToString(separator = ":")}"
             }
-    }
+          }
+        creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
+
+        // add sources processing dependencies
+        allSourcesProcessingTasks.forEach { sourceProcessingTask -> testSuiteTestTask.dependsOn(sourceProcessingTask) }
+
+        // Adds GMD Setup task dependency.
+        target.targetDevices.forEach { targetDeviceName ->
+          val targetDevice = creationConfig.global.androidTestOptions.managedDevices.localDevices.getByName(targetDeviceName)
+          testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
+        }
+      }
+  }
 }

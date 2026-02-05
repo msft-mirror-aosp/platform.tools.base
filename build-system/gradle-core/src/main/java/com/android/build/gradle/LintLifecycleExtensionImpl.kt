@@ -21,17 +21,15 @@ import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegi
 import com.android.build.api.variant.LintLifecycleExtension
 import org.gradle.api.Action
 
-open class LintLifecycleExtensionImpl internal constructor(
-    private val dslLifecycleOperationsRegistrar: DslLifecycleComponentsOperationsRegistrar<Lint>
-): LintLifecycleExtension {
+open class LintLifecycleExtensionImpl
+internal constructor(private val dslLifecycleOperationsRegistrar: DslLifecycleComponentsOperationsRegistrar<Lint>) :
+  LintLifecycleExtension {
 
-    override fun finalizeDsl(callback: (Lint) -> Unit) {
-        dslLifecycleOperationsRegistrar.add {
-            callback.invoke(it)
-        }
-    }
+  override fun finalizeDsl(callback: (Lint) -> Unit) {
+    dslLifecycleOperationsRegistrar.add { callback.invoke(it) }
+  }
 
-    override fun finalizeDsl(callback: Action<Lint>) {
-        dslLifecycleOperationsRegistrar.add(callback)
-    }
+  override fun finalizeDsl(callback: Action<Lint>) {
+    dslLifecycleOperationsRegistrar.add(callback)
+  }
 }

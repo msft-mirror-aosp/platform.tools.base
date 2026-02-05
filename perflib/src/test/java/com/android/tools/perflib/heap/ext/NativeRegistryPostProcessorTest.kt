@@ -23,9 +23,9 @@ import com.android.tools.perflib.heap.Snapshot
 import com.android.tools.perflib.heap.Type
 import com.android.tools.proguard.ProguardMap
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.util.*
 import java.util.Collections.emptyList
+import org.junit.Test
 
 class NativeRegistryPostProcessorTest {
 
@@ -59,18 +59,18 @@ class NativeRegistryPostProcessorTest {
       Truth.assertThat(referentInstance.nativeSize).isEqualTo(0L)
       Truth.assertThat(thunkInstance).isNotNull()
 
-      val nativeRegistryField = thunkInstance.values.stream().filter {
-        f ->
-        f.value is ClassInstance && (f.value as ClassInstance).classObj === nativeRegistryClass
-      }.findFirst()
+      val nativeRegistryField =
+        thunkInstance.values
+          .stream()
+          .filter { f -> f.value is ClassInstance && (f.value as ClassInstance).classObj === nativeRegistryClass }
+          .findFirst()
 
       if (!nativeRegistryField.isPresent) {
         continue
       }
 
       val nativeRegistryInstance = nativeRegistryField.get().value as ClassInstance
-      val sizeField = nativeRegistryInstance.values.stream()
-          .filter { f -> "size" == f.field.name && f.field.type == Type.LONG }.findFirst()
+      val sizeField = nativeRegistryInstance.values.stream().filter { f -> "size" == f.field.name && f.field.type == Type.LONG }.findFirst()
       Truth.assertThat(sizeField.isPresent).isTrue()
 
       (instances as java.util.Map<Instance, Long>).putIfAbsent(referentInstance, sizeField.get().value as Long)

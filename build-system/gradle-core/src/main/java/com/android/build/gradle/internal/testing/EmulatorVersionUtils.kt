@@ -29,30 +29,30 @@ private val FORCE_SNAPSHOT_LOAD_VERSION = Version.parse("34.2.14")
 data class EmulatorVersionMetadata(val canUseForceSnapshotLoad: Boolean)
 
 fun getEmulatorMetadata(emulatorDir: File): EmulatorVersionMetadata {
-    val packageFile = emulatorDir.resolve("package.xml")
+  val packageFile = emulatorDir.resolve("package.xml")
 
-    val repository = runCatching {
-        SchemaModuleUtil.unmarshal(
-            packageFile.inputStream(),
-            AndroidSdkHandler.getAllModules(),
-            false,
-            NullProgressIndicator,
-            packageFile.toString(),
-        ) as? Repository
-    }
+  val repository = runCatching {
+    SchemaModuleUtil.unmarshal(
+      packageFile.inputStream(),
+      AndroidSdkHandler.getAllModules(),
+      false,
+      NullProgressIndicator,
+      packageFile.toString(),
+    ) as? Repository
+  }
 
-    val version =
-        repository.getOrNull()?.localPackage?.version?.let { Version.parse("${it.major}.${it.minor}.${it.micro}") }
-            ?: throw IllegalStateException(
-                "Could not determine version of Emulator in ${emulatorDir.absolutePath}. Update " +
-                        "emulator in order to use Managed Devices.", repository.exceptionOrNull()
-            )
-    if (version < SNAPSHOT_LOADABLE_VERSION) {
-        throw IllegalStateException(
-            "Emulator needs to be updated in order to use managed devices. Minimum " +
-                    "version required: $SNAPSHOT_LOADABLE_VERSION. Version found: $version"
-        )
-    }
+  val version =
+    repository.getOrNull()?.localPackage?.version?.let { Version.parse("${it.major}.${it.minor}.${it.micro}") }
+      ?: throw IllegalStateException(
+        "Could not determine version of Emulator in ${emulatorDir.absolutePath}. Update " + "emulator in order to use Managed Devices.",
+        repository.exceptionOrNull(),
+      )
+  if (version < SNAPSHOT_LOADABLE_VERSION) {
+    throw IllegalStateException(
+      "Emulator needs to be updated in order to use managed devices. Minimum " +
+        "version required: $SNAPSHOT_LOADABLE_VERSION. Version found: $version"
+    )
+  }
 
-    return EmulatorVersionMetadata(canUseForceSnapshotLoad = version >= FORCE_SNAPSHOT_LOAD_VERSION)
+  return EmulatorVersionMetadata(canUseForceSnapshotLoad = version >= FORCE_SNAPSHOT_LOAD_VERSION)
 }

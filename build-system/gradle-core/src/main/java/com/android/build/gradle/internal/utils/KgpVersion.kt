@@ -22,22 +22,19 @@ import com.android.ide.common.gradle.Version
 @Suppress("UnstableApiUsage")
 class KgpVersion(private val version: Version) : Comparable<KgpVersion> {
 
-    override fun compareTo(other: KgpVersion) = version.compareTo(other.version)
+  override fun compareTo(other: KgpVersion) = version.compareTo(other.version)
 
-    override fun toString() = version.toString()
+  override fun toString() = version.toString()
 
-    companion object {
+  companion object {
 
-        fun parse(version: String): KgpVersion {
-            return KgpVersion(Version.parse(version))
-        }
-
-        val KGP_2_1_0: KgpVersion = parse("2.1.0")
-
-        /**
-         * The minimum version of KGP required to be on the buildscript classpath for built-in
-         * Kotlin support in AGP.
-         */
-        val MINIMUM_BUILT_IN_KOTLIN_VERSION: KgpVersion = parse("1.9.20")
+    fun parse(version: String): KgpVersion {
+      return KgpVersion(Version.parse(version))
     }
+
+    val KGP_2_1_0: KgpVersion = parse("2.1.0")
+
+    /** The minimum version of KGP required to be on the buildscript classpath for built-in Kotlin support in AGP. */
+    val MINIMUM_BUILT_IN_KOTLIN_VERSION: KgpVersion = parse("1.9.20")
+  }
 }

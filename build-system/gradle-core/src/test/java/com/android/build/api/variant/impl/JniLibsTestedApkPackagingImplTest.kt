@@ -31,35 +31,34 @@ import org.junit.Test
 
 class JniLibsTestedApkPackagingImplTest {
 
-    private lateinit var dslPackaging: Packaging
-    private val projectServices = createProjectServices()
-    private val dslServices: DslServices = createDslServices(projectServices)
-    private val variantPropertiesApiServices = createVariantPropertiesApiServices(projectServices)
+  private lateinit var dslPackaging: Packaging
+  private val projectServices = createProjectServices()
+  private val dslServices: DslServices = createDslServices(projectServices)
+  private val variantPropertiesApiServices = createVariantPropertiesApiServices(projectServices)
 
-    interface PackagingOptionsWrapper {
-        val packaging: Packaging
-    }
+  interface PackagingOptionsWrapper {
+    val packaging: Packaging
+  }
 
-    @Before
-    fun setUp() {
-        dslPackaging = androidPluginDslDecorator.decorate(PackagingOptionsWrapper::class.java)
-            .getDeclaredConstructor(DslServices::class.java)
-            .newInstance(dslServices)
-            .packaging
-    }
+  @Before
+  fun setUp() {
+    dslPackaging =
+      androidPluginDslDecorator
+        .decorate(PackagingOptionsWrapper::class.java)
+        .getDeclaredConstructor(DslServices::class.java)
+        .newInstance(dslServices)
+        .packaging
+  }
 
-    @Test
-    fun testTestOnly() {
-        dslPackaging.jniLibs.testOnly.add("foo")
-        // test setTestOnly method too
-        val dslJniLibsPackagingOptionsImpl = dslPackaging.jniLibs as JniLibsPackagingImpl
-        dslJniLibsPackagingOptionsImpl.setTestOnly(
-            Sets.union(dslPackaging.jniLibs.testOnly, setOf("bar"))
-        )
+  @Test
+  fun testTestOnly() {
+    dslPackaging.jniLibs.testOnly.add("foo")
+    // test setTestOnly method too
+    val dslJniLibsPackagingOptionsImpl = dslPackaging.jniLibs as JniLibsPackagingImpl
+    dslJniLibsPackagingOptionsImpl.setTestOnly(Sets.union(dslPackaging.jniLibs.testOnly, setOf("bar")))
 
-        val jniLibsTestedApkPackagingOptions =
-            JniLibsTestedApkPackagingImpl(dslPackaging, variantPropertiesApiServices, M)
+    val jniLibsTestedApkPackagingOptions = JniLibsTestedApkPackagingImpl(dslPackaging, variantPropertiesApiServices, M)
 
-        assertThat(jniLibsTestedApkPackagingOptions.testOnly.get()).containsExactly("foo", "bar")
-    }
+    assertThat(jniLibsTestedApkPackagingOptions.testOnly.get()).containsExactly("foo", "bar")
+  }
 }

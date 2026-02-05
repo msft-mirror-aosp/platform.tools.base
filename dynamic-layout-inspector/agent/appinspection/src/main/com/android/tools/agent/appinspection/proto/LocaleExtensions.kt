@@ -20,11 +20,13 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import java.util.Locale as JavaUtilLocale
 
 fun JavaUtilLocale.convert(stringTable: StringTable): Locale {
-    val self = this
-    return Locale.newBuilder().apply {
-        language = stringTable.put(self.language)
-        country = stringTable.put(self.country)
-        variant = stringTable.put(self.variant)
-        script = stringTable.put(self.script)
-    }.build()
+  val self = this
+  return Locale.newBuilder()
+    .apply {
+      language = stringTable.put(self.language)
+      country = stringTable.put(self.country)
+      variant = stringTable.put(self.variant)
+      script = stringTable.put(self.script)
+    }
+    .build()
 }

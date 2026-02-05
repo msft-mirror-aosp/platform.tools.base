@@ -21,110 +21,89 @@ import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunn
 import com.android.tools.androidtest.testengine.instrument.InstrumentationResult
 import com.android.tools.androidtest.testengine.instrument.TestIdentifier
 import com.android.tools.androidtest.testengine.instrument.TestResult
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.hierarchical.Node
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
 
-/**
- * Root descriptor for [AndroidTestEngine].
- */
+/** Root descriptor for [AndroidTestEngine]. */
 class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
-    EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
+  EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
 
-    override fun mayRegisterTests(): Boolean = true
+  override fun mayRegisterTests(): Boolean = true
 
-    override fun execute(
-        context: AndroidTestExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): AndroidTestExecutionContext {
-        val config = context.configuration
+  override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
+    val config = context.configuration
 
-        val adbApkInstaller = AdbApkInstaller(
-            config.adb,
-            config.aapt,
-            config.deviceSerial,
-            config.deviceApiLevel,
-            config.installTimeoutMs
-        )
+    val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt, config.deviceSerial, config.deviceApiLevel, config.installTimeoutMs)
 
-        val listener = Listener(this, dynamicTestExecutor)
+    val listener = Listener(this, dynamicTestExecutor)
 
-        val instrumentationRunner = AmInstrumentationRunner(
-            config.adb,
-            config.deviceSerial,
-            config.instrumentationRunnerClass,
-            config.instrumentationTargetPackageId,
-            setOf(listener)
-        )
+    val instrumentationRunner =
+      AmInstrumentationRunner(
+        config.adb,
+        config.deviceSerial,
+        config.instrumentationRunnerClass,
+        config.instrumentationTargetPackageId,
+        setOf(listener),
+      )
 
-        val runner = AndroidTestRunner(
-            adbApkInstaller,
-            instrumentationRunner,
-            config.testedApks,
-            config.testApks,
-            config.apkInstallOptions,
-            config.testUtilApks,
-            config.uninstallApksAfterTests
-        )
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller,
+        instrumentationRunner,
+        config.testedApks,
+        config.testApks,
+        config.apkInstallOptions,
+        config.testUtilApks,
+        config.uninstallApksAfterTests,
+      )
 
-        runner.run()
+    runner.run()
 
-        return context
+    return context
+  }
+
+  /** Bridges Android instrumentation events to JUnit dynamic tests. */
+  class Listener(private val rootDescriptor: TestDescriptor, private val dynamicTestExecutor: Node.DynamicTestExecutor) :
+    AmInstrumentationListener {
+
+    private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
+
+    override fun instrumentationStarted(testCount: Int) {}
+
+    override fun testStarted(testIdentifier: TestIdentifier) {
+      val uniqueId = rootDescriptor.uniqueId.append("test", "${testIdentifier.testClass}#${testIdentifier.testMethod}")
+      val displayName = "${testIdentifier.testClass}.${testIdentifier.testMethod}"
+      val testDescriptor = AndroidDynamicTestDescriptor(uniqueId, displayName, testIdentifier.testClass, testIdentifier.testMethod)
+
+      rootDescriptor.addChild(testDescriptor)
+      testDescriptors[testIdentifier] = testDescriptor
+      dynamicTestExecutor.execute(testDescriptor)
     }
 
-    /**
-     * Bridges Android instrumentation events to JUnit dynamic tests.
-     */
-    class Listener(
-        private val rootDescriptor: TestDescriptor,
-        private val dynamicTestExecutor: Node.DynamicTestExecutor
-    ) : AmInstrumentationListener {
-
-        private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
-
-        override fun instrumentationStarted(testCount: Int) {}
-
-        override fun testStarted(testIdentifier: TestIdentifier) {
-            val uniqueId = rootDescriptor.uniqueId.append(
-                "test",
-                "${testIdentifier.testClass}#${testIdentifier.testMethod}"
-            )
-            val displayName = "${testIdentifier.testClass}.${testIdentifier.testMethod}"
-            val testDescriptor = AndroidDynamicTestDescriptor(
-                uniqueId,
-                displayName,
-                testIdentifier.testClass,
-                testIdentifier.testMethod
-            )
-
-            rootDescriptor.addChild(testDescriptor)
-            testDescriptors[testIdentifier] = testDescriptor
-            dynamicTestExecutor.execute(testDescriptor)
-        }
-
-        override fun testEnded(testResult: TestResult) {
-            testDescriptors[testResult.testIdentifier]?.resultFuture?.complete(testResult)
-        }
-
-        override fun instrumentationFailed(errorMessage: String) {
-            val exception = RuntimeException(errorMessage)
-            testDescriptors.values.forEach {
-                if (!it.resultFuture.isDone) {
-                    it.resultFuture.completeExceptionally(exception)
-                }
-            }
-        }
-
-        override fun instrumentationEnded(instrumentationResult: InstrumentationResult) {
-            val exception = RuntimeException("Instrumentation ended unexpectedly")
-            testDescriptors.values.forEach {
-                if (!it.resultFuture.isDone) {
-                    it.resultFuture.completeExceptionally(exception)
-                }
-            }
-        }
+    override fun testEnded(testResult: TestResult) {
+      testDescriptors[testResult.testIdentifier]?.resultFuture?.complete(testResult)
     }
+
+    override fun instrumentationFailed(errorMessage: String) {
+      val exception = RuntimeException(errorMessage)
+      testDescriptors.values.forEach {
+        if (!it.resultFuture.isDone) {
+          it.resultFuture.completeExceptionally(exception)
+        }
+      }
+    }
+
+    override fun instrumentationEnded(instrumentationResult: InstrumentationResult) {
+      val exception = RuntimeException("Instrumentation ended unexpectedly")
+      testDescriptors.values.forEach {
+        if (!it.resultFuture.isDone) {
+          it.resultFuture.completeExceptionally(exception)
+        }
+      }
+    }
+  }
 }

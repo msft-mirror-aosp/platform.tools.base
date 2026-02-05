@@ -30,58 +30,42 @@ import javax.lang.model.element.Modifier
 
 /** Inject fields based on [TensorInfo]. */
 class FieldInjector : CodeInjector<TypeSpec.Builder, TensorInfo> {
-    override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
-        if (!tensorInfo.isMetadataExisted) {
-            return
-        }
-
-        if (!Strings.isNullOrEmpty(tensorInfo.fileName)) {
-            val fieldName = FieldSpec.builder(
-                ClassNames.LIST_OF_STRING,
-                getIdentifierFromFileName(tensorInfo.fileName)
-            )
-                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                .addAnnotation(ClassNames.NON_NULL)
-                .build()
-            classBuilder.addField(fieldName)
-        }
-
-        // Add preprocessor and postprocessor fields.
-        if (tensorInfo.isRGBImage) {
-            // Add processor and image fields.
-            val processorField = FieldSpec.builder(
-                ClassNames.IMAGE_PROCESSOR,
-                getProcessorName(tensorInfo)
-            )
-                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                .addAnnotation(ClassNames.NON_NULL)
-                .build()
-            classBuilder.addField(processorField)
-
-            val imageHeightField = FieldSpec.builder(
-                TypeName.INT,
-                getImageHeightFieldName(tensorInfo)
-            )
-                .addModifiers(Modifier.PRIVATE)
-                .build()
-            classBuilder.addField(imageHeightField)
-
-            val imageWidthField = FieldSpec.builder(
-                TypeName.INT,
-                getImageWidthFieldName(tensorInfo)
-            )
-                .addModifiers(Modifier.PRIVATE)
-                .build()
-            classBuilder.addField(imageWidthField)
-        } else {
-            val fieldName = FieldSpec.builder(
-                ClassNames.TENSOR_PROCESSOR,
-                getProcessorName(tensorInfo)
-            )
-                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                .addAnnotation(ClassNames.NON_NULL)
-                .build()
-            classBuilder.addField(fieldName)
-        }
+  override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
+    if (!tensorInfo.isMetadataExisted) {
+      return
     }
+
+    if (!Strings.isNullOrEmpty(tensorInfo.fileName)) {
+      val fieldName =
+        FieldSpec.builder(ClassNames.LIST_OF_STRING, getIdentifierFromFileName(tensorInfo.fileName))
+          .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+          .addAnnotation(ClassNames.NON_NULL)
+          .build()
+      classBuilder.addField(fieldName)
+    }
+
+    // Add preprocessor and postprocessor fields.
+    if (tensorInfo.isRGBImage) {
+      // Add processor and image fields.
+      val processorField =
+        FieldSpec.builder(ClassNames.IMAGE_PROCESSOR, getProcessorName(tensorInfo))
+          .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+          .addAnnotation(ClassNames.NON_NULL)
+          .build()
+      classBuilder.addField(processorField)
+
+      val imageHeightField = FieldSpec.builder(TypeName.INT, getImageHeightFieldName(tensorInfo)).addModifiers(Modifier.PRIVATE).build()
+      classBuilder.addField(imageHeightField)
+
+      val imageWidthField = FieldSpec.builder(TypeName.INT, getImageWidthFieldName(tensorInfo)).addModifiers(Modifier.PRIVATE).build()
+      classBuilder.addField(imageWidthField)
+    } else {
+      val fieldName =
+        FieldSpec.builder(ClassNames.TENSOR_PROCESSOR, getProcessorName(tensorInfo))
+          .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+          .addAnnotation(ClassNames.NON_NULL)
+          .build()
+      classBuilder.addField(fieldName)
+    }
+  }
 }

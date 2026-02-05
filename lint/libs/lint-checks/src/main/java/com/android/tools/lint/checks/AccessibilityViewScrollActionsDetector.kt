@@ -45,21 +45,18 @@ import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
- * Reports overrides of `View.onInitializeAccessibilityNodeInfo(info)` when all the following are
- * true:
- * - In the function body, we see at least one of
- *   `info.addAction(ACTION_SCROLL_{FORWARD,BACKWARD})`.
- * - In the function body, we do NOT see any of
- *   `info.addAction(ACTION_SCROLL_{UP,DOWN,LEFT,RIGHT})`.
+ * Reports overrides of `View.onInitializeAccessibilityNodeInfo(info)` when all the following are true:
+ * - In the function body, we see at least one of `info.addAction(ACTION_SCROLL_{FORWARD,BACKWARD})`.
+ * - In the function body, we do NOT see any of `info.addAction(ACTION_SCROLL_{UP,DOWN,LEFT,RIGHT})`.
  * - In the function body, `info` does NOT escape (ignoring escape via a call to the super method).
- * - The containing class (subclass of `View`) is NOT a subclass of `ScrollView`, but behaves like a
- *   `ScrollView`; that is, at least one of the following must hold:
+ * - The containing class (subclass of `View`) is NOT a subclass of `ScrollView`, but behaves like a `ScrollView`; that is, at least one of
+ *   the following must hold:
  *     - In the function body, we see `info.setCollectionInfo(...)`.
  *     - In the function body, we see `info.setClassName(S)`.
  *     - The containing class overrides `getAccessibilityClassName` and just returns `S`.
  *
- * ...where S is a String that contains "ScrollView" or contains a reference to `ScrollView.class`
- * (to allow for expressions like `ScrollView.class.getName()`).
+ * ...where S is a String that contains "ScrollView" or contains a reference to `ScrollView.class` (to allow for expressions like
+ * `ScrollView.class.getName()`).
  */
 class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
 
@@ -78,10 +75,7 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
     // implements things correctly.
     if (context.evaluator.inheritsFrom(psiClass, FQCN_SCROLL_VIEW, strict = false)) return
 
-    /**
-     * Returns true if [method]'s signature is `void
-     * onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo p0)` and is an override.
-     */
+    /** Returns true if [method]'s signature is `void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo p0)` and is an override. */
     fun isInitializeMethod(method: PsiMethod): Boolean {
       if (PsiTypes.voidType() != method.returnType) return false
       val parameters = method.parameterList.parameters
@@ -90,15 +84,11 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
       if (parameter.isVarArgs) return false
       val type = parameter.type
       if (type !is PsiClassReferenceType) return false
-      if (type.reference.qualifiedName != "android.view.accessibility.AccessibilityNodeInfo")
-        return false
+      if (type.reference.qualifiedName != "android.view.accessibility.AccessibilityNodeInfo") return false
       return context.evaluator.isOverride(method, includeInterfaces = false)
     }
 
-    /**
-     * Returns true if [method]'s signature is `CharSequence getAccessibilityClassName()` and is an
-     * override.
-     */
+    /** Returns true if [method]'s signature is `CharSequence getAccessibilityClassName()` and is an override. */
     fun isGetAccessibilityClassNameMethod(method: PsiMethod): Boolean {
       val returnType = method.returnType as? PsiClassReferenceType ?: return false
       if (returnType.reference.qualifiedName != "java.lang.CharSequence") return false
@@ -143,19 +133,15 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
     var setsClassNameToScrollView = false
 
     val superMethods =
-      lazy(LazyThreadSafetyMode.NONE) {
-        (initializeMethod.javaPsi as? PsiMethod)?.findSuperMethods() ?: emptyArray<PsiMethod>()
-      }
+      lazy(LazyThreadSafetyMode.NONE) { (initializeMethod.javaPsi as? PsiMethod)?.findSuperMethods() ?: emptyArray<PsiMethod>() }
 
     val dfa =
       object : EscapeCheckingDataFlowAnalyzer(listOf(accessibilityNodeInfoParam)) {
 
         override fun argument(call: UCallExpression, reference: UElement) {
-          val isSuperCall =
-            call.resolve()?.let { resolved ->
-              superMethods.value.any { sup -> resolved.isEquivalentTo(sup) }
-            } ?: false
-          // Ignore escapes from calls to super method. There is a risk of false-warnings here: the
+          val isSuperCall = call.resolve()?.let { resolved -> superMethods.value.any { sup -> resolved.isEquivalentTo(sup) } } ?: false
+          // Ignore escapes from calls to super method. There is a risk of false-warnings here:
+          // the
           // onInitializeAccessibilityNodeInfo override could call
           // info.addAction(ACTION_SCROLL_FORWARD) and the super method could call
           // info.addAction(ACTION_SCROLL_UP). However, this seems very unlikely.
@@ -223,15 +209,11 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
       !dfa.escaped &&
         addsForwardBackward &&
         !addsUpDownLeftRight &&
-        (setsCollectionInfo ||
-          setsClassNameToScrollView ||
-          overridesAccessibilityClassNameAsScrollView())
+        (setsCollectionInfo || setsClassNameToScrollView || overridesAccessibilityClassNameAsScrollView())
     ) {
       context.report(
         issue = ISSUE,
-        scope =
-          initializeMethod
-            as? UElement, // The cast is needed to disambiguate the report function signature.
+        scope = initializeMethod as? UElement, // The cast is needed to disambiguate the report function signature.
         location = context.getLocation(initializeMethod),
         message =
           "Views that behave like `ScrollView` and support `ACTION_SCROLL_{FORWARD,BACKWARD}` should also support " +
@@ -257,8 +239,7 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
         category = Category.A11Y,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(AccessibilityViewScrollActionsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(AccessibilityViewScrollActionsDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
   }

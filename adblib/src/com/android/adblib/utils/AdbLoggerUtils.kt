@@ -16,41 +16,40 @@
 package com.android.adblib.utils
 
 import com.android.adblib.AdbLogger
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import java.io.EOFException
 import java.io.IOException
 import java.nio.channels.ClosedChannelException
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.channels.ClosedSendChannelException
 
 /**
- * Logs a [Throwable] related to an operation performing I/O, at an appropriate [AdbLogger.Level]
- * depending on the severity of the error, with the assumption [AdbLogger.Level.INFO] is
- * the default [AdbLogger] level.
+ * Logs a [Throwable] related to an operation performing I/O, at an appropriate [AdbLogger.Level] depending on the severity of the error,
+ * with the assumption [AdbLogger.Level.INFO] is the default [AdbLogger] level.
  */
 fun AdbLogger.logIOCompletionErrors(throwable: Throwable, messagePrefix: String = "") {
-    val prefix = if (messagePrefix.isEmpty()) "" else "$messagePrefix: "
-    when (throwable) {
-        // Cancellation is always expected to happen
-        is CancellationException -> {
-            debug(throwable) { "${prefix}Completion due to cancellation" }
-        }
-        // Errors related to EOF, end of connection or end of Channel are expected to happen
-        is EOFException,
-        is ClosedChannelException,
-        is ClosedSendChannelException,
-        is ClosedReceiveChannelException -> {
-            info { "${prefix}Completion due to EOF or connection closed ($throwable)"}
-            debug(throwable) { "-- Associated exception" }
-        }
-        // Other type of I/O errors are expected to happen, but rarely, so logging the stacktrace
-        // can be useful.
-        is IOException -> {
-            info(throwable) { "${prefix}Completion due to I/O Exception" }
-        }
-        // Other errors are not expected, log a warning
-        else -> {
-            warn(throwable, "${prefix}Completion due to unexpected exception")
-        }
+  val prefix = if (messagePrefix.isEmpty()) "" else "$messagePrefix: "
+  when (throwable) {
+    // Cancellation is always expected to happen
+    is CancellationException -> {
+      debug(throwable) { "${prefix}Completion due to cancellation" }
     }
+    // Errors related to EOF, end of connection or end of Channel are expected to happen
+    is EOFException,
+    is ClosedChannelException,
+    is ClosedSendChannelException,
+    is ClosedReceiveChannelException -> {
+      info { "${prefix}Completion due to EOF or connection closed ($throwable)" }
+      debug(throwable) { "-- Associated exception" }
+    }
+    // Other type of I/O errors are expected to happen, but rarely, so logging the stacktrace
+    // can be useful.
+    is IOException -> {
+      info(throwable) { "${prefix}Completion due to I/O Exception" }
+    }
+    // Other errors are not expected, log a warning
+    else -> {
+      warn(throwable, "${prefix}Completion due to unexpected exception")
+    }
+  }
 }

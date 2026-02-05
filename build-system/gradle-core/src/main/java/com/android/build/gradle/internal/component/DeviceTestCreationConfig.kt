@@ -16,7 +16,5 @@
 
 package com.android.build.gradle.internal.component
 
-/**
- * Internal interface for Android Test component
- */
-interface DeviceTestCreationConfig: TestComponentCreationConfig, InstrumentedTestCreationConfig
+/** Internal interface for Android Test component */
+interface DeviceTestCreationConfig : TestComponentCreationConfig, InstrumentedTestCreationConfig

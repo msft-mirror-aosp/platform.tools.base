@@ -20,33 +20,30 @@ import com.android.tools.lint.LintIssueDocGenerator
 import com.android.tools.lint.detector.api.JavaContext
 
 /**
- * Test mode which modifies Kotlin and Java source files in various compatible ways (such as
- * inserting extra parentheses for clarity) and makes sure the test continues to pass.
+ * Test mode which modifies Kotlin and Java source files in various compatible ways (such as inserting extra parentheses for clarity) and
+ * makes sure the test continues to pass.
  *
  * Remaining ideas for things to try modifying:
  * * Extract all literals into constants (to make sure constant evaluator is used)
- * * For == calls in Kotlin files to non primitives, consider switching to .equals() to make sure
- *   detector dealing with UBinaryExpression also handle UCallExpression
- * * Advanced: Consider trying to introduce apply statements for repeated construction chains, or
- *   "with" statements for repeated initialization
+ * * For == calls in Kotlin files to non primitives, consider switching to .equals() to make sure detector dealing with UBinaryExpression
+ *   also handle UCallExpression
+ * * Advanced: Consider trying to introduce apply statements for repeated construction chains, or "with" statements for repeated
+ *   initialization
  * * In Kotlin add explicit types as well as try to remove them in case they're implicit
  * * Make unicode escapes for symbol names and/or unicode symbols
  * * Add boolean inversion (if (C) A else B => if (!C) B else A)
  * * Rename symbols in Kotlin to reserved names or names with spaces?
- * * Adding "+ 0" to integer expressions and "false || " to boolean expressions to make sure code is
- *   properly using a constant evaluator. (This obviously won't work for resource type and typedef
- *   expressions!)
+ * * Adding "+ 0" to integer expressions and "false || " to boolean expressions to make sure code is properly using a constant evaluator.
+ *   (This obviously won't work for resource type and typedef expressions!)
  */
-abstract class SourceTransformationTestMode(description: String, testMode: String, folder: String) :
-  TestMode(description, testMode) {
+abstract class SourceTransformationTestMode(description: String, testMode: String, folder: String) : TestMode(description, testMode) {
   override val folderName: String = folder
   override val modifiesSources: Boolean = true
 
   /**
-   * Special comparison function for the output; normally, test modes change conditions and expect
-   * the output to be identical, but here we're modifying the source itself, which affects the
-   * sources snippets shown in the error output as well as the error ranges. However, we want to
-   * treat this error:
+   * Special comparison function for the output; normally, test modes change conditions and expect the output to be identical, but here
+   * we're modifying the source itself, which affects the sources snippets shown in the error output as well as the error ranges. However,
+   * we want to treat this error:
    * ```
    *    src/test/pkg/CheckPermissions.java:22: Warning: The result of extractAlpha is not used [CheckResult]
    *            bitmap.extractAlpha(); // WARNING
@@ -69,9 +66,7 @@ abstract class SourceTransformationTestMode(description: String, testMode: Strin
 
     // Just compare the error lines. Change details about the source
     // line included in the diff should not affect comparison.
-    val filterOutput =
-      if (type == OutputKind.REPORT) LintIssueDocGenerator::getOutputLines
-      else LintIssueDocGenerator::getFixLines
+    val filterOutput = if (type == OutputKind.REPORT) LintIssueDocGenerator::getOutputLines else LintIssueDocGenerator::getFixLines
     val expectedLines = filterOutput(expected)
     val actualLines = filterOutput(actual)
     if (expectedLines.size != actualLines.size) {
@@ -98,11 +93,10 @@ abstract class SourceTransformationTestMode(description: String, testMode: Strin
   }
 
   /**
-   * Converts an error message in the error report in such a way that it's made comparable to the
-   * default. For example, in parenthesis mode, we're adding unnecessary parentheses. If a detector
-   * just verbatim includes the node text, it will now include parentheses as well, and the normal
-   * equals comparison will fail. The override of this method in the parenthesis test mode will drop
-   * all parentheses, which would make the comparison succeeded.
+   * Converts an error message in the error report in such a way that it's made comparable to the default. For example, in parenthesis mode,
+   * we're adding unnecessary parentheses. If a detector just verbatim includes the node text, it will now include parentheses as well, and
+   * the normal equals comparison will fail. The override of this method in the parenthesis test mode will drop all parentheses, which would
+   * make the comparison succeeded.
    */
   open fun transformMessage(message: String): String = message
 
@@ -186,13 +180,11 @@ class Edit(
 }
 
 /**
- * Checks that the given list of [edits] for a given test [mode] operating on a source file pointed
- * to by the given [context] is a valid set of edits: no overlaps. This is normally the case, but
- * there are some tricky situations where UAST will map a single source element into multiple
- * separate AST elements (examples include `@JvmStatic` methods in companion objects and properties)
- * so test modes need to be careful around these. This adds a safeguard mechanism such that if the
- * test mode produces an invalid set of edits, we catch it, log it and resume (or if it's a built-in
- * test, fail the test). This method should return true if there are no conflicts.
+ * Checks that the given list of [edits] for a given test [mode] operating on a source file pointed to by the given [context] is a valid set
+ * of edits: no overlaps. This is normally the case, but there are some tricky situations where UAST will map a single source element into
+ * multiple separate AST elements (examples include `@JvmStatic` methods in companion objects and properties) so test modes need to be
+ * careful around these. This adds a safeguard mechanism such that if the test mode produces an invalid set of edits, we catch it, log it
+ * and resume (or if it's a built-in test, fail the test). This method should return true if there are no conflicts.
  */
 internal fun ensureConflictFree(mode: TestMode, context: JavaContext, edits: List<Edit>): Boolean {
   // Make sure the edits are valid
@@ -211,8 +203,7 @@ internal fun ensureConflictFree(mode: TestMode, context: JavaContext, edits: Lis
       if (
         Throwable().fillInStackTrace().stackTrace.any {
           val name = it.className
-          name.startsWith("com.android.tools.") &&
-            (!name.contains(".infrastructure.") || name.endsWith("Test"))
+          name.startsWith("com.android.tools.") && (!name.contains(".infrastructure.") || name.endsWith("Test"))
         }
       ) {
         // For built-in tests we want to fail

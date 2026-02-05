@@ -20,5 +20,4 @@ import com.android.build.gradle.internal.caching.DisabledCachingReason
 import org.gradle.work.DisableCachingByDefault
 
 /** Global (non-variant) task. */
-@DisableCachingByDefault(because = DisabledCachingReason.BASE_TASK)
-abstract class AndroidGlobalTask : BaseTask(), GlobalTask
+@DisableCachingByDefault(because = DisabledCachingReason.BASE_TASK) abstract class AndroidGlobalTask : BaseTask(), GlobalTask

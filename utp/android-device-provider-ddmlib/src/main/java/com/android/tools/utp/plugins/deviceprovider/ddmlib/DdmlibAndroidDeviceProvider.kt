@@ -37,100 +37,98 @@ import com.google.testing.platform.lib.process.logger.SubprocessLogger
 import com.google.testing.platform.proto.api.config.LocalAndroidDeviceProviderProto
 import com.google.testing.platform.runtime.android.AndroidDeviceProvider
 import com.google.testing.platform.runtime.android.device.AndroidDevice
-import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.TimeUnit
+import kotlin.OptIn
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-/**
- * Provisions an [AndroidDevice] and returns a [DeviceController] using the DDMLIB.
- */
+/** Provisions an [AndroidDevice] and returns a [DeviceController] using the DDMLIB. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
-    companion object {
-        private const val DEFAULT_ADB_COMMAND_TIMEOUT_SECONDS = 120L
-    }
+  companion object {
+    private const val DEFAULT_ADB_COMMAND_TIMEOUT_SECONDS = 120L
+  }
 
-    private lateinit var deviceFinder: DdmlibAndroidDeviceFinder
-    private lateinit var environment: Environment
-    private lateinit var testSetup: Setup
-    private lateinit var androidSdk: AndroidSdk
-    private lateinit var apkPackageNameResolver: ApkPackageNameResolver
-    private lateinit var ddmlibAndroidDeviceProviderConfig: AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
-    private lateinit var deviceProviderConfig: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
-    private lateinit var coroutineScope: CoroutineScope
+  private lateinit var deviceFinder: DdmlibAndroidDeviceFinder
+  private lateinit var environment: Environment
+  private lateinit var testSetup: Setup
+  private lateinit var androidSdk: AndroidSdk
+  private lateinit var apkPackageNameResolver: ApkPackageNameResolver
+  private lateinit var ddmlibAndroidDeviceProviderConfig: AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
+  private lateinit var deviceProviderConfig: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
+  private lateinit var coroutineScope: CoroutineScope
 
-    constructor(deviceFinder: DdmlibAndroidDeviceFinder) : this() {
-        this.deviceFinder = deviceFinder
-    }
+  constructor(deviceFinder: DdmlibAndroidDeviceFinder) : this() {
+    this.deviceFinder = deviceFinder
+  }
 
-    /**
-     * Called to 'inject' config into this class.
-     *
-     * @param config The config class which has all the required data classes.
-     */
-    override fun configure(context: Context) {
-        coroutineScope = context.coroutineScope
+  /**
+   * Called to 'inject' config into this class.
+   *
+   * @param config The config class which has all the required data classes.
+   */
+  override fun configure(context: Context) {
+    coroutineScope = context.coroutineScope
 
-        val config = context[Context.CONFIG_KEY] as Config
-        environment = config.environment
-        testSetup = config.setup
-        androidSdk = config.androidSdk
+    val config = context[Context.CONFIG_KEY] as Config
+    environment = config.environment
+    testSetup = config.setup
+    androidSdk = config.androidSdk
 
-        val subprocessLoggerFactory = object: SubprocessLogger.Factory {
-            override fun create() = DefaultSubprocessLogger(
-                config.environment.outputDirectory,
-                flushEagerly = true)
-        }
-        val subprocessComponent = DaggerSubprocessComponent.builder()
-            .subprocessLoggerFactory(subprocessLoggerFactory)
-            .build()
-        apkPackageNameResolver = ApkPackageNameResolver(androidSdk.aaptPath, subprocessComponent)
+    val subprocessLoggerFactory =
+      object : SubprocessLogger.Factory {
+        override fun create() = DefaultSubprocessLogger(config.environment.outputDirectory, flushEagerly = true)
+      }
+    val subprocessComponent = DaggerSubprocessComponent.builder().subprocessLoggerFactory(subprocessLoggerFactory).build()
+    apkPackageNameResolver = ApkPackageNameResolver(androidSdk.aaptPath, subprocessComponent)
 
-        ddmlibAndroidDeviceProviderConfig = requireNotNull(config.parseConfig())
-        deviceProviderConfig = validateLocalDeviceProviderConfig(
-            LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider.parseFrom(
-                ddmlibAndroidDeviceProviderConfig.localAndroidDeviceProviderConfig.value))
-
-        if (!this::deviceFinder.isInitialized) {
-            val adb = requireNotNull(AndroidDebugBridge.createBridge(
-                    config.androidSdk.adbPath,
-                    /*forceNewBridge=*/false,
-                    DEFAULT_ADB_COMMAND_TIMEOUT_SECONDS,
-                    TimeUnit.SECONDS)) {
-                "Failed to initialize AndroidDebugBridge."
-            }
-            deviceFinder = DdmlibAndroidDeviceFinder(adb)
-        }
-    }
-
-    /**
-     * Makes sure there is configuration info to contact adb server. Does not use config.isValid()
-     * since that validates the config fully identifies a device.
-     */
-    private fun validateLocalDeviceProviderConfig(
-            config: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
-    ): LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider {
-        require(config.hostOrDefault.isNotBlank()) {
-            "DeviceProviderConfig must contain adbServerPort and either host, was given:\n$config"
-        }
-        return config
-    }
-
-    override fun provideDevice(): DeviceController {
-        val deviceController = DdmlibAndroidDeviceController(
-            apkPackageNameResolver,
-            ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks,
-            coroutineScope,
+    ddmlibAndroidDeviceProviderConfig = requireNotNull(config.parseConfig())
+    deviceProviderConfig =
+      validateLocalDeviceProviderConfig(
+        LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider.parseFrom(
+          ddmlibAndroidDeviceProviderConfig.localAndroidDeviceProviderConfig.value
         )
-        val device = deviceFinder.findDevice(deviceProviderConfig.serial)
-            ?: throw DeviceProviderException(
-                "Android device (${deviceProviderConfig.serial}) is not found."
-            )
+      )
 
-        deviceController.setDevice(DdmlibAndroidDevice(device))
-        return deviceController
+    if (!this::deviceFinder.isInitialized) {
+      val adb =
+        requireNotNull(
+          AndroidDebugBridge.createBridge(
+            config.androidSdk.adbPath,
+            /*forceNewBridge=*/ false,
+            DEFAULT_ADB_COMMAND_TIMEOUT_SECONDS,
+            TimeUnit.SECONDS,
+          )
+        ) {
+          "Failed to initialize AndroidDebugBridge."
+        }
+      deviceFinder = DdmlibAndroidDeviceFinder(adb)
     }
+  }
 
-    override fun releaseDevice() {
-    }
+  /**
+   * Makes sure there is configuration info to contact adb server. Does not use config.isValid() since that validates the config fully
+   * identifies a device.
+   */
+  private fun validateLocalDeviceProviderConfig(
+    config: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
+  ): LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider {
+    require(config.hostOrDefault.isNotBlank()) { "DeviceProviderConfig must contain adbServerPort and either host, was given:\n$config" }
+    return config
+  }
 
-    override fun cancel(aborted: Boolean): Boolean = false
+  override fun provideDevice(): DeviceController {
+    val deviceController =
+      DdmlibAndroidDeviceController(apkPackageNameResolver, ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks, coroutineScope)
+    val device =
+      deviceFinder.findDevice(deviceProviderConfig.serial)
+        ?: throw DeviceProviderException("Android device (${deviceProviderConfig.serial}) is not found.")
+
+    deviceController.setDevice(DdmlibAndroidDevice(device))
+    return deviceController
+  }
+
+  override fun releaseDevice() {}
+
+  override fun cancel(aborted: Boolean): Boolean = false
 }

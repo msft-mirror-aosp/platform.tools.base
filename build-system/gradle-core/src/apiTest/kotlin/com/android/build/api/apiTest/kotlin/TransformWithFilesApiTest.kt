@@ -26,35 +26,32 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-
 @RunWith(Parameterized::class)
-class TransformWithFilesApiTest(private val artifact: String, private val plugin: String):
-    VariantApiBaseTest(TestType.Script) {
-    companion object {
+class TransformWithFilesApiTest(private val artifact: String, private val plugin: String) : VariantApiBaseTest(TestType.Script) {
+  companion object {
 
-        @Parameterized.Parameters(name = "artifact_{0}")
-        @JvmStatic
-        fun parameters() = listOf(
-            arrayOf("AAR", "com.android.library"),
-            arrayOf("BUNDLE", "com.android.application")
-        )
-    }
-    @Test
-    fun androidArtifactTransformTest() {
-        given {
-            tasksToInvoke.add(":module:debugConsumeArtifact")
-            addModule(":module") {
-                val versionCodeBlock = if (artifact != "AAR") {
+    @Parameterized.Parameters(name = "artifact_{0}")
+    @JvmStatic
+    fun parameters() = listOf(arrayOf("AAR", "com.android.library"), arrayOf("BUNDLE", "com.android.application"))
+  }
+
+  @Test
+  fun androidArtifactTransformTest() {
+    given {
+      tasksToInvoke.add(":module:debugConsumeArtifact")
+      addModule(":module") {
+        val versionCodeBlock =
+          if (artifact != "AAR") {
             """
                 defaultConfig {
                     versionCode = 3
                 }
             """
-                } else ""
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+          } else ""
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
         plugins {
                 id("$plugin")
                 kotlin("android")
@@ -111,35 +108,30 @@ class TransformWithFilesApiTest(private val artifact: String, private val plugin
                 .toTransform(SingleArtifact.$artifact)
             }
         }
-    """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).containsMatch(
-                "initialArtifact = .+?/module/build/intermediates/(bundle/debug/signDebugBundle|aar/debug/bundleDebugAar)/module-debug.(aar|aab)"
-            )
-            Truth.assertThat(output).containsMatch(
-                "updatedArtifact = .+?/module/build/outputs/(aar|bundle/debug)/module-debug.(aar|aab)"
-            )
-
-            Truth.assertThat(output).contains("artifactPresent = true")
-            Truth.assertThat(output).contains("artifactTransformed = true")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                Truth.assertThat(it.variantApiAccess.artifactAccessList.size).isAtLeast(1)
-                it.variantApiAccess.artifactAccessList.forEach { artifactAccess ->
-                    Truth.assertThat(artifactAccess.type).isAnyOf(
-                            ArtifactAccess.AccessType.TRANSFORM,
-                            ArtifactAccess.AccessType.GET
-                    )
-                    Truth.assertThat(artifactAccess.inputArtifactType).isEqualTo(
-                            VariantApiArtifactType.valueOf(artifact).number
-                    )
-                }
-            }
-        }
+    """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output)
+        .containsMatch(
+          "initialArtifact = .+?/module/build/intermediates/(bundle/debug/signDebugBundle|aar/debug/bundleDebugAar)/module-debug.(aar|aab)"
+        )
+      Truth.assertThat(output).containsMatch("updatedArtifact = .+?/module/build/outputs/(aar|bundle/debug)/module-debug.(aar|aab)")
+
+      Truth.assertThat(output).contains("artifactPresent = true")
+      Truth.assertThat(output).contains("artifactTransformed = true")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        Truth.assertThat(it.variantApiAccess.artifactAccessList.size).isAtLeast(1)
+        it.variantApiAccess.artifactAccessList.forEach { artifactAccess ->
+          Truth.assertThat(artifactAccess.type).isAnyOf(ArtifactAccess.AccessType.TRANSFORM, ArtifactAccess.AccessType.GET)
+          Truth.assertThat(artifactAccess.inputArtifactType).isEqualTo(VariantApiArtifactType.valueOf(artifact).number)
+        }
+      }
+    }
+  }
 }

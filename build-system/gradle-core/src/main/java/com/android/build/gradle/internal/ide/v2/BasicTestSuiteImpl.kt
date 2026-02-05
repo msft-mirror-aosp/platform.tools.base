@@ -17,17 +17,17 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.AndroidModel
-import com.android.builder.model.v2.models.BasicTestSuite
 import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import com.android.builder.model.v2.models.AssetsTestSuiteSource
+import com.android.builder.model.v2.models.BasicTestSuite
 import com.android.builder.model.v2.models.HostJarTestSuiteSource
 import com.android.builder.model.v2.models.TestApkTestSuiteSource
 import java.io.Serializable
 
 class BasicTestSuiteImpl(
-    override val name: String,
-    override val assets: Collection<AssetsTestSuiteSource>,
-    override val hostJars: Collection<HostJarTestSuiteSource>,
-    override val testApks: Collection<TestApkTestSuiteSource>,
-    override val targetsByVariant: Collection<TestSuiteVariantTarget>,
-): BasicTestSuite, AndroidModel, Serializable
+  override val name: String,
+  override val assets: Collection<AssetsTestSuiteSource>,
+  override val hostJars: Collection<HostJarTestSuiteSource>,
+  override val testApks: Collection<TestApkTestSuiteSource>,
+  override val targetsByVariant: Collection<TestSuiteVariantTarget>,
+) : BasicTestSuite, AndroidModel, Serializable

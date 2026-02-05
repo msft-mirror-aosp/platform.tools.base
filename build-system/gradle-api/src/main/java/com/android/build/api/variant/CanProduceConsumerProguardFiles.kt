@@ -20,16 +20,12 @@ import org.gradle.api.Incubating
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 
-/**
- * Component that optionally produces consumer proguard files.
- */
+/** Component that optionally produces consumer proguard files. */
 @Incubating
 interface CanProduceConsumerProguardFiles {
-    /**
-     * The collection of proguard rule files for consumers of the library to use. The list
-     * is initialized from the corresponding DSL element, and cannot be queried at configuration
-     * time. At configuration time, you can only add new elements to the list.
-     */
-    @get:Incubating
-    val consumerProguardFiles: ListProperty<RegularFile>
+  /**
+   * The collection of proguard rule files for consumers of the library to use. The list is initialized from the corresponding DSL element,
+   * and cannot be queried at configuration time. At configuration time, you can only add new elements to the list.
+   */
+  @get:Incubating val consumerProguardFiles: ListProperty<RegularFile>
 }

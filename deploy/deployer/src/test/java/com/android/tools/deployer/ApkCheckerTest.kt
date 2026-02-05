@@ -21,20 +21,20 @@ import org.junit.Assert
 import org.junit.Test
 
 class ApkCheckerTest {
-    val BASE: String = "tools/base/deploy/deployer/src/test/resource/"
+  val BASE: String = "tools/base/deploy/deployer/src/test/resource/"
 
-    @Test
-    fun testBasic() {
-        val logger = TestLogger()
-        val checker = ApkChecker("SESSION_ID", logger)
-        val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
-        val apk = ApkParser.parse(file.toAbsolutePath().toString())
-        checker.log(listOf(apk))
-        assertLogContains(logger, "fingerprint='74eaa38f4d4d8619c7bb886289f84efe1fce7ce3'")
-        assertLogContains(logger, "classes.dex='2596924577'")
-    }
+  @Test
+  fun testBasic() {
+    val logger = TestLogger()
+    val checker = ApkChecker("SESSION_ID", logger)
+    val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
+    val apk = ApkParser.parse(file.toAbsolutePath().toString())
+    checker.log(listOf(apk))
+    assertLogContains(logger, "fingerprint='74eaa38f4d4d8619c7bb886289f84efe1fce7ce3'")
+    assertLogContains(logger, "classes.dex='2596924577'")
+  }
 
-    private fun assertLogContains(logger: TestLogger, expected: String) {
-        Assert.assertTrue("Expecting to find $expected in logger.", logger.log.any {  it.contains(expected) })
-    }
+  private fun assertLogContains(logger: TestLogger, expected: String) {
+    Assert.assertTrue("Expecting to find $expected in logger.", logger.log.any { it.contains(expected) })
+  }
 }

@@ -16,9 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values
 
-fun stylesXml(
-  splashScreenTheme: String
-): String {
+fun stylesXml(splashScreenTheme: String): String {
   return """
 <resources>
     <style name="$splashScreenTheme" parent="Theme.SplashScreen">

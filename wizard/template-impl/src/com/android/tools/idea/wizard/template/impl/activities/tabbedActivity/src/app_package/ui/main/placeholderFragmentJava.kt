@@ -28,20 +28,24 @@ fun placeholderFragmentJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val viewModelInitializationBlock = if (useAndroidX) {
-    "pageViewModel = new ViewModelProvider(this).get(PageViewModel.class);"
-  } else {
-    """pageViewModel = new ViewModelProvider(this,
+  val viewModelInitializationBlock =
+    if (useAndroidX) {
+      "pageViewModel = new ViewModelProvider(this).get(PageViewModel.class);"
+    } else {
+      """pageViewModel = new ViewModelProvider(this,
                new ViewModelProvider.NewInstanceFactory()).get(PageViewModel.class);"""
-  }
+    }
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(fragmentLayoutName)}.inflate(inflater, container, false);
       View root = binding.getRoot();
-  """ else "View root = inflater.inflate(R.layout.$fragmentLayoutName, container, false);"
+  """
+    else "View root = inflater.inflate(R.layout.$fragmentLayoutName, container, false);"
 
   return """package ${packageName}.ui.main;
 
@@ -98,7 +102,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "section_label",
-          parentView = "root")};
+          parentView = "root",)};
         pageViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
             @Override
             public void onChanged(@Nullable String s) {

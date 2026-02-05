@@ -21,78 +21,65 @@ import com.android.repository.Revision
 import java.io.File
 
 /**
- * Android SDK packages have a file named source.properties in the root of the installation
- * folder. It looks like:
+ * Android SDK packages have a file named source.properties in the root of the installation folder. It looks like:
  *
- *   Pkg.Desc = Android NDK
- *   Pkg.Revision = 17.2.4988734
+ * Pkg.Desc = Android NDK Pkg.Revision = 17.2.4988734
  *
  * This class is for reading that file.
  */
-data class SdkSourceProperties(private val map : Map<String, String>) {
+data class SdkSourceProperties(private val map: Map<String, String>) {
+
+  /** Get a value by key. Returns null if the key didn't exist. */
+  fun getValue(key: SdkSourceProperty): String? {
+    return map[key.key]
+  }
+
+  /** Return the Pkg.Revision value. */
+  val revision: Revision
+    get() = Revision.parseRevision(getValue(SdkSourceProperty.SDK_PKG_REVISION)!!)
+
+  companion object {
+    private const val SOURCE_PROPERTIES = "source.properties"
+
+    /** Enum of known properties. */
+    enum class SdkSourceProperty(val key: String) {
+      SDK_PKG_DESC("Pkg.Desc"),
+      SDK_PKG_REVISION("Pkg.Revision"),
+    }
+
+    private fun sourcePropertiesFile(folder: File) = File(folder, SOURCE_PROPERTIES)
 
     /**
-     * Get a value by key.
-     * Returns null if the key didn't exist.
+     * Read a source properties file.
+     *
+     * Throws FileNotFoundException if the source.properties file didn't exist.
      */
-    fun getValue(key : SdkSourceProperty) : String? {
-        return map[key.key]
+    fun fromInstallFolder(folder: File): SdkSourceProperties {
+      val map = mutableMapOf<String, String>()
+      val sourceProperties = pathFromInstallFolder(folder)
+      for (line in sourceProperties.readLines()) {
+        val key = line.substringBefore("=").trim()
+        val value = line.substringAfter("=").trim()
+        map[key] = value
+      }
+      return SdkSourceProperties(map)
     }
 
     /**
-     * Return the Pkg.Revision value.
+     * Try to read the Pkg.Revision from the source.properties file. Returns null if the folder or file can't be found or if there is no
+     * Pkg.Revision in the file.
      */
-    val revision : Revision
-        get() = Revision.parseRevision(getValue(SdkSourceProperty.SDK_PKG_REVISION)!!)
-
-    companion object {
-        private const val SOURCE_PROPERTIES = "source.properties"
-
-        /**
-         * Enum of known properties.
-         */
-        enum class SdkSourceProperty(val key : String) {
-            SDK_PKG_DESC("Pkg.Desc"),
-            SDK_PKG_REVISION("Pkg.Revision");
-        }
-
-        private fun sourcePropertiesFile(folder : File) = File(folder, SOURCE_PROPERTIES)
-
-        /**
-         * Read a source properties file.
-         *
-         * Throws FileNotFoundException if the source.properties file didn't exist.
-         */
-        fun fromInstallFolder(folder : File) : SdkSourceProperties {
-            val map = mutableMapOf<String, String>()
-            val sourceProperties = pathFromInstallFolder(folder)
-            for (line in sourceProperties.readLines()) {
-                val key = line.substringBefore("=").trim()
-                val value = line.substringAfter("=").trim()
-                map[key] = value
-            }
-            return SdkSourceProperties(map)
-        }
-
-        /**
-         * Try to read the Pkg.Revision from the source.properties file. Returns null
-         * if the folder or file can't be found or if there is no Pkg.Revision in the
-         * file.
-         */
-        fun tryReadPackageRevision(folder : File) : String? {
-            if (!folder.isDirectory || !sourcePropertiesFile(folder).isFile) {
-                return null
-            }
-            val properties = fromInstallFolder(folder)
-            return properties.getValue(SdkSourceProperty.SDK_PKG_REVISION)
-        }
-
-        /**
-         * Return the path to source.properties inside a given SDK component.
-         */
-        private fun pathFromInstallFolder(folder : File) : File {
-            return File(folder, FN_SOURCE_PROP)
-
-        }
+    fun tryReadPackageRevision(folder: File): String? {
+      if (!folder.isDirectory || !sourcePropertiesFile(folder).isFile) {
+        return null
+      }
+      val properties = fromInstallFolder(folder)
+      return properties.getValue(SdkSourceProperty.SDK_PKG_REVISION)
     }
+
+    /** Return the path to source.properties inside a given SDK component. */
+    private fun pathFromInstallFolder(folder: File): File {
+      return File(folder, FN_SOURCE_PROP)
+    }
+  }
 }

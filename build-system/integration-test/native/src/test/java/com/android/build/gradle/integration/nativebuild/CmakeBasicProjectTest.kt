@@ -92,92 +92,94 @@ import com.android.utils.FileUtils.join
 import com.android.utils.cxx.os.bat
 import com.android.utils.cxx.streamCompileCommands
 import com.google.common.truth.Truth
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.util.zip.GZIPInputStream
+import kotlin.random.Random
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import java.util.zip.GZIPInputStream
-import kotlin.random.Random
 
-/** Assemble tests for Cmake.  */
+/** Assemble tests for Cmake. */
 @RunWith(Parameterized::class)
-class CmakeBasicProjectTest(
-    private val cmakeVersionInDsl: String,
-    private val mode: Mode
-) {
-    enum class Mode(val taskNameTag : String, val buildFolderTag : String) {
-        CMake("CMake", "cmake"),
-        Ninja("Ninja", "ninja"),
-        NinjaRedirect("Ninja", "ninja")
+class CmakeBasicProjectTest(private val cmakeVersionInDsl: String, private val mode: Mode) {
+  enum class Mode(val taskNameTag: String, val buildFolderTag: String) {
+    CMake("CMake", "cmake"),
+    Ninja("Ninja", "ninja"),
+    NinjaRedirect("Ninja", "ninja"),
+  }
+
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .create()
+
+  companion object {
+    @Parameterized.Parameters(name = "version={0} mode={1}")
+    @JvmStatic
+    fun data(): Array<Array<*>> {
+      val result: Array<Array<*>> =
+        cartesianOf(
+            // This test covers a wider range of CMake versions than most other tests to
+            // verify that
+            // the basic functionality of each mode works.
+            CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
+            arrayOf(Mode.CMake),
+          )
+          // Shuffle helps find problems earlier by not grouping similar cases with each other
+          .toList()
+          .shuffled(Random(192))
+          .toTypedArray()
+      return if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
+        // Because Windows runs much slower, limit the tests that run on Windows to a (stable)
+        // sample
+        result.take(10).toTypedArray()
+      } else result
+    }
+  }
+
+  @Before
+  fun setUp() {
+    assertThat(project.buildFile).isNotNull()
+    assertThat(project.buildFile).isFile()
+
+    TestFileUtils.appendToFile(project.buildFile, moduleBody("CMakeLists.txt"))
+  }
+
+  private fun moduleBody(cmakeListsPath: String) =
+    when (mode) {
+      Mode.CMake -> moduleBodyCmake(cmakeListsPath)
+      Mode.Ninja -> moduleBodyNinja(cmakeListsPath)
+      Mode.NinjaRedirect -> moduleBodyNinjaRedirect(cmakeListsPath)
     }
 
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .create()
-
-    companion object {
-        @Parameterized.Parameters(name = "version={0} mode={1}")
-        @JvmStatic
-        fun data() : Array<Array<*>> {
-            val result : Array<Array<*>> = cartesianOf(
-                // This test covers a wider range of CMake versions than most other tests to verify that
-                // the basic functionality of each mode works.
-                CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
-                arrayOf(Mode.CMake))
-                // Shuffle helps find problems earlier by not grouping similar cases with each other
-                .toList().shuffled(Random(192))
-                .toTypedArray()
-            return if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
-                // Because Windows runs much slower, limit the tests that run on Windows to a (stable) sample
-                result.take(10).toTypedArray()
-            } else result
-        }
+  // Map from version in DSL to physical folder in prebuilts
+  private val cmakeFolderVersion =
+    when (cmakeVersionInDsl) {
+      "3.6.0" -> "3.6.4111459"
+      "3.10.2" -> "3.10.2.4988404"
+      else -> cmakeVersionInDsl
     }
 
-    @Before
-    fun setUp() {
-        assertThat(project.buildFile).isNotNull()
-        assertThat(project.buildFile).isFile()
+  private val cmakeExe = getCmakeVersionFolder(cmakeFolderVersion).resolve("bin/cmake").absolutePath
 
-        TestFileUtils.appendToFile(project.buildFile, moduleBody("CMakeLists.txt"))
-    }
+  private val nativeBuildSystem: String
+    get() =
+      when (mode) {
+        Mode.CMake -> "CMAKE"
+        Mode.Ninja -> "NINJA"
+        Mode.NinjaRedirect -> "NINJA"
+      }
 
-    private fun moduleBody(cmakeListsPath: String) =
-        when (mode) {
-            Mode.CMake -> moduleBodyCmake(cmakeListsPath)
-            Mode.Ninja -> moduleBodyNinja(cmakeListsPath)
-            Mode.NinjaRedirect -> moduleBodyNinjaRedirect(cmakeListsPath)
-        }
-
-    // Map from version in DSL to physical folder in prebuilts
-    private val cmakeFolderVersion = when(cmakeVersionInDsl) {
-        "3.6.0" -> "3.6.4111459"
-        "3.10.2" -> "3.10.2.4988404"
-        else -> cmakeVersionInDsl
-    }
-
-    private val cmakeExe = getCmakeVersionFolder(cmakeFolderVersion)
-        .resolve("bin/cmake").absolutePath
-
-    private val nativeBuildSystem : String get() =
-        when (mode) {
-            Mode.CMake -> "CMAKE"
-            Mode.Ninja -> "NINJA"
-            Mode.NinjaRedirect -> "NINJA"
-        }
-
-    private fun moduleBodyCmake(
-        cmakeListsPath: String
-    ): String {
-        return """
+  private fun moduleBodyCmake(cmakeListsPath: String): String {
+    return """
             apply plugin: 'com.android.application'
 
             android {
@@ -218,13 +220,12 @@ class CmakeBasicProjectTest(
                 androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
                 androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
-        """.trimIndent()
-    }
+        """
+      .trimIndent()
+  }
 
-    private fun moduleBodyNinja(
-        cmakeListsPath: String
-    ): String {
-        return """
+  private fun moduleBodyNinja(cmakeListsPath: String): String {
+    return """
             apply plugin: 'com.android.application'
 
             android {
@@ -270,21 +271,18 @@ class CmakeBasicProjectTest(
                 androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
                 androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
-        """.trimIndent()
-    }
+        """
+      .trimIndent()
+  }
 
-    /**
-     * This version of build.gradle creates a script that does the actual CMake build in another
-     * (redirected) folder.
-     */
-    private fun moduleBodyNinjaRedirect(
-        cmakeListsPath: String
-    ): String {
-        val scriptsBuildRoot = project.buildDir.parentFile.parentFile.resolve("script-build-root")
-        scriptsBuildRoot.mkdirs()
-        when(CURRENT_PLATFORM) {
-            PLATFORM_WINDOWS -> ninjaBuildConfigureScript.writeText(
-                """
+  /** This version of build.gradle creates a script that does the actual CMake build in another (redirected) folder. */
+  private fun moduleBodyNinjaRedirect(cmakeListsPath: String): String {
+    val scriptsBuildRoot = project.buildDir.parentFile.parentFile.resolve("script-build-root")
+    scriptsBuildRoot.mkdirs()
+    when (CURRENT_PLATFORM) {
+      PLATFORM_WINDOWS ->
+        ninjaBuildConfigureScript.writeText(
+          """
                     set ABI=%1
                     set ABI_BUILD_ROOT=$scriptsBuildRoot\%2\%1
                     set BUILD_NINJA_TXT=%3\build.ninja.txt
@@ -298,11 +296,12 @@ class CmakeBasicProjectTest(
                     shift && shift && shift && shift && shift && shift && shift && shift && shift
                     set COMMAND=%COMMAND% %1 %2 %3 %4 %5 %6 %7 %8 %9
                     %COMMAND%
-                """.trimIndent()
-            )
-            else -> {
-                ninjaBuildConfigureScript.writeText(
-                    """
+                """
+            .trimIndent()
+        )
+      else -> {
+        ninjaBuildConfigureScript.writeText(
+          """
                     ABI=$1
                     ABI_BUILD_ROOT=$scriptsBuildRoot/$2/$1
                     BUILD_NINJA_TXT=$3/build.ninja.txt
@@ -313,13 +312,14 @@ class CmakeBasicProjectTest(
                     echo ${'$'}ABI_BUILD_ROOT/build.ninja > ${'$'}BUILD_NINJA_TXT
 
                     $cmakeExe -B${'$'}ABI_BUILD_ROOT -DANDROID_ABI=${'$'}ABI "$@"
-                """.trimIndent()
-                )
-                ninjaBuildConfigureScript.setExecutable(true)
-            }
-        }
+                """
+            .trimIndent()
+        )
+        ninjaBuildConfigureScript.setExecutable(true)
+      }
+    }
 
-        return """
+    return """
             apply plugin: 'com.android.application'
 
             android {
@@ -366,145 +366,148 @@ class CmakeBasicProjectTest(
                 androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
                 androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
-        """.trimIndent()
-    }
+        """
+      .trimIndent()
+  }
 
-    /**
-     * Name of the ninja build configure script.
-     */
-    private val ninjaBuildConfigureScript : File get() =
-        project.buildFile.resolveSibling("configure-script$bat")
+  /** Name of the ninja build configure script. */
+  private val ninjaBuildConfigureScript: File
+    get() = project.buildFile.resolveSibling("configure-script$bat")
 
-    /**
-     * Helper function that controls arguments when running a task
-     */
-    private fun runTasks(vararg tasks : String): GradleBuildResult? {
-        return executorWithLegacyApi().withArgument("--build-cache").run(*tasks)
-    }
+  /** Helper function that controls arguments when running a task */
+  private fun runTasks(vararg tasks: String): GradleBuildResult? {
+    return executorWithLegacyApi().withArgument("--build-cache").run(*tasks)
+  }
 
-    @Test
-    fun `check configuration caching`() {
-        executorWithLegacyApi().run("assembleRelease")
-        executorWithLegacyApi().run("assembleRelease")
-        project.buildResult.assertConfigurationCacheHit()
-    }
+  @Test
+  fun `check configuration caching`() {
+    executorWithLegacyApi().run("assembleRelease")
+    executorWithLegacyApi().run("assembleRelease")
+    project.buildResult.assertConfigurationCacheHit()
+  }
 
-    @Test
-    fun `bug 262077903 tolerate deleted intermediate CMakeLists`() {
-        Assume.assumeTrue(mode == Mode.CMake)  // This is a CMake-only test
-        val destinationRoot = project.buildFile.parentFile
+  @Test
+  fun `bug 262077903 tolerate deleted intermediate CMakeLists`() {
+    Assume.assumeTrue(mode == Mode.CMake) // This is a CMake-only test
+    val destinationRoot = project.buildFile.parentFile
 
-        // Step 1 -- configure a CMake project that refers to a nested CMakeLists.txt
-        val cmakeLists = destinationRoot.resolve("CMakeLists.txt")
-        val cmakeListsOriginalContent = cmakeLists.readText()
-        cmakeLists.writeText(
-            """
-            cmake_minimum_required(VERSION 3.4.1)
-            project(Test)
-            add_subdirectory(nested-a)
-            """.trimIndent()
-        )
-        val nestedACMakeLists = destinationRoot.resolve("nested-a/CMakeLists.txt")
-        nestedACMakeLists.parentFile.mkdirs()
-        nestedACMakeLists.writeText(
-            """
-            cmake_minimum_required(VERSION 3.4.1)
-            project(NestedA)
-            add_library(native-lib SHARED nested-a.cpp)
-            """.trimIndent()
-        )
-        val nestedAcpp = nestedACMakeLists.resolveSibling("nested-a.cpp")
-        nestedAcpp.writeText(
-            """
-            void f() { }
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
+    // Step 1 -- configure a CMake project that refers to a nested CMakeLists.txt
+    val cmakeLists = destinationRoot.resolve("CMakeLists.txt")
+    val cmakeListsOriginalContent = cmakeLists.readText()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.4.1)
+      project(Test)
+      add_subdirectory(nested-a)
+      """
+        .trimIndent()
+    )
+    val nestedACMakeLists = destinationRoot.resolve("nested-a/CMakeLists.txt")
+    nestedACMakeLists.parentFile.mkdirs()
+    nestedACMakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.4.1)
+      project(NestedA)
+      add_library(native-lib SHARED nested-a.cpp)
+      """
+        .trimIndent()
+    )
+    val nestedAcpp = nestedACMakeLists.resolveSibling("nested-a.cpp")
+    nestedAcpp.writeText(
+      """
+      void f() { }
+      """
+        .trimIndent()
+    )
+    executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
 
-        // Step 2 -- Change to root CMakeLists.txt so that it no longer refers to the nested CMakeLists.txt
-        // Also, delete the nested CMakeLists.txt.
-        // Before the bug fix, the following configureCMakeDebug would issue an error like:
-        // [CXX1409] ...\android_gradle_build.json debug|armeabi-v7a : expected buildFiles file 'nested-a\CMakeLists.txt' to exist
-        cmakeLists.writeText(cmakeListsOriginalContent)
-        nestedACMakeLists.delete()
-        executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
-    }
+    // Step 2 -- Change to root CMakeLists.txt so that it no longer refers to the nested
+    // CMakeLists.txt
+    // Also, delete the nested CMakeLists.txt.
+    // Before the bug fix, the following configureCMakeDebug would issue an error like:
+    // [CXX1409] ...\android_gradle_build.json debug|armeabi-v7a : expected buildFiles file
+    // 'nested-a\CMakeLists.txt' to exist
+    cmakeLists.writeText(cmakeListsOriginalContent)
+    nestedACMakeLists.delete()
+    executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
+  }
 
-    // Regression test for b/179062268
-    @Test
-    fun `check clean task and extract proguard files task run together`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    buildTypes {
-                        release {
-                            minifyEnabled true
-                            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("clean", "assembleRelease")
-        assertThat(project.getIntermediateFile("default_proguard_files/global")).exists()
-    }
+  // Regression test for b/179062268
+  @Test
+  fun `check clean task and extract proguard files task run together`() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+          buildTypes {
+              release {
+                  minifyEnabled true
+                  proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    executorWithLegacyApi().run("clean", "assembleRelease")
+    assertThat(project.getIntermediateFile("default_proguard_files/global")).exists()
+  }
 
-    // Regression test for b/184060944
-    @Test
-    fun `ninja verbosity respects CMAKE_VERBOSE_MAKEFILE=1`() {
-        Assume.assumeTrue(mode == Mode.CMake && cmakeVersionInDsl != "3.6.0")
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DCMAKE_VERBOSE_MAKEFILE=1")
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("generateJsonModelDebug")
-        val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
-        val config = getNativeBuildMiniConfig(abi, null)
-        val commands = config.buildTargetsCommandComponents
-        assertThat(commands)
-            .named(abi.miniConfigFile.path)
-            .contains("-v")
-    }
+  // Regression test for b/184060944
+  @Test
+  fun `ninja verbosity respects CMAKE_VERBOSE_MAKEFILE=1`() {
+    Assume.assumeTrue(mode == Mode.CMake && cmakeVersionInDsl != "3.6.0")
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DCMAKE_VERBOSE_MAKEFILE=1")
+      """
+        .trimIndent(),
+    )
+    executorWithLegacyApi().run("generateJsonModelDebug")
+    val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
+    val config = getNativeBuildMiniConfig(abi, null)
+    val commands = config.buildTargetsCommandComponents
+    assertThat(commands).named(abi.miniConfigFile.path).contains("-v")
+  }
 
-    // See b/159434435
-    @Test
-    fun `bug 159434435 -C flag passed to CMake via arguments`() {
-        if (mode != Mode.CMake) return // This is a CMake-only test
-        val properties = project.buildFile.resolveSibling("Properties.cmake")
-        properties.writeText("")
-        val path = properties.absolutePath.replace("\\", "/")
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  // See b/159434435
+  @Test
+  fun `bug 159434435 -C flag passed to CMake via arguments`() {
+    if (mode != Mode.CMake) return // This is a CMake-only test
+    val properties = project.buildFile.resolveSibling("Properties.cmake")
+    properties.writeText("")
+    val path = properties.absolutePath.replace("\\", "/")
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-C$path")
-            """.trimIndent()
-        )
-
-        // Skip extra validations on 3.10.2 since CMake server doesn't use
-        // CreateProcess to invoke CMake.
-        if (cmakeVersionInDsl == "3.10.2") return
-
-        // For the others, validate that the cmake.exe process had our flag
-        enableCxxStructuredLogging(project)
-        executorWithLegacyApi().run("generateJsonModelDebug")
-        println(project.readStructuredLogs(::decodeExecuteProcess))
-        val process = project.readStructuredLogs(::decodeExecuteProcess).first()
-        assertThat(process.argsList).contains("-C$path")
-    }
-
-    @Test
-    fun `ensure hashed output paths are stable`() {
-        Assume.assumeTrue(mode == Mode.CMake && cmakeVersionInDsl != "3.6.0")
-        executorWithLegacyApi().run("configure${mode.buildFolderTag}Debug[x86_64]")
-        val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
-        val minPlatform = abi.variant.module.ndkMinPlatform
-        val hashKey = abi.cxxBuildHashKeyFile.readText()
-        val hashSegment = abi.cxxBuildHashKeyFile.parentFile.name
-        val hashKeyExpected =
             """
+        .trimIndent(),
+    )
+
+    // Skip extra validations on 3.10.2 since CMake server doesn't use
+    // CreateProcess to invoke CMake.
+    if (cmakeVersionInDsl == "3.10.2") return
+
+    // For the others, validate that the cmake.exe process had our flag
+    enableCxxStructuredLogging(project)
+    executorWithLegacyApi().run("generateJsonModelDebug")
+    println(project.readStructuredLogs(::decodeExecuteProcess))
+    val process = project.readStructuredLogs(::decodeExecuteProcess).first()
+    assertThat(process.argsList).contains("-C$path")
+  }
+
+  @Test
+  fun `ensure hashed output paths are stable`() {
+    Assume.assumeTrue(mode == Mode.CMake && cmakeVersionInDsl != "3.6.0")
+    executorWithLegacyApi().run("configure${mode.buildFolderTag}Debug[x86_64]")
+    val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
+    val minPlatform = abi.variant.module.ndkMinPlatform
+    val hashKey = abi.cxxBuildHashKeyFile.readText()
+    val hashSegment = abi.cxxBuildHashKeyFile.parentFile.name
+    val hashKeyExpected =
+      """
             # Values used to calculate the hash in this folder name.
             # Should not depend on the absolute path of the project itself.
             #   - AGP: ${Version.ANDROID_GRADLE_PLUGIN_VERSION}.
@@ -532,235 +535,242 @@ class CmakeBasicProjectTest(
             -DCMAKE_BUILD_TYPE=Debug
             -B${'$'}PROJECT/.cxx/Debug/${'$'}HASH/${'$'}ABI
             -GNinja
-            """.trimIndent()
-        assertThat(hashKey).isEqualTo(hashKeyExpected)
-        val expectedHashSegment = sha256Of(hashKeyExpected, includeGradleVersionInHash = false).substring(0,8)
-        // If the text above passes then the SHA-256 of it should be stable.
-        assertThat(hashSegment).isEqualTo(expectedHashSegment)
-    }
-
-    @Test
-    fun `ensure CMake arguments have macros expanded`() {
-        if (mode != Mode.CMake) return // This is a CMake-only test
-        TestFileUtils.appendToFile(
-            project.buildFile,
             """
-            android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DMY_CPU_ARCH=\${"$"}{ndk.abiAltCpuArchitecture}")
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("generateJsonModelDebug")
-        val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
-        assertThat(abi.configurationArguments).contains("-DMY_CPU_ARCH=x64")
-    }
+        .trimIndent()
+    assertThat(hashKey).isEqualTo(hashKeyExpected)
+    val expectedHashSegment = sha256Of(hashKeyExpected, includeGradleVersionInHash = false).substring(0, 8)
+    // If the text above passes then the SHA-256 of it should be stable.
+    assertThat(hashSegment).isEqualTo(expectedHashSegment)
+  }
 
-    // See b/134086362
-    @Test
-    fun `check target rename through transitive CMakeLists add_subdirectory`() {
-        // This doesn't work with 3.6.0 CMake because the transitive list of build files isn't
-        // produced and there's no way to fix that without reshipping fork CMake.
-        if (cmakeVersionInDsl == "3.6.0") return
-        val leafCmakeLists = join(project.buildFile.parentFile, "CMakeLists.txt")
-        assertThat(leafCmakeLists).isFile()
-        val rootCmakeLists = join(leafCmakeLists.parentFile, "root", "CMakeLists.txt")
-        rootCmakeLists.parentFile.mkdirs()
-        rootCmakeLists.writeText("""
+  @Test
+  fun `ensure CMake arguments have macros expanded`() {
+    if (mode != Mode.CMake) return // This is a CMake-only test
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DMY_CPU_ARCH=\${"$"}{ndk.abiAltCpuArchitecture}")
+      """
+        .trimIndent(),
+    )
+    executorWithLegacyApi().run("generateJsonModelDebug")
+    val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
+    assertThat(abi.configurationArguments).contains("-DMY_CPU_ARCH=x64")
+  }
+
+  // See b/134086362
+  @Test
+  fun `check target rename through transitive CMakeLists add_subdirectory`() {
+    // This doesn't work with 3.6.0 CMake because the transitive list of build files isn't
+    // produced and there's no way to fix that without reshipping fork CMake.
+    if (cmakeVersionInDsl == "3.6.0") return
+    val leafCmakeLists = join(project.buildFile.parentFile, "CMakeLists.txt")
+    assertThat(leafCmakeLists).isFile()
+    val rootCmakeLists = join(leafCmakeLists.parentFile, "root", "CMakeLists.txt")
+    rootCmakeLists.parentFile.mkdirs()
+    rootCmakeLists.writeText(
+      """
             cmake_minimum_required(VERSION 3.10)
             add_subdirectory(${leafCmakeLists.parentFile.absolutePath.replace('\\','/')} bin)
-            """.trimIndent())
-        TestFileUtils.appendToFile(project.buildFile, moduleBody("root/CMakeLists.txt"))
-
-        executorWithLegacyApi().run("assemble")
-
-        // Rename the target
-        leafCmakeLists.writeText(leafCmakeLists.readText().replace("hello-jni", "hello-jni-renamed"))
-
-        // Assemble again
-        executorWithLegacyApi().run("assemble")
-    }
-
-    @Test
-    fun `check that duplicate runtimeFiles does not cause a build failure`() {
-        // https://issuetracker.google.com/158317988
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        project.buildFile.resolveSibling("bar.cpp").writeText("void bar() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.4.1)
-
-            add_library(foo SHARED foo.cpp)
-            add_library(bar SHARED bar.cpp)
-
-            find_library(log-lib log)
-
-            target_link_libraries(foo ${'$'}{log-lib})
-            target_link_libraries(bar foo)
-            """.trimIndent())
-
-        // The bug being tested was caused by the bad ordering between handling runtimeFiles and
-        // performing the build. The JSON model was being generated from a clean build directory the
-        // libraries would not be present when the CMake response was handled and we would skip any
-        // linkLibraries that had not been built yet.
-        //
-        // If the build directory *wasn't* cleaned before regenerating the JSON model the libraries
-        // would be included in runtimeFiles and the install task could fail when trying to install
-        // a file to itself.
-        //
-        // To recreate those conditions, build the project twice, purging only the .cxx directory
-        // between runs.
-        executorWithLegacyApi().run("assembleDebug")
-        val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
-        project.projectDir.resolve(".cxx").deleteRecursively()
-        assertThat(abi.soFolder.resolve("libfoo.so")).isFile()
-        executorWithLegacyApi().run("assembleDebug")
-    }
-
-
-    @Test
-    fun `bug 187134648 OBJECT-library`() {
-        // https://issuetracker.google.com/158317988
-        // runtimeFiles doesn't work pre-3.7 because there's no CMake server.
-        if (cmakeVersionInDsl == "3.6.0") return
-        if (cmakeVersionInDsl == "3.10.2") return
-        project.buildFile.resolveSibling("object_src1.cpp").writeText("void foo() {}")
-        project.buildFile.resolveSibling("object_src2.cpp").writeText("void bar() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
-
-            add_library(object_dependency OBJECT)
-            target_sources(object_dependency PRIVATE object_src1.cpp object_src2.cpp)
-
-            add_library(native_lib SHARED)
-            target_link_libraries(native_lib PRIVATE object_dependency)
-            """.trimIndent())
-
-        executorWithLegacyApi().run("generateJsonModelDebug")
-
-        val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
-    }
-
-    @Test
-    fun `runtimeFiles are included even if not built yet`() {
-        // https://issuetracker.google.com/158317988
-        // runtimeFiles doesn't work pre-3.7 because there's no CMake server.
-        if (cmakeVersionInDsl == "3.6.0") return
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        project.buildFile.resolveSibling("bar.cpp").writeText("void bar() {}")
-        project.buildFile.resolveSibling("baz.cpp").writeText("void baz() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.7)
-
-            add_library(foo SHARED foo.cpp)
-            add_library(bar SHARED bar.cpp)
-            add_library(baz STATIC baz.cpp)
-
-            target_link_libraries(foo ${'$'}{log-lib})
-            target_link_libraries(bar foo baz)
-            """.trimIndent())
-
-        executorWithLegacyApi().run("generateJsonModelDebug")
-
-        val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
-        val fooPath = abi.soFolder.resolve("libfoo.so")
-        assertThat(fooPath).doesNotExist()
-
-        val config = AndroidBuildGradleJsons.getNativeBuildMiniConfig(abi, null)
-        val library = config
-            .libraries
-            .asSequence()
-            .filter { it.key.contains("bar") }
-            .single()
-            .value
-        assertThat(library.runtimeFiles).containsExactly(fooPath)
-    }
-
-    /**
-     * In this bug, the file metadata_generation_command.txt was deleted by clean task.
-     * This caused configure task to delete the module/.cxx folder as 'stale'.
-     * This test checks for a build side effect: the presence of .ninja_deps file.
-     */
-    @Test
-    fun `clean should not trigger stale CMake folder deletion`() {
-        runTasks("build${mode.taskNameTag}Debug")
-        val abi = project.recoverExistingCxxAbiModels().first()
-        assertThat(abi.ninjaDepsFile.isFile).isTrue()
-        runTasks("clean")
-        assertThat(abi.ninjaDepsFile.isFile).isTrue()
-        runTasks("configure${mode.taskNameTag}Debug")
-        assertThat(abi.ninjaDepsFile.isFile).isTrue()
-    }
-
-    @Test
-    fun checkApkContent() {
-        executorWithLegacyApi().run("clean", "assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        assertThatApk(apk).hasVersionCode(1)
-        assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
-
-        var lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so")
-        TruthHelper.assertThatNativeLib(lib).isStripped()
-
-        lib = ZipHelper.extractFile(apk, "lib/x86_64/libhello-jni.so")
-        TruthHelper.assertThatNativeLib(lib).isStripped()
-    }
-
-    // Regression test for b/236913987
-    @Test
-    fun checkTestOnlyNativeLibraries() {
-        // First check that native libs are packaged in the main APK and not the android test APK by
-        // default.
-        executorWithLegacyApi().run("clean", "assembleDebug", "assembleDebugAndroidTest")
-        var apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        var androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(androidTestApk).doesNotContain("lib/x86_64/libhello-jni.so")
-
-        // Then check that we can exclude native libs from the main APK and instead package them in
-        // the test APK using the testOnly DSL
-        TestFileUtils.appendToFile(
-            project.buildFile,
             """
-                android {
-                    packaging {
-                        jniLibs {
-                            testOnly += "**/libhello-jni.so"
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("assembleDebug", "assembleDebugAndroidTest")
-        apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(apk).doesNotContain("lib/x86_64/libhello-jni.so")
-        assertThatApk(androidTestApk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(androidTestApk).contains("lib/x86_64/libhello-jni.so")
-    }
+        .trimIndent()
+    )
+    TestFileUtils.appendToFile(project.buildFile, moduleBody("root/CMakeLists.txt"))
 
-    @Test
-    fun checkApkContentWithInjectedABI() {
-        executorWithLegacyApi()
-            .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64")
-            .run("clean", "assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates)
-        assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
-        assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
+    executorWithLegacyApi().run("assemble")
 
-        val lib = ZipHelper.extractFile(apk, "lib/x86_64/libhello-jni.so")
-        TruthHelper.assertThatNativeLib(lib).isStripped()
-    }
+    // Rename the target
+    leafCmakeLists.writeText(leafCmakeLists.readText().replace("hello-jni", "hello-jni-renamed"))
 
-    private fun expectedBuildProducts() : String {
-        // Mode.NinjaRedirect doesn't have .o files because they are built in an external folder
-        return (if (mode == Mode.NinjaRedirect) """
+    // Assemble again
+    executorWithLegacyApi().run("assemble")
+  }
+
+  @Test
+  fun `check that duplicate runtimeFiles does not cause a build failure`() {
+    // https://issuetracker.google.com/158317988
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    project.buildFile.resolveSibling("bar.cpp").writeText("void bar() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.4.1)
+
+      add_library(foo SHARED foo.cpp)
+      add_library(bar SHARED bar.cpp)
+
+      find_library(log-lib log)
+
+      target_link_libraries(foo ${'$'}{log-lib})
+      target_link_libraries(bar foo)
+      """
+        .trimIndent()
+    )
+
+    // The bug being tested was caused by the bad ordering between handling runtimeFiles and
+    // performing the build. The JSON model was being generated from a clean build directory the
+    // libraries would not be present when the CMake response was handled and we would skip any
+    // linkLibraries that had not been built yet.
+    //
+    // If the build directory *wasn't* cleaned before regenerating the JSON model the libraries
+    // would be included in runtimeFiles and the install task could fail when trying to install
+    // a file to itself.
+    //
+    // To recreate those conditions, build the project twice, purging only the .cxx directory
+    // between runs.
+    executorWithLegacyApi().run("assembleDebug")
+    val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
+    project.projectDir.resolve(".cxx").deleteRecursively()
+    assertThat(abi.soFolder.resolve("libfoo.so")).isFile()
+    executorWithLegacyApi().run("assembleDebug")
+  }
+
+  @Test
+  fun `bug 187134648 OBJECT-library`() {
+    // https://issuetracker.google.com/158317988
+    // runtimeFiles doesn't work pre-3.7 because there's no CMake server.
+    if (cmakeVersionInDsl == "3.6.0") return
+    if (cmakeVersionInDsl == "3.10.2") return
+    project.buildFile.resolveSibling("object_src1.cpp").writeText("void foo() {}")
+    project.buildFile.resolveSibling("object_src2.cpp").writeText("void bar() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+
+      add_library(object_dependency OBJECT)
+      target_sources(object_dependency PRIVATE object_src1.cpp object_src2.cpp)
+
+      add_library(native_lib SHARED)
+      target_link_libraries(native_lib PRIVATE object_dependency)
+      """
+        .trimIndent()
+    )
+
+    executorWithLegacyApi().run("generateJsonModelDebug")
+
+    val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
+  }
+
+  @Test
+  fun `runtimeFiles are included even if not built yet`() {
+    // https://issuetracker.google.com/158317988
+    // runtimeFiles doesn't work pre-3.7 because there's no CMake server.
+    if (cmakeVersionInDsl == "3.6.0") return
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    project.buildFile.resolveSibling("bar.cpp").writeText("void bar() {}")
+    project.buildFile.resolveSibling("baz.cpp").writeText("void baz() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.7)
+
+      add_library(foo SHARED foo.cpp)
+      add_library(bar SHARED bar.cpp)
+      add_library(baz STATIC baz.cpp)
+
+      target_link_libraries(foo ${'$'}{log-lib})
+      target_link_libraries(bar foo baz)
+      """
+        .trimIndent()
+    )
+
+    executorWithLegacyApi().run("generateJsonModelDebug")
+
+    val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
+    val fooPath = abi.soFolder.resolve("libfoo.so")
+    assertThat(fooPath).doesNotExist()
+
+    val config = AndroidBuildGradleJsons.getNativeBuildMiniConfig(abi, null)
+    val library = config.libraries.asSequence().filter { it.key.contains("bar") }.single().value
+    assertThat(library.runtimeFiles).containsExactly(fooPath)
+  }
+
+  /**
+   * In this bug, the file metadata_generation_command.txt was deleted by clean task. This caused configure task to delete the module/.cxx
+   * folder as 'stale'. This test checks for a build side effect: the presence of .ninja_deps file.
+   */
+  @Test
+  fun `clean should not trigger stale CMake folder deletion`() {
+    runTasks("build${mode.taskNameTag}Debug")
+    val abi = project.recoverExistingCxxAbiModels().first()
+    assertThat(abi.ninjaDepsFile.isFile).isTrue()
+    runTasks("clean")
+    assertThat(abi.ninjaDepsFile.isFile).isTrue()
+    runTasks("configure${mode.taskNameTag}Debug")
+    assertThat(abi.ninjaDepsFile.isFile).isTrue()
+  }
+
+  @Test
+  fun checkApkContent() {
+    executorWithLegacyApi().run("clean", "assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    assertThatApk(apk).hasVersionCode(1)
+    assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
+
+    var lib = ZipHelper.extractFile(apk, "lib/armeabi-v7a/libhello-jni.so")
+    TruthHelper.assertThatNativeLib(lib).isStripped()
+
+    lib = ZipHelper.extractFile(apk, "lib/x86_64/libhello-jni.so")
+    TruthHelper.assertThatNativeLib(lib).isStripped()
+  }
+
+  // Regression test for b/236913987
+  @Test
+  fun checkTestOnlyNativeLibraries() {
+    // First check that native libs are packaged in the main APK and not the android test APK by
+    // default.
+    executorWithLegacyApi().run("clean", "assembleDebug", "assembleDebugAndroidTest")
+    var apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    var androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
+    assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(androidTestApk).doesNotContain("lib/x86_64/libhello-jni.so")
+
+    // Then check that we can exclude native libs from the main APK and instead package them in
+    // the test APK using the testOnly DSL
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+          packaging {
+              jniLibs {
+                  testOnly += "**/libhello-jni.so"
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    executorWithLegacyApi().run("assembleDebug", "assembleDebugAndroidTest")
+    apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
+    assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(apk).doesNotContain("lib/x86_64/libhello-jni.so")
+    assertThatApk(androidTestApk).contains("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(androidTestApk).contains("lib/x86_64/libhello-jni.so")
+  }
+
+  @Test
+  fun checkApkContentWithInjectedABI() {
+    executorWithLegacyApi().with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64").run("clean", "assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates)
+    assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
+    assertThatApk(apk).contains("lib/x86_64/libhello-jni.so")
+
+    val lib = ZipHelper.extractFile(apk, "lib/x86_64/libhello-jni.so")
+    TruthHelper.assertThatNativeLib(lib).isStripped()
+  }
+
+  private fun expectedBuildProducts(): String {
+    // Mode.NinjaRedirect doesn't have .o files because they are built in an external folder
+    return (if (mode == Mode.NinjaRedirect)
+        """
                 {PROJECT}/build/intermediates/${mode.buildFolderTag}/debug/obj/armeabi-v7a/libhello-jni.so{F}
                 {PROJECT}/build/intermediates/${mode.buildFolderTag}/debug/obj/x86_64/libhello-jni.so{F}
                 {PROJECT}/build/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/armeabi-v7a/libhello-jni.so{F}
@@ -770,7 +780,8 @@ class CmakeBasicProjectTest(
                 {PROJECT}/build/intermediates/{DEBUG}/obj/armeabi-v7a/libhello-jni.so{F}
                 {PROJECT}/build/intermediates/{DEBUG}/obj/x86_64/libhello-jni.so{F}
             """
-        else """
+      else
+        """
                {PROJECT}/.cxx/{DEBUG}/armeabi-v7a/CMakeFiles/hello-jni.dir/src/main/cxx/hello-jni.c.o{F}
                {PROJECT}/.cxx/{DEBUG}/x86_64/CMakeFiles/hello-jni.dir/src/main/cxx/hello-jni.c.o{F}
                {PROJECT}/build/intermediates/${mode.buildFolderTag}/debug/obj/armeabi-v7a/libhello-jni.so{F}
@@ -782,50 +793,50 @@ class CmakeBasicProjectTest(
                {PROJECT}/build/intermediates/{DEBUG}/obj/armeabi-v7a/libhello-jni.so{F}
                {PROJECT}/build/intermediates/{DEBUG}/obj/x86_64/libhello-jni.so{F}
                """)
-            .trimIndent()
-            .split("\n")
-            .sortedBy { it }
-            .joinToString("\n")
-    }
+      .trimIndent()
+      .split("\n")
+      .sortedBy { it }
+      .joinToString("\n")
+  }
 
-    @Test
-    fun `build product golden locations`() {
-        executorWithLegacyApi().run(
-            "assembleDebug",
-            // The tasks externalNativeBuild* are no longer part of the regular build. Instead,
-            // the MergeNativeLibs tasks depend directly on the individual buildCMake*[abi] tasks.
-            // The externalNativeBuild* tasks are left active as legacy tasks because we expose
-            // them as APIs to the user.
-            "externalNativeBuildDebug")
-        assertEqualsMultiline(
-            project.goldenBuildProducts(),
-            expectedBuildProducts())
-    }
+  @Test
+  fun `build product golden locations`() {
+    executorWithLegacyApi()
+      .run(
+        "assembleDebug",
+        // The tasks externalNativeBuild* are no longer part of the regular build. Instead,
+        // the MergeNativeLibs tasks depend directly on the individual buildCMake*[abi] tasks.
+        // The externalNativeBuild* tasks are left active as legacy tasks because we expose
+        // them as APIs to the user.
+        "externalNativeBuildDebug",
+      )
+    assertEqualsMultiline(project.goldenBuildProducts(), expectedBuildProducts())
+  }
 
-    @Test
-    fun `build product golden locations with forced task order`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            // ------------------------------------------------------------------------
-            // b/195318431 whenTaskAdded can change the task evaluation order
-            tasks.whenTaskAdded { }
-            """.trimIndent()
-        )
-        executorWithLegacyApi().run("assembleDebug", "externalNativeBuildDebug")
-        assertEqualsMultiline(
-            project.goldenBuildProducts(),
-            expectedBuildProducts())
-    }
+  @Test
+  fun `build product golden locations with forced task order`() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      // ------------------------------------------------------------------------
+      // b/195318431 whenTaskAdded can change the task evaluation order
+      tasks.whenTaskAdded { }
+      """
+        .trimIndent(),
+    )
+    executorWithLegacyApi().run("assembleDebug", "externalNativeBuildDebug")
+    assertEqualsMultiline(project.goldenBuildProducts(), expectedBuildProducts())
+  }
 
-    @Test
-    fun `configuration build command golden flags`() {
-        val golden = project.goldenConfigurationFlags(Abi.X86_64)
-        val minPlatform = project.recoverExistingCxxAbiModels().first().variant.module.ndkMinPlatform
+  @Test
+  fun `configuration build command golden flags`() {
+    val golden = project.goldenConfigurationFlags(Abi.X86_64)
+    val minPlatform = project.recoverExistingCxxAbiModels().first().variant.module.ndkMinPlatform
 
-        if (mode == Mode.NinjaRedirect) {
-            assertEqualsMultiline(golden,
-                """
+    if (mode == Mode.NinjaRedirect) {
+      assertEqualsMultiline(
+        golden,
+        """
                 -DANDROID_NDK={NDK}
                 -DANDROID_PLATFORM=android-${minPlatform}
                 -DCMAKE_ANDROID_ARCH_ABI=x86_64
@@ -845,11 +856,14 @@ class CmakeBasicProjectTest(
                 debug
                 x86_64
                 {PROJECT}/.cxx/{DEBUG}/x86_64
-            """.trimIndent())
-            return
-        }
-        assertEqualsMultiline(golden,
             """
+          .trimIndent(),
+      )
+      return
+    }
+    assertEqualsMultiline(
+      golden,
+      """
             -B{PROJECT}/.cxx/{DEBUG}/x86_64
             -DANDROID_ABI=x86_64
             -DANDROID_NDK={NDK}
@@ -868,20 +882,24 @@ class CmakeBasicProjectTest(
             -DCMAKE_TOOLCHAIN_FILE={NDK}/build/cmake/android.toolchain.cmake
             -G{Generator}
             -H{PROJECT}
-        """.trimIndent())
-    }
+        """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun checkModelSingleVariant() {
-        // Request build details for debug-x86_64
-        val fetchResult =
-          project.modelV2()
-              .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
-              .fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86_64")))
+  @Test
+  fun checkModelSingleVariant() {
+    // Request build details for debug-x86_64
+    val fetchResult =
+      project
+        .modelV2()
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
+        .fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86_64")))
 
-        // note that only build files for the requested variant and ABI exists.
-        Truth.assertThat(fetchResult.dump()).isEqualTo(
-          """[:]
+    // note that only build files for the requested variant and ABI exists.
+    Truth.assertThat(fetchResult.dump())
+      .isEqualTo(
+        """[:]
 > NativeModule:
    - name                    = "project"
    > variants:
@@ -919,15 +937,15 @@ class CmakeBasicProjectTest(
    - defaultNdkVersion       = "{DEFAULT_NDK_VERSION}"
    - externalNativeBuildFile = {PROJECT}/CMakeLists.txt{F}
 < NativeModule"""
-        )
-    }
+      )
+  }
 
-    @Test
-    fun checkModel() {
-        val fetchResult = project.modelV2()
-            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
-        Truth.assertThat(fetchResult.dump()).isEqualTo(
-          """[:]
+  @Test
+  fun checkModel() {
+    val fetchResult = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+    Truth.assertThat(fetchResult.dump())
+      .isEqualTo(
+        """[:]
 > NativeModule:
    - name                    = "project"
    > variants:
@@ -965,24 +983,24 @@ class CmakeBasicProjectTest(
    - defaultNdkVersion       = "{DEFAULT_NDK_VERSION}"
    - externalNativeBuildFile = {PROJECT}/CMakeLists.txt{F}
 < NativeModule"""
-        )
-    }
+      )
+  }
 
-    @Test
-    fun checkClean() {
-        lateinit var modelV2: NativeModule
-        // Build the project.
-        executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
+  @Test
+  fun checkClean() {
+    lateinit var modelV2: NativeModule
+    // Build the project.
+    executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
 
-        // We specify to not generate the build information for any variants or ABIs here.
-        val result = project.modelV2()
-            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+    // We specify to not generate the build information for any variants or ABIs here.
+    val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
 
-        val additionalProjectFileStatus =  "F"
+    val additionalProjectFileStatus = "F"
 
-        // The files still appear to exist because we have already built the project.
-        Truth.assertThat(result.dump()).isEqualTo(
-          """[:]
+    // The files still appear to exist because we have already built the project.
+    Truth.assertThat(result.dump())
+      .isEqualTo(
+        """[:]
 > NativeModule:
    - name                    = "project"
    > variants:
@@ -1020,46 +1038,36 @@ class CmakeBasicProjectTest(
    - defaultNdkVersion       = "{DEFAULT_NDK_VERSION}"
    - externalNativeBuildFile = {PROJECT}/CMakeLists.txt{F}
 < NativeModule"""
-        )
-        modelV2 = result.container.singleNativeModule
-        val outputFiles = modelV2.variants.flatMap { variant ->
-            variant.abis.flatMap { abi ->
-                abi.symbolFolderIndexFile.readAsFileIndex().flatMap {
-                    it.list().toList()
-                }
-            }
-        }
-        Truth.assertThat(outputFiles).hasSize(4)
-        Truth.assertThat(outputFiles.toSet()).containsExactly("libhello-jni.so")
+      )
+    modelV2 = result.container.singleNativeModule
+    val outputFiles =
+      modelV2.variants.flatMap { variant ->
+        variant.abis.flatMap { abi -> abi.symbolFolderIndexFile.readAsFileIndex().flatMap { it.list().toList() } }
+      }
+    Truth.assertThat(outputFiles).hasSize(4)
+    Truth.assertThat(outputFiles.toSet()).containsExactly("libhello-jni.so")
 
+    executorWithLegacyApi().run("clean")
 
-        executorWithLegacyApi().run("clean")
+    outputFiles.forEach { file -> assertThat(File(file)).doesNotExist() }
+  }
 
-        outputFiles.forEach { file -> assertThat(File(file)).doesNotExist() }
+  @Test
+  fun checkCleanAfterAbiSubset() {
+    executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
+    val buildOutputs = run {
+      val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+      val nativeModule = result.container.singleNativeModule
+      val buildOutputFolders =
+        nativeModule.variants.flatMap { variant -> variant.abis.flatMap { abi -> abi.symbolFolderIndexFile.readAsFileIndex() } }
+      buildOutputFolders.forEach { folder -> Truth.assertThat(folder.list().toList()).containsExactly("libhello-jni.so") }
+      buildOutputFolders
     }
 
-    @Test
-    fun checkCleanAfterAbiSubset() {
-        executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
-        val buildOutputs = run {
-            val result = project.modelV2()
-                .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
-            val nativeModule = result.container.singleNativeModule
-            val buildOutputFolders = nativeModule.variants.flatMap { variant ->
-                variant.abis.flatMap { abi ->
-                    abi.symbolFolderIndexFile.readAsFileIndex()
-                }
-            }
-            buildOutputFolders.forEach { folder ->
-                Truth.assertThat(folder.list().toList()).containsExactly("libhello-jni.so")
-            }
-            buildOutputFolders
-        }
-
-        // Change the build file to only have "x86_64"
-        TestFileUtils.appendToFile(
-          project.buildFile,
-          """
+    // Change the build file to only have "x86_64"
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply plugin: 'com.android.application'
 
     android {
@@ -1073,208 +1081,203 @@ apply plugin: 'com.android.application'
         }
     }
 
-"""
-        )
-        executorWithLegacyApi().run("clean")
+""",
+    )
+    executorWithLegacyApi().run("clean")
 
-        // All build outputs should no longer exist, even the non-x86 outputs
-        for (output in buildOutputs) {
-            assertThat(output).doesNotExist()
+    // All build outputs should no longer exist, even the non-x86 outputs
+    for (output in buildOutputs) {
+      assertThat(output).doesNotExist()
+    }
+  }
+
+  @Test
+  fun `build attributions are captured in chrome trace log`() {
+    executorWithLegacyApi().with(BooleanOption.ENABLE_PROFILE_JSON, true).run("clean", "assembleDebug")
+    val traceFolder = join(project.projectDir, "build", "android-profile")
+    val traceFile = traceFolder.listFiles()!!.first { it.name.endsWith("json.gz") }
+    Truth.assertThat(InputStreamReader(GZIPInputStream(FileInputStream(traceFile))).readText())
+      .contains("CMakeFiles/hello-jni.dir/src/main/cxx/hello-jni.c.o")
+  }
+
+  @Test
+  fun `build attributions are captured in structured log`() {
+    enableCxxStructuredLogging(project)
+    executorWithLegacyApi().run("assembleDebug")
+    println(project.readStructuredLogs(::decodeBuildTaskAttributions))
+    val events =
+      project
+        .readStructuredLogs(::decodeBuildTaskAttributions)
+        .flatMap { it.attributionList }
+        .groupBy { File(it.outputFile).name }
+        .map { group -> group.key to group.value.count() }
+        .toMap()
+    assertThat(events).hasSize(2) // One for .o and one for .so
+    assertThat(events["hello-jni.c.o"]).isEqualTo(2) // One each for two ABIs
+    assertThat(events["libhello-jni.so"]).isEqualTo(2) // One each for two ABIs
+  }
+
+  @Test
+  fun `ensure that file synchronizations are hard links`() {
+    enableCxxStructuredLogging(project)
+    executorWithLegacyApi().run("externalNativeBuildDebug")
+    val fileSyncs = project.readStructuredLogs(::decodeSynchronizeFile)
+    val syncs =
+      fileSyncs
+        .groupBy {
+          val destination = File(it.destinationFile)
+          destination.relativeTo(destination.parentFile.parentFile).path
         }
+        .map { group -> group.key.replace("\\", "/") to group.value.map { it.outcome }.distinct() }
+        .toMap()
+    println(syncs)
+    assertThat(syncs["armeabi-v7a/libhello-jni.so"]).containsExactly(CREATED_HARD_LINK_FROM_SOURCE_TO_DESTINATION)
+    assertThat(syncs["x86_64/libhello-jni.so"]).containsExactly(CREATED_HARD_LINK_FROM_SOURCE_TO_DESTINATION)
+  }
+
+  @Test
+  fun `generateJsonModel task always runs`() {
+    executorWithLegacyApi().run("assembleDebug")
+    val abi = project.recoverExistingCxxAbiModels().first()
+    val generationRecord = abi.jsonGenerationLoggingRecordFile
+    assertThat(generationRecord).exists()
+    val stateModificationTime = generationRecord.lastModified()
+    executorWithLegacyApi().run("assembleDebug")
+    assertThat(stateModificationTime).isNotEqualTo(0)
+    assertThat(generationRecord).exists()
+    assertThat(generationRecord.lastModified()).isGreaterThan(stateModificationTime)
+  }
+
+  // https://issuetracker.google.com/187448826
+  @Test
+  fun `bug 187448826 precompiled header works`() {
+    // Precompiled header support was added in CMake 3.16
+    if (cmakeVersionInDsl == "3.6.0") return // Unknown CMake command "target_precompile_headers".
+    if (cmakeVersionInDsl == "3.10.2") return // Unknown CMake command "target_precompile_headers".
+    project.buildFile.resolveSibling("stdheader.h").writeText("")
+    project.buildFile.resolveSibling("src1.cpp").writeText("void foo() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.4.1)
+      add_library(foo SHARED src1.cpp)
+      find_library(log-lib log)
+      target_precompile_headers(foo PUBLIC stdheader.h)
+      target_link_libraries(foo ${'$'}{log-lib})
+      """
+        .trimIndent()
+    )
+    executorWithLegacyApi().run("assembleDebug")
+
+    val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
+    val outputFiles = mutableListOf<String>()
+    streamCompileCommands(abi.compileCommandsJsonBinFile) { outputFiles.add(outputFile.name) }
+    assertThat(outputFiles).contains("cmake_pch.hxx.pch")
+  }
+
+  @Test
+  fun `bug 239090305 changes to ninja configure script trigger reconfigure`() {
+    Assume.assumeTrue(mode == Mode.NinjaRedirect)
+    enableCxxStructuredLogging(project)
+
+    // Execute configure the first time, make sure it ran
+    executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
+    project.assertLastConfigureWasRebuild()
+    assertThat(project.totalProcessExecuted).isEqualTo(1) // Assert configure script was invoked
+
+    // Execute again with everything up-to-date
+    deleteExistingStructuredLogs(project)
+    executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
+    project.assertLastConfigureWasNotRebuild()
+    assertThat(project.totalProcessExecuted).isEqualTo(0)
+
+    // Touch configure script. Should rebuild.
+    deleteExistingStructuredLogs(project)
+    assertThat(ninjaBuildConfigureScript).isFile()
+    ninjaBuildConfigureScript.appendText("\n")
+    executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
+    project.assertLastConfigureWasRebuild()
+    assertThat(project.totalProcessExecuted).isEqualTo(1)
+
+    // Touch the output ninja file.
+    deleteExistingStructuredLogs(project)
+    val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
+    assertThat(abi.ninjaBuildFile.isFile).isTrue()
+    abi.ninjaBuildFile.appendText("\n")
+    executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
+    assertThat(project.lastConfigureInvalidationState.shouldConfigure).isTrue()
+    assertThat(project.totalProcessExecuted).isEqualTo(1)
+  }
+
+  @Test
+  fun `validate some utility functions`() {
+    // TODO move this into a separate NativeUtilsTest and break into distinct tests
+    // As far as I can see it will have to be an integration test since that is
+    // what NativeUtils methods are serving.
+    val file = join(File("."), ".cxx", "cmake", "debug", "armeabi-v7a", "symbol_folder_index.txt")
+    val abiSegment = findAbiSegment(file)
+    val cxxSegment = findCxxSegment(file)
+    val configurationSegment = findConfigurationSegment(file)
+    assertThat(abiSegment).named(abiSegment).isEqualTo("armeabi-v7a")
+    assertThat(cxxSegment).named(cxxSegment).isEqualTo(".cxx")
+    assertThat(configurationSegment).named(configurationSegment).isEqualTo(join("cmake/debug"))
+
+    // [Check cartesianOf(...)]---
+    val cartesian = cartesianOf(arrayOf(1, 2), arrayOf("b", "c"), arrayOf(1.1, 1.2))
+    assertThat(cartesian[0]).isEqualTo(arrayOf(1, "b", 1.1))
+    assertThat(cartesian[7]).isEqualTo(arrayOf(2, "c", 1.2))
+    assertThat(cartesian).hasLength(8)
+
+    // [Check minimizeUsingTupleCoverage(...)]---
+    val minimized = cartesian.minimizeUsingTupleCoverage(maxTupleSize = 2)
+    assertThat(minimized).hasLength(5) // Smaller than cartesian which is 8
+    // These should be the least needed to cover each pair of argument
+    assertThat(minimized[0]).isEqualTo(arrayOf(1, "b", 1.1))
+    assertThat(minimized[1]).isEqualTo(arrayOf(2, "c", 1.2))
+    assertThat(minimized[2]).isEqualTo(arrayOf(1, "b", 1.2))
+    assertThat(minimized[3]).isEqualTo(arrayOf(1, "c", 1.1))
+    assertThat(minimized[4]).isEqualTo(arrayOf(2, "b", 1.1))
+  }
+
+  @Test
+  fun `ensure compile_commands json bin is created for each native ABI in model`() {
+    val nativeModules =
+      project
+        .modelV2()
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
+        .fetchNativeModules(NativeModuleParams())
+    val nativeModule = nativeModules.container.singleNativeModule
+    for (variant in nativeModule.variants) {
+      for (abi in variant.abis) {
+        Truth.assertThat(abi.sourceFlagsFile.readCompileCommandsJsonBin(nativeModules.normalizer)).hasSize(1)
+      }
     }
+  }
 
-    @Test
-    fun `build attributions are captured in chrome trace log`() {
-        executorWithLegacyApi()
-            .with(BooleanOption.ENABLE_PROFILE_JSON, true)
-            .run("clean", "assembleDebug")
-        val traceFolder = join(project.projectDir, "build", "android-profile")
-        val traceFile = traceFolder.listFiles()!!.first { it.name.endsWith("json.gz") }
-        Truth.assertThat(InputStreamReader(GZIPInputStream(FileInputStream(traceFile))).readText())
-            .contains("CMakeFiles/hello-jni.dir/src/main/cxx/hello-jni.c.o")
+  @Test
+  fun `ensure compile_commands json is republished for each native ABI in model`() {
+    Assume.assumeTrue(mode != Mode.NinjaRedirect) // Only creates compile_commands.json.bin
+    Assume.assumeTrue(mode != Mode.CMake || cmakeVersionInDsl != "3.6.0") // Only creates compile_commands.json.bin
+    project
+      .modelV2()
+      .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
+      .fetchNativeModules(NativeModuleParams())
+    val abis = project.recoverExistingCxxAbiModels()
+    assertThat(abis.size).isEqualTo(4)
+    for (abi in abis) {
+      assertThat(abi.predictableRepublishFolder.resolve("compile_commands.json")).isFile()
     }
+  }
 
-    @Test
-    fun `build attributions are captured in structured log`() {
-        enableCxxStructuredLogging(project)
-        executorWithLegacyApi().run("assembleDebug")
-        println(project.readStructuredLogs(::decodeBuildTaskAttributions))
-        val events = project.readStructuredLogs(::decodeBuildTaskAttributions)
-            .flatMap { it.attributionList }
-            .groupBy { File(it.outputFile).name }
-            .map { group -> group.key to group.value.count() }
-            .toMap()
-        assertThat(events).hasSize(2) // One for .o and one for .so
-        assertThat(events["hello-jni.c.o"]).isEqualTo(2) // One each for two ABIs
-        assertThat(events["libhello-jni.so"]).isEqualTo(2) // One each for two ABIs
-    }
+  // See b/207403732
+  @Test
+  fun `ensure configureX tasks have dependency on preBuild`() {
+    executorWithLegacyApi().run("configure${mode.taskNameTag}Debug[x86_64]").assertTask(":preDebugBuild").wasUpToDate()
+    executorWithLegacyApi().run("configure${mode.taskNameTag}RelWithDebInfo[x86_64]").assertTask(":preReleaseBuild").wasUpToDate()
+  }
 
-    @Test
-    fun `ensure that file synchronizations are hard links`() {
-        enableCxxStructuredLogging(project)
-        executorWithLegacyApi().run("externalNativeBuildDebug")
-        val fileSyncs = project.readStructuredLogs(::decodeSynchronizeFile)
-        val syncs = fileSyncs
-            .groupBy {
-                val destination = File(it.destinationFile)
-                destination.relativeTo(destination.parentFile.parentFile).path
-            }
-            .map { group -> group.key.replace("\\", "/") to group.value.map { it.outcome }.distinct() }
-            .toMap()
-        println(syncs)
-        assertThat(syncs["armeabi-v7a/libhello-jni.so"]).containsExactly(
-            CREATED_HARD_LINK_FROM_SOURCE_TO_DESTINATION
-        )
-        assertThat(syncs["x86_64/libhello-jni.so"]).containsExactly(
-            CREATED_HARD_LINK_FROM_SOURCE_TO_DESTINATION
-        )
-    }
-
-    @Test
-    fun `generateJsonModel task always runs`() {
-        executorWithLegacyApi().run("assembleDebug")
-        val abi = project.recoverExistingCxxAbiModels().first()
-        val generationRecord = abi.jsonGenerationLoggingRecordFile
-        assertThat(generationRecord).exists()
-        val stateModificationTime = generationRecord.lastModified()
-        executorWithLegacyApi().run("assembleDebug")
-        assertThat(stateModificationTime).isNotEqualTo(0)
-        assertThat(generationRecord).exists()
-        assertThat(generationRecord.lastModified()).isGreaterThan(stateModificationTime)
-    }
-
-    // https://issuetracker.google.com/187448826
-    @Test
-    fun `bug 187448826 precompiled header works`() {
-        // Precompiled header support was added in CMake 3.16
-        if (cmakeVersionInDsl == "3.6.0") return // Unknown CMake command "target_precompile_headers".
-        if (cmakeVersionInDsl == "3.10.2") return // Unknown CMake command "target_precompile_headers".
-        project.buildFile.resolveSibling("stdheader.h").writeText("")
-        project.buildFile.resolveSibling("src1.cpp").writeText("void foo() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.4.1)
-            add_library(foo SHARED src1.cpp)
-            find_library(log-lib log)
-            target_precompile_headers(foo PUBLIC stdheader.h)
-            target_link_libraries(foo ${'$'}{log-lib})
-            """.trimIndent())
-        executorWithLegacyApi().run("assembleDebug")
-
-        val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
-        val outputFiles = mutableListOf<String>()
-        streamCompileCommands(abi.compileCommandsJsonBinFile) {
-            outputFiles.add(outputFile.name)
-        }
-        assertThat(outputFiles).contains("cmake_pch.hxx.pch")
-    }
-
-    @Test
-    fun `bug 239090305 changes to ninja configure script trigger reconfigure`() {
-        Assume.assumeTrue(mode == Mode.NinjaRedirect)
-        enableCxxStructuredLogging(project)
-
-        // Execute configure the first time, make sure it ran
-        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
-        project.assertLastConfigureWasRebuild()
-        assertThat(project.totalProcessExecuted).isEqualTo(1) // Assert configure script was invoked
-
-        // Execute again with everything up-to-date
-        deleteExistingStructuredLogs(project)
-        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
-        project.assertLastConfigureWasNotRebuild()
-        assertThat(project.totalProcessExecuted).isEqualTo(0)
-
-        // Touch configure script. Should rebuild.
-        deleteExistingStructuredLogs(project)
-        assertThat(ninjaBuildConfigureScript).isFile()
-        ninjaBuildConfigureScript.appendText("\n")
-        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
-        project.assertLastConfigureWasRebuild()
-        assertThat(project.totalProcessExecuted).isEqualTo(1)
-
-        // Touch the output ninja file.
-        deleteExistingStructuredLogs(project)
-        val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
-        assertThat(abi.ninjaBuildFile.isFile).isTrue()
-        abi.ninjaBuildFile.appendText("\n")
-        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
-        assertThat(project.lastConfigureInvalidationState.shouldConfigure).isTrue()
-        assertThat(project.totalProcessExecuted).isEqualTo(1)
-    }
-
-    @Test
-    fun `validate some utility functions`() {
-        // TODO move this into a separate NativeUtilsTest and break into distinct tests
-        // As far as I can see it will have to be an integration test since that is
-        // what NativeUtils methods are serving.
-        val file = join(File("."), ".cxx", "cmake", "debug","armeabi-v7a","symbol_folder_index.txt")
-        val abiSegment = findAbiSegment(file)
-        val cxxSegment = findCxxSegment(file)
-        val configurationSegment = findConfigurationSegment(file)
-        assertThat(abiSegment).named(abiSegment).isEqualTo("armeabi-v7a")
-        assertThat(cxxSegment).named(cxxSegment).isEqualTo(".cxx")
-        assertThat(configurationSegment).named(configurationSegment).isEqualTo(join("cmake/debug"))
-
-        // [Check cartesianOf(...)]---
-        val cartesian = cartesianOf(arrayOf(1,2), arrayOf("b", "c"), arrayOf(1.1, 1.2))
-        assertThat(cartesian[0]).isEqualTo(arrayOf(1, "b", 1.1))
-        assertThat(cartesian[7]).isEqualTo(arrayOf(2, "c", 1.2))
-        assertThat(cartesian).hasLength(8)
-
-        // [Check minimizeUsingTupleCoverage(...)]---
-        val minimized = cartesian
-            .minimizeUsingTupleCoverage(maxTupleSize = 2)
-        assertThat(minimized).hasLength(5) // Smaller than cartesian which is 8
-        // These should be the least needed to cover each pair of argument
-        assertThat(minimized[0]).isEqualTo(arrayOf(1, "b", 1.1))
-        assertThat(minimized[1]).isEqualTo(arrayOf(2, "c", 1.2))
-        assertThat(minimized[2]).isEqualTo(arrayOf(1, "b", 1.2))
-        assertThat(minimized[3]).isEqualTo(arrayOf(1, "c", 1.1))
-        assertThat(minimized[4]).isEqualTo(arrayOf(2, "b", 1.1))
-    }
-
-    @Test
-    fun `ensure compile_commands json bin is created for each native ABI in model`() {
-        val nativeModules = project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
-            .fetchNativeModules(NativeModuleParams())
-        val nativeModule = nativeModules.container.singleNativeModule
-        for (variant in nativeModule.variants) {
-            for (abi in variant.abis) {
-                Truth.assertThat(abi.sourceFlagsFile.readCompileCommandsJsonBin(nativeModules.normalizer))
-                        .hasSize(1)
-            }
-        }
-    }
-
-    @Test
-    fun `ensure compile_commands json is republished for each native ABI in model`() {
-        Assume.assumeTrue(mode != Mode.NinjaRedirect) // Only creates compile_commands.json.bin
-        Assume.assumeTrue(mode != Mode.CMake || cmakeVersionInDsl != "3.6.0") // Only creates compile_commands.json.bin
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
-            .fetchNativeModules(NativeModuleParams())
-        val abis = project.recoverExistingCxxAbiModels()
-        assertThat(abis.size).isEqualTo(4)
-        for(abi in abis) {
-            assertThat(abi.predictableRepublishFolder.resolve("compile_commands.json")).isFile()
-        }
-    }
-
-    // See b/207403732
-    @Test
-    fun `ensure configureX tasks have dependency on preBuild`() {
-        executorWithLegacyApi().run("configure${mode.taskNameTag}Debug[x86_64]")
-            .assertTask(":preDebugBuild")
-            .wasUpToDate()
-        executorWithLegacyApi().run("configure${mode.taskNameTag}RelWithDebInfo[x86_64]")
-            .assertTask(":preReleaseBuild")
-            .wasUpToDate()
-    }
-
-    private fun executorWithLegacyApi(): GradleTaskExecutor {
-        return project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
-    }
+  private fun executorWithLegacyApi(): GradleTaskExecutor {
+    return project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
+  }
 }

@@ -18,11 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.customView.res.layout
 
 import com.android.tools.idea.wizard.template.impl.other.customView.res.values.getCustomViewStyle
 
-fun sampleXml(
-  packageName: String,
-  themeName: String,
-  viewClass: String
-) = """
+fun sampleXml(packageName: String, themeName: String, viewClass: String) =
+  """
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

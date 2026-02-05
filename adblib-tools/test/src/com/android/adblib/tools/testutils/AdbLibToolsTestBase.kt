@@ -30,81 +30,71 @@ import com.android.adblib.waitForDevice
 import com.android.adblib.waitUntilOnline
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 import org.hamcrest.CoreMatchers
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.rules.ExpectedException
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 open class AdbLibToolsTestBase {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @JvmField @Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    protected val fakeAdb get() = fakeAdbRule.fakeAdb
-    protected val session get() = fakeAdbRule.adbSession
-    protected val hostServices get() = session.hostServices
-    protected val deviceServices get() = session.deviceServices
+  protected val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  protected val session
+    get() = fakeAdbRule.adbSession
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  protected val hostServices
+    get() = session.hostServices
 
-    protected fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
-    }
+  protected val deviceServices
+    get() = session.deviceServices
 
-    protected fun createDisconnectedSession(): AdbSession {
-        val host = registerCloseable(TestingAdbSessionHost())
-        val channelProvider = object: AdbServerChannelProvider {
-            override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
-                throw NotImplementedError("A disconnected session does not support channels")
-            }
+  @JvmField @Rule val closeables = CloseablesRule()
+
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
+
+  protected fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
+
+  protected fun createDisconnectedSession(): AdbSession {
+    val host = registerCloseable(TestingAdbSessionHost())
+    val channelProvider =
+      object : AdbServerChannelProvider {
+        override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
+          throw NotImplementedError("A disconnected session does not support channels")
         }
-        return registerCloseable(AdbSession.create(
-            host,
-            channelProvider,
-            Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS)
-        ))
-    }
+      }
+    return registerCloseable(AdbSession.create(host, channelProvider, Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS)))
+  }
 
-    protected fun addFakeDevice(fakeAdb: FakeAdbServerProvider, api: Int): DeviceState {
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                "1234",
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(api),
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return fakeDevice
-    }
+  protected fun addFakeDevice(fakeAdb: FakeAdbServerProvider, api: Int): DeviceState {
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", AndroidApiLevel(api), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    return fakeDevice
+  }
 
-    protected fun <T: Any> setHostPropertyValue(host: AdbSessionHost, property: AdbSessionHost.Property<T>, value: T) {
-        (host as TestingAdbSessionHost).setPropertyValue(property, value)
-    }
+  protected fun <T : Any> setHostPropertyValue(host: AdbSessionHost, property: AdbSessionHost.Property<T>, value: T) {
+    (host as TestingAdbSessionHost).setPropertyValue(property, value)
+  }
 
-    protected inline fun <reified T> assertThrows(block: () -> Unit) {
-        try {
-            block()
-        } catch(t: Throwable) {
-            Assert.assertThat(t, CoreMatchers.instanceOf(T::class.java))
-            return
-        }
-        Assert.fail("Expected: An exception instance of ${T::class}, but got no exception instead")
+  protected inline fun <reified T> assertThrows(block: () -> Unit) {
+    try {
+      block()
+    } catch (t: Throwable) {
+      Assert.assertThat(t, CoreMatchers.instanceOf(T::class.java))
+      return
     }
+    Assert.fail("Expected: An exception instance of ${T::class}, but got no exception instead")
+  }
 }
 
 suspend fun AdbSession.waitForOnlineConnectedDevice(serialNumber: String): ConnectedDevice {
-    val connectedDevice = connectedDevicesTracker.waitForDevice(serialNumber)
-    connectedDevice.waitUntilOnline()
-    return connectedDevice
+  val connectedDevice = connectedDevicesTracker.waitForDevice(serialNumber)
+  connectedDevice.waitUntilOnline()
+  return connectedDevice
 }

@@ -22,65 +22,54 @@ import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Verifies the handling of build type and product flavor attributes of project dependencies
- * as passed to the IDE.
- */
-class FlavouredDependencyModelTest: ModelComparator() {
+/** Verifies the handling of build type and product flavor attributes of project dependencies as passed to the IDE. */
+class FlavouredDependencyModelTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary(":lib1") {
-            android {
-                enableKotlin = false
-                flavorDimensions += listOf("model", "market")
-                productFlavors {
-                    create("basic") { it.dimension = "model" }
-                    create("pro") { it.dimension = "model" }
-                    create("play") { it.dimension = "market" }
-                    create("other") { it.dimension = "market" }
-                }
-            }
-            dependencies {
-                implementation(project(":lib2"))
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary(":lib1") {
+        android {
+          enableKotlin = false
+          flavorDimensions += listOf("model", "market")
+          productFlavors {
+            create("basic") { it.dimension = "model" }
+            create("pro") { it.dimension = "model" }
+            create("play") { it.dimension = "market" }
+            create("other") { it.dimension = "market" }
+          }
         }
-        androidLibrary(":lib2") {
-            android {
-                enableKotlin = false
-                flavorDimensions += listOf("model", "market")
-                productFlavors {
-                    create("basic") { it.dimension = "model" }
-                    create("pro") { it.dimension = "model" }
-                    create("play") { it.dimension = "market" }
-                    create("other") { it.dimension = "market" }
-                }
-            }
-            dependencies {
-                implementation(project(":lib3"))
-            }
+        dependencies { implementation(project(":lib2")) }
+      }
+      androidLibrary(":lib2") {
+        android {
+          enableKotlin = false
+          flavorDimensions += listOf("model", "market")
+          productFlavors {
+            create("basic") { it.dimension = "model" }
+            create("pro") { it.dimension = "model" }
+            create("play") { it.dimension = "market" }
+            create("other") { it.dimension = "market" }
+          }
         }
-        androidLibrary(":lib3") {
-            android {
-                enableKotlin = false
-                flavorDimensions += listOf("market")
-                productFlavors {
-                    create("play") { it.dimension = "market" }
-                    create("other") { it.dimension = "market" }
-                }
-            }
+        dependencies { implementation(project(":lib3")) }
+      }
+      androidLibrary(":lib3") {
+        android {
+          enableKotlin = false
+          flavorDimensions += listOf("market")
+          productFlavors {
+            create("play") { it.dimension = "market" }
+            create("other") { it.dimension = "market" }
+          }
         }
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "basicPlayDebug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "basicPlayDebug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib1") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":lib1") }, goldenFile = "VariantDependencies")
+  }
 }

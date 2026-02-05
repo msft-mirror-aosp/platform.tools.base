@@ -18,45 +18,40 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.AndroidResources
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.provider.ListProperty
 import javax.inject.Inject
+import org.gradle.api.provider.ListProperty
 
-open class AnalyticsEnabledAndroidResources @Inject constructor(
-    open val delegate: AndroidResources,
-    val stats: GradleBuildVariant.Builder,
-): AndroidResources {
+open class AnalyticsEnabledAndroidResources
+@Inject
+constructor(open val delegate: AndroidResources, val stats: GradleBuildVariant.Builder) : AndroidResources {
 
-    override val ignoreAssetsPatterns: ListProperty<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.IGNORE_ASSETS_PATTERN_VALUE
-            return delegate.ignoreAssetsPatterns
-        }
-    override val aaptAdditionalParameters: ListProperty<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.AAPT_ADDITIONAL_PARAMETERS_VALUE
-            return delegate.aaptAdditionalParameters
-        }
+  override val ignoreAssetsPatterns: ListProperty<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.IGNORE_ASSETS_PATTERN_VALUE
+      return delegate.ignoreAssetsPatterns
+    }
 
-    override val noCompress: ListProperty<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.NO_COMPRESS_VALUE
-            return delegate.noCompress
-        }
+  override val aaptAdditionalParameters: ListProperty<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.AAPT_ADDITIONAL_PARAMETERS_VALUE
+      return delegate.aaptAdditionalParameters
+    }
 
-    override val dataBinding: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.DATA_BINDING_VALUE
-            return delegate.dataBinding
-        }
+  override val noCompress: ListProperty<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.NO_COMPRESS_VALUE
+      return delegate.noCompress
+    }
 
-    override val viewBinding: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VIEW_BINDING_VALUE
-            return delegate.viewBinding
-        }
+  override val dataBinding: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.DATA_BINDING_VALUE
+      return delegate.dataBinding
+    }
+
+  override val viewBinding: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.VIEW_BINDING_VALUE
+      return delegate.viewBinding
+    }
 }

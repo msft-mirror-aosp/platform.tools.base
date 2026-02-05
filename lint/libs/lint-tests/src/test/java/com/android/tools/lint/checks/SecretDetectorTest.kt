@@ -73,8 +73,10 @@ class SecretDetectorTest : AbstractCheckTest() {
   fun testKeys() {
     lint()
       .files(
-        // This makes the project look like a Gradle project; the check will not report the use of a
-        // field from a different file unless the project looks like a Gradle project because the
+        // This makes the project look like a Gradle project; the check will not report the use
+        // of a
+        // field from a different file unless the project looks like a Gradle project because
+        // the
         // check tries to see whether the field is in a generated file.
         kts(""),
         generativeModelStubKt,

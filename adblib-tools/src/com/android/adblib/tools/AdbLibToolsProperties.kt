@@ -20,178 +20,135 @@ import com.android.adblib.AdbFeatures
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.AppProcessImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
 import com.android.adblib.tools.debugging.impl.ResumeProcessImpl
+import com.android.adblib.tools.debugging.trackApp
 import java.time.Duration
 
-/**
- * By convention, all [properties][AdbSessionHost.Property] of this module are defined in
- * this singleton.
- */
+/** By convention, all [properties][AdbSessionHost.Property] of this module are defined in this singleton. */
 object AdbLibToolsProperties {
 
-    private const val NAME_PREFIX = "com.android.adblib.tools"
+  private const val NAME_PREFIX = "com.android.adblib.tools"
 
-    /**
-     * If the [AdbDeviceServices.trackApp] call fails with an error while the device is
-     * still connected, we want to retry. This defines the [Duration] to wait before retrying.
-     */
-    val TRACK_APP_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.track.app.retry.delay",
-        defaultValue = Duration.ofSeconds(2)
+  /**
+   * If the [AdbDeviceServices.trackApp] call fails with an error while the device is still connected, we want to retry. This defines the
+   * [Duration] to wait before retrying.
+   */
+  val TRACK_APP_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.track.app.retry.delay", defaultValue = Duration.ofSeconds(2))
+
+  /**
+   * If the [AdbDeviceServices.trackJdwp] call fails with an error while the device is still connected, we want to retry. This defines the
+   * [Duration] to wait before retrying.
+   */
+  val TRACK_JDWP_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.track.jdwp.retry.delay", defaultValue = Duration.ofSeconds(2))
+
+  val JDWP_PROCESS_TRACKER_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.jdwp.process.tracker.retry.delay", defaultValue = Duration.ofSeconds(2))
+
+  /**
+   * Delay between the time [AdbDeviceServices.trackJdwp] (or [AdbDeviceServices.trackApp]) is notified of a process termination and the
+   * time the corresponding [AbstractJdwpProcess.close] (or [AppProcessImpl.close]) method is called.
+   */
+  val JDWP_PROCESS_TRACKER_CLOSE_NOTIFICATION_DELAY =
+    AdbSessionHost.DurationProperty(
+      name = "$NAME_PREFIX.jdwp.process.tracker.close.notification.delay",
+      defaultValue = Duration.ofMillis(100),
     )
 
-    /**
-     * If the [AdbDeviceServices.trackJdwp] call fails with an error while the device is
-     * still connected, we want to retry. This defines the [Duration] to wait before retrying.
-     */
-    val TRACK_JDWP_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.track.jdwp.retry.delay",
-        defaultValue = Duration.ofSeconds(2)
+  /**
+   * Delay between the time [JdwpProcessManager] receives a new list of process ids and the time it updates its internal map to close
+   * instances of [AbstractJdwpProcess] corresponding to JDWP processes that have exited.
+   */
+  val JDWP_PROCESS_MANAGER_REFRESH_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.jdwp.process.manager.refresh.delay", defaultValue = Duration.ofMillis(200))
+
+  /** This value is from DDMLIB, using it should help avoid potential backward compatibility issues if someone depends on this somehow. */
+  val JDWP_SESSION_FIRST_PACKET_ID =
+    AdbSessionHost.IntProperty(name = "$NAME_PREFIX.jdwp.session.first.packet.id", defaultValue = 0x40000000)
+
+  /**
+   * Whether to use [trackApp] when tracking debuggable processes in `JdwpProcessTracker` when device SDK >= 31. This is more efficient as
+   * `track-app` is already being utilized by other Android Studio components, preventing redundant commands.
+   */
+  val JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE =
+    AdbSessionHost.BooleanProperty(name = "$NAME_PREFIX.jdwp.process.tracker.should.use.track.app.if.available", defaultValue = true)
+
+  /**
+   * Amount of time to wait before collecting the properties of a [JdwpProcess] after the process has been discovered, when
+   * [PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT] is `false`.
+   *
+   * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
+   */
+  val PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.process.properties.collector.delay.default", defaultValue = Duration.ofMillis(500))
+
+  /**
+   * Amount of time to wait before collecting the properties of a [JdwpProcess] after the process has been discovered, when
+   * [PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT] is `true`.
+   *
+   * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
+   */
+  val PROCESS_PROPERTIES_COLLECTOR_DELAY_SHORT =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.process.properties.collector.delay.short", defaultValue = Duration.ofMillis(0))
+
+  /**
+   * Whether to use [PROCESS_PROPERTIES_COLLECTOR_DELAY_SHORT] or [PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT] when collecting process
+   * properties.
+   *
+   * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
+   */
+  val PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT =
+    AdbSessionHost.BooleanProperty(
+      name = "$NAME_PREFIX.process.properties.collector.delay.use.short",
+      defaultValue = false,
+      isVolatile = true,
     )
 
-    val JDWP_PROCESS_TRACKER_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.jdwp.process.tracker.retry.delay",
-        defaultValue = Duration.ofSeconds(2)
-    )
+  /**
+   * Whether to use [trackApp] when collecting JDWP process properties, if the [AdbFeatures.APP_INFO] feature is supported by the device.
+   */
+  val PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE =
+    AdbSessionHost.BooleanProperty(name = "$NAME_PREFIX.process.properties.collector.use.app.info.if.available", defaultValue = true)
 
-    /**
-     * Delay between the time [AdbDeviceServices.trackJdwp] (or [AdbDeviceServices.trackApp]) is
-     * notified of a process termination and the time the corresponding [AbstractJdwpProcess.close]
-     * (or [AppProcessImpl.close]) method is called.
-     */
-    val JDWP_PROCESS_TRACKER_CLOSE_NOTIFICATION_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.jdwp.process.tracker.close.notification.delay",
-        defaultValue = Duration.ofMillis(100)
-    )
+  /**
+   * Maximum amount of time a JDWP connection is open while waiting for the JDWP "handshake" and various DDMS packets related to the process
+   * state.
+   *
+   * Note: The current value (15 seconds) matches the time Android Studio waits for a process to show up as "waiting for debugger" after
+   * deploying and starting an application on a device.
+   */
+  val PROCESS_PROPERTIES_READ_TIMEOUT =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.process.properties.read.timeout", defaultValue = Duration.ofSeconds(15))
 
-    /**
-     * Delay between the time [JdwpProcessManager] receives a new list of process ids
-     * and the time it updates its internal map to close instances of [AbstractJdwpProcess]
-     * corresponding to JDWP processes that have exited.
-     */
-    val JDWP_PROCESS_MANAGER_REFRESH_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.jdwp.process.manager.refresh.delay",
-        defaultValue = Duration.ofMillis(200),
-    )
+  /** Amount of time to wait before retrying a JDWP session to retrieve process properties */
+  val PROCESS_PROPERTIES_RETRY_DURATION =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.process.properties.retry.duration", defaultValue = Duration.ofSeconds(2))
 
-    /**
-     * This value is from DDMLIB, using it should help avoid potential backward compatibility
-     * issues if someone depends on this somehow.
-     */
-    val JDWP_SESSION_FIRST_PACKET_ID = AdbSessionHost.IntProperty(
-        name = "$NAME_PREFIX.jdwp.session.first.packet.id",
-        defaultValue = 0x40000000
-    )
+  val APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_COUNT =
+    AdbSessionHost.IntProperty(name = "$NAME_PREFIX.app.process.retrieve.name.retry.count", defaultValue = 5)
 
-    /**
-     * Whether to use [trackApp] when tracking debuggable processes in `JdwpProcessTracker` when
-     * device SDK >= 31. This is more efficient as `track-app` is already being utilized by
-     * other Android Studio components, preventing redundant commands.
-     */
-    val JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE = AdbSessionHost.BooleanProperty(
-        name = "$NAME_PREFIX.jdwp.process.tracker.should.use.track.app.if.available",
-        defaultValue = true
-    )
+  val APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.app.process.retrieve.name.retry.delay", defaultValue = Duration.ofMillis(200))
 
-    /**
-     * Amount of time to wait before collecting the properties of a [JdwpProcess] after the
-     * process has been discovered, when [PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT] is `false`.
-     *
-     * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
-     */
-    val PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.process.properties.collector.delay.default",
-        defaultValue = Duration.ofMillis(500)
-    )
+  val DDMS_REPLY_WAIT_TIMEOUT =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.ddms.reply.wait.timeout", defaultValue = Duration.ofSeconds(2))
 
-    /**
-     * Amount of time to wait before collecting the properties of a [JdwpProcess] after the
-     * process has been discovered, when [PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT] is `true`.
-     *
-     * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
-     */
-    val PROCESS_PROPERTIES_COLLECTOR_DELAY_SHORT = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.process.properties.collector.delay.short",
-        defaultValue = Duration.ofMillis(0)
-    )
+  /**
+   * When reading packets from [SharedJdwpSession], this is the maximum payload length of JDWP packets that are eagerly read into memory "by
+   * default". For JDWP packets with larger payload, the payload is connected to the underlying socket, and read into memory only when
+   * explicitly read.
+   */
+  val SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH =
+    AdbSessionHost.IntProperty(name = "$NAME_PREFIX.shared.jdwp.packet.in.memory.max.payload.length", defaultValue = 128)
 
-    /**
-     * Whether to use [PROCESS_PROPERTIES_COLLECTOR_DELAY_SHORT] or
-     * [PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT] when collecting process properties.
-     *
-     * See [b/271572555](https://issuetracker.google.com/issues/271572555) for more context.
-     */
-    val PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT = AdbSessionHost.BooleanProperty(
-        name = "$NAME_PREFIX.process.properties.collector.delay.use.short",
-        defaultValue = false,
-        isVolatile = true
-    )
-
-    /**
-     * Whether to use [trackApp] when collecting JDWP process properties,
-     * if the [AdbFeatures.APP_INFO] feature is supported by the device.
-     */
-    val PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE = AdbSessionHost.BooleanProperty(
-        name = "$NAME_PREFIX.process.properties.collector.use.app.info.if.available",
-        defaultValue = true
-    )
-
-    /**
-     * Maximum amount of time a JDWP connection is open while waiting for the JDWP "handshake"
-     * and various DDMS packets related to the process state.
-     *
-     * Note: The current value (15 seconds) matches the time Android Studio waits for a process
-     * to show up as "waiting for debugger" after deploying and starting an application on a
-     * device.
-     */
-    val PROCESS_PROPERTIES_READ_TIMEOUT = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.process.properties.read.timeout",
-        defaultValue = Duration.ofSeconds(15)
-    )
-
-    /**
-     * Amount of time to wait before retrying a JDWP session to retrieve process properties
-     */
-    val PROCESS_PROPERTIES_RETRY_DURATION = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.process.properties.retry.duration",
-        defaultValue = Duration.ofSeconds(2)
-    )
-
-    val APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_COUNT = AdbSessionHost.IntProperty(
-        name = "$NAME_PREFIX.app.process.retrieve.name.retry.count",
-        defaultValue = 5
-    )
-
-    val APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.app.process.retrieve.name.retry.delay",
-        defaultValue = Duration.ofMillis(200)
-    )
-
-    val DDMS_REPLY_WAIT_TIMEOUT = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.ddms.reply.wait.timeout",
-        defaultValue = Duration.ofSeconds(2)
-    )
-
-    /**
-     * When reading packets from [SharedJdwpSession], this is the maximum payload length of JDWP
-     * packets that are eagerly read into memory "by default".
-     * For JDWP packets with larger payload, the payload is connected to the underlying socket,
-     * and read into memory only when explicitly read.
-     */
-    val SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH = AdbSessionHost.IntProperty(
-        name = "$NAME_PREFIX.shared.jdwp.packet.in.memory.max.payload.length",
-        defaultValue = 128
-    )
-
-    /**
-     * See [ResumeProcessImpl.resumeProcessImpl]
-     */
-    val RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.resume.process.delay.before.closing.jdwp.session",
-        defaultValue = Duration.ofMillis(1_000)
+  /** See [ResumeProcessImpl.resumeProcessImpl] */
+  val RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION =
+    AdbSessionHost.DurationProperty(
+      name = "$NAME_PREFIX.resume.process.delay.before.closing.jdwp.session",
+      defaultValue = Duration.ofMillis(1_000),
     )
 }

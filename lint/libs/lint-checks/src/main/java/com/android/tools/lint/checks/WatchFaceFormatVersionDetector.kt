@@ -37,9 +37,8 @@ import com.android.xml.AndroidManifest.NODE_APPLICATION
 import org.w3c.dom.Element
 
 /**
- * Detector that checks that the manifest's application contains a
- * [WATCH_FACE_FORMAT_VERSION_PROPERTY] property if the project contains a Declarative Watch Face
- * file (file with a `<WatchFace>` root tag) in the `res/raw` folder.
+ * Detector that checks that the manifest's application contains a [WATCH_FACE_FORMAT_VERSION_PROPERTY] property if the project contains a
+ * Declarative Watch Face file (file with a `<WatchFace>` root tag) in the `res/raw` folder.
  *
  * It also checks that the `android:value` attribute if the property exists.
  */
@@ -56,8 +55,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
   override fun visitElement(context: XmlContext, element: Element) {
     if (element.tagName != TAG_PROPERTY) return
     if (element.parentNode.nodeName != NODE_APPLICATION) return
-    if (element.getAttributeNS(ANDROID_URI, ATTRIBUTE_NAME) != WATCH_FACE_FORMAT_VERSION_PROPERTY)
-      return
+    if (element.getAttributeNS(ANDROID_URI, ATTRIBUTE_NAME) != WATCH_FACE_FORMAT_VERSION_PROPERTY) return
 
     hasWffVersionProperty = true
 
@@ -83,11 +81,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
       }
 
     if (wffVersion.toIntOrNull() == null) {
-      context.report(
-        INVALID_VERSION_ISSUE,
-        context.getLocation(wffVersionValueAttribute),
-        "The Watch Face Format version is invalid",
-      )
+      context.report(INVALID_VERSION_ISSUE, context.getLocation(wffVersionValueAttribute), "The Watch Face Format version is invalid")
       return
     }
   }
@@ -97,13 +91,8 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
     if (hasWffVersionProperty) return
     if (!hasDeclarativeWatchFaceFile(context.project)) return
     val manifest = (context as? XmlContext)?.document ?: return
-    val application =
-      XmlUtils.getFirstSubTagByName(manifest.documentElement, NODE_APPLICATION) ?: return
-    context.report(
-      MISSING_VERSION_ISSUE,
-      context.getNameLocation(application),
-      "The Watch Face Format version property must be set",
-    )
+    val application = XmlUtils.getFirstSubTagByName(manifest.documentElement, NODE_APPLICATION) ?: return
+    context.report(MISSING_VERSION_ISSUE, context.getNameLocation(application), "The Watch Face Format version property must be set")
   }
 
   companion object {
@@ -127,8 +116,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
           priority = 7,
           severity = Severity.ERROR,
           moreInfo = "https://developer.android.com/training/wearables/wff/setup#declare-wff-use",
-          implementation =
-            Implementation(WatchFaceFormatVersionDetector::class.java, Scope.MANIFEST_SCOPE),
+          implementation = Implementation(WatchFaceFormatVersionDetector::class.java, Scope.MANIFEST_SCOPE),
           androidSpecific = true,
         )
         .addMoreInfo("https://developer.android.com/training/wearables/wff/features")
@@ -146,8 +134,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
         priority = 7,
         severity = Severity.ERROR,
         moreInfo = "https://developer.android.com/training/wearables/wff/features",
-        implementation =
-          Implementation(WatchFaceFormatVersionDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(WatchFaceFormatVersionDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
       )
   }

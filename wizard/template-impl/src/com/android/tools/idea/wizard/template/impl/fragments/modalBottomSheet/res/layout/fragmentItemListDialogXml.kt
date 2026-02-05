@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.modalBottomSheet.r
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun fragmentItemListDialogXml(
-  fragmentClass: String,
-  itemLayout: String,
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun fragmentItemListDialogXml(fragmentClass: String, itemLayout: String, packageName: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.v7.widget.RecyclerView", useAndroidX)} xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"

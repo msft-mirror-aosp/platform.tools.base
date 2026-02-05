@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import java.io.Serializable
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -41,217 +42,181 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
-import java.io.Serializable
 
 class AnalyticsEnabledVariantTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: Variant = mock()
+  private val delegate: Variant = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledVariant by lazy {
-        object : AnalyticsEnabledVariant(delegate, stats, FakeObjectFactory.factory) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledVariant by lazy { object : AnalyticsEnabledVariant(delegate, stats, FakeObjectFactory.factory) {} }
 
-    @Test
-    fun getMinSdk() {
-        val androidVersion = mock<AndroidVersion>()
-        whenever(delegate.minSdk).thenReturn(androidVersion)
-        Truth.assertThat(proxy.minSdk).isEqualTo(androidVersion)
+  @Test
+  fun getMinSdk() {
+    val androidVersion = mock<AndroidVersion>()
+    whenever(delegate.minSdk).thenReturn(androidVersion)
+    Truth.assertThat(proxy.minSdk).isEqualTo(androidVersion)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE)
-        verify(delegate, times(1))
-                .minSdk
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE)
+    verify(delegate, times(1)).minSdk
+  }
 
-    @Test
-    fun getMaxSdk() {
-        whenever(delegate.maxSdk).thenReturn(23)
-        Truth.assertThat(proxy.maxSdk).isEqualTo(23)
+  @Test
+  fun getMaxSdk() {
+    whenever(delegate.maxSdk).thenReturn(23)
+    Truth.assertThat(proxy.maxSdk).isEqualTo(23)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE)
-        verify(delegate, times(1))
-                .maxSdk
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE)
+    verify(delegate, times(1)).maxSdk
+  }
 
-    @Test
-    fun getMinSdkVersion() {
-        val androidVersion = mock<AndroidVersion>()
-        whenever(delegate.minSdk).thenReturn(androidVersion)
-        Truth.assertThat(proxy.minSdkVersion).isEqualTo(androidVersion)
+  @Test
+  fun getMinSdkVersion() {
+    val androidVersion = mock<AndroidVersion>()
+    whenever(delegate.minSdk).thenReturn(androidVersion)
+    Truth.assertThat(proxy.minSdkVersion).isEqualTo(androidVersion)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE)
-        verify(delegate, times(1))
-            .minSdk
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE)
+    verify(delegate, times(1)).minSdk
+  }
 
-    @Suppress("DEPRECATION_ERROR")
-    @Test
-    fun getTargetSdkVersion() {
-        val androidVersion = mock<AndroidVersion>()
-        whenever(delegate.targetSdkVersion).thenReturn(androidVersion)
-        Truth.assertThat(proxy.targetSdkVersion).isEqualTo(androidVersion)
+  @Suppress("DEPRECATION_ERROR")
+  @Test
+  fun getTargetSdkVersion() {
+    val androidVersion = mock<AndroidVersion>()
+    whenever(delegate.targetSdkVersion).thenReturn(androidVersion)
+    Truth.assertThat(proxy.targetSdkVersion).isEqualTo(androidVersion)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TARGET_SDK_VERSION_VALUE)
-        verify(delegate, times(1))
-            .targetSdkVersion
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TARGET_SDK_VERSION_VALUE)
+    verify(delegate, times(1)).targetSdkVersion
+  }
 
-    @Test
-    fun getMaxSdkVersion() {
-        whenever(delegate.maxSdk).thenReturn(23)
-        Truth.assertThat(proxy.maxSdkVersion).isEqualTo(23)
+  @Test
+  fun getMaxSdkVersion() {
+    whenever(delegate.maxSdk).thenReturn(23)
+    Truth.assertThat(proxy.maxSdkVersion).isEqualTo(23)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE)
-        verify(delegate, times(1))
-            .maxSdk
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE)
+    verify(delegate, times(1)).maxSdk
+  }
 
-    @Test
-    fun getNamespace() {
-        whenever(delegate.namespace).thenReturn(FakeGradleProvider("package.name"))
-        Truth.assertThat(proxy.namespace.get()).isEqualTo("package.name")
+  @Test
+  fun getNamespace() {
+    whenever(delegate.namespace).thenReturn(FakeGradleProvider("package.name"))
+    Truth.assertThat(proxy.namespace.get()).isEqualTo("package.name")
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NAMESPACE_VALUE)
-        verify(delegate, times(1))
-            .namespace
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.NAMESPACE_VALUE)
+    verify(delegate, times(1)).namespace
+  }
 
-    @Test
-    fun getBuildConfigFields() {
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<String, BuildConfigField<out Serializable>> =
-            mock<MapProperty<String, BuildConfigField<out Serializable>>>()
-        whenever(delegate.buildConfigFields).thenReturn(map)
-        Truth.assertThat(proxy.buildConfigFields).isEqualTo(map)
+  @Test
+  fun getBuildConfigFields() {
+    @Suppress("UNCHECKED_CAST")
+    val map: MapProperty<String, BuildConfigField<out Serializable>> = mock<MapProperty<String, BuildConfigField<out Serializable>>>()
+    whenever(delegate.buildConfigFields).thenReturn(map)
+    Truth.assertThat(proxy.buildConfigFields).isEqualTo(map)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.BUILD_CONFIG_FIELDS_VALUE)
-        verify(delegate, times(1))
-            .buildConfigFields
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.BUILD_CONFIG_FIELDS_VALUE)
+    verify(delegate, times(1)).buildConfigFields
+  }
 
-    @Test
-    fun getResValues() {
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<ResValue.Key, ResValue> =
-            mock<MapProperty<ResValue.Key, ResValue>>()
-        whenever(delegate.resValues).thenReturn(map)
-        Truth.assertThat(proxy.resValues).isEqualTo(map)
+  @Test
+  fun getResValues() {
+    @Suppress("UNCHECKED_CAST") val map: MapProperty<ResValue.Key, ResValue> = mock<MapProperty<ResValue.Key, ResValue>>()
+    whenever(delegate.resValues).thenReturn(map)
+    Truth.assertThat(proxy.resValues).isEqualTo(map)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.RES_VALUE_VALUE)
-        verify(delegate, times(1))
-            .resValues
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.RES_VALUE_VALUE)
+    verify(delegate, times(1)).resValues
+  }
 
-    @Test
-    fun getManifestPlaceholders() {
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<String, String> =
-            mock<MapProperty<String, String>>()
-        whenever(delegate.manifestPlaceholders).thenReturn(map)
-        Truth.assertThat(proxy.manifestPlaceholders).isEqualTo(map)
+  @Test
+  fun getManifestPlaceholders() {
+    @Suppress("UNCHECKED_CAST") val map: MapProperty<String, String> = mock<MapProperty<String, String>>()
+    whenever(delegate.manifestPlaceholders).thenReturn(map)
+    Truth.assertThat(proxy.manifestPlaceholders).isEqualTo(map)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE)
-        verify(delegate, times(1))
-            .manifestPlaceholders
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE)
+    verify(delegate, times(1)).manifestPlaceholders
+  }
 
-    @Test
-    fun getPackagingOptions() {
-        val packagingOptions = mock<Packaging>()
-        val jniLibsPackagingOptions = mock<JniLibsPackaging>()
-        val resourcesPackagingOptions = mock<ResourcesPackaging>()
-        whenever(packagingOptions.jniLibs).thenReturn(jniLibsPackagingOptions)
-        whenever(packagingOptions.resources).thenReturn(resourcesPackagingOptions)
-        whenever(delegate.packaging).thenReturn(packagingOptions)
-        // simulate a user configuring packaging options for jniLibs and resources
-        proxy.packaging.jniLibs
-        proxy.packaging.resources
+  @Test
+  fun getPackagingOptions() {
+    val packagingOptions = mock<Packaging>()
+    val jniLibsPackagingOptions = mock<JniLibsPackaging>()
+    val resourcesPackagingOptions = mock<ResourcesPackaging>()
+    whenever(packagingOptions.jniLibs).thenReturn(jniLibsPackagingOptions)
+    whenever(packagingOptions.resources).thenReturn(resourcesPackagingOptions)
+    whenever(delegate.packaging).thenReturn(packagingOptions)
+    // simulate a user configuring packaging options for jniLibs and resources
+    proxy.packaging.jniLibs
+    proxy.packaging.resources
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
-                VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE
-            )
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(
+        listOf(
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE,
         )
-        verify(delegate, times(1)).packaging
-    }
+      )
+    verify(delegate, times(1)).packaging
+  }
 
-    @Test
-    fun getProguardFiles() {
-        @Suppress("UNCHECKED_CAST")
-        val proguardFiles = mock<ListProperty<RegularFile>>()
-        whenever(delegate.proguardFiles).thenReturn(proguardFiles)
+  @Test
+  fun getProguardFiles() {
+    @Suppress("UNCHECKED_CAST") val proguardFiles = mock<ListProperty<RegularFile>>()
+    whenever(delegate.proguardFiles).thenReturn(proguardFiles)
 
-        Truth.assertThat(proxy.proguardFiles).isEqualTo(proguardFiles)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.PROGUARD_FILES_VALUE)
-    }
+    Truth.assertThat(proxy.proguardFiles).isEqualTo(proguardFiles)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.PROGUARD_FILES_VALUE)
+  }
 
-    @Test
-    fun testNestedComponents() {
-        whenever(delegate.nestedComponents)
-            .thenReturn(listOf(mock<UnitTest>()))
-        val nestedComponents = proxy.nestedComponents
-        Truth.assertThat(nestedComponents).hasSize(1)
-        Truth.assertThat(nestedComponents.first()).isInstanceOf(UnitTest::class.java)
+  @Test
+  fun testNestedComponents() {
+    whenever(delegate.nestedComponents).thenReturn(listOf(mock<UnitTest>()))
+    val nestedComponents = proxy.nestedComponents
+    Truth.assertThat(nestedComponents).hasSize(1)
+    Truth.assertThat(nestedComponents.first()).isInstanceOf(UnitTest::class.java)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NESTED_COMPONENTS_VALUE)
-        verify(delegate, times(1))
-            .nestedComponents
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NESTED_COMPONENTS_VALUE)
+    verify(delegate, times(1)).nestedComponents
+  }
 
-    @Test
-    fun testAllComponents() {
-        whenever(delegate.components)
-            .thenReturn(listOf(delegate, mock<UnitTest>()))
-        val allComponents = proxy.components
-        Truth.assertThat(allComponents).hasSize(2)
-        Truth.assertThat(allComponents[0]).isInstanceOf(Variant::class.java)
-        Truth.assertThat(allComponents[1]).isInstanceOf(UnitTest::class.java)
+  @Test
+  fun testAllComponents() {
+    whenever(delegate.components).thenReturn(listOf(delegate, mock<UnitTest>()))
+    val allComponents = proxy.components
+    Truth.assertThat(allComponents).hasSize(2)
+    Truth.assertThat(allComponents[0]).isInstanceOf(Variant::class.java)
+    Truth.assertThat(allComponents[1]).isInstanceOf(UnitTest::class.java)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
-            .isEqualTo(VariantPropertiesMethodType.COMPONENTS_VALUE)
-        verify(delegate, times(1)).components
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.COMPONENTS_VALUE)
+    verify(delegate, times(1)).components
+  }
 }

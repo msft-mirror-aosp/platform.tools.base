@@ -17,46 +17,43 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.tasks.ProcessApplicationManifest
 import org.gradle.api.Action
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.file.FileCollection
-import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
-import java.io.File
 
-/**
- * Intended to provide consistent API for accessing configuration artifacts across plugins.
- */
+/** Intended to provide consistent API for accessing configuration artifacts across plugins. */
 interface PluginDependencies {
-    val configurations: PluginConfigurations
-    val spec: Spec<ComponentIdentifier>
+  val configurations: PluginConfigurations
+  val spec: Spec<ComponentIdentifier>
 
-    fun getArtifactFileCollection(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        artifactType: AndroidArtifacts.ArtifactType,
-        attributes: AndroidAttributes? = null
-    ) : FileCollection {
-        return getArtifactCollection(configType, artifactType, attributes).artifactFiles
-    }
+  fun getArtifactFileCollection(
+    configType: AndroidArtifacts.ConsumedConfigType,
+    artifactType: AndroidArtifacts.ArtifactType,
+    attributes: AndroidAttributes? = null,
+  ): FileCollection {
+    return getArtifactCollection(configType, artifactType, attributes).artifactFiles
+  }
 
-    fun getArtifactCollection(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        artifactType: AndroidArtifacts.ArtifactType,
-        attributes: AndroidAttributes? = null
-    ) : ArtifactCollection {
-        val attributesAction =
-            Action { container: AttributeContainer ->
-                container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
-                attributes?.addAttributesToContainer(container)
-            }
-        return configurations.getByConfigType(configType).incoming
-            .artifactView { config: ArtifactView.ViewConfiguration ->
-                config.attributes(attributesAction)
-                config.componentFilter(spec)
-            }.artifacts
+  fun getArtifactCollection(
+    configType: AndroidArtifacts.ConsumedConfigType,
+    artifactType: AndroidArtifacts.ArtifactType,
+    attributes: AndroidAttributes? = null,
+  ): ArtifactCollection {
+    val attributesAction = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+      attributes?.addAttributesToContainer(container)
     }
+    return configurations
+      .getByConfigType(configType)
+      .incoming
+      .artifactView { config: ArtifactView.ViewConfiguration ->
+        config.attributes(attributesAction)
+        config.componentFilter(spec)
+      }
+      .artifacts
+  }
 }

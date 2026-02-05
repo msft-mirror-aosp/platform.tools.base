@@ -20,64 +20,48 @@ import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.internal.services.DslServices
-import org.gradle.api.Action
 import javax.inject.Inject
+import org.gradle.api.Action
 
-abstract class FusedLibraryExtensionImpl @Inject constructor(val dslServices: DslServices) :
-    InternalFusedLibraryExtension {
+abstract class FusedLibraryExtensionImpl @Inject constructor(val dslServices: DslServices) : InternalFusedLibraryExtension {
 
-    private val minSdkDelegate: MinSdkDelegate = MinSdkDelegate(
-        getMinSdk = { _minSdkVersion },
-        setMinSdk = { _minSdkVersion = it },
-        dslServices = dslServices
-    )
+  private val minSdkDelegate: MinSdkDelegate =
+    MinSdkDelegate(getMinSdk = { _minSdkVersion }, setMinSdk = { _minSdkVersion = it }, dslServices = dslServices)
 
-    abstract override var namespace: String?
+  abstract override var namespace: String?
 
-    protected abstract var _minSdkVersion: MinSdkVersion?
+  protected abstract var _minSdkVersion: MinSdkVersion?
 
-    override val minSdkApiLevel: Int?
-        get() = minSdkDelegate.minSdkVersion?.apiLevel
+  override val minSdkApiLevel: Int?
+    get() = minSdkDelegate.minSdkVersion?.apiLevel
 
-    override fun minSdk(action: Action<MinSdkSpec>) {
-        minSdkDelegate.minSdk(action)
+  override fun minSdk(action: Action<MinSdkSpec>) {
+    minSdkDelegate.minSdk(action)
+  }
+
+  override fun minSdk(action: MinSdkSpec.() -> Unit) {
+    minSdkDelegate.minSdk(action)
+  }
+
+  abstract override val manifestPlaceholders: MutableMap<String, String>
+
+  abstract override val experimentalProperties: MutableMap<String, Any>
+
+  /* Applies options from the settings plugin if they're not set explicitly in
+  `[FusedLibraryExtension]`.
+  */
+  private fun setFieldsFromSettingsExtension(settings: SettingsExtension?) {
+    settings?.minSdk?.let { minSdk -> this.minSdkDelegate.setMinSdkVersion(minSdk) }
+
+    settings?.minSdkPreview?.let { minSdkPreview -> this.minSdkDelegate.setMinSdkVersion(minSdkPreview) }
+  }
+
+  companion object {
+
+    fun getDecoratedInstance(dslServices: DslServices, settingsExtension: SettingsExtension? = null): FusedLibraryExtensionImpl {
+      return dslServices.newDecoratedInstance(FusedLibraryExtensionImpl::class.java, dslServices).also {
+        it.setFieldsFromSettingsExtension(settingsExtension)
+      }
     }
-
-    override fun minSdk(action: MinSdkSpec.() -> Unit) {
-        minSdkDelegate.minSdk(action)
-    }
-
-    abstract override val manifestPlaceholders: MutableMap<String, String>
-
-    abstract override val experimentalProperties: MutableMap<String, Any>
-
-    /* Applies options from the settings plugin if they're not set explicitly in
-     `[FusedLibraryExtension]`.
-     */
-    private fun setFieldsFromSettingsExtension(
-        settings: SettingsExtension?
-    ) {
-        settings?.minSdk?.let { minSdk ->
-            this.minSdkDelegate.setMinSdkVersion(minSdk)
-        }
-
-        settings?.minSdkPreview?.let { minSdkPreview ->
-            this.minSdkDelegate.setMinSdkVersion(minSdkPreview)
-        }
-    }
-
-    companion object {
-
-        fun getDecoratedInstance(
-            dslServices: DslServices,
-            settingsExtension: SettingsExtension? = null
-        ): FusedLibraryExtensionImpl {
-            return dslServices.newDecoratedInstance(
-                FusedLibraryExtensionImpl::class.java,
-                dslServices,
-            ).also {
-                it.setFieldsFromSettingsExtension(settingsExtension)
-            }
-        }
-    }
+  }
 }

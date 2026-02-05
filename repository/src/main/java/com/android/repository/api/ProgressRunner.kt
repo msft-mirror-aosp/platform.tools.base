@@ -16,8 +16,8 @@
 package com.android.repository.api
 
 /**
- * An interface for facilities that can run tasks, synchronously or asynchronously, and allow them
- * to show their progress using a [ProgressIndicator].
+ * An interface for facilities that can run tasks, synchronously or asynchronously, and allow them to show their progress using a
+ * [ProgressIndicator].
  */
 interface ProgressRunner {
   /** Runs a task asynchronously. */

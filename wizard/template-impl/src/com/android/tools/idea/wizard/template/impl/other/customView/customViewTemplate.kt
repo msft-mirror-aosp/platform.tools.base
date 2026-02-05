@@ -56,13 +56,7 @@ val customViewTemplate
       File("no_activity.png")
     }
 
-    widgets(
-      PackageNameWidget(packageName),
-      TextFieldWidget(viewClass),
-      LanguageWidget()
-    )
+    widgets(PackageNameWidget(packageName), TextFieldWidget(viewClass), LanguageWidget())
 
-    recipe = { data: TemplateData ->
-      customViewRecipe(data as ModuleTemplateData, packageName.value, viewClass.value)
-    }
+    recipe = { data: TemplateData -> customViewRecipe(data as ModuleTemplateData, packageName.value, viewClass.value) }
   }

@@ -29,7 +29,7 @@ fun RecipeExecutor.googleMapsFragmentRecipe(
   moduleData: ModuleTemplateData,
   fragmentClass: String,
   layoutName: String,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -44,10 +44,11 @@ fun RecipeExecutor.googleMapsFragmentRecipe(
   mergeXml(androidManifestXml(), manifestOut.resolve("AndroidManifest.xml"))
 
   save(fragmentMapXml(fragmentClass, packageName), resOut.resolve("layout/${layoutName}.xml"))
-  val mapFragment = when (projectData.language) {
-    Language.Java -> mapFragmentJava(fragmentClass, layoutName, packageName, useAndroidX)
-    Language.Kotlin -> mapFragmentKt(fragmentClass, layoutName, packageName, useAndroidX)
-  }
+  val mapFragment =
+    when (projectData.language) {
+      Language.Java -> mapFragmentJava(fragmentClass, layoutName, packageName, useAndroidX)
+      Language.Kotlin -> mapFragmentKt(fragmentClass, layoutName, packageName, useAndroidX)
+    }
   save(mapFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))

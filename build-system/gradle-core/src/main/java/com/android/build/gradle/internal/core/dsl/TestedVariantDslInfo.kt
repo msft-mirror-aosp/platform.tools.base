@@ -17,14 +17,13 @@
 package com.android.build.gradle.internal.core.dsl
 
 import com.android.build.api.dsl.TestFixtures
-import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by tested components.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by tested
+ * components.
  */
-interface TestedVariantDslInfo: VariantDslInfo {
-    val testFixtures: TestFixtures?
+interface TestedVariantDslInfo : VariantDslInfo {
+  val testFixtures: TestFixtures?
 
-    val testInstrumentationRunnerArguments: Map<String, String>
+  val testInstrumentationRunnerArguments: Map<String, String>
 }

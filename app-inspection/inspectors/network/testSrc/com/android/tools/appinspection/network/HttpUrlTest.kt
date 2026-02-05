@@ -42,25 +42,15 @@ private val FAKE_URL = URL("https://www.google.com?$URL_PARAMS")
 private val EXPECTED_RESPONSE =
   NetworkInspectorProtocol.HttpConnectionEvent.ResponseStarted.newBuilder()
     .setResponseCode(200)
-    .addHeaders(
-      NetworkInspectorProtocol.HttpConnectionEvent.Header.newBuilder()
-        .setKey("null")
-        .addValues("HTTP/1.0 200 OK")
-    )
+    .addHeaders(NetworkInspectorProtocol.HttpConnectionEvent.Header.newBuilder().setKey("null").addValues("HTTP/1.0 200 OK"))
     .build()
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class HttpUrlTest {
   private val inspectorRule = NetworkInspectorRule()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
   @Test
   fun httpGet() {
@@ -70,17 +60,13 @@ internal class HttpUrlTest {
     }
     assertThat(inspectorRule.connection.httpData).hasSize(6)
     val httpRequestStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED)!!
     assertThat(httpRequestStarted.httpRequestStarted.url).contains(URL_PARAMS)
     assertThat(httpRequestStarted.httpRequestStarted.method).isEqualTo("GET")
     assertThat(httpRequestStarted.httpRequestStarted.transport).isEqualTo(HttpTransport.JAVA_NET)
 
     val httpResponseStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED
-      )
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED)
     assertThat(httpResponseStarted!!.httpResponseStarted).isEqualTo(EXPECTED_RESPONSE)
 
     assertThat(
@@ -100,9 +86,7 @@ internal class HttpUrlTest {
     // Step1: add a new body rule.
     val ruleAdded = createFakeRuleAddedEvent(FAKE_URL)
 
-    inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build()
-    )
+    inspectorRule.inspector.receiveInterceptCommand(InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build())
 
     with(FakeHttpUrlConnection(FAKE_URL, "Test".toByteArray(), "GET").triggerHttpExitHook()) {
       val inputStream = inputStream
@@ -119,9 +103,7 @@ internal class HttpUrlTest {
 
     assertThat(
         inspectorRule.connection
-          .findHttpEvent(
-            NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_INTERCEPTED
-          )!!
+          .findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_INTERCEPTED)!!
           .httpResponseIntercepted
           .bodyReplaced
       )
@@ -137,8 +119,7 @@ internal class HttpUrlTest {
               .toBuilder()
               .apply {
                 ruleId = 2
-                ruleBuilder.transformationBuilderList[0].bodyReplacedBuilder.body =
-                  ByteString.copyFrom("InterceptedBody2".toByteArray())
+                ruleBuilder.transformationBuilderList[0].bodyReplacedBuilder.body = ByteString.copyFrom("InterceptedBody2".toByteArray())
               }
               .build()
         }
@@ -150,9 +131,7 @@ internal class HttpUrlTest {
     }
     assertThat(
         inspectorRule.connection
-          .findLastHttpEvent(
-            NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD
-          )!!
+          .findLastHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD)!!
           .responsePayload
           .payload
           .toStringUtf8()
@@ -161,9 +140,7 @@ internal class HttpUrlTest {
 
     // Step3: reorder two body rules.
     inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder()
-        .apply { reorderInterceptRulesBuilder.apply { addAllRuleId(listOf(2, 1)) }.build() }
-        .build()
+      InterceptCommand.newBuilder().apply { reorderInterceptRulesBuilder.apply { addAllRuleId(listOf(2, 1)) }.build() }.build()
     )
     with(FakeHttpUrlConnection(FAKE_URL, "Test".toByteArray(), "GET").triggerHttpExitHook()) {
       val inputStream = inputStream
@@ -171,9 +148,7 @@ internal class HttpUrlTest {
     }
     assertThat(
         inspectorRule.connection
-          .findLastHttpEvent(
-            NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD
-          )!!
+          .findLastHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD)!!
           .responsePayload
           .payload
           .toStringUtf8()
@@ -182,9 +157,7 @@ internal class HttpUrlTest {
 
     // Step4: remove the last body rule.
     inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder()
-        .apply { interceptRuleRemovedBuilder.apply { ruleId = 1 }.build() }
-        .build()
+      InterceptCommand.newBuilder().apply { interceptRuleRemovedBuilder.apply { ruleId = 1 }.build() }.build()
     )
     with(FakeHttpUrlConnection(FAKE_URL, "Test".toByteArray(), "GET").triggerHttpExitHook()) {
       val inputStream = inputStream
@@ -192,9 +165,7 @@ internal class HttpUrlTest {
     }
     assertThat(
         inspectorRule.connection
-          .findLastHttpEvent(
-            NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD
-          )!!
+          .findLastHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.RESPONSE_PAYLOAD)!!
           .responsePayload
           .payload
           .toStringUtf8()
@@ -212,18 +183,12 @@ internal class HttpUrlTest {
 
     assertThat(inspectorRule.connection.httpData).hasSize(8)
     val httpRequestStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED)!!
     assertThat(httpRequestStarted.httpRequestStarted.url).contains(URL_PARAMS)
     assertThat(httpRequestStarted.httpRequestStarted.method).isEqualTo("POST")
     assertThat(httpRequestStarted.httpRequestStarted.transport).isEqualTo(HttpTransport.JAVA_NET)
 
-    assertThat(
-        inspectorRule.connection.findHttpEvent(
-          NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_COMPLETED
-        )
-      )
+    assertThat(inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_COMPLETED))
       .isNotNull()
 
     assertThat(
@@ -236,9 +201,7 @@ internal class HttpUrlTest {
       .isEqualTo("TestRequestBody")
 
     val httpResponseStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED)!!
     assertThat(httpResponseStarted.httpResponseStarted).isEqualTo(EXPECTED_RESPONSE)
 
     assertThat(
@@ -254,9 +217,8 @@ internal class HttpUrlTest {
   }
 
   /**
-   * HttpURLConnection has many functions to query response values which cause a connection to be
-   * made if one wasn't already established. This test helps makes sure our tracking code handles
-   * such functions before we call 'connect' or 'getInputStream'.
+   * HttpURLConnection has many functions to query response values which cause a connection to be made if one wasn't already established.
+   * This test helps makes sure our tracking code handles such functions before we call 'connect' or 'getInputStream'.
    */
   @Test
   fun getResponseCodeBeforeConnect() {
@@ -267,15 +229,11 @@ internal class HttpUrlTest {
     }
     assertThat(inspectorRule.connection.httpData).hasSize(6)
     val httpRequestStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_STARTED)!!
     assertThat(httpRequestStarted.httpRequestStarted.method).isEqualTo("GET")
 
     val httpResponseStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED)!!
     assertThat(httpResponseStarted.httpResponseStarted).isEqualTo(EXPECTED_RESPONSE)
 
     assertThat(
@@ -307,10 +265,6 @@ internal class HttpUrlTest {
   }
 
   private fun HttpURLConnection.triggerHttpExitHook(): HttpURLConnection {
-    return inspectorRule.environment.fakeArtTooling.triggerExitHook(
-      URL::class.java,
-      "openConnection()Ljava/net/URLConnection;",
-      this,
-    )
+    return inspectorRule.environment.fakeArtTooling.triggerExitHook(URL::class.java, "openConnection()Ljava/net/URLConnection;", this)
   }
 }

@@ -30,35 +30,37 @@ import org.junit.Test
 
 class D8StartupProfileDexOptimizationTest {
 
-    private val app = HelloWorldApp.forPluginWithNamespace(
-        "com.android.application",
-        "com.example.app"
-    ).also {
-        it.addFile(
+  private val app =
+    HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app").also {
+      it.addFile(
         "src/main/java/com/example/app/Foo.java",
         """
-            package com.example.app;
-            public class Foo {
-                public void foo() {
-                    System.out.println("foo !");
-                }
+        package com.example.app;
+        public class Foo {
+            public void foo() {
+                System.out.println("foo !");
             }
-            """.trimIndent()
-        )
-        it.addFile(
-            "src/main/java/com/example/app/Bar.java",
-            """
-            package com.example.app;
-            public class Bar {
-                public void bar() {
-                    System.out.println("bar !");
-                }
+        }
+        """
+          .trimIndent(),
+      )
+      it.addFile(
+        "src/main/java/com/example/app/Bar.java",
+        """
+        package com.example.app;
+        public class Bar {
+            public void bar() {
+                System.out.println("bar !");
             }
-            """.trimIndent()
-        )
+        }
+        """
+          .trimIndent(),
+      )
 
-        val rewrittenFile = it.getFile("src/main/java/com/example/app/HelloWorld.java")
-            .rewriteContent(
+      val rewrittenFile =
+        it
+          .getFile("src/main/java/com/example/app/HelloWorld.java")
+          .rewriteContent(
             """
             package com.example.app;
 
@@ -76,11 +78,13 @@ class D8StartupProfileDexOptimizationTest {
                     new Bar().bar();
                 }
             }
-            """.trimIndent())
-        it.removeFile("src/main/java/com/example/app/HelloWorld.java")
-        it.addFile(rewrittenFile)
-        it.appendToBuild(
             """
+              .trimIndent()
+          )
+      it.removeFile("src/main/java/com/example/app/HelloWorld.java")
+      it.addFile(rewrittenFile)
+      it.appendToBuild(
+        """
                 android.defaultConfig.minSdkVersion = 26
                 androidComponents {
                     onVariants(selector().withName("release"), { variant ->
@@ -92,51 +96,50 @@ class D8StartupProfileDexOptimizationTest {
                         )
                     })
                 }
-            """.trimIndent())
-    }
-
-    @JvmField
-    @Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .build()
-            )
-            .disableBuiltInKotlin()
-            .create()
-
-    @Test
-    fun testStartupProfile() {
-        // If feature turned on but no startup baseline profile is provided, log should be present
-        val buildResult =
-            project.executor().withLoggingLevel(LoggingLevel.INFO).run("assembleRelease")
-        ScannerSubject.assertThat(buildResult.stdout).contains(
-            "Dex optimization based on startup profile is enabled, but there are no input " +
-            "baseline profiles found in the baselineProfiles sources."
-        )
-
-        FileUtils.createFile(
-            project.getSubproject("app")
-                .file("src/main/baselineProfiles/startup-prof.txt"),
             """
-                Lcom/example/app/Foo;->foo()V
-            """.trimIndent()
-        )
-        project.execute("clean", "assembleRelease")
-        var apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
-        Truth.assertThat(apk.allDexes).hasSize(2)
-        Truth.assertThat(apk.mainDexFile.get().classes).hasSize(1)
-
-        TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile,
-            "\"${ModulePropertyKey.BooleanWithDefault.D8_DEX_STARTUP_OPTIMIZATION.key}\", true",
-            "\"${ModulePropertyKey.BooleanWithDefault.D8_DEX_STARTUP_OPTIMIZATION.key}\", false"
-        )
-
-        project.execute("clean", "assembleRelease")
-        apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
-        Truth.assertThat(apk.allDexes).hasSize(1)
-        Truth.assertThat(apk.mainDexFile.get().classes).hasSize(7)
+          .trimIndent()
+      )
     }
+
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build())
+      .disableBuiltInKotlin()
+      .create()
+
+  @Test
+  fun testStartupProfile() {
+    // If feature turned on but no startup baseline profile is provided, log should be present
+    val buildResult = project.executor().withLoggingLevel(LoggingLevel.INFO).run("assembleRelease")
+    ScannerSubject.assertThat(buildResult.stdout)
+      .contains(
+        "Dex optimization based on startup profile is enabled, but there are no input " +
+          "baseline profiles found in the baselineProfiles sources."
+      )
+
+    FileUtils.createFile(
+      project.getSubproject("app").file("src/main/baselineProfiles/startup-prof.txt"),
+      """
+      Lcom/example/app/Foo;->foo()V
+      """
+        .trimIndent(),
+    )
+    project.execute("clean", "assembleRelease")
+    var apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
+    Truth.assertThat(apk.allDexes).hasSize(2)
+    Truth.assertThat(apk.mainDexFile.get().classes).hasSize(1)
+
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("app").buildFile,
+      "\"${ModulePropertyKey.BooleanWithDefault.D8_DEX_STARTUP_OPTIMIZATION.key}\", true",
+      "\"${ModulePropertyKey.BooleanWithDefault.D8_DEX_STARTUP_OPTIMIZATION.key}\", false",
+    )
+
+    project.execute("clean", "assembleRelease")
+    apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
+    Truth.assertThat(apk.allDexes).hasSize(1)
+    Truth.assertThat(apk.mainDexFile.get().classes).hasSize(7)
+  }
 }

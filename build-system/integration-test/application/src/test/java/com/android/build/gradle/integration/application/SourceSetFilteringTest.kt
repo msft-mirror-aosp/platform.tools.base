@@ -21,33 +21,29 @@ import org.junit.Rule
 import org.junit.Test
 
 class SourceSetFilteringTest {
-    @JvmField
-    @Rule
-    var project = builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @JvmField @Rule var project = builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    /** Regression test for b/155215177. */
-    @Test
-    fun testDynamicFilteringIsApplied() {
-        project.mainSrcDir.resolve("test/DoesNotCompile.java").also {
-            it.parentFile.mkdirs()
-            it.writeText("""this is not a valid source file""")
-        }
-        project.mainSrcDir.resolve("test/Another.java")
-            .writeText("""this is not a valid source file""")
-        project.buildFile.appendText(
-            """
-
-            android.sourceSets.main.java {
-              exclude { f ->
-                f.file.path.endsWith("DoesNotCompile.java")
-              }
-              exclude "**/Another.java"
-            }
-        """.trimIndent()
-        )
-
-        project.executor().run("assembleDebug")
+  /** Regression test for b/155215177. */
+  @Test
+  fun testDynamicFilteringIsApplied() {
+    project.mainSrcDir.resolve("test/DoesNotCompile.java").also {
+      it.parentFile.mkdirs()
+      it.writeText("""this is not a valid source file""")
     }
+    project.mainSrcDir.resolve("test/Another.java").writeText("""this is not a valid source file""")
+    project.buildFile.appendText(
+      """
+
+      android.sourceSets.main.java {
+        exclude { f ->
+          f.file.path.endsWith("DoesNotCompile.java")
+        }
+        exclude "**/Another.java"
+      }
+      """
+        .trimIndent()
+    )
+
+    project.executor().run("assembleDebug")
+  }
 }

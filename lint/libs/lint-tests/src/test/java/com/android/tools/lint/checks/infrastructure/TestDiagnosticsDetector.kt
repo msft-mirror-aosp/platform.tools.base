@@ -38,8 +38,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 
 internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UFile::class.java, UCallExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UFile::class.java, UCallExpression::class.java)
 
   @OptIn(KaExperimentalApi::class)
   override fun createUastHandler(context: JavaContext): UElementHandler =
@@ -49,18 +48,10 @@ internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
         if (ktFile.name != "main.kt") return
 
         analyze(ktFile) {
-          val diagnostics =
-            ktFile.collectDiagnostics(KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
-          assertEquals(
-            1,
-            diagnostics.size,
-            diagnostics.joinToString(separator = System.lineSeparator()) { it.defaultMessage },
-          )
+          val diagnostics = ktFile.collectDiagnostics(KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+          assertEquals(1, diagnostics.size, diagnostics.joinToString(separator = System.lineSeparator()) { it.defaultMessage })
           val diagnostic = diagnostics.single()
-          assertTrue(
-            diagnostic.defaultMessage.contains(NULLNESS_MESSAGE),
-            diagnostic.defaultMessage,
-          )
+          assertTrue(diagnostic.defaultMessage.contains(NULLNESS_MESSAGE), diagnostic.defaultMessage)
           context.report(ID, node, context.getLocation(diagnostic.psi), diagnostic.defaultMessage)
         }
       }
@@ -75,41 +66,30 @@ internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
         val ktSource = node.sourcePsi as? KtElement ?: return
         val withReceiver = ktSource.parent as? KtDotQualifiedExpression ?: return
         analyze(withReceiver) {
-          val diagnostics =
-            withReceiver.diagnostics(KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
-          assertEquals(
-            1,
-            diagnostics.size,
-            diagnostics.joinToString(separator = System.lineSeparator()) { it.defaultMessage },
-          )
+          val diagnostics = withReceiver.diagnostics(KaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+          assertEquals(1, diagnostics.size, diagnostics.joinToString(separator = System.lineSeparator()) { it.defaultMessage })
           val diagnostic = diagnostics.single()
-          assertTrue(
-            diagnostic.defaultMessage.contains(NULLNESS_MESSAGE),
-            diagnostic.defaultMessage,
-          )
+          assertTrue(diagnostic.defaultMessage.contains(NULLNESS_MESSAGE), diagnostic.defaultMessage)
         }
       }
     }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(TestDiagnosticsDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(TestDiagnosticsDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ID =
       Issue.create(
         id = "KotlinCompilerDiagnostic",
         briefDescription = "Errors Reported by the Kotlin Compiler",
-        explanation =
-          "Lint runs on top of compiler, hence able to collect diagnostics from compiler too",
+        explanation = "Lint runs on top of compiler, hence able to collect diagnostics from compiler too",
         category = Category.LINT,
         priority = 5,
         severity = Severity.WARNING,
         implementation = IMPLEMENTATION,
       )
 
-    const val NULLNESS_MESSAGE =
-      "Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type"
+    const val NULLNESS_MESSAGE = "Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type"
 
     private val useK2Uast = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
   }

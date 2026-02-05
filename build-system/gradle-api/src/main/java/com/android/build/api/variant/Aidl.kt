@@ -25,13 +25,11 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
 /**
- * Provides structured access to various AIDL tools such as
- * the aidl compiler executable and aidl framework.
+ * Provides structured access to various AIDL tools such as the aidl compiler executable and aidl framework.
  *
  * An instance of [Aidl] can be obtained via [AndroidComponentsExtension.sdkComponents]
  *
  * As an example , let's take a [Task] that runs aidl compiler:
- *
  * ```kotlin
  *  abstract class MyTask: DefaultTask() {
  *    @get:Nested
@@ -61,26 +59,12 @@ import org.gradle.api.tasks.PathSensitivity
  */
 interface Aidl {
 
-    /**
-     * Path to the [AIDL](https://developer.android.com/guide/components/aidl)
-     * executable file from the Android SDK
-     */
-    @get:Internal
-    val executable: Provider<RegularFile>
+  /** Path to the [AIDL](https://developer.android.com/guide/components/aidl) executable file from the Android SDK */
+  @get:Internal val executable: Provider<RegularFile>
 
-    /**
-     * Path to the [AIDL](https://developer.android.com/guide/components/aidl)
-     * framework file from the Android SDK
-     */
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFile
-    val framework: Provider<RegularFile>
+  /** Path to the [AIDL](https://developer.android.com/guide/components/aidl) framework file from the Android SDK */
+  @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFile val framework: Provider<RegularFile>
 
-    /**
-     * Version of build tools.
-     * It is used as an input to allow correct build cache behaviour across different platforms
-     */
-    @get:Input
-    val version: Provider<String>
+  /** Version of build tools. It is used as an input to allow correct build cache behaviour across different platforms */
+  @get:Input val version: Provider<String>
 }
-

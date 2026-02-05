@@ -29,16 +29,20 @@ fun placeholderFragmentKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val viewModelInitializationBlock = if (useAndroidX) "pageViewModel = ViewModelProvider(this).get(PageViewModel::class.java)"
-  else "pageViewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(PageViewModel::class.java)"
+  val viewModelInitializationBlock =
+    if (useAndroidX) "pageViewModel = ViewModelProvider(this).get(PageViewModel::class.java)"
+    else "pageViewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(PageViewModel::class.java)"
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(fragmentLayoutName)}.inflate(inflater, container, false)
       val root = binding.root
-  """ else "val root = inflater.inflate(R.layout.$fragmentLayoutName, container, false)"
+  """
+    else "val root = inflater.inflate(R.layout.$fragmentLayoutName, container, false)"
 
   return """package ${escapeKotlinIdentifier(packageName)}.ui.main
 
@@ -82,7 +86,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "section_label",
-          parentView = "root")}
+          parentView = "root",)}
         pageViewModel.text.observe(viewLifecycleOwner, Observer {
             textView.text = it
         })

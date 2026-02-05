@@ -29,17 +29,20 @@ import org.junit.Rule
 import org.junit.Test
 
 class CmakeVariantApiTest {
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
-            .setSideBySideNdkVersion(GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-            .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
+      .setSideBySideNdkVersion(GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .create()
 
-    @Test
-    fun testAbiFilter() {
+  @Test
+  fun testAbiFilter() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -72,41 +75,48 @@ class CmakeVariantApiTest {
                     it.externalNativeBuild.abiFilters.add("x86_64")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.7)
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.7)
 
-            add_library(foo SHARED foo.cpp)
+      add_library(foo SHARED foo.cpp)
 
-            target_link_libraries(foo ${'$'}{log-lib})
-            """.trimIndent())
+      target_link_libraries(foo ${'$'}{log-lib})
+      """
+        .trimIndent()
+    )
 
-        project.execute("assembleDebug")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
 
-            Truth.assertThat(buildCommand).contains("-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG")
-            Truth.assertThat(buildCommand).contains("-DCMAKE_C_FLAGS=-DTEST_C_FLAG")
-            Truth.assertThat(buildCommand).contains("-DANDROID_ABI=x86_64")
-        }
+      Truth.assertThat(buildCommand).contains("-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG")
+      Truth.assertThat(buildCommand).contains("-DCMAKE_C_FLAGS=-DTEST_C_FLAG")
+      Truth.assertThat(buildCommand).contains("-DANDROID_ABI=x86_64")
     }
+  }
 
-    @Test
-    fun testFlags() {
+  @Test
+  fun testFlags() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -139,41 +149,47 @@ class CmakeVariantApiTest {
                     it.externalNativeBuild.getCppFlags().add("-DTEST_CPP_FLAG2")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.7)
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.7)
 
-            add_library(foo SHARED foo.cpp)
+      add_library(foo SHARED foo.cpp)
 
-            target_link_libraries(foo ${'$'}{log-lib})
-            """.trimIndent())
+      target_link_libraries(foo ${'$'}{log-lib})
+      """
+        .trimIndent()
+    )
 
-        project.execute("assembleDebug")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
 
-            Truth.assertThat(buildCommand)
-                    .contains("-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG -DTEST_CPP_FLAG2")
-            Truth.assertThat(buildCommand).contains("-DCMAKE_C_FLAGS=-DTEST_C_FLAG -DTEST_C_FLAG2")
-        }
+      Truth.assertThat(buildCommand).contains("-DCMAKE_CXX_FLAGS=-DTEST_CPP_FLAG -DTEST_CPP_FLAG2")
+      Truth.assertThat(buildCommand).contains("-DCMAKE_C_FLAGS=-DTEST_C_FLAG -DTEST_C_FLAG2")
     }
+  }
 
-    @Test
-    fun testArguments() {
+  @Test
+  fun testArguments() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -205,32 +221,37 @@ class CmakeVariantApiTest {
                     it.externalNativeBuild.arguments.add("-DANDROID_ARM_NEON=TRUE")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
-        assertThat(cmakeLists).isFile()
-        cmakeLists.writeText("""
-            cmake_minimum_required(VERSION 3.7)
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    val cmakeLists = project.buildFile.resolveSibling("CMakeLists.txt")
+    assertThat(cmakeLists).isFile()
+    cmakeLists.writeText(
+      """
+      cmake_minimum_required(VERSION 3.7)
 
-            add_library(foo SHARED foo.cpp)
+      add_library(foo SHARED foo.cpp)
 
-            target_link_libraries(foo ${'$'}{log-lib})
-            """.trimIndent())
+      target_link_libraries(foo ${'$'}{log-lib})
+      """
+        .trimIndent()
+    )
 
-        project.execute("assembleDebug")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
 
-            Truth.assertThat(buildCommand).contains("-DANDROID_ARM_NEON=TRUE")
-        }
+      Truth.assertThat(buildCommand).contains("-DANDROID_ARM_NEON=TRUE")
     }
+  }
 }

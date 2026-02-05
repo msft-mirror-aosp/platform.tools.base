@@ -44,8 +44,6 @@ public class LintSkipDependenciesTest {
             GradleTestProject.builder()
                     .fromTestProject("lintLibrarySkipDeps")
                     .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
-                    .addGradleProperties(
-                            BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Test

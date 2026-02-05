@@ -32,13 +32,16 @@ fun drawerActivityJava(
   menuName: String,
   navHostFragmentId: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
   val appBarMainBinding = underscoreToLowerCamelCase(appBarLayoutName)
 
   return """
@@ -72,12 +75,12 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported,
           id = "toolbar",
-          bindingName = "binding.${appBarMainBinding}")});
+          bindingName = "binding.${appBarMainBinding}",)});
         ${findViewById(
           Language.Java,
           isViewBindingSupported,
           id = "fab",
-          bindingName = "binding.${appBarMainBinding}")}.setOnClickListener(new View.OnClickListener() {
+          bindingName = "binding.${appBarMainBinding}",)}.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)

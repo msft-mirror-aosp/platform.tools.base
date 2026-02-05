@@ -18,10 +18,7 @@ package com.android.ide.common.util
 import kotlin.math.max
 import kotlin.math.min
 
-/**
- * Utilities around diffs; creates diffs between strings, and can parse diffs to return information
- * about diff hunks.
- */
+/** Utilities around diffs; creates diffs between strings, and can parse diffs to return information about diff hunks. */
 // LINT.IfChange
 class Diffs {
   /**
@@ -58,11 +55,9 @@ class Diffs {
 
   companion object {
     /**
-     * Line String.lines(), but we *include* the final line separators on each line. This is useful
-     * such that we can correctly match diff's treatment of line separators; we don't want to treat
-     * a line that ends with \r\n as the same as a line that ends with \n, and similarly, for the
-     * last line in the file, we want to detect a difference in whether the file ends with a newline
-     * or not.
+     * Line String.lines(), but we *include* the final line separators on each line. This is useful such that we can correctly match diff's
+     * treatment of line separators; we don't want to treat a line that ends with \r\n as the same as a line that ends with \n, and
+     * similarly, for the last line in the file, we want to detect a difference in whether the file ends with a newline or not.
      */
     fun String.splitWithLineSeparators(): List<String> {
       if (this.isEmpty()) {
@@ -72,10 +67,7 @@ class Diffs {
         val lineSeparatorRegex = Regex("\r\n|\n|\r")
         var lastEnd = 0
         lineSeparatorRegex.findAll(this@splitWithLineSeparators).forEach { matchResult ->
-          add(
-            this@splitWithLineSeparators.substring(lastEnd, matchResult.range.first) +
-              matchResult.value
-          )
+          add(this@splitWithLineSeparators.substring(lastEnd, matchResult.range.first) + matchResult.value)
           lastEnd = matchResult.range.last + 1
         }
         if (lastEnd < this@splitWithLineSeparators.length) {
@@ -99,8 +91,7 @@ class Diffs {
      */
     fun diffLines(originalText: String, newText: String): List<DiffLine> {
       // Treat empty strings as having zero lines, otherwise split by lines.
-      val originalLines =
-        if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
+      val originalLines = if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
       val newLines = if (newText.isEmpty()) emptyList() else newText.splitWithLineSeparators()
 
       return diffLines(originalLines, newLines)
@@ -168,18 +159,12 @@ class Diffs {
      * @param newText The new string.
      * @param windowSize The number of context lines to include around a difference.
      * @param trimEnds If true, trim any trailing whitespace on the diff lines
-     * @return A string in a format similar to `git diff`, showing differences. Returns an empty
-     *   string if texts are identical or both are empty.
+     * @return A string in a format similar to `git diff`, showing differences. Returns an empty string if texts are identical or both are
+     *   empty.
      */
-    fun diff(
-      originalText: String,
-      newText: String,
-      windowSize: Int = 3,
-      trimEnds: Boolean = false,
-    ): String {
+    fun diff(originalText: String, newText: String, windowSize: Int = 3, trimEnds: Boolean = false): String {
       // Treat empty strings as having zero lines, otherwise split by lines.
-      val originalLines =
-        if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
+      val originalLines = if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
       val newLines = if (newText.isEmpty()) emptyList() else newText.splitWithLineSeparators()
 
       val diffLines = diffLines(originalLines, newLines)
@@ -201,10 +186,7 @@ class Diffs {
       while (overallProcessedIdx < diffLines.size) {
         // 1. Find the start of the *first* change in a potential new hunk
         var firstChangeStartInHunk = overallProcessedIdx
-        while (
-          firstChangeStartInHunk < diffLines.size &&
-            diffLines[firstChangeStartInHunk].type == LineType.COMMON
-        ) {
+        while (firstChangeStartInHunk < diffLines.size && diffLines[firstChangeStartInHunk].type == LineType.COMMON) {
           firstChangeStartInHunk++
         }
 
@@ -212,10 +194,7 @@ class Diffs {
 
         // 2. Find the end of this first change block
         var firstChangeEndInHunk = firstChangeStartInHunk
-        while (
-          firstChangeEndInHunk < diffLines.size &&
-            diffLines[firstChangeEndInHunk].type != LineType.COMMON
-        ) {
+        while (firstChangeEndInHunk < diffLines.size && diffLines[firstChangeEndInHunk].type != LineType.COMMON) {
           firstChangeEndInHunk++
         }
 
@@ -224,22 +203,17 @@ class Diffs {
         var currentHunkEffectiveEnd = min(diffLines.size, firstChangeEndInHunk + contextLines)
 
         // 4. Attempt to merge subsequent change blocks
-        var lastConsideredChangeEnd =
-          firstChangeEndInHunk // Index *after* the last non-common line of the last change block
+        var lastConsideredChangeEnd = firstChangeEndInHunk // Index *after* the last non-common line of the last change block
         // merged.
 
         while (true) {
           // Find the start of the *next* block of actual changes after the last one we incorporated
           var nextChangeBlockActualStart = lastConsideredChangeEnd
-          while (
-            nextChangeBlockActualStart < diffLines.size &&
-              diffLines[nextChangeBlockActualStart].type == LineType.COMMON
-          ) {
+          while (nextChangeBlockActualStart < diffLines.size && diffLines[nextChangeBlockActualStart].type == LineType.COMMON) {
             nextChangeBlockActualStart++
           }
 
-          if (nextChangeBlockActualStart == diffLines.size)
-            break // No more change blocks anywhere to merge
+          if (nextChangeBlockActualStart == diffLines.size) break // No more change blocks anywhere to merge
 
           // Condition for merging:
           // The current hunk's effective end (context included) must overlap or touch
@@ -249,10 +223,7 @@ class Diffs {
             // Merge:
             // Find the end of this next change block
             var nextChangeBlockActualEnd = nextChangeBlockActualStart
-            while (
-              nextChangeBlockActualEnd < diffLines.size &&
-                diffLines[nextChangeBlockActualEnd].type != LineType.COMMON
-            ) {
+            while (nextChangeBlockActualEnd < diffLines.size && diffLines[nextChangeBlockActualEnd].type != LineType.COMMON) {
               nextChangeBlockActualEnd++
             }
 
@@ -321,11 +292,8 @@ class Diffs {
         }
 
         var displayOriginalStart =
-          if (hunkOriginalNumEffectiveLines == 0) max(0, hunkOriginalFileStartLine - 1)
-          else hunkOriginalFileStartLine
-        var displayNewStart =
-          if (hunkNewNumEffectiveLines == 0) max(0, hunkNewFileStartLine - 1)
-          else hunkNewFileStartLine
+          if (hunkOriginalNumEffectiveLines == 0) max(0, hunkOriginalFileStartLine - 1) else hunkOriginalFileStartLine
+        var displayNewStart = if (hunkNewNumEffectiveLines == 0) max(0, hunkNewFileStartLine - 1) else hunkNewFileStartLine
 
         if (numTotalOriginalLines == 0 && hunkOriginalNumEffectiveLines == 0) {
           displayOriginalStart = 0

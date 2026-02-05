@@ -16,39 +16,25 @@
 
 package com.android.buildanalyzer.common
 
-/**
- * Enum class for the different possible warnings / informations that
- * can be attached to a task category in Build Analyzer.
- */
+/** Enum class for the different possible warnings / informations that can be attached to a task category in Build Analyzer. */
 enum class TaskCategoryIssue(val taskCategory: TaskCategory, val severity: Severity) {
 
-    /**
-     * Warning for when Resource-Ids are final.
-     * BooleanOption android.nonFinalResIds = false.
-     */
-    NON_FINAL_RES_IDS_DISABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
+  /** Warning for when Resource-Ids are final. BooleanOption android.nonFinalResIds = false. */
+  NON_FINAL_RES_IDS_DISABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
 
-    /**
-     * Warning for when non-transitive R classes are disabled.
-     * BooleanOption android.nonTransitiveRClass = false.
-     */
-    NON_TRANSITIVE_R_CLASS_DISABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
+  /** Warning for when non-transitive R classes are disabled. BooleanOption android.nonTransitiveRClass = false. */
+  NON_TRANSITIVE_R_CLASS_DISABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
+  @Deprecated("We no longer warn about this flag in the build analyzer.")
+  RESOURCE_VALIDATION_ENABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
 
-    @Deprecated("We no longer warn about this flag in the build analyzer.")
-    RESOURCE_VALIDATION_ENABLED(TaskCategory.ANDROID_RESOURCES, Severity.WARNING),
+  /** Non-incremental Java annotation processor warning. */
+  JAVA_NON_INCREMENTAL_ANNOTATION_PROCESSOR(TaskCategory.JAVA, Severity.WARNING),
 
-    /**
-     * Non-incremental Java annotation processor warning.
-     */
-    JAVA_NON_INCREMENTAL_ANNOTATION_PROCESSOR(TaskCategory.JAVA, Severity.WARNING),
+  /** Performance warning for enabling minification in debug builds. */
+  MINIFICATION_ENABLED_IN_DEBUG_BUILD(TaskCategory.OPTIMIZATION, Severity.WARNING);
 
-    /**
-     * Performance warning for enabling minification in debug builds.
-     */
-    MINIFICATION_ENABLED_IN_DEBUG_BUILD(TaskCategory.OPTIMIZATION, Severity.WARNING);
-
-    enum class Severity {
-        WARNING,
-        INFO
-    }
+  enum class Severity {
+    WARNING,
+    INFO,
+  }
 }

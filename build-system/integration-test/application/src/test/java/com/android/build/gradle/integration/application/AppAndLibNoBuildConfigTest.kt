@@ -27,111 +27,107 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class AppAndLibNoBuildConfigTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidLibrary(":lib") {
-                android {
-                    namespace = "com.android.tests.testprojecttest.lib"
-                    buildFeatures {
-                        buildConfig = false
-                    }
-                    enableKotlin = false
-                }
-                files.add("src/main/java/com/android/tests/testprojecttest/lib/LibActivity.java",
-                    """
-                    package com.android.tests.testprojecttest.lib;
-                    import android.app.Activity;
-                    public class LibActivity extends Activity {}
-                    """.trimIndent())
-            }
-            androidApplication(":app") {
-                android {
-                    namespace = "com.android.tests.testprojecttest.app"
-                    buildFeatures {
-                        buildConfig = false
-                    }
-                    enableKotlin = false
-                }
-                dependencies {
-                    implementation(project(":lib"))
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidLibrary(":lib") {
+        android {
+          namespace = "com.android.tests.testprojecttest.lib"
+          buildFeatures { buildConfig = false }
+          enableKotlin = false
         }
-
-    @Test
-    fun `ensure buildConfig is not in the APK`() {
-        rule.build.executor.run("app:assembleDebug")
-
-        rule.build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly("com/android/tests/testprojecttest/app/R",
-                                      "com/android/tests/testprojecttest/lib/LibActivity",
-                                      "com/android/tests/testprojecttest/lib/R")
+        files.add(
+          "src/main/java/com/android/tests/testprojecttest/lib/LibActivity.java",
+          """
+          package com.android.tests.testprojecttest.lib;
+          import android.app.Activity;
+          public class LibActivity extends Activity {}
+          """
+            .trimIndent(),
+        )
+      }
+      androidApplication(":app") {
+        android {
+          namespace = "com.android.tests.testprojecttest.app"
+          buildFeatures { buildConfig = false }
+          enableKotlin = false
         }
+        dependencies { implementation(project(":lib")) }
+      }
     }
 
-    @Test
-    fun `ensure buildConfig is not in the AAR`() {
-        rule.build.executor.run("lib:assembleDebug")
+  @Test
+  fun `ensure buildConfig is not in the APK`() {
+    rule.build.executor.run("app:assembleDebug")
 
-        rule.build.androidLibrary(":lib").assertAar(AarSelector.DEBUG) {
-            // check this does not include the BuildConfig class
-            classes().containsExactly("com/android/tests/testprojecttest/lib/LibActivity")
-        }
-    }
-
-    @Test
-    fun `ensure defaultConfig-buildConfigField fails`() {
-        rule.build.androidApplication(":app").reconfigure {
-            android {
-                defaultConfig {
-                    buildConfigField("boolean", "foo", "\"true\"")
-                }
-            }
-        }
-
-        rule.build.executor.expectFailure().run("app:assembleDebug").assertErrorContains(
-            """
-                defaultConfig contains custom BuildConfig fields, but the feature is disabled.
-                To enable the feature, add the following to your module-level build.gradle:
-                `android.buildFeatures.buildConfig = true`
-            """.trimIndent()
+    rule.build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+      classes()
+        .containsExactly(
+          "com/android/tests/testprojecttest/app/R",
+          "com/android/tests/testprojecttest/lib/LibActivity",
+          "com/android/tests/testprojecttest/lib/R",
         )
     }
+  }
 
-    @Test
-    fun `ensure buildtypes-buildConfigField fails`() {
-        rule.build.androidApplication(":app").reconfigure {
-            android {
-                buildTypes {
-                    named("debug") {
-                        it.buildConfigField("boolean", "foo", "\"true\"")
-                    }
-                }
-            }
-        }
+  @Test
+  fun `ensure buildConfig is not in the AAR`() {
+    rule.build.executor.run("lib:assembleDebug")
 
-        rule.build.executor.expectFailure().run("app:assembleDebug").assertErrorContains(
-            """
-                Build Type 'debug' contains custom BuildConfig fields, but the feature is disabled.
-                To enable the feature, add the following to your module-level build.gradle:
-                `android.buildFeatures.buildConfig = true`
-            """.trimIndent()
-        )
+    rule.build.androidLibrary(":lib").assertAar(AarSelector.DEBUG) {
+      // check this does not include the BuildConfig class
+      classes().containsExactly("com/android/tests/testprojecttest/lib/LibActivity")
+    }
+  }
+
+  @Test
+  fun `ensure defaultConfig-buildConfigField fails`() {
+    rule.build.androidApplication(":app").reconfigure { android { defaultConfig { buildConfigField("boolean", "foo", "\"true\"") } } }
+
+    rule.build.executor
+      .expectFailure()
+      .run("app:assembleDebug")
+      .assertErrorContains(
+        """
+        defaultConfig contains custom BuildConfig fields, but the feature is disabled.
+        To enable the feature, add the following to your module-level build.gradle:
+        `android.buildFeatures.buildConfig = true`
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `ensure buildtypes-buildConfigField fails`() {
+    rule.build.androidApplication(":app").reconfigure {
+      android { buildTypes { named("debug") { it.buildConfigField("boolean", "foo", "\"true\"") } } }
     }
 
-    @Test
-    fun `ensure no buildConfig won't break dexing when no other java source file exists`() {
-        rule.build.androidApplication(":app").reconfigure {
-            android {
-                // app has no sources by default in this setup, so no need to exclude
-                compileOptions {
-                    sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-                    targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-                }
-            }
-        }
+    rule.build.executor
+      .expectFailure()
+      .run("app:assembleDebug")
+      .assertErrorContains(
+        """
+        Build Type 'debug' contains custom BuildConfig fields, but the feature is disabled.
+        To enable the feature, add the following to your module-level build.gradle:
+        `android.buildFeatures.buildConfig = true`
+        """
+          .trimIndent()
+      )
+  }
 
-        rule.build.executor.run("app:assembleDebug")
+  @Test
+  fun `ensure no buildConfig won't break dexing when no other java source file exists`() {
+    rule.build.androidApplication(":app").reconfigure {
+      android {
+        // app has no sources by default in this setup, so no need to exclude
+        compileOptions {
+          sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
+          targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
+        }
+      }
     }
+
+    rule.build.executor.run("app:assembleDebug")
+  }
 }

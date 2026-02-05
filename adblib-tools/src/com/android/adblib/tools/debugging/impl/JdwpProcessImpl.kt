@@ -33,72 +33,61 @@ import kotlinx.coroutines.job
 /**
  * Implementation of [AbstractJdwpProcess] performing the actual JDWP connection.
  *
- * Note: The [close] method is called by [appProcessTracker] or [jdwpProcessTracker] when
- * the process is terminated, or when the [ConnectedDevice.scope] completes.
+ * Note: The [close] method is called by [appProcessTracker] or [jdwpProcessTracker] when the process is terminated, or when the
+ * [ConnectedDevice.scope] completes.
  */
-internal class JdwpProcessImpl(
-    override val device: ConnectedDevice,
-    override val pid: Int
-) : AbstractJdwpProcess() {
+internal class JdwpProcessImpl(override val device: ConnectedDevice, override val pid: Int) : AbstractJdwpProcess() {
 
-    private val processDescription = "${device.session} - $device - pid=$pid"
+  private val processDescription = "${device.session} - $device - pid=$pid"
 
-    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
+  private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
 
-    override val cache = CoroutineScopeCache.create(device.scope, processDescription)
+  override val cache = CoroutineScopeCache.create(device.scope, processDescription)
 
-    /**
-     * Provides concurrent and on-demand access to the `jdwp` session of the device.
-     *
-     * We use a [SharedJdwpSessionProvider] to ensure only one session is created at a time,
-     * while at the same time allowing multiple consumers to access the jdwp session concurrently.
-     *
-     * We currently have 2 consumers:
-     * * A [JdwpProcessPropertiesCollector] that opens a jdwp session for a few seconds to collect
-     *   the process properties (package name, process name, etc.)
-     * * A [JdwpProxySocketServer] that opens a jdwp session "on demand" when a Java debugger wants
-     *   to connect to the process on the device.
-     *
-     * Typically, both consumers don't overlap, but if a debugger tries to attach to the process
-     * just after its creation, before we are done collecting properties, the [JdwpProxySocketServer]
-     * ends up trying to open a jdwp session before [JdwpProcessPropertiesCollector] is done
-     * collecting process properties. When this happens, we open a single JDWP connection that
-     * is used for collecting process properties and for a debugging session. The connection
-     * lasts until the debugging session ends.
-     */
-    private val sharedJdwpSessionProvider = SharedJdwpSessionProvider.create(device, pid)
+  /**
+   * Provides concurrent and on-demand access to the `jdwp` session of the device.
+   *
+   * We use a [SharedJdwpSessionProvider] to ensure only one session is created at a time, while at the same time allowing multiple
+   * consumers to access the jdwp session concurrently.
+   *
+   * We currently have 2 consumers:
+   * * A [JdwpProcessPropertiesCollector] that opens a jdwp session for a few seconds to collect the process properties (package name,
+   *   process name, etc.)
+   * * A [JdwpProxySocketServer] that opens a jdwp session "on demand" when a Java debugger wants to connect to the process on the device.
+   *
+   * Typically, both consumers don't overlap, but if a debugger tries to attach to the process just after its creation, before we are done
+   * collecting properties, the [JdwpProxySocketServer] ends up trying to open a jdwp session before [JdwpProcessPropertiesCollector] is
+   * done collecting process properties. When this happens, we open a single JDWP connection that is used for collecting process properties
+   * and for a debugging session. The connection lasts until the debugging session ends.
+   */
+  private val sharedJdwpSessionProvider = SharedJdwpSessionProvider.create(device, pid)
 
-    override val jdwpSessionActivationCount: StateFlow<Int>
-        get() = sharedJdwpSessionProvider.activationCount
+  override val jdwpSessionActivationCount: StateFlow<Int>
+    get() = sharedJdwpSessionProvider.activationCount
 
-    override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
-        return sharedJdwpSessionProvider.withSharedJdwpSession {
-            it.block()
-        }
-    }
+  override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
+    return sharedJdwpSessionProvider.withSharedJdwpSession { it.block() }
+  }
 
-    override suspend fun awaitReadyToClose() {
-        // Wait until no active JDWP session
-        sharedJdwpSessionProvider.activationCount.first { it == 0 }
-        logger.debug { "Ready to close" }
-    }
+  override suspend fun awaitReadyToClose() {
+    // Wait until no active JDWP session
+    sharedJdwpSessionProvider.activationCount.first { it == 0 }
+    logger.debug { "Ready to close" }
+  }
 
-    override fun close() {
-        logger.debug { "close()" }
-        sharedJdwpSessionProvider.close()
-        cache.close()
-    }
+  override fun close() {
+    logger.debug { "close()" }
+    sharedJdwpSessionProvider.close()
+    cache.close()
+  }
 
-    /**
-     * For testing purpose only: close all scopes and jobs, and wait for all these jobs
-     * to finish using [Job.join]
-     */
-    internal suspend fun closeAndJoinInternalOnly() {
-        close()
-        cache.scope.coroutineContext.job.join()
-    }
+  /** For testing purpose only: close all scopes and jobs, and wait for all these jobs to finish using [Job.join] */
+  internal suspend fun closeAndJoinInternalOnly() {
+    close()
+    cache.scope.coroutineContext.job.join()
+  }
 
-    override fun toString(): String {
-        return "${this::class.simpleName}(session=${device.session}, device=$device, pid=$pid)"
-    }
+  override fun toString(): String {
+    return "${this::class.simpleName}(session=${device.session}, device=$device, pid=$pid)"
+  }
 }

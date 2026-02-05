@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("VdUtil")
+
 package com.android.ide.common.vectordrawable
 
 import java.math.RoundingMode
@@ -24,10 +25,7 @@ import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.log10
 
-/**
- * Returns a [NumberFormat] of sufficient precision to use for formatting coordinate
- * values given the maximum viewport dimension.
- */
+/** Returns a [NumberFormat] of sufficient precision to use for formatting coordinate values given the maximum viewport dimension. */
 fun getCoordinateFormat(maxViewportSize: Float): NumberFormat {
   val exponent = floor(log10(maxViewportSize.toDouble())).toInt()
   var fractionalDigits = 4 - exponent
@@ -42,9 +40,7 @@ fun getCoordinateFormat(maxViewportSize: Float): NumberFormat {
       formatBuilder.append('#')
     }
   }
-  return DecimalFormat(formatBuilder.toString(), DecimalFormatSymbols(Locale.ROOT)).apply {
-    roundingMode = RoundingMode.HALF_UP
-  }
+  return DecimalFormat(formatBuilder.toString(), DecimalFormatSymbols(Locale.ROOT)).apply { roundingMode = RoundingMode.HALF_UP }
 }
 
 private const val ALPHA_MASK = 0xFF shl 24
@@ -76,8 +72,7 @@ fun parseColorValue(color: String): Int {
     5 -> {
       // #ARGB
       val v = Integer.parseUnsignedInt(color.substring(1), 16)
-      (v shr 12 and 0xF) * 0x11000000 or (v shr 8 and 0xF) * 0x110000 or
-              (v shr 4 and 0xF) * 0x1100 or (v and 0xF) * 0x11
+      (v shr 12 and 0xF) * 0x11000000 or (v shr 8 and 0xF) * 0x110000 or (v shr 4 and 0xF) * 0x1100 or (v and 0xF) * 0x11
     }
     else -> ALPHA_MASK
   }

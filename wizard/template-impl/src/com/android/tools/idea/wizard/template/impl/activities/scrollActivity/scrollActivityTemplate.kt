@@ -101,14 +101,20 @@ val scrollActivityTemplate
       TextFieldWidget(menuName),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("scrolling-activity").resolve("template_scroll_activity.png") }
 
     recipe = { data: TemplateData ->
-      scrollActivityRecipe(data as ModuleTemplateData, activityClass.value, layoutName.value, contentLayoutName.value,
-                           menuName.value, isLauncher.value, packageName.value)
+      scrollActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        layoutName.value,
+        contentLayoutName.value,
+        menuName.value,
+        isLauncher.value,
+        packageName.value,
+      )
     }
-
   }

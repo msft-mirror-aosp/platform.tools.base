@@ -16,16 +16,11 @@
 
 package com.android.build.gradle.internal.utils
 
-import com.android.build.gradle.internal.tasks.extractApkFilesBypassingBundleTool
 import com.android.bundle.Devices
-import java.io.File
 import java.nio.file.Path
 
 interface BundleApkFetcher {
-    fun getApkFiles(
-        apkBundles: Collection<Path>,
-        deviceSpec: Devices.DeviceSpec
-    ): List<Path> {
-        return com.android.build.gradle.internal.tasks.getApkFiles(apkBundles, deviceSpec)
-    }
+  fun getApkFiles(apkBundles: Collection<Path>, deviceSpec: Devices.DeviceSpec): List<Path> {
+    return com.android.build.gradle.internal.tasks.getApkFiles(apkBundles, deviceSpec)
+  }
 }

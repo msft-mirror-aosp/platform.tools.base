@@ -5,7 +5,6 @@ com.android.build.gradle.integration.analytics.ProfileContentTest
 com.android.build.gradle.integration.analytics.ProjectIdAnonymizationTest
 com.android.build.gradle.integration.annotationprocessor.AutoServiceTest
 com.android.build.gradle.integration.annotationprocessor.IncrementalJavaCompileWithAPsTest
-com.android.build.gradle.integration.annotationprocessor.JavaPreCompileTest
 com.android.build.gradle.integration.annotationprocessor.KspJavaPreCompileTest
 com.android.build.gradle.integration.api.AllClassesAccessTest
 com.android.build.gradle.integration.api.ApiCompatibilityTest
@@ -132,7 +131,6 @@ com.android.build.gradle.integration.application.MissingCompileSdkVersionTest
 com.android.build.gradle.integration.application.MissingNamespaceTest
 com.android.build.gradle.integration.application.MissingSdkTest
 com.android.build.gradle.integration.application.ModelInstantAppCompatibleTest
-com.android.build.gradle.integration.application.ModelSyncFilesTest
 com.android.build.gradle.integration.application.ModelTest
 com.android.build.gradle.integration.application.ModelWithDataBindingTest
 com.android.build.gradle.integration.application.MultiCompositeBuildTest
@@ -436,7 +434,6 @@ com.android.build.gradle.integration.lint.LintDynamicFeatureTest
 com.android.build.gradle.integration.lint.LintEnvironmentVariablesTest
 com.android.build.gradle.integration.lint.LintErrorTest
 com.android.build.gradle.integration.lint.LintFixTest
-com.android.build.gradle.integration.lint.LintGeneratedResourcesTest
 com.android.build.gradle.integration.lint.LintGeneratedSourcesTest
 com.android.build.gradle.integration.lint.LintGlobalRuleJarsTest
 com.android.build.gradle.integration.lint.LintInstantiateTest
@@ -480,7 +477,6 @@ com.android.build.gradle.integration.lint.UpdateLintBaselineTest
 com.android.build.gradle.integration.manifest.ManifestFullyQualifiedClassNamesTest
 com.android.build.gradle.integration.manifest.ProcessApplicationManifestTest
 com.android.build.gradle.integration.manifest.ProcessManifestTest
-com.android.build.gradle.integration.manifest.ProcessTestManifestTest
 com.android.build.gradle.integration.mlkit.MlGeneratedClassTest
 com.android.build.gradle.integration.mlkit.MlModelBindingInLibTest
 com.android.build.gradle.integration.model.AdditionalArtifactsModelTest
@@ -560,6 +556,8 @@ com.android.build.gradle.integration.packaging.DexPackagingTest
 com.android.build.gradle.integration.packaging.IncrementalCodeChangeTest
 com.android.build.gradle.integration.packaging.JavaResMergePackagingTest
 com.android.build.gradle.integration.packaging.JavaResPackagingTest
+com.android.build.gradle.integration.packaging.JavaResPackagingAppTest
+com.android.build.gradle.integration.packaging.JavaResPackagingLibraryTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingDirectSubprojectAarTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingFromJarTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingFromRemoteAarTest

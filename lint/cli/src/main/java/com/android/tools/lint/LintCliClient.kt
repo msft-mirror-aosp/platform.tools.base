@@ -115,8 +115,7 @@ import org.jetbrains.kotlin.util.PhaseType
 import org.w3c.dom.Document
 
 /**
- * Lint client for command line usage. Supports the flags in [LintCliFlags], and offers text, HTML
- * and XML reporting, etc.
+ * Lint client for command line usage. Supports the flags in [LintCliFlags], and offers text, HTML and XML reporting, etc.
  *
  * Minimal example:
  * ```
@@ -131,14 +130,12 @@ import org.w3c.dom.Document
 open class LintCliClient : LintClient {
   constructor(clientName: String) : super(clientName) {
     flags = LintCliFlags()
-    @Suppress("LeakingThis")
-    val reporter = TextReporter(this, flags, System.out.printWriter(), false)
+    @Suppress("LeakingThis") val reporter = TextReporter(this, flags, System.out.printWriter(), false)
     flags.reporters.add(reporter)
     initialize()
   }
 
-  @Deprecated("Specify client explicitly by calling {@link LintCliClient(String)} ")
-  constructor() : this(CLIENT_UNIT_TESTS)
+  @Deprecated("Specify client explicitly by calling {@link LintCliClient(String)} ") constructor() : this(CLIENT_UNIT_TESTS)
 
   constructor(flags: LintCliFlags, clientName: String) : super(clientName) {
     this.flags = flags
@@ -171,15 +168,14 @@ open class LintCliClient : LintClient {
   val definiteIncidents: MutableList<Incident> = ArrayList()
 
   /**
-   * Any conditionally reported incidents. These can have either a [LintMap] with custom attributes
-   * for the detector to process during reporting, or a [Constraint] stashed in the
-   * [Incident.clientProperties] to be checked.
+   * Any conditionally reported incidents. These can have either a [LintMap] with custom attributes for the detector to process during
+   * reporting, or a [Constraint] stashed in the [Incident.clientProperties] to be checked.
    */
   val provisionalIncidents: MutableList<Incident> = ArrayList()
 
   /**
-   * Any data recorded into the map from [LintClient.getPartialResults] for later analysis and
-   * potential reporting via [Detector.checkPartialResults]
+   * Any data recorded into the map from [LintClient.getPartialResults] for later analysis and potential reporting via
+   * [Detector.checkPartialResults]
    */
   private var partialResults: MutableMap<Issue, PartialResult>? = null
 
@@ -234,25 +230,13 @@ open class LintCliClient : LintClient {
       else -> super.runReadAction(runnable)
     }
 
-  /**
-   * Runs the static analysis command line driver. You need to add at least one error reporter to
-   * the command line flags.
-   */
+  /** Runs the static analysis command line driver. You need to add at least one error reporter to the command line flags. */
   @Throws(IOException::class)
   fun run(registry: IssueRegistry, lintRequest: LintRequest): Int {
-    return run(
-      registry,
-      lintRequest,
-      analyze = { driver.analyze() },
-      finish = { performReporting() },
-    )
+    return run(registry, lintRequest, analyze = { driver.analyze() }, finish = { performReporting() })
   }
 
-  override fun addCustomLintRules(
-    registry: IssueRegistry,
-    driver: LintDriver?,
-    warnDeprecated: Boolean,
-  ): IssueRegistry {
+  override fun addCustomLintRules(registry: IssueRegistry, driver: LintDriver?, warnDeprecated: Boolean): IssueRegistry {
     val custom = super.addCustomLintRules(registry, driver, warnDeprecated)
 
     val additionalRegistries = flags.additionalRegistries
@@ -268,8 +252,8 @@ open class LintCliClient : LintClient {
   }
 
   /**
-   * Analyzes a specific project in isolation; stores partial results for that library, which will
-   * later be loaded and merged with other projects in [mergeOnly].
+   * Analyzes a specific project in isolation; stores partial results for that library, which will later be loaded and merged with other
+   * projects in [mergeOnly].
    */
   fun analyzeOnly(registry: IssueRegistry, lintRequest: LintRequest): Int {
     assert(supportsPartialAnalysis())
@@ -281,8 +265,7 @@ open class LintCliClient : LintClient {
         // Forcibly initialize the resource repository for each android module during analysis to
         // ensure that it's present when analyzing downstream modules (b/301673528)
         val project = driver.projectRoots.first()
-        val isMainArtifact =
-          project.buildVariant == null || project.buildVariant?.artifact?.type == MAIN
+        val isMainArtifact = project.buildVariant == null || project.buildVariant?.artifact?.type == MAIN
         if (project.isAndroidProject && isMainArtifact) {
           LintResourceRepository.get(this, project, ResourceRepositoryScope.PROJECT_ONLY)
         }
@@ -292,26 +275,19 @@ open class LintCliClient : LintClient {
   }
 
   /**
-   * Loads in all the partial results for a set of module dependencies and creates a single report
-   * based on both taking the definite results as well as conditionally processing the provisional
-   * results.
+   * Loads in all the partial results for a set of module dependencies and creates a single report based on both taking the definite results
+   * as well as conditionally processing the provisional results.
    */
   fun mergeOnly(registry: IssueRegistry, lintRequest: LintRequest): Int {
     // We perform some additional validation during reporting
     validatedIds = false
-    return run(
-      registry,
-      lintRequest,
-      analyze = { driver.mergeOnly() },
-      finish = { performReporting() },
-    )
+    return run(registry, lintRequest, analyze = { driver.mergeOnly() }, finish = { performReporting() })
   }
 
   /**
-   * Creates a lint driver, sets up analytics, and performs the analysis provided by [analyze]
-   * before cleaning up. An optional [finish] lambda can be supplied. This is where for reporting
-   * tasks the reports are actually written, and for errors halting the build if set exit code is
-   * true, and so on.
+   * Creates a lint driver, sets up analytics, and performs the analysis provided by [analyze] before cleaning up. An optional [finish]
+   * lambda can be supplied. This is where for reporting tasks the reports are actually written, and for errors halting the build if set
+   * exit code is true, and so on.
    */
   private fun run(
     registry: IssueRegistry,
@@ -347,8 +323,7 @@ open class LintCliClient : LintClient {
       return exitCode
     }
 
-    return if (flags.isSetExitCode) if (hasErrors) ERRNO_ERRORS else ERRNO_SUCCESS
-    else ERRNO_SUCCESS
+    return if (flags.isSetExitCode) if (hasErrors) ERRNO_ERRORS else ERRNO_SUCCESS else ERRNO_SUCCESS
   }
 
   private fun performReporting(): Int {
@@ -363,9 +338,9 @@ open class LintCliClient : LintClient {
       if (fixed && flags.isAbortOnAutoFix) {
         val message =
           """
-                    One or more issues were fixed in the source code.
-                    Aborting the build since the edits to the source files were performed **after** compilation, so the outputs do not contain the fixes. Re-run the build.
-                    """
+          One or more issues were fixed in the source code.
+          Aborting the build since the edits to the source files were performed **after** compilation, so the outputs do not contain the fixes. Re-run the build.
+          """
             .trimIndent()
         System.err.println(message)
         return ERRNO_APPLIED_SUGGESTIONS
@@ -383,10 +358,7 @@ open class LintCliClient : LintClient {
       baseline.file = outputBaselineFile
       writeBaselineFile(stats, file = outputBaselineFile, writeEmptyBaseline = true)
       // Not setting exit code to ERRNO_CREATED_BASELINE; that's the contract for this flag
-    } else if (
-      baselineFile != null && !baselineFile.exists() && writeBaselineIfMissing ||
-        outputBaselineFile != null && baseline == null
-    ) {
+    } else if (baselineFile != null && !baselineFile.exists() && writeBaselineIfMissing || outputBaselineFile != null && baseline == null) {
       val fileToWrite = outputBaselineFile ?: baselineFile!!
       val exitCode =
         writeBaselineFile(
@@ -409,12 +381,7 @@ open class LintCliClient : LintClient {
         }
         else -> return ERRNO_SUCCESS
       }
-    } else if (
-      baseline != null &&
-        baseline.writeOnClose &&
-        baseline.fixedCount > 0 &&
-        flags.isRemoveFixedBaselineIssues
-    ) {
+    } else if (baseline != null && baseline.writeOnClose && baseline.fixedCount > 0 && flags.isRemoveFixedBaselineIssues) {
       writeBaselineFile(stats, file = baseline.file, writeEmptyBaseline = true)
       return ERRNO_CREATED_BASELINE
     } else if (baseline != null && flags.isUpdateBaseline) {
@@ -430,33 +397,21 @@ open class LintCliClient : LintClient {
     // console to help pinpoint the problem.
     if (hasErrors && !reportingToConsole() && flags.isSetExitCode && !flags.isQuiet) {
       val writer = System.out.printWriter()
-      val count =
-        describeCounts(
-          stats.errorCount,
-          stats.warningCount,
-          stats.hintCount,
-          comma = false,
-          capitalize = false,
-        )
+      val count = describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = false, capitalize = false)
       println("Lint found $count. First failure:")
       val reporter = Reporter.createTextReporter(this, LintCliFlags(), null, writer, false)
       reporter.setWriteStats(false)
-      reporter.write(
-        stats,
-        listOf(definiteIncidents.first { it.severity.isError }),
-        driver.registry,
-      )
+      reporter.write(stats, listOf(definiteIncidents.first { it.severity.isError }), driver.registry)
     }
 
-    return if (flags.isSetExitCode) if (hasErrors) ERRNO_ERRORS else ERRNO_SUCCESS
-    else ERRNO_SUCCESS
+    return if (flags.isSetExitCode) if (hasErrors) ERRNO_ERRORS else ERRNO_SUCCESS else ERRNO_SUCCESS
   }
 
   /**
    * Writes a baseline file.
    *
-   * In the case when [writeEmptyBaseline] is false and there are no incidents, does not write a new
-   * baseline file and deletes any existing baseline file.
+   * In the case when [writeEmptyBaseline] is false and there are no incidents, does not write a new baseline file and deletes any existing
+   * baseline file.
    *
    * @param stats the [LintStats]
    * @param file the file to write to.
@@ -496,11 +451,7 @@ open class LintCliClient : LintClient {
         definiteIncidents.map { LintBaseline.ReportedEntry(it) }
 
     // Sort the entries and check if they belong in baselines
-    val incidentsToWrite =
-      entries
-        .sorted()
-        .filter { LintBaseline.shouldBaseline(it.incident.issue.id) }
-        .map { it.incident }
+    val incidentsToWrite = entries.sorted().filter { LintBaseline.shouldBaseline(it.incident.issue.id) }.map { it.incident }
     return incidentsToWrite
   }
 
@@ -565,11 +516,10 @@ open class LintCliClient : LintClient {
   /**
    * Merge analysis results into a report.
    *
-   * This is the heart of the module-independent analysis: here we figure out the module dependency
-   * graph, and load in all the state (both definite incidents, as well as conditionally reported
-   * incidents and partial data), and pass this data to the detectors to do their own computation.
-   * We also check whether issues enabled in this reporting project were disabled in any individual
-   * module, since that means the project is configured incorrectly.
+   * This is the heart of the module-independent analysis: here we figure out the module dependency graph, and load in all the state (both
+   * definite incidents, as well as conditionally reported incidents and partial data), and pass this data to the detectors to do their own
+   * computation. We also check whether issues enabled in this reporting project were disabled in any individual module, since that means
+   * the project is configured incorrectly.
    */
   override fun mergeState(roots: Collection<Project>, driver: LintDriver) {
     // Load any partial results from dependencies we've already analyzed
@@ -578,11 +528,7 @@ open class LintCliClient : LintClient {
     val dependentsMap: Map<Project, Project> =
       if (driver.checkDependencies) {
         roots
-          .flatMap { root ->
-            root.allLibraries
-              .map { dependency -> dependency to root }
-              .filterNot { it.first.isExternalLibrary }
-          }
+          .flatMap { root -> root.allLibraries.map { dependency -> dependency to root }.filterNot { it.first.isExternalLibrary } }
           .associateBy({ it.first }, { it.second })
       } else {
         // Even in non-check-dependencies scenarios we have to add in any dynamic
@@ -614,9 +560,7 @@ open class LintCliClient : LintClient {
     // above data structures
     for (project in projects) {
       driver.computeDetectors(project)
-      xmlReader(project, XmlFileType.CONDITIONAL_INCIDENTS)?.let {
-        provisionalMap[project] = it.getIncidents()
-      }
+      xmlReader(project, XmlFileType.CONDITIONAL_INCIDENTS)?.let { provisionalMap[project] = it.getIncidents() }
 
       xmlReader(project, XmlFileType.INCIDENTS)?.let { definiteMap[project] = it.getIncidents() }
 
@@ -665,8 +609,7 @@ open class LintCliClient : LintClient {
           val detectorMap = HashMap<Issue, Detector>()
           for ((issue, map) in dataMap.entries) {
             val results = PartialResult.withRequestedProject(PartialResult(issue, map), root)
-            val detector =
-              detectorMap.getOrPut(issue, issue.implementation.detectorClass::newInstance)
+            val detector = detectorMap.getOrPut(issue, issue.implementation.detectorClass::newInstance)
             detector.checkPartialResults(rootContext, results)
           }
         }
@@ -676,20 +619,11 @@ open class LintCliClient : LintClient {
     }
   }
 
-  /**
-   * Checks to make sure that for any issues enabled in the reporting project the corresponding
-   * issue was enabled in the libraries.
-   */
-  private fun checkConfigured(
-    library: Project,
-    libraryConfigured: Map<String, Severity>,
-    main: Project,
-    mainContext: Context,
-  ) {
+  /** Checks to make sure that for any issues enabled in the reporting project the corresponding issue was enabled in the libraries. */
+  private fun checkConfigured(library: Project, libraryConfigured: Map<String, Severity>, main: Project, mainContext: Context) {
     val registry = registry!!
     val mainConfiguration = main.getConfiguration(driver)
-    val mainConfigured: Map<String, Severity> =
-      mainConfiguration.getConfiguredIssues(registry, true)
+    val mainConfigured: Map<String, Severity> = mainConfiguration.getConfiguredIssues(registry, true)
     for ((issue, severity) in mainConfigured) {
       if (severity == Severity.IGNORE) {
         continue
@@ -702,8 +636,7 @@ open class LintCliClient : LintClient {
           librarySeverity == null && registry.getIssue(issue)?.isEnabledByDefault() == false
       ) {
         val location =
-          mainConfiguration.getIssueConfigLocation(issue, specificOnly = true, severityOnly = true)
-            ?: Location.create(main.dir)
+          mainConfiguration.getIssueConfigLocation(issue, specificOnly = true, severityOnly = true) ?: Location.create(main.dir)
         val appSeverity = severity.toName()
         mainContext.report(
           Incident(
@@ -717,8 +650,8 @@ open class LintCliClient : LintClient {
   }
 
   /**
-   * Given maps from projects to lists of definite and provisional incidents, report the definite
-   * incidents, and check the conditional incidents and report if they're accepted by the detectors.
+   * Given maps from projects to lists of definite and provisional incidents, report the definite incidents, and check the conditional
+   * incidents and report if they're accepted by the detectors.
    */
   @JvmSuppressWildcards
   protected open fun mergeIncidents(
@@ -752,11 +685,7 @@ open class LintCliClient : LintClient {
   /** Returns the path to the file containing any data of the given [xmlType]. */
   open fun getSerializationFile(project: Project, xmlType: XmlFileType): File {
     val variant = project.buildVariant
-    val dir =
-      variant?.partialResultsDir
-        ?: variant?.module?.buildFolder
-        ?: project.partialResultsDir
-        ?: File(project.dir, "build")
+    val dir = variant?.partialResultsDir ?: variant?.module?.buildFolder ?: project.partialResultsDir ?: File(project.dir, "build")
     return File(dir, xmlType.getDefaultFileName())
   }
 
@@ -790,47 +719,23 @@ open class LintCliClient : LintClient {
       .trimMargin()
   }
 
-  private fun emitBaselineDiagnostics(
-    baseline: LintBaseline,
-    baselineFile: File,
-    stats: LintStats,
-  ) {
+  private fun emitBaselineDiagnostics(baseline: LintBaseline, baselineFile: File, stats: LintStats) {
     if (!flags.isQuiet && !reportingToConsole()) {
       if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
         if (stats.count() == 0) {
           print("Lint found no new issues")
         } else {
-          val count =
-            describeCounts(
-              stats.errorCount,
-              stats.warningCount,
-              stats.hintCount,
-              comma = true,
-              capitalize = false,
-            )
+          val count = describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = true, capitalize = false)
           print("Lint found $count")
           if (stats.autoFixedCount > 0) {
             print(" (${stats.autoFixedCount} of these were automatically fixed)")
           }
         }
         val count =
-          describeCounts(
-            stats.baselineErrorCount,
-            stats.baselineWarningCount,
-            stats.baselineHintCount,
-            comma = false,
-            capitalize = true,
-          )
+          describeCounts(stats.baselineErrorCount, stats.baselineWarningCount, stats.baselineHintCount, comma = false, capitalize = true)
         print(" (and $count filtered by baseline ${baselineFile.name})")
       } else {
-        val count =
-          describeCounts(
-            stats.errorCount,
-            stats.warningCount,
-            stats.hintCount,
-            comma = true,
-            capitalize = false,
-          )
+        val count = describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = true, capitalize = false)
         print("Lint found $count")
       }
       println()
@@ -845,13 +750,9 @@ open class LintCliClient : LintClient {
       val checkVariant = baselineVariantName
       val creationVariant = baseline.getAttribute(ATTR_VARIANT)
       if (creationVariant != null && creationVariant != checkVariant) {
-        println(
-          "\nNote: The baseline was created using a different target/variant than it was checked against."
-        )
+        println("\nNote: The baseline was created using a different target/variant than it was checked against.")
         println("Creation variant: " + getTargetName(creationVariant))
-        println(
-          "Current variant: " + if (checkVariant != null) getTargetName(checkVariant) else "none"
-        )
+        println("Current variant: " + if (checkVariant != null) getTargetName(checkVariant) else "none")
       }
       val baselineTransitive = baseline.getAttribute(ATTR_CHECK_DEPS)?.let { it == VALUE_TRUE }
       val transitive = flags.isCheckDependencies
@@ -875,12 +776,7 @@ open class LintCliClient : LintClient {
         val checkClient = clientName
         val creationVersion = baseline.getAttribute("version")
         val creationClient = baseline.getAttribute("client")
-        if (
-          checkClient == creationClient &&
-            creationVersion != null &&
-            checkVersion != null &&
-            creationVersion != checkVersion
-        ) {
+        if (checkClient == creationClient && creationVersion != null && checkVersion != null && creationVersion != checkVersion) {
           val created = com.android.ide.common.gradle.Version.parse(creationVersion)
           val current = com.android.ide.common.gradle.Version.parse(checkVersion)
           if (created > current) {
@@ -900,11 +796,7 @@ open class LintCliClient : LintClient {
 
   protected fun validateIssueIds() {
     driver.addLintListener { _, type, project, _ ->
-      if (
-        !validatedIds &&
-          (type === LintListener.EventType.SCANNING_PROJECT ||
-            type === LintListener.EventType.MERGING)
-      ) {
+      if (!validatedIds && (type === LintListener.EventType.SCANNING_PROJECT || type === LintListener.EventType.MERGING)) {
         // Make sure all the id's are valid once the driver is all set up and
         // ready to run (such that custom rules are available in the registry etc)
         validateIssueIds(project)
@@ -973,8 +865,7 @@ open class LintCliClient : LintClient {
   private var xmlDocuments = HashMap<File, Document>()
 
   override fun getXmlDocument(file: File, contents: CharSequence?): Document? {
-    return xmlDocuments[file]
-      ?: super.getXmlDocument(file, contents)?.also { xmlDocuments[file] = it }
+    return xmlDocuments[file] ?: super.getXmlDocument(file, contents)?.also { xmlDocuments[file] = it }
   }
 
   override fun getResources(project: Project, scope: ResourceRepositoryScope): ResourceRepository {
@@ -989,10 +880,7 @@ open class LintCliClient : LintClient {
     return fileContentCache.computeIfAbsent(file) { readFile(file) }
   }
 
-  /**
-   * Records the given source text as the source to be used for the given file when looked up via
-   * [getSourceText].
-   */
+  /** Records the given source text as the source to be used for the given file when looked up via [getSourceText]. */
   fun setSourceText(file: File, text: CharSequence?) {
     text?.let { fileContentCache[file] = it }
   }
@@ -1001,8 +889,7 @@ open class LintCliClient : LintClient {
   private var clientProperties: MutableMap<Any, Any>? = null
 
   /**
-   * Associate the given key and value data with this project. Used to store project specific state
-   * without introducing external caching.
+   * Associate the given key and value data with this project. Used to store project specific state without introducing external caching.
    */
   open fun putClientProperty(key: Any, value: Any?) {
     val map = clientProperties ?: HashMap<Any, Any>().also { clientProperties = it }
@@ -1014,11 +901,12 @@ open class LintCliClient : LintClient {
   }
 
   /**
-   * Retrieve the given key and value data associated with this project. Used to store project
-   * specific state without introducing external caching.
+   * Retrieve the given key and value data associated with this project. Used to store project specific state without introducing external
+   * caching.
    */
   open fun <T> getClientProperty(key: Any): T? {
-    @Suppress("UNCHECKED_CAST") return clientProperties?.get(key) as? T?
+    @Suppress("UNCHECKED_CAST")
+    return clientProperties?.get(key) as? T?
   }
 
   override fun getUastParser(project: Project?): UastParser = LintCliUastParser(project)
@@ -1075,8 +963,7 @@ open class LintCliClient : LintClient {
       // error to attempt to store more state during merging, so flag
       // these for developers.
       val (detector, issues) =
-        Context.findCallingDetector(driver)
-          ?: error("Unexpected call to report(Incident, LintMap) during the merge phase")
+        Context.findCallingDetector(driver) ?: error("Unexpected call to report(Incident, LintMap) during the merge phase")
       val stack = StringBuilder()
       LintDriver.appendStackTraceSummary(RuntimeException(), stack, skipFrames = 1, maxFrames = 20)
       val message =
@@ -1107,9 +994,7 @@ open class LintCliClient : LintClient {
 
   override fun getPartialResults(project: Project, issue: Issue): PartialResult {
     fun partialResult(project: Project, issue: Issue) =
-      partialResults!!.getOrPut(issue) {
-        PartialResult(issue, LinkedHashMap<Project, LintMap>().also { it[project] = LintMap() })
-      }
+      partialResults!!.getOrPut(issue) { PartialResult(issue, LinkedHashMap<Project, LintMap>().also { it[project] = LintMap() }) }
 
     if (partialResults == null) {
       partialResults = LinkedHashMap()
@@ -1135,9 +1020,7 @@ open class LintCliClient : LintClient {
   }
 
   private fun xmlReader(project: Project, type: XmlFileType): XmlReader? =
-    getSerializationFile(project, type).takeIf(File::isFile)?.let { file ->
-      XmlReader(this, driver.registry, project, file)
-    }
+    getSerializationFile(project, type).takeIf(File::isFile)?.let { file -> XmlReader(this, driver.registry, project, file) }
 
   override fun readFile(file: File): CharSequence {
     val contents =
@@ -1147,10 +1030,7 @@ open class LintCliClient : LintClient {
         ""
       }
     val path = file.path
-    if (
-      (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT) || path.endsWith(DOT_KTS)) &&
-        CharSequences.indexOf(contents, '\r') != -1
-    ) {
+    if ((path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT) || path.endsWith(DOT_KTS)) && CharSequences.indexOf(contents, '\r') != -1) {
       // Offsets in these files will be relative to PSI's text offsets (which may
       // have converted line offsets); make sure we use the same offsets.
       // (Can't just do this on Windows; what matters is whether the file contains CRLF's.)
@@ -1221,11 +1101,10 @@ open class LintCliClient : LintClient {
   }
 
   /**
-   * Checks that any id's specified by id refer to valid, known, issues. This typically can't be
-   * done right away (in for example the Gradle code which handles DSL references to strings, or in
-   * the command line parser for the lint command) because the full set of valid id's is not known
-   * until lint actually starts running and for example gathers custom rules from all AAR
-   * dependencies reachable from libraries, etc.
+   * Checks that any id's specified by id refer to valid, known, issues. This typically can't be done right away (in for example the Gradle
+   * code which handles DSL references to strings, or in the command line parser for the lint command) because the full set of valid id's is
+   * not known until lint actually starts running and for example gathers custom rules from all AAR dependencies reachable from libraries,
+   * etc.
    */
   private fun validateIssueIds(project: Project?) {
     if (::driver.isInitialized) {
@@ -1269,12 +1148,7 @@ open class LintCliClient : LintClient {
     }
   }
 
-  private fun validateIssueIds(
-    project: Project?,
-    registry: IssueRegistry,
-    ids: Collection<String>?,
-    file: File? = null,
-  ) {
+  private fun validateIssueIds(project: Project?, registry: IssueRegistry, ids: Collection<String>?, file: File? = null) {
     if (ids != null) {
       for (id in ids) {
         if (registry.getIssue(id) == null) {
@@ -1284,12 +1158,7 @@ open class LintCliClient : LintClient {
     }
   }
 
-  private fun reportNonExistingIssueId(
-    project: Project?,
-    registry: IssueRegistry,
-    id: String,
-    file: File? = null,
-  ) {
+  private fun reportNonExistingIssueId(project: Project?, registry: IssueRegistry, id: String, file: File? = null) {
     if (IssueRegistry.isDeletedIssueId(id)) {
       // Recently deleted, but avoid complaining about leftover configuration
       return
@@ -1301,21 +1170,9 @@ open class LintCliClient : LintClient {
       return
     }
     val message = Configuration.getUnknownIssueIdErrorMessage(id, registry)
-    if (
-      ::driver.isInitialized && project != null && !isSuppressed(IssueRegistry.UNKNOWN_ISSUE_ID)
-    ) {
-      val location =
-        if (file != null) guessGradleLocationForFile(this, file, id)
-        else guessGradleLocation(this, project.dir, id)
-      report(
-        this,
-        IssueRegistry.UNKNOWN_ISSUE_ID,
-        message,
-        driver,
-        project,
-        location,
-        LintFix.create().data(ATTR_ID, id),
-      )
+    if (::driver.isInitialized && project != null && !isSuppressed(IssueRegistry.UNKNOWN_ISSUE_ID)) {
+      val location = if (file != null) guessGradleLocationForFile(this, file, id) else guessGradleLocation(this, project.dir, id)
+      report(this, IssueRegistry.UNKNOWN_ISSUE_ID, message, driver, project, location, LintFix.create().data(ATTR_ID, id))
     } else {
       log(Severity.WARNING, null, "Lint: %1\$s", message)
     }
@@ -1344,10 +1201,7 @@ open class LintCliClient : LintClient {
     val disabledCategories = flags.disabledCategories
     if (disabledCategories != null) {
       val category = issue.category
-      if (
-        disabledCategories.contains(category) ||
-          category.parent != null && disabledCategories.contains(category.parent)
-      ) {
+      if (disabledCategories.contains(category) || category.parent != null && disabledCategories.contains(category.parent)) {
         return true
       }
     }
@@ -1359,10 +1213,7 @@ open class LintCliClient : LintClient {
     val enabledCategories = flags.enabledCategories
     if (enabledCategories != null) {
       val category = issue.category
-      if (
-        enabledCategories.contains(category) ||
-          category.parent != null && enabledCategories.contains(category.parent)
-      ) {
+      if (enabledCategories.contains(category) || category.parent != null && enabledCategories.contains(category.parent)) {
         return true
       }
     }
@@ -1370,10 +1221,7 @@ open class LintCliClient : LintClient {
     return flags.enabledIds.contains(issue.id)
   }
 
-  /**
-   * Returns true if Kotlin scripting may be required based on the [driver]'s [LintDriver.scope] and
-   * the files in [allProjects].
-   */
+  /** Returns true if Kotlin scripting may be required based on the [driver]'s [LintDriver.scope] and the files in [allProjects]. */
   private fun mayNeedKotlinScripting(allProjects: Set<Project>): Boolean {
     if (allProjects.none { it.isGradleProject }) {
       return false
@@ -1406,18 +1254,13 @@ open class LintCliClient : LintClient {
   public override fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) {
     if (driver?.mode == LintDriver.DriverMode.MERGE) {
       // The costly parsing environment is not required (or supported!) when merging
-      val config =
-        UastEnvironment.Configuration.create(
-          enableKotlinScripting = false,
-          useFirUast = flags.useK2Uast() && useFirUast(),
-        )
+      val config = UastEnvironment.Configuration.create(enableKotlinScripting = false, useFirUast = flags.useK2Uast() && useFirUast())
       val env = UastEnvironment.create(config)
       uastEnvironment = env
       return
     }
     // knownProject only lists root projects, not dependencies
-    val allProjects =
-      knownProjects.asSequence().flatMap { sequenceOf(it) + it.allLibraries }.toIdentitySet()
+    val allProjects = knownProjects.asSequence().flatMap { sequenceOf(it) + it.allLibraries }.toIdentitySet()
 
     val bootClassPaths = getBootClassPath(knownProjects)
     // Don't initialize JDK classpath in UastEnvironmentUtils if
@@ -1429,20 +1272,8 @@ open class LintCliClient : LintClient {
         bootClassPaths.first().path.endsWith(FN_FRAMEWORK_LIBRARY)
     val jdkHome: File? = if (isAndroid) null else getJdkHomeUnlessJre()
     val allModules =
-      allProjects.map {
-        UastEnvironment.Module(
-          it,
-          jdkHome,
-          !flags.isIgnoreTestSources,
-          !flags.isIgnoreTestFixturesSources,
-          isUnitTest,
-        )
-      }
-    val maxLevel =
-      knownProjects
-        .asSequence()
-        .map(Project::getJavaLanguageLevel)
-        .fold(LanguageLevel.JDK_1_7, LanguageLevel::coerceAtLeast)
+      allProjects.map { UastEnvironment.Module(it, jdkHome, !flags.isIgnoreTestSources, !flags.isIgnoreTestFixturesSources, isUnitTest) }
+    val maxLevel = knownProjects.asSequence().map(Project::getJavaLanguageLevel).fold(LanguageLevel.JDK_1_7, LanguageLevel::coerceAtLeast)
 
     for (module in allModules.asSequence()) {
       for (file in module.allRoots) {
@@ -1494,31 +1325,26 @@ open class LintCliClient : LintClient {
       }
 
   /**
-   * Return the best build target to use among the given set of projects. This is necessary because
-   * we need to pick a single target to use to (for example) configure a boot classpath for the
-   * parsing infrastructure, but in theory Gradle lets you configure different compileSdkVersions
-   * for different modules, so here we pick the highest of the versions to make sure it's capable of
-   * resolving all library calls into the platform.
+   * Return the best build target to use among the given set of projects. This is necessary because we need to pick a single target to use
+   * to (for example) configure a boot classpath for the parsing infrastructure, but in theory Gradle lets you configure different
+   * compileSdkVersions for different modules, so here we pick the highest of the versions to make sure it's capable of resolving all
+   * library calls into the platform.
    *
-   * However, we cannot just blindly request the build target using the [Project.getBuildTarget]
-   * method because its implementation will default to the highest installed SDK platform when the
-   * project has not specified a compileSdkVersion. This can artificially increase the picked build
-   * target. Instead we should only use the projects that have an explicit compileSdkVersion
-   * specified. If there are none, then we should use the highest SDK platform.
+   * However, we cannot just blindly request the build target using the [Project.getBuildTarget] method because its implementation will
+   * default to the highest installed SDK platform when the project has not specified a compileSdkVersion. This can artificially increase
+   * the picked build target. Instead we should only use the projects that have an explicit compileSdkVersion specified. If there are none,
+   * then we should use the highest SDK platform.
    */
   @VisibleForTesting
   fun pickBuildTarget(knownProjects: Collection<Project>): IAndroidTarget? {
-    val projectsWithExplicitlySpecifiedTarget =
-      knownProjects.filter { it.isAndroidProject && it.getCompileSdkResult().explicitlySpecified }
+    val projectsWithExplicitlySpecifiedTarget = knownProjects.filter { it.isAndroidProject && it.getCompileSdkResult().explicitlySpecified }
 
     if (projectsWithExplicitlySpecifiedTarget.isEmpty()) {
       // none of the projects have an explicitly specified build target so we should use the
       // default value which will be calculated for any of the projects.
       return knownProjects.firstOrNull { it.isAndroidProject }?.buildTarget
     } else {
-      return projectsWithExplicitlySpecifiedTarget
-        .mapNotNull { it.buildTarget }
-        .maxByOrNull { it.version }
+      return projectsWithExplicitlySpecifiedTarget.mapNotNull { it.buildTarget }.maxByOrNull { it.version }
     }
   }
 
@@ -1530,8 +1356,7 @@ open class LintCliClient : LintClient {
 
   /** Synchronizes any options specified in lint.xml with the [LintCliFlags] object. */
   fun syncConfigOptions() {
-    val configs =
-      generateSequence(configurations.fallback) { configurations.getParentConfiguration(it) }
+    val configs = generateSequence(configurations.fallback) { configurations.getParentConfiguration(it) }
     val config = configs.filterIsInstance(LintXmlConfiguration::class.java).firstOrNull() ?: return
 
     val checkAllWarnings = config.getCheckAllWarnings()
@@ -1603,10 +1428,7 @@ open class LintCliClient : LintClient {
   @Deprecated("Use the List<File> version")
   override fun createUrlClassLoader(urls: Array<URL>, parent: ClassLoader): ClassLoader {
     return if (isGradle || currentPlatform() == PLATFORM_WINDOWS) {
-      createUrlClassLoader(
-        urls.map { File(UrlClassLoader.urlToFilePath(it.path)) }.toList(),
-        parent,
-      )
+      createUrlClassLoader(urls.map { File(UrlClassLoader.urlToFilePath(it.path)) }.toList(), parent)
     } else {
       @Suppress("DEPRECATION") super.createUrlClassLoader(urls, parent)
     }
@@ -1689,9 +1511,7 @@ open class LintCliClient : LintClient {
     // so this optimization isn't useful.
     try {
       val logger = StdLogger(StdLogger.Level.INFO)
-      val type =
-        if (project.isLibrary) ManifestMerger2.MergeType.LIBRARY
-        else ManifestMerger2.MergeType.APPLICATION
+      val type = if (project.isLibrary) ManifestMerger2.MergeType.LIBRARY else ManifestMerger2.MergeType.APPLICATION
       val blameFile = File.createTempFile("manifest-blame", ".txt")
       blameFile.deleteOnExit()
       val manifestMerger =
@@ -1741,8 +1561,7 @@ open class LintCliClient : LintClient {
           return document
         }
       } else {
-        val mergerFailures =
-          "Manifest merger failed:\n\n${mergeReport.loggingRecords.joinToString("\n\n")}"
+        val mergerFailures = "Manifest merger failed:\n\n${mergeReport.loggingRecords.joinToString("\n\n")}"
         if (throwOnManifestMergerFail) {
           throw AssertionError(
             "$mergerFailures\n\n" +
@@ -1788,8 +1607,7 @@ open class LintCliClient : LintClient {
     }
   }
 
-  protected open inner class LintCliUastParser(private val project: Project?) :
-    DefaultUastParser(project, ideaProject!!) {
+  protected open inner class LintCliUastParser(private val project: Project?) : DefaultUastParser(project, ideaProject!!) {
     override fun prepare(
       contexts: List<JavaContext>,
       javaLanguageLevel: LanguageLevel?,
@@ -1829,8 +1647,7 @@ open class LintCliClient : LintClient {
 
         if (project != null) {
           for (library in project.allLibraries) {
-            for (sourceFolder in
-              library.javaSourceFolders.asSequence() + library.generatedSourceFolders) {
+            for (sourceFolder in library.javaSourceFolders.asSequence() + library.generatedSourceFolders) {
               gatherKotlinFiles(library.dir, kotlinFiles)
             }
           }
@@ -1855,28 +1672,18 @@ open class LintCliClient : LintClient {
       }
       // Now that we have a project context, ensure that the annotations manager
       // is up to date
-      val annotationsManager =
-        ExternalAnnotationsManager.getInstance(ideaProject) as LintExternalAnnotationsManager
+      val annotationsManager = ExternalAnnotationsManager.getInstance(ideaProject) as LintExternalAnnotationsManager
       val projects = contexts.first().driver.projects
       val target = pickBuildTarget(projects)
-      annotationsManager.updateAnnotationRoots(
-        this@LintCliClient,
-        target,
-        target == null && projects.isNotEmpty(),
-      )
+      annotationsManager.updateAnnotationRoots(this@LintCliClient, target, target == null && projects.isNotEmpty())
       return ok
     }
 
-    override fun createEvaluator(
-      project: Project?,
-      p: com.intellij.openapi.project.Project,
-    ): DefaultJavaEvaluator {
+    override fun createEvaluator(project: Project?, p: com.intellij.openapi.project.Project): DefaultJavaEvaluator {
       return object : DefaultJavaEvaluator(p, project!!) {
         override fun findClass(qualifiedName: String): PsiClass? {
           if (::driver.isInitialized && driver.mode == LintDriver.DriverMode.MERGE) {
-            error(
-              "Class lookup is not allowed during report merging; see the lint partial analysis documentation"
-            )
+            error("Class lookup is not allowed during report merging; see the lint partial analysis documentation")
           }
           return super.findClass(qualifiedName)
         }
@@ -1909,8 +1716,7 @@ open class LintCliClient : LintClient {
 
   /** Whether lint should continue running after a baseline has been created. */
   private fun continueAfterBaselineCreated(): Boolean {
-    return System.getProperty("lint.baselines.continue") == VALUE_TRUE ||
-      flags.isContinueAfterBaselineCreated
+    return System.getProperty("lint.baselines.continue") == VALUE_TRUE || flags.isContinueAfterBaselineCreated
   }
 
   companion object {

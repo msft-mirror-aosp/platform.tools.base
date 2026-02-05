@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src.app_package.data.model
 
-
-fun loggedInUserJava(
-  packageName: String) =
-
+fun loggedInUserJava(packageName: String) =
   """package ${packageName}.data.model;
 
 /**

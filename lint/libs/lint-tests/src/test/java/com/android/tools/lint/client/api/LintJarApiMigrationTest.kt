@@ -65,8 +65,7 @@ class LintJarApiMigrationTest {
   @Test
   fun testCache() {
     val dir = temporaryFolder.root
-    val project =
-      lint().files(jar("lint.jar", getNavigationLintUtilsClass())).createProjects(dir).first()
+    val project = lint().files(jar("lint.jar", getNavigationLintUtilsClass())).createProjects(dir).first()
     val jarFile = File(project, "lint.jar")
     assertTrue(jarFile.isFile)
 
@@ -570,9 +569,7 @@ class LintJarApiMigrationTest {
           val method = migratedClass.declaredMethods.find { it.name == "getPsiForReceiver" }!!
           return method.invoke(null, ktExpression) as PsiElement?
         }
-        val call =
-          ((ktFile.declarations[0] as KtClass).declarations[0] as KtNamedFunction).bodyExpression
-            as KtCallExpression
+        val call = ((ktFile.declarations[0] as KtClass).declarations[0] as KtNamedFunction).bodyExpression as KtCallExpression
         assertEquals("Foo", (getImplicitReceiverPsi(call) as KtClass).name)
       },
     )
@@ -1350,7 +1347,8 @@ class LintJarApiMigrationTest {
       checks = { ktFile, migratedClass ->
         fun UExpression.isClassReferenceReflection(): Pair<Boolean, String?> {
           val method = migratedClass.declaredMethods[0]
-          @Suppress("UNCHECKED_CAST") return method.invoke(null, this) as Pair<Boolean, String?>
+          @Suppress("UNCHECKED_CAST")
+          return method.invoke(null, this) as Pair<Boolean, String?>
         }
 
         val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
@@ -1461,11 +1459,13 @@ class LintJarApiMigrationTest {
       checks = { ktFile, migratedClass ->
         fun UExpression.isClassReferenceReflection1(): Pair<Boolean, String?> {
           val method = migratedClass.declaredMethods.find { it.name == "usageExample1" }
-          @Suppress("UNCHECKED_CAST") return method!!.invoke(null, this) as Pair<Boolean, String?>
+          @Suppress("UNCHECKED_CAST")
+          return method!!.invoke(null, this) as Pair<Boolean, String?>
         }
         fun UExpression.isClassReferenceReflection2(): Pair<Boolean, String?> {
           val method = migratedClass.declaredMethods.find { it.name == "usageExample2" }
-          @Suppress("UNCHECKED_CAST") return method!!.invoke(null, this) as Pair<Boolean, String?>
+          @Suppress("UNCHECKED_CAST")
+          return method!!.invoke(null, this) as Pair<Boolean, String?>
         }
 
         val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
@@ -1846,17 +1846,9 @@ class LintJarApiMigrationTest {
     return replace('$', '＄')
   }
 
-  private fun checkMigratedFunction(
-    kotlinTestSource: TestFile,
-    bytecode: ByteArray,
-    checks: (KtFile, Class<*>) -> Unit,
-  ) {
+  private fun checkMigratedFunction(kotlinTestSource: TestFile, bytecode: ByteArray, checks: (KtFile, Class<*>) -> Unit) {
     val (context, disposable) =
-      parseFirst(
-        temporaryFolder = temporaryFolder,
-        sdkHome = TestUtils.getSdk().toFile(),
-        testFiles = arrayOf(kotlinTestSource.indented()),
-      )
+      parseFirst(temporaryFolder = temporaryFolder, sdkHome = TestUtils.getSdk().toFile(), testFiles = arrayOf(kotlinTestSource.indented()))
     val psiFile = context.psiFile as KtFile
 
     val cr = ClassReader(bytecode)
@@ -1890,11 +1882,7 @@ class LintJarApiMigrationTest {
     val bytes =
       if (file is BinaryTestFile) file.binaryContents
       else if (file is BytecodeTestFile) {
-        (file
-            .getBytecodeFiles()
-            .map { it as BinaryTestFile }
-            .single { it.targetRelativePath.endsWith(DOT_CLASS) })
-          .binaryContents
+        (file.getBytecodeFiles().map { it as BinaryTestFile }.single { it.targetRelativePath.endsWith(DOT_CLASS) }).binaryContents
       } else {
         error("Unsupported test file type")
       }
@@ -1902,15 +1890,10 @@ class LintJarApiMigrationTest {
 
     val client =
       object : TestLintClient() {
-        override fun log(
-          severity: Severity,
-          exception: Throwable?,
-          format: String?,
-          vararg args: Any,
-        ) = error("Didn't expect output: $format")
-
-        override fun log(exception: Throwable?, format: String?, vararg args: Any) =
+        override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) =
           error("Didn't expect output: $format")
+
+        override fun log(exception: Throwable?, format: String?, vararg args: Any) = error("Didn't expect output: $format")
       }
     val newBytes = LintJarApiMigration(client).migrateClass(bytes)
     var after = prettyPrint(newBytes, methodName).trimIndent()

@@ -90,16 +90,12 @@ import org.jetbrains.uast.util.isAssignment
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
- * Helper class for analyzing data flow. To use it, initialize it with one or more AST elements that
- * you want to track, and then visit a method scope with this analyzer. It has a number of callback
- * methods you can override to find out when the value is returned, or used as an argument in a
- * call, or used as a receiver in a call, etc. See `lint/docs/api-guide/dataflow-analyzer.md.html`
- * for more.
+ * Helper class for analyzing data flow. To use it, initialize it with one or more AST elements that you want to track, and then visit a
+ * method scope with this analyzer. It has a number of callback methods you can override to find out when the value is returned, or used as
+ * an argument in a call, or used as a receiver in a call, etc. See `lint/docs/api-guide/dataflow-analyzer.md.html` for more.
  */
-abstract class DataFlowAnalyzer(
-  val initial: Collection<UElement>,
-  initialReferences: Collection<PsiVariable> = emptyList(),
-) : AbstractUastVisitor() {
+abstract class DataFlowAnalyzer(val initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  AbstractUastVisitor() {
 
   /** The instance being tracked is the receiver for a method call. */
   open fun receiver(call: UCallExpression) {}
@@ -117,10 +113,9 @@ abstract class DataFlowAnalyzer(
   open fun array(array: UArrayAccessExpression) {}
 
   /**
-   * The instance being tracked is being passed in a method call, where [call] is the method call
-   * node, and the [reference] is the argument to the call which is passing the tracked instance.
-   * (In some cases, it can also be a [UCallableReferenceExpression] where the method reference is
-   * invoked in this call and the reference has captured one of the tracked instances.)
+   * The instance being tracked is being passed in a method call, where [call] is the method call node, and the [reference] is the argument
+   * to the call which is passing the tracked instance. (In some cases, it can also be a [UCallableReferenceExpression] where the method
+   * reference is invoked in this call and the reference has captured one of the tracked instances.)
    */
   open fun argument(call: UCallExpression, reference: UElement) {}
 
@@ -128,8 +123,8 @@ abstract class DataFlowAnalyzer(
   var failedResolve = false
 
   /**
-   * We failed to resolve a reference; this means the code can be invalid or the environment
-   * incorrect, and we should draw conclusions very carefully.
+   * We failed to resolve a reference; this means the code can be invalid or the environment incorrect, and we should draw conclusions very
+   * carefully.
    */
   open fun failedResolve(reference: UElement) {
     // If it's a standalone unresolved call (whose value is not assigned, and which we're not making
@@ -142,10 +137,7 @@ abstract class DataFlowAnalyzer(
     // we don't need to give up on our analysis here since unresolved() is unlikely to affect the
     // result.
     var curr: UElement = skipParenthesizedExprUp(reference.uastParent) ?: return
-    if (
-      curr is UQualifiedReferenceExpression &&
-        skipParenthesizedExprUp(curr.uastParent) is UQualifiedReferenceExpression
-    ) {
+    if (curr is UQualifiedReferenceExpression && skipParenthesizedExprUp(curr.uastParent) is UQualifiedReferenceExpression) {
       failedResolve = true
       return
     }
@@ -169,9 +161,8 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * If a tracked element is passed as an argument, [argument] will be invoked unless this method
-   * returns true. This lets you exempt certain methods from being treated as an escape, such as
-   * logging methods.
+   * If a tracked element is passed as an argument, [argument] will be invoked unless this method returns true. This lets you exempt certain
+   * methods from being treated as an escape, such as logging methods.
    */
   open fun ignoreArgument(call: UCallExpression, reference: UElement): Boolean {
     val name = call.methodName ?: call.methodIdentifier?.name ?: return false
@@ -179,8 +170,7 @@ abstract class DataFlowAnalyzer(
       return true
     } else if (name.length == 1) {
       // Common Android logging methods Log.d(...), Log.e(...), etc.
-      val receiverIdentifier =
-        (call.receiver?.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)?.identifier
+      val receiverIdentifier = (call.receiver?.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)?.identifier
       if (receiverIdentifier == "Log" || call.resolve()?.containingClass?.name == "Log") {
         return true
       }
@@ -189,9 +179,8 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * Tries to guess whether the given method call returns self. This is intended to be able to tell
-   * that in a constructor call chain foo().bar().baz() is still invoking methods on the foo
-   * instance.
+   * Tries to guess whether the given method call returns self. This is intended to be able to tell that in a constructor call chain
+   * foo().bar().baz() is still invoking methods on the foo instance.
    */
   @Suppress("RedundantIf")
   open fun returnsSelf(call: UCallExpression): Boolean {
@@ -209,11 +198,7 @@ abstract class DataFlowAnalyzer(
     // Some method names can suggest that this is not returning itself
     if (ignoreCopies()) {
       getMethodName(call)?.let { name ->
-        if (
-          name == "copy" ||
-            name == "clone" ||
-            name.startsWith("to") && name.length > 2 && Character.isUpperCase(name[2])
-        ) {
+        if (name == "copy" || name == "clone" || name.startsWith("to") && name.length > 2 && Character.isUpperCase(name[2])) {
           return false
         }
       }
@@ -232,11 +217,7 @@ abstract class DataFlowAnalyzer(
     }
 
     // Return a subtype is also likely self; see for example Snackbar
-    if (
-      returnTypeClass != null &&
-        containingClass.name != "Object" &&
-        returnTypeClass.isInheritor(containingClass, true)
-    ) {
+    if (returnTypeClass != null && containingClass.name != "Object" && returnTypeClass.isInheritor(containingClass, true)) {
       return true
     }
 
@@ -249,12 +230,10 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * Normally [returnsSelf] will try to guess whether a method returns itself, and one of the
-   * heuristics is whether the method returns the type of its containing class. However, there are
-   * some clues in the names when this may not be the case, such as "copy", or "clone", or "toX" (a
-   * common conversion method convention in Kotlin). However, there may be scenarios where you
-   * **do** want to consider these methods as transferring the tracked value, and in that case you
-   * can return false from this method instead.
+   * Normally [returnsSelf] will try to guess whether a method returns itself, and one of the heuristics is whether the method returns the
+   * type of its containing class. However, there are some clues in the names when this may not be the case, such as "copy", or "clone", or
+   * "toX" (a common conversion method convention in Kotlin). However, there may be scenarios where you **do** want to consider these
+   * methods as transferring the tracked value, and in that case you can return false from this method instead.
    */
   open fun ignoreCopies(): Boolean = true
 
@@ -262,17 +241,14 @@ abstract class DataFlowAnalyzer(
   protected val instances: MutableSet<UElement> = LinkedHashSet()
 
   /**
-   * Lambda expressions of handled scope functions where we know the scope function returns the
-   * lambda result. When we visit return expressions that return to one of these lambda expressions
-   * then we can skip calling `returns(...)` and instead just propagate tracking.
+   * Lambda expressions of handled scope functions where we know the scope function returns the lambda result. When we visit return
+   * expressions that return to one of these lambda expressions then we can skip calling `returns(...)` and instead just propagate tracking.
    */
-  private val lambdaExprResultReturnedByCall: MutableMap<ULambdaExpression, UCallExpression> =
-    HashMap()
+  private val lambdaExprResultReturnedByCall: MutableMap<ULambdaExpression, UCallExpression> = HashMap()
 
   /**
-   * Handled scope function calls. Handled means that we propagate tracking information into and out
-   * of the lambda expression (where appropriate) and do not call `receiver(...)` or `argument(...)`
-   * for the function call.
+   * Handled scope function calls. Handled means that we propagate tracking information into and out of the lambda expression (where
+   * appropriate) and do not call `receiver(...)` or `argument(...)` for the function call.
    */
   private val handledScopeFunctionCalls: MutableSet<UCallExpression> = HashSet()
 
@@ -310,15 +286,12 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * Returns a pair "isReceiverTracked, receiver". The first element indicates whether the receiver
-   * is tracked. If the first element is true, then the second element provides the receiver
-   * UElement. Note that if the call has an implicit "this" receiver, then the receiver UElement
-   * will often be a lightweight <this> UParameter of an enclosing lambda expression, with no
-   * sourcePsi. Returns null in certain cases where the receiver is implicit, and we could not
-   * resolve it to a UElement. This is not necessarily a problem. For example, null will be returned
-   * when the implicit "this" receiver references the containing class. The idea is that resolving
-   * the implicit receiver is less reliable, and so if null is returned, the caller may want to
-   * react differently.
+   * Returns a pair "isReceiverTracked, receiver". The first element indicates whether the receiver is tracked. If the first element is
+   * true, then the second element provides the receiver UElement. Note that if the call has an implicit "this" receiver, then the receiver
+   * UElement will often be a lightweight <this> UParameter of an enclosing lambda expression, with no sourcePsi. Returns null in certain
+   * cases where the receiver is implicit, and we could not resolve it to a UElement. This is not necessarily a problem. For example, null
+   * will be returned when the implicit "this" receiver references the containing class. The idea is that resolving the implicit receiver is
+   * less reliable, and so if null is returned, the caller may want to react differently.
    */
   private fun getTrackedReceiver(callExpression: UCallExpression): Pair<Boolean, UElement?>? {
     // Simple case: explicit receiver.
@@ -334,9 +307,7 @@ abstract class DataFlowAnalyzer(
     if (callExpression.receiverType != null && callExpression.lang == KotlinLanguage.INSTANCE) {
       val ktExpression = callExpression.sourcePsi as? KtExpression ?: return null
       val implicitReceiver =
-        analyze(ktExpression) {
-          getImplicitReceiverIfFromLambdaExpr(ktExpression, baseKotlinUastResolveProviderService)
-        } ?: return null
+        analyze(ktExpression) { getImplicitReceiverIfFromLambdaExpr(ktExpression, baseKotlinUastResolveProviderService) } ?: return null
       return if (isTracked(implicitReceiver)) {
         true to implicitReceiver
       } else {
@@ -348,9 +319,9 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * Tries to handle [callExpression] if it is a scope function call that can be handled. Handled
-   * means that we propagate tracking information into and out of the lambda expression (where
-   * appropriate) and do not call `receiver(...)` or `argument(...)` for the function call.
+   * Tries to handle [callExpression] if it is a scope function call that can be handled. Handled means that we propagate tracking
+   * information into and out of the lambda expression (where appropriate) and do not call `receiver(...)` or `argument(...)` for the
+   * function call.
    *
    * @return true iff the scope function was handled
    */
@@ -396,15 +367,11 @@ abstract class DataFlowAnalyzer(
 
     if (callExpression.valueArgumentCount < 1) return false
 
-    val lastParameterIndex =
-      (callExpression.resolve()?.toUElementOfType<UMethod>()?.uastParameters?.size
-        ?: return false) - 1
+    val lastParameterIndex = (callExpression.resolve()?.toUElementOfType<UMethod>()?.uastParameters?.size ?: return false) - 1
 
     val lambda =
-      callExpression
-        .getArgumentForParameter(lastParameterIndex)
-        ?.skipParenthesizedExprDown()
-        ?.skipLabeledExpression() as? ULambdaExpression ?: return false
+      callExpression.getArgumentForParameter(lastParameterIndex)?.skipParenthesizedExprDown()?.skipLabeledExpression() as? ULambdaExpression
+        ?: return false
 
     if (isReturningLambdaResult(callExpression)) {
       lambdaResultReturnedByCall = true
@@ -420,8 +387,7 @@ abstract class DataFlowAnalyzer(
         // with(tracked) { ... <this> is now also tracked ... }
 
         // If the argument is tracked:
-        val arg =
-          callExpression.getArgumentForParameter(0)?.skipParenthesizedExprDown() ?: return false
+        val arg = callExpression.getArgumentForParameter(0)?.skipParenthesizedExprDown() ?: return false
         if (isTracked(arg)) {
           // TODO: The above check does not properly handle cases where the argument is only added
           //  to "instances" _after_ being visited. This bug already existed in a previous version
@@ -650,9 +616,7 @@ abstract class DataFlowAnalyzer(
   }
 
   protected fun addVariableReference(node: UVariable, source: UElement = node): Boolean {
-    return (node.sourcePsi?.let { track(it, source) } ?: false).or(
-      node.javaPsi?.let { track(it, source) } ?: false
-    )
+    return (node.sourcePsi?.let { track(it, source) } ?: false).or(node.javaPsi?.let { track(it, source) } ?: false)
   }
 
   override fun afterVisitSwitchClauseExpression(node: USwitchClauseExpression) {
@@ -706,10 +670,7 @@ abstract class DataFlowAnalyzer(
             } else if (variable is UVariable) {
               val psi = variable.javaPsi
               val sourcePsi = variable.sourcePsi
-              if (
-                psi != null && references.contains(psi) ||
-                  sourcePsi != null && references.contains(sourcePsi)
-              ) {
+              if (psi != null && references.contains(psi) || sourcePsi != null && references.contains(sourcePsi)) {
                 track(parent, node)
               }
             }
@@ -723,18 +684,12 @@ abstract class DataFlowAnalyzer(
 
     val thenExpression = node.thenExpression?.skipParenthesizedExprDown()
     val elseExpression = node.elseExpression?.skipParenthesizedExprDown()
-    val thenReference =
-      if (thenExpression is USimpleNameReferenceExpression) thenExpression.resolve() else null
-    val elseReference =
-      if (elseExpression is USimpleNameReferenceExpression) elseExpression.resolve() else null
-    if (
-      thenExpression != null && instances.contains(thenExpression) ||
-        thenReference != null && references.contains(thenReference)
-    ) {
+    val thenReference = if (thenExpression is USimpleNameReferenceExpression) thenExpression.resolve() else null
+    val elseReference = if (elseExpression is USimpleNameReferenceExpression) elseExpression.resolve() else null
+    if (thenExpression != null && instances.contains(thenExpression) || thenReference != null && references.contains(thenReference)) {
       track(node, thenExpression)
     } else if (
-      elseExpression != null && instances.contains(elseExpression) ||
-        elseReference != null && references.contains(elseReference)
+      elseExpression != null && instances.contains(elseExpression) || elseReference != null && references.contains(elseReference)
     ) {
       track(node, elseExpression)
     } else {
@@ -801,12 +756,7 @@ abstract class DataFlowAnalyzer(
         if (element.isBelow(node)) {
           return
         }
-        val initialBlock =
-          element.getParentOfType<UElement>(
-            false,
-            UBlockExpression::class.java,
-            UIfExpression::class.java,
-          ) ?: return
+        val initialBlock = element.getParentOfType<UElement>(false, UBlockExpression::class.java, UIfExpression::class.java) ?: return
 
         if (initialBlock === block) {
           references.remove(lhs)
@@ -825,9 +775,7 @@ abstract class DataFlowAnalyzer(
                 super.afterVisitElement(node)
               }
 
-              override fun visitSimpleNameReferenceExpression(
-                node: USimpleNameReferenceExpression
-              ): Boolean {
+              override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
                 if (reachedTarget) {
                   val resolved = node.resolve()
                   if (lhs.isEquivalentTo(resolved)) {
@@ -935,9 +883,8 @@ abstract class DataFlowAnalyzer(
   }
 
   /**
-   * Dump the tracked elements of the analyzer; this is used for debugging only. Left in the code
-   * since it's really useful anytime we need to debug what's happening (including when debugging
-   * checks using the data flow analyzer).
+   * Dump the tracked elements of the analyzer; this is used for debugging only. Left in the code since it's really useful anytime we need
+   * to debug what's happening (including when debugging checks using the data flow analyzer).
    */
   override fun toString(): String {
     val sb = StringBuilder()
@@ -959,10 +906,7 @@ abstract class DataFlowAnalyzer(
 
   /** Computes identifying string for the given element; used for debugging only */
   fun UElement.id(): String {
-    val s =
-      Integer.toHexString(System.identityHashCode(this)) +
-        ":" +
-        this.sourcePsi?.text?.replace(Regex("\\s+"), " ")
+    val s = Integer.toHexString(System.identityHashCode(this)) + ":" + this.sourcePsi?.text?.replace(Regex("\\s+"), " ")
     val max = 100
     return if (s.length > max) {
       s.substring(0, max / 2) + "..." + s.substring(s.length - (max / 2 + 3))
@@ -972,10 +916,7 @@ abstract class DataFlowAnalyzer(
   }
 
   fun PsiElement.id(): String {
-    val s =
-      Integer.toHexString(System.identityHashCode(this)) +
-        ":" +
-        this.text?.replace(Regex("\\s+"), " ")
+    val s = Integer.toHexString(System.identityHashCode(this)) + ":" + this.text?.replace(Regex("\\s+"), " ")
     val max = 100
     return if (s.length > max) {
       s.substring(0, max / 2) + "..." + s.substring(s.length - (max / 2 + 3))
@@ -999,11 +940,7 @@ abstract class DataFlowAnalyzer(
       return null
     }
 
-    fun getVariableElement(
-      rhs: UCallExpression,
-      allowChainedCalls: Boolean,
-      allowFields: Boolean,
-    ): PsiVariable? {
+    fun getVariableElement(rhs: UCallExpression, allowChainedCalls: Boolean, allowFields: Boolean): PsiVariable? {
       var parent = skipParenthesizedExprUp(rhs.getQualifiedParentOrThis().uastParent)
 
       // Handle some types of chained calls; e.g. you might have
@@ -1051,14 +988,11 @@ abstract class DataFlowAnalyzer(
 }
 
 /**
- * [DataFlowAnalyzer] which also tracks whether the tracked instances escape into fields, method
- * calls, array assignments or as return values. Subclasses can check the value of the [escaped]
- * property after visiting.
+ * [DataFlowAnalyzer] which also tracks whether the tracked instances escape into fields, method calls, array assignments or as return
+ * values. Subclasses can check the value of the [escaped] property after visiting.
  */
-open class EscapeCheckingDataFlowAnalyzer(
-  initial: Collection<UElement>,
-  initialReferences: Collection<PsiVariable> = emptyList(),
-) : DataFlowAnalyzer(initial, initialReferences) {
+open class EscapeCheckingDataFlowAnalyzer(initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  DataFlowAnalyzer(initial, initialReferences) {
   var escaped: Boolean = false
 
   override fun field(field: UElement) {
@@ -1079,49 +1013,36 @@ open class EscapeCheckingDataFlowAnalyzer(
 }
 
 /**
- * Analyzer which makes it easier to check for a scenario where you want to track the flow from some
- * sort of initialization expression (such as creating a transaction) to make sure that it
- * eventually ends up calling one or more "target" methods (such as a transaction commit function).
+ * Analyzer which makes it easier to check for a scenario where you want to track the flow from some sort of initialization expression (such
+ * as creating a transaction) to make sure that it eventually ends up calling one or more "target" methods (such as a transaction commit
+ * function).
  *
- * All you need to do is override one or more of the `isTargetMethod` functions to indicate that the
- * given call or method is the target you're looking for.
+ * All you need to do is override one or more of the `isTargetMethod` functions to indicate that the given call or method is the target
+ * you're looking for.
  *
- * There are some utility methods in the companion object which makes it even simpler for some
- * common and basic scenarios, but in general this continues to extend a UAST visitor, so you can
- * override various AST visitor methods to customize the logic as needed.
+ * There are some utility methods in the companion object which makes it even simpler for some common and basic scenarios, but in general
+ * this continues to extend a UAST visitor, so you can override various AST visitor methods to customize the logic as needed.
  */
-abstract class TargetMethodDataFlowAnalyzer(
-  initial: Collection<UElement>,
-  initialReferences: Collection<PsiVariable> = emptyList(),
-) : EscapeCheckingDataFlowAnalyzer(initial, initialReferences) {
+abstract class TargetMethodDataFlowAnalyzer(initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  EscapeCheckingDataFlowAnalyzer(initial, initialReferences) {
   var targetReached = false
   var targetReference: UElement? = null
 
   /**
-   * Simple name filter; this lets you reject names that have no chance of being the target method,
-   * so we don't need to proceed to resolve the call for further checking. For convenience, it's
-   * safe to just return true here and do full filtering when given the method.
+   * Simple name filter; this lets you reject names that have no chance of being the target method, so we don't need to proceed to resolve
+   * the call for further checking. For convenience, it's safe to just return true here and do full filtering when given the method.
    */
   open fun isTargetMethodName(name: String): Boolean = true
 
-  /**
-   * Returns true if the given [method] is one of the targets we're after. If [method] is null,
-   * there was a resolve problem.
-   */
+  /** Returns true if the given [method] is one of the targets we're after. If [method] is null, there was a resolve problem. */
   open fun isTargetMethod(name: String, method: PsiMethod?): Boolean = false
 
   /**
-   * Returns true if the given [method] is one of the targets we're after. If [method] is null,
-   * there was a resolve problem. Here we're also passing in either the corresponding call
-   * expression or corresponding method reference expression, in case you want to perform additional
-   * validation.
+   * Returns true if the given [method] is one of the targets we're after. If [method] is null, there was a resolve problem. Here we're also
+   * passing in either the corresponding call expression or corresponding method reference expression, in case you want to perform
+   * additional validation.
    */
-  open fun isTargetMethod(
-    name: String,
-    method: PsiMethod?,
-    call: UCallExpression?,
-    methodRef: UCallableReferenceExpression?,
-  ): Boolean {
+  open fun isTargetMethod(name: String, method: PsiMethod?, call: UCallExpression?, methodRef: UCallableReferenceExpression?): Boolean {
     return isTargetMethod(name, method)
   }
 
@@ -1153,10 +1074,7 @@ abstract class TargetMethodDataFlowAnalyzer(
       val resolved = call.resolve()
       if (resolved is PsiMethod) {
         if (isTargetMethod(name, resolved, null, call)) {
-          val method =
-            initial.firstOrNull()?.getParentOfType<UMethod>()
-              ?: call.getParentOfType<UMethod>()
-              ?: return
+          val method = initial.firstOrNull()?.getParentOfType<UMethod>() ?: call.getParentOfType<UMethod>() ?: return
           val callTracker =
             object : EscapeCheckingDataFlowAnalyzer(listOf(call)) {
               override fun visitElement(node: UElement): Boolean {
@@ -1177,10 +1095,9 @@ abstract class TargetMethodDataFlowAnalyzer(
   }
 
   /**
-   * After visiting the given method, returns false if we reached the target, or if one of the
-   * tracked instances escaped from the method (via a return or method call or assignment into a
-   * field etc), or if we have some uncertainty about it (for example if there were resolve
-   * problems, and we observed a call or method reference with a name match).
+   * After visiting the given method, returns false if we reached the target, or if one of the tracked instances escaped from the method
+   * (via a return or method call or assignment into a field etc), or if we have some uncertainty about it (for example if there were
+   * resolve problems, and we observed a call or method reference with a name match).
    */
   internal fun isMissingTarget(within: UMethod, allowEscape: Boolean): Boolean {
     if (targetReached || escaped && !allowEscape) {
@@ -1203,9 +1120,7 @@ abstract class TargetMethodDataFlowAnalyzer(
             return found || super.visitCallExpression(node)
           }
 
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
             val name = node.callableName
             if (isTargetMethodName(name)) {
               val resolved = node.resolve()
@@ -1225,8 +1140,8 @@ abstract class TargetMethodDataFlowAnalyzer(
 
   companion object {
     /**
-     * Creates a simple [TargetMethodDataFlowAnalyzer] looking for the given method (identified by
-     * name and containing class fully qualified name) starting from the given source element.
+     * Creates a simple [TargetMethodDataFlowAnalyzer] looking for the given method (identified by name and containing class fully qualified
+     * name) starting from the given source element.
      */
     fun create(source: UElement, targets: Map<String, List<String>>): TargetMethodDataFlowAnalyzer {
       return object : TargetMethodDataFlowAnalyzer(listOf(source)) {
@@ -1242,23 +1157,17 @@ abstract class TargetMethodDataFlowAnalyzer(
     }
 
     /**
-     * Creates a simple [TargetMethodDataFlowAnalyzer] looking for the given method (identified by
-     * name and list of containing class fully qualified names) starting from the given source
-     * element.
+     * Creates a simple [TargetMethodDataFlowAnalyzer] looking for the given method (identified by name and list of containing class fully
+     * qualified names) starting from the given source element.
      */
-    fun create(
-      source: UElement,
-      methodName: String,
-      containingClass: String?,
-    ): TargetMethodDataFlowAnalyzer {
+    fun create(source: UElement, methodName: String, containingClass: String?): TargetMethodDataFlowAnalyzer {
       return object : TargetMethodDataFlowAnalyzer(listOf(source)) {
         override fun isTargetMethodName(name: String): Boolean {
           return methodName == name
         }
 
         override fun isTargetMethod(name: String, method: PsiMethod?): Boolean {
-          return containingClass == null ||
-            method?.containingClass?.qualifiedName == containingClass
+          return containingClass == null || method?.containingClass?.qualifiedName == containingClass
         }
       }
     }
@@ -1266,29 +1175,23 @@ abstract class TargetMethodDataFlowAnalyzer(
 }
 
 /**
- * Given a [TargetMethodDataFlowAnalyzer], visits this method, and then checks whether the target
- * was reached or not (and returns true if **not** found, or unknown because the instance escapes
- * this method and could be reached elsewhere.)
+ * Given a [TargetMethodDataFlowAnalyzer], visits this method, and then checks whether the target was reached or not (and returns true if
+ * **not** found, or unknown because the instance escapes this method and could be reached elsewhere.)
  *
- * (After visiting the given method, returns false if we reached the target, or if one of the
- * tracked instances escaped from the method (via a return or method call or assignment into a field
- * etc), or if we have some uncertainty about it, for example if there were resolve problems, and we
- * observed a call or method reference with a name match).
+ * (After visiting the given method, returns false if we reached the target, or if one of the tracked instances escaped from the method (via
+ * a return or method call or assignment into a field etc), or if we have some uncertainty about it, for example if there were resolve
+ * problems, and we observed a call or method reference with a name match).
  */
-fun UMethod.isMissingTarget(
-  analyzer: TargetMethodDataFlowAnalyzer,
-  allowEscape: Boolean = false,
-): Boolean {
+fun UMethod.isMissingTarget(analyzer: TargetMethodDataFlowAnalyzer, allowEscape: Boolean = false): Boolean {
   accept(analyzer)
   return analyzer.isMissingTarget(this, allowEscape)
 }
 
 /**
- * Returns true if the given method contains at least one call which [filter] returns true for.
- * Typically used in conjunction with [DataFlowAnalyzer] is [DataFlowAnalyzer.failedResolve] is
- * true; in that case, we can't confidently follow the flow from the initial expression to a target
- * method call on the right instance, but we can quickly check if the target call is never called on
- * *any* instance, and if so we're still sure there's a problem.
+ * Returns true if the given method contains at least one call which [filter] returns true for. Typically used in conjunction with
+ * [DataFlowAnalyzer] is [DataFlowAnalyzer.failedResolve] is true; in that case, we can't confidently follow the flow from the initial
+ * expression to a target method call on the right instance, but we can quickly check if the target call is never called on *any* instance,
+ * and if so we're still sure there's a problem.
  *
  * TODO: Consider whether escape analysis is correct in this case...
  */

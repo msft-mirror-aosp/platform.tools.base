@@ -124,7 +124,7 @@ val responsiveActivityTemplate = template {
     TextFieldWidget(navHeaderLayoutName),
     TextFieldWidget(contentLayoutName),
     TextFieldWidget(navGraphName),
-    LanguageWidget()
+    LanguageWidget(),
   )
 
   thumb { File("responsive-activity").resolve("template_responsive_activity.png") }
@@ -139,7 +139,7 @@ val responsiveActivityTemplate = template {
       appBarMainLayoutName = appBarLayoutName.value,
       navHeaderLayoutName = navHeaderLayoutName.value,
       contentLayoutName = contentLayoutName.value,
-      navGraphName = navGraphName.value
+      navGraphName = navGraphName.value,
     )
   }
 }

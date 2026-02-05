@@ -35,8 +35,7 @@ private fun String.abbrev(maxLen: Int = 30): String =
     else -> "${substring(0, maxLen)}…"
   }
 
-internal fun UElement.renderAbbrev(maxLen: Int = 30): String =
-  "⟪${asSourceString().abbrev(maxLen)}⟫"
+internal fun UElement.renderAbbrev(maxLen: Int = 30): String = "⟪${asSourceString().abbrev(maxLen)}⟫"
 
 internal fun String.bold() = map { it.bold() }.joinToString("")
 

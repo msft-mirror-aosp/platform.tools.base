@@ -21,47 +21,44 @@ import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.Charset
 
-/**
- * A [SuspendingWriter] that writes to the given [AdbOutputChannel]
- */
+/** A [SuspendingWriter] that writes to the given [AdbOutputChannel] */
 internal class AdbOutputChannelWriter(
-    val channel: AdbOutputChannel,
-    autoFlush: Boolean = true,
-    throwsOnMalformed: Boolean = false,
-    bufferCapacity: Int = 256,
-    charset: Charset = AdbProtocolUtils.ADB_CHARSET
+  val channel: AdbOutputChannel,
+  autoFlush: Boolean = true,
+  throwsOnMalformed: Boolean = false,
+  bufferCapacity: Int = 256,
+  charset: Charset = AdbProtocolUtils.ADB_CHARSET,
 ) : SuspendingWriter(bufferCapacity) {
 
-    /**
-     * The suspending encoder we use to encode incoming characters
-     */
-    private val encoder = SuspendingCharacterEncoder(charset,
-                                                     autoFlush = autoFlush,
-                                                     throwOnMalformed = throwsOnMalformed,
-                                                     bufferCapacity = bufferCapacity,
-                                                     byteProcessor = this::flushBuffer)
+  /** The suspending encoder we use to encode incoming characters */
+  private val encoder =
+    SuspendingCharacterEncoder(
+      charset,
+      autoFlush = autoFlush,
+      throwOnMalformed = throwsOnMalformed,
+      bufferCapacity = bufferCapacity,
+      byteProcessor = this::flushBuffer,
+    )
 
-    override suspend fun writeChars(charBuffer: CharBuffer) {
-        // Encode characters and call `flushBuffer` as needed
-        encoder.encode(charBuffer)
-    }
+  override suspend fun writeChars(charBuffer: CharBuffer) {
+    // Encode characters and call `flushBuffer` as needed
+    encoder.encode(charBuffer)
+  }
 
-    override suspend fun shutdown() {
-        // Last call to `flushBuffer` as needed
-        encoder.shutdown()
-    }
+  override suspend fun shutdown() {
+    // Last call to `flushBuffer` as needed
+    encoder.shutdown()
+  }
 
-    override fun close() {
-        // We close the underlying channel to follow the convention used by Java
-        // OutputStream API
-        channel.close()
-        encoder.close()
-    }
+  override fun close() {
+    // We close the underlying channel to follow the convention used by Java
+    // OutputStream API
+    channel.close()
+    encoder.close()
+  }
 
-    /**
-     * The "callback" from [encoder] when encoded characters are available.
-     */
-    private suspend fun flushBuffer(outputBuffer: ByteBuffer) {
-        channel.writeExactly(outputBuffer)
-    }
+  /** The "callback" from [encoder] when encoded characters are available. */
+  private suspend fun flushBuffer(outputBuffer: ByteBuffer) {
+    channel.writeExactly(outputBuffer)
+  }
 }

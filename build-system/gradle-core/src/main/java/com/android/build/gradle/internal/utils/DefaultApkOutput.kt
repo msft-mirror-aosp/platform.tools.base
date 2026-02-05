@@ -22,51 +22,44 @@ import com.android.build.api.variant.ApkOutput
 import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.impl.toSharedAndroidVersion
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
-import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskInputs
 
 class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpec) : ApkOutput {
-    private val deviceApkOutput: DeviceApkOutput
+  private val deviceApkOutput: DeviceApkOutput
 
-    init {
-        val skipApksViaBundle = variant.services.projectOptions.get(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE)
-        val hasDynamicFeatures = variant.global.hasDynamicFeatures
-        val minSdk = variant.minSdk.toSharedAndroidVersion()
-        val variantName = variant.baseName
-        val projectPath = variant.services.projectInfo.path
-        val useViaBundleFlow = !skipApksViaBundle || hasDynamicFeatures
-        deviceApkOutput = if (useViaBundleFlow) {
-            val apkBundle = variant.artifacts.get(InternalArtifactType.APKS_FROM_BUNDLE)
-            ViaBundleDeviceApkOutput(
-                apkBundle,
-                minSdk,
-                variantName,
-                projectPath
-            )
-        } else {
-            val supportedAbis = variant.nativeBuildCreationConfig?.supportedAbis
+  init {
+    val skipApksViaBundle = variant.services.projectOptions.get(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE)
+    val hasDynamicFeatures = variant.global.hasDynamicFeatures
+    val minSdk = variant.minSdk.toSharedAndroidVersion()
+    val variantName = variant.baseName
+    val projectPath = variant.services.projectInfo.path
+    val useViaBundleFlow = !skipApksViaBundle || hasDynamicFeatures
+    deviceApkOutput =
+      if (useViaBundleFlow) {
+        val apkBundle = variant.artifacts.get(InternalArtifactType.APKS_FROM_BUNDLE)
+        ViaBundleDeviceApkOutput(apkBundle, minSdk, variantName, projectPath)
+      } else {
+        val supportedAbis = variant.nativeBuildCreationConfig?.supportedAbis
 
-            DefaultDeviceApkOutput(
-                getApkSources(variant), supportedAbis, minSdk,
-                variantName, projectPath)
-        }
-    }
-    override val apkInstallGroups: List<ApkInstallGroup>
+        DefaultDeviceApkOutput(getApkSources(variant), supportedAbis, minSdk, variantName, projectPath)
+      }
+  }
+
+  override val apkInstallGroups: List<ApkInstallGroup>
     get() {
-        return deviceApkOutput.getApks(deviceSpec)
+      return deviceApkOutput.getApks(deviceSpec)
     }
 
-    fun setInputs(inputs: TaskInputs) {
-        deviceApkOutput.setInputs(inputs, deviceSpec)
-    }
+  fun setInputs(inputs: TaskInputs) {
+    deviceApkOutput.setInputs(inputs, deviceSpec)
+  }
 
-    private fun getApkSources(variant: VariantCreationConfig): ApkSources {
-        return ApkSources(
-            mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
-            dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY)
-        )
-    }
+  private fun getApkSources(variant: VariantCreationConfig): ApkSources {
+    return ApkSources(
+      mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
+      dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY),
+    )
+  }
 }

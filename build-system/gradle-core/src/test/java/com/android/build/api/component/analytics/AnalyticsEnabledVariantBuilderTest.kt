@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2020 The Android Open Source Project
  *
@@ -15,6 +14,7 @@
  * limitations under the License.
  */
 package com.android.build.api.component.analytics
+
 import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
@@ -22,70 +22,56 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledVariantBuilderTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: ApplicationVariantBuilder = mock()
+  private val delegate: ApplicationVariantBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledVariantBuilder by lazy {
-        object: AnalyticsEnabledVariantBuilder(delegate, stats) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledVariantBuilder by lazy { object : AnalyticsEnabledVariantBuilder(delegate, stats) {} }
 
-    @Test
-    fun setMinSdkVersion() {
-        proxy.minSdk = 23
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.MIN_SDK_VERSION_VALUE_VALUE)
-        verify(delegate, times(1)).minSdk = 23
-    }
+  @Test
+  fun setMinSdkVersion() {
+    proxy.minSdk = 23
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.MIN_SDK_VERSION_VALUE_VALUE)
+    verify(delegate, times(1)).minSdk = 23
+  }
 
-    @Test
-    fun setMinSdkVersionPreview() {
-        proxy.minSdkPreview = "S"
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.MIN_SDK_PREVIEW_VALUE)
-        verify(delegate, times(1)).minSdkPreview = "S"
-    }
+  @Test
+  fun setMinSdkVersionPreview() {
+    proxy.minSdkPreview = "S"
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.MIN_SDK_PREVIEW_VALUE)
+    verify(delegate, times(1)).minSdkPreview = "S"
+  }
 
-    @Test
-    fun setMaxSdkVersion() {
-        proxy.maxSdk = 23
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.MAX_SDK_VERSION_VALUE_VALUE)
-        verify(delegate, times(1)).maxSdk = 23
-    }
+  @Test
+  fun setMaxSdkVersion() {
+    proxy.maxSdk = 23
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.MAX_SDK_VERSION_VALUE_VALUE)
+    verify(delegate, times(1)).maxSdk = 23
+  }
 
+  @Test
+  fun setTargetSdkVersion() {
+    val apkBuilder: GeneratesApkBuilder = mock()
+    GeneratesApkBuilder::class.java.getMethod("setTargetSdk", Integer::class.java).invoke(apkBuilder, 23)
+    verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdk = 23
+  }
 
-    @Test
-    fun setTargetSdkVersion() {
-        val apkBuilder: GeneratesApkBuilder = mock()
-        GeneratesApkBuilder::class.java
-            .getMethod("setTargetSdk", Integer::class.java)
-            .invoke(apkBuilder, 23)
-        verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdk = 23
-    }
-
-    @Test
-    fun setTargetSdkVersionPreview() {
-        val apkBuilder: GeneratesApkBuilder = mock()
-        GeneratesApkBuilder::class.java
-            .getMethod("setTargetSdkPreview", String::class.java)
-            .invoke(apkBuilder, "S")
-        verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdkPreview = "S"
-    }
+  @Test
+  fun setTargetSdkVersionPreview() {
+    val apkBuilder: GeneratesApkBuilder = mock()
+    GeneratesApkBuilder::class.java.getMethod("setTargetSdkPreview", String::class.java).invoke(apkBuilder, "S")
+    verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdkPreview = "S"
+  }
 }

@@ -18,8 +18,6 @@ package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
-import com.android.build.gradle.integration.common.fixture.TEST_SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.EmptyGradleProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -35,31 +33,23 @@ import org.junit.Test
 
 class D8DesugaringConnectedTest {
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val emulator = getEmulator()
-    }
+  companion object {
+    @ClassRule @JvmField val emulator = getEmulator()
+  }
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                ImmutableMap.of<String, GradleProject>(
-                    ":app",
-                    HelloWorldApp.noBuildFile(),
-                    ":lib",
-                    EmptyGradleProject()
-                )
-            )
-        )
-        .create()
+  @get:Rule
+  var project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(ImmutableMap.of<String, GradleProject>(":app", HelloWorldApp.noBuildFile(), ":lib", EmptyGradleProject()))
+      )
+      .create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
                 apply plugin: "com.android.application"
 
                 android {
@@ -95,20 +85,18 @@ class D8DesugaringConnectedTest {
                     androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
                     androidTestImplementation "androidx.annotation:annotation-experimental:1.3.0"
                 }
-                """.trimIndent()
-        )
-        // fail fast if no response
-        project.addAdbTimeout()
+                """
+        .trimIndent(),
+    )
+    // fail fast if no response
+    project.addAdbTimeout()
 
-        TestFileUtils.appendToFile(
-            project.getSubproject(":lib").buildFile, "apply plugin: 'java'\n"
-        )
-        val interfaceWithDefault = project.getSubproject(":lib")
-            .file("src/main/java/com/example/helloworld/InterfaceWithDefault.java")
-        FileUtils.mkdirs(interfaceWithDefault.parentFile)
-        TestFileUtils.appendToFile(
-            interfaceWithDefault,
-            ("""package com.example.helloworld;
+    TestFileUtils.appendToFile(project.getSubproject(":lib").buildFile, "apply plugin: 'java'\n")
+    val interfaceWithDefault = project.getSubproject(":lib").file("src/main/java/com/example/helloworld/InterfaceWithDefault.java")
+    FileUtils.mkdirs(interfaceWithDefault.parentFile)
+    TestFileUtils.appendToFile(
+      interfaceWithDefault,
+      ("""package com.example.helloworld;
 
                     public interface InterfaceWithDefault {
 
@@ -120,14 +108,13 @@ class D8DesugaringConnectedTest {
                         return defaultConvert(input);
                       }
                     }
-                    """)
-        )
-        val stringTool = project.getSubproject(":lib")
-            .file("src/main/java/com/example/helloworld/StringTool.java")
-        FileUtils.mkdirs(stringTool.parentFile)
-        TestFileUtils.appendToFile(
-            stringTool,
-            ("""package com.example.helloworld;
+                    """),
+    )
+    val stringTool = project.getSubproject(":lib").file("src/main/java/com/example/helloworld/StringTool.java")
+    FileUtils.mkdirs(stringTool.parentFile)
+    TestFileUtils.appendToFile(
+      stringTool,
+      ("""package com.example.helloworld;
 
                     public class StringTool {
                       private InterfaceWithDefault converter;
@@ -138,16 +125,14 @@ class D8DesugaringConnectedTest {
                         return converter.convert(input);
                       }
                     }
-                    """)
-        )
-        val exampleInstrumentedTest = project.getSubproject(":app")
-            .file(
-                "src/androidTest/java/com/example/helloworld/ExampleInstrumentedTest.java"
-            )
-        FileUtils.mkdirs(exampleInstrumentedTest.parentFile)
-        TestFileUtils.appendToFile(
-            exampleInstrumentedTest,
-            ("""package com.example.helloworld;
+                    """),
+    )
+    val exampleInstrumentedTest =
+      project.getSubproject(":app").file("src/androidTest/java/com/example/helloworld/ExampleInstrumentedTest.java")
+    FileUtils.mkdirs(exampleInstrumentedTest.parentFile)
+    TestFileUtils.appendToFile(
+      exampleInstrumentedTest,
+      ("""package com.example.helloworld;
 
                     import android.content.Context;
                     import androidx.test.InstrumentationRegistry;
@@ -167,21 +152,19 @@ class D8DesugaringConnectedTest {
                             assertEquals("toto-default", new StringTool(new InterfaceWithDefault() { }).convert("toto"));
                         }
                     }
-                    """)
-        )
-        val debugMainDexList = project.getSubproject(":app").file("debug_main_dex_list.txt")
-        TestFileUtils.appendToFile(
-            debugMainDexList, "com/example/helloworld/InterfaceWithDefault.class"
-        )
+                    """),
+    )
+    val debugMainDexList = project.getSubproject(":app").file("debug_main_dex_list.txt")
+    TestFileUtils.appendToFile(debugMainDexList, "com/example/helloworld/InterfaceWithDefault.class")
 
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().run("uninstallAll")
-    }
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.executor().run("uninstallAll")
+  }
 
-    @Test
-    fun runAndroidTest() {
-        val result = project.executor().run("app:connectedBaseDebugAndroidTest")
-        result.stdout.use { stdout -> assertThat(stdout).contains("Starting 2 tests on") }
-    }
+  @Test
+  fun runAndroidTest() {
+    val result = project.executor().run("app:connectedBaseDebugAndroidTest")
+    result.stdout.use { stdout -> assertThat(stdout).contains("Starting 2 tests on") }
+  }
 }

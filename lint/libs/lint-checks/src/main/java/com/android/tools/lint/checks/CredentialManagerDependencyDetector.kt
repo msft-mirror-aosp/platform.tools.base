@@ -32,16 +32,13 @@ import com.android.utils.subtag
  * - the app is not a Wear OS app
  * - the app depends on `:credentials` and does not depend on `:credentials-play-services-auth`
  *
- * This used to be implemented in [GradleDetector] and the warning was reported on a dependency
- * declaration for `:credentials`. However, the dependency could come from some prebuilt .aar
- * dependency, not from a Gradle declaration in the developer's codebase, and we would fail to
- * report the warning in this case. Also, a dependency declaration might affect multiple app modules
- * (especially in a wear app + mobile app project, with a common library module), and yet the
- * warning may only apply to a subset of the app modules. In particular, at the time of writing (mid
- * 2024), `:credentials-play-services-auth` does not support Wear OS, and so the dependency should
- * not be added to a wear app module. Thus, we report the incident on the `<application>` tag of
- * each app module where it causes a problem. This approach also allows reporting the problem for
- * build systems other than Gradle (such as Bazel), although this requires an implementation of
+ * This used to be implemented in [GradleDetector] and the warning was reported on a dependency declaration for `:credentials`. However, the
+ * dependency could come from some prebuilt .aar dependency, not from a Gradle declaration in the developer's codebase, and we would fail to
+ * report the warning in this case. Also, a dependency declaration might affect multiple app modules (especially in a wear app + mobile app
+ * project, with a common library module), and yet the warning may only apply to a subset of the app modules. In particular, at the time of
+ * writing (mid 2024), `:credentials-play-services-auth` does not support Wear OS, and so the dependency should not be added to a wear app
+ * module. Thus, we report the incident on the `<application>` tag of each app module where it causes a problem. This approach also allows
+ * reporting the problem for build systems other than Gradle (such as Bazel), although this requires an implementation of
  * `project.dependsOn` that works for the build system.
  */
 class CredentialManagerDependencyDetector : Detector(), XmlScanner {
@@ -78,8 +75,7 @@ class CredentialManagerDependencyDetector : Detector(), XmlScanner {
 
   companion object {
 
-    private val IMPLEMENTATION =
-      Implementation(CredentialManagerDependencyDetector::class.java, Scope.MANIFEST_SCOPE)
+    private val IMPLEMENTATION = Implementation(CredentialManagerDependencyDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val CREDENTIAL_DEP =

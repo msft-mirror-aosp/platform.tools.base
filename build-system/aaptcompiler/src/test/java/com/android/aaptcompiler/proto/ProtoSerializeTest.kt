@@ -39,8 +39,8 @@ import com.android.aaptcompiler.tryParseInt
 import com.android.aaptcompiler.tryParseNullOrEmpty
 import com.android.resources.ResourceVisibility
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.nio.ByteBuffer
+import org.junit.Test
 
 class ProtoSerializeTest {
 
@@ -79,8 +79,7 @@ class ProtoSerializeTest {
     Truth.assertThat(deserialized).isEqualTo(string)
   }
 
-  private fun testSerializeDeserialize(
-    file: FileReference, givenPool: StringPool, config: ConfigDescription) {
+  private fun testSerializeDeserialize(file: FileReference, givenPool: StringPool, config: ConfigDescription) {
 
     val pbFileRef = serializeFileRefToPb(file)
     val deserialized = deserializeFileRefFromPb(pbFileRef, givenPool, config)
@@ -91,14 +90,12 @@ class ProtoSerializeTest {
   private fun testSerializeDeserialize(overlayableItem: OverlayableItem) {
     val sourcePool = StringPool()
     val overlayable = overlayableItem.overlayable
-    val pbOverlayableItem = serializeOverlayableToPb(
-      overlayableItem, mutableListOf(), Resources.ResourceTable.newBuilder(), sourcePool)
+    val pbOverlayableItem = serializeOverlayableToPb(overlayableItem, mutableListOf(), Resources.ResourceTable.newBuilder(), sourcePool)
 
     val buffer = BigBuffer(1028)
     sourcePool.flattenUtf16(buffer, null)
     val extractedSources = ResStringPool.get(ByteBuffer.wrap(buffer.toBytes()), buffer.size)
-    val deserialized = deserializeOverlayableFromPb(
-      pbOverlayableItem, overlayable, extractedSources, null)
+    val deserialized = deserializeOverlayableFromPb(pbOverlayableItem, overlayable, extractedSources, null)
 
     Truth.assertThat(deserialized).isNotNull()
     Truth.assertThat(deserialized!!).isEqualTo(overlayableItem)
@@ -143,8 +140,7 @@ class ProtoSerializeTest {
     val buffer = BigBuffer(1028)
     sourcePool.flattenUtf16(buffer, null)
     val extractedSources = ResStringPool.get(ByteBuffer.wrap(buffer.toBytes()), buffer.size)
-    val deserialized =
-      deserializeStyleFromPb(pbStyle, givenPool, ConfigDescription(), extractedSources, null)
+    val deserialized = deserializeStyleFromPb(pbStyle, givenPool, ConfigDescription(), extractedSources, null)
 
     Truth.assertThat(deserialized).isNotNull()
     Truth.assertThat(deserialized!!).isEqualTo(style)
@@ -172,8 +168,7 @@ class ProtoSerializeTest {
     val buffer = BigBuffer(1028)
     sourcePool.flattenUtf16(buffer, null)
     val extractedSources = ResStringPool.get(ByteBuffer.wrap(buffer.toBytes()), buffer.size)
-    val deserialized = deserializeArrayFromPb(
-        pbArray, givenPool, ConfigDescription(), extractedSources, null)
+    val deserialized = deserializeArrayFromPb(pbArray, givenPool, ConfigDescription(), extractedSources, null)
 
     Truth.assertThat(deserialized).isNotNull()
     Truth.assertThat(deserialized!!).isEqualTo(array)
@@ -214,8 +209,7 @@ class ProtoSerializeTest {
     val buffer = BigBuffer(1028)
     sourcePool.flattenUtf16(buffer, null)
     val extractedSources = ResStringPool.get(ByteBuffer.wrap(buffer.toBytes()), buffer.size)
-    val deserialized =
-      deserializePluralFromPb(pbPlural, givenPool, ConfigDescription(), extractedSources, null)
+    val deserialized = deserializePluralFromPb(pbPlural, givenPool, ConfigDescription(), extractedSources, null)
 
     Truth.assertThat(deserialized).isNotNull()
     Truth.assertThat(deserialized!!).isEqualTo(plural)
@@ -236,8 +230,7 @@ class ProtoSerializeTest {
     // Boolean type
     testSerializeDeserialize(tryParseBool("true")!!)
     // Null type
-    testSerializeDeserialize(
-      BinaryPrimitive(ResValue(ResValue.DataType.NULL, ResValue.NullFormat.UNDEFINED)))
+    testSerializeDeserialize(BinaryPrimitive(ResValue(ResValue.DataType.NULL, ResValue.NullFormat.UNDEFINED)))
     // Empty type
     testSerializeDeserialize(tryParseNullOrEmpty("@empty") as BinaryPrimitive)
     // Int types
@@ -341,11 +334,13 @@ class ProtoSerializeTest {
     testSerializeDeserialize(parse("v8"))
     testSerializeDeserialize(parse("v36.1"))
 
+    testSerializeDeserialize(parse("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav"))
     testSerializeDeserialize(
-      parse("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav"))
-    testSerializeDeserialize(
-      parse("mcc123-mnc456-b+en+GB-ldltr-sw300dp-w300dp-h400dp-large-long-round-widecg-highdr-" +
-        "land-car-night-xhdpi-stylus-keysexposed-qwerty-navhidden-dpad-300x200-v23"))
+      parse(
+        "mcc123-mnc456-b+en+GB-ldltr-sw300dp-w300dp-h400dp-large-long-round-widecg-highdr-" +
+          "land-car-night-xhdpi-stylus-keysexposed-qwerty-navhidden-dpad-300x200-v23"
+      )
+    )
 
     testSerializeDeserialize(parse("neuter"))
     testSerializeDeserialize(parse("feminine"))
@@ -369,13 +364,9 @@ class ProtoSerializeTest {
     Truth.assertThat(newPool.size()).isEqualTo(4)
 
     testSerializeDeserialize(
-      StyledString(
-        originalPool.makeRef(
-          StyleString(
-            "Hello World!",
-            listOf(Span("b", 0, 4), Span("i", 6, 10)))),
-        listOf()),
-      newPool)
+      StyledString(originalPool.makeRef(StyleString("Hello World!", listOf(Span("b", 0, 4), Span("i", 6, 10)))), listOf()),
+      newPool,
+    )
 
     Truth.assertThat(newPool.size()).isEqualTo(7)
 
@@ -393,11 +384,13 @@ class ProtoSerializeTest {
   @Test
   fun testOverlayableSerialization() {
     val overlayable = Overlayable("name", "actor", Source("res/values/overlayable.xml", 17))
-    val overlayableItem = OverlayableItem(
-      overlayable,
-      OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT,
-      "comment",
-      Source("res/values/overlayable.xml", 19))
+    val overlayableItem =
+      OverlayableItem(
+        overlayable,
+        OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT,
+        "comment",
+        Source("res/values/overlayable.xml", 19),
+      )
 
     val overlayableItem2 = OverlayableItem(overlayable)
 
@@ -428,20 +421,14 @@ class ProtoSerializeTest {
     attributeExample.maxInt = 1 shl 16
 
     attributeExample.symbols.add(
-      AttributeResource.Symbol(
-        Reference(parseNameOrFail("android:attr/bar")),
-        1,
-        ResValue.DataType.INT_DEC.byteValue))
+      AttributeResource.Symbol(Reference(parseNameOrFail("android:attr/bar")), 1, ResValue.DataType.INT_DEC.byteValue)
+    )
     attributeExample.symbols.add(
-      AttributeResource.Symbol(
-        Reference(parseNameOrFail("android:attr/baz")),
-        2,
-        ResValue.DataType.INT_DEC.byteValue))
+      AttributeResource.Symbol(Reference(parseNameOrFail("android:attr/baz")), 2, ResValue.DataType.INT_DEC.byteValue)
+    )
     attributeExample.symbols.add(
-      AttributeResource.Symbol(
-        Reference(parseNameOrFail("android:attr/bat")),
-        4,
-        ResValue.DataType.INT_DEC.byteValue))
+      AttributeResource.Symbol(Reference(parseNameOrFail("android:attr/bat")), 4, ResValue.DataType.INT_DEC.byteValue)
+    )
     testSerializeDeserialize(attributeExample)
   }
 
@@ -456,16 +443,12 @@ class ProtoSerializeTest {
 
     val styleExampleNoParent = Style()
     styleExampleNoParent.entries.add(
-      Style.Entry(
-        Reference(parseResourceName("android:string/foo")!!.resourceName),
-        BasicString(oldPool.makeRef("Hello there!"))))
+      Style.Entry(Reference(parseResourceName("android:string/foo")!!.resourceName), BasicString(oldPool.makeRef("Hello there!")))
+    )
     val keyReference = Reference(parseResourceName("android:bool/bar")!!.resourceName)
     keyReference.source = Source("res/values/style.xml", 30)
     keyReference.comment = "Whether or not the bar state can be active."
-    styleExampleNoParent.entries.add(
-      Style.Entry(
-        keyReference,
-        tryParseBool("true")))
+    styleExampleNoParent.entries.add(Style.Entry(keyReference, tryParseBool("true")))
 
     testSerializeDeserialize(styleExampleNoParent, newPool)
     Truth.assertThat(newPool.size()).isEqualTo(1)
@@ -532,21 +515,18 @@ class ProtoSerializeTest {
 
   @Test
   fun testSerializeSinglePackage() {
-    val table = ResourceTableBuilder()
-      .setPackageId("com.app.a", 0x7f)
-      .addFileReference("com.app.a:layout/main", "res/layout/main.xml", 0x7f020000)
-      .addReference("com.app.a:layout/other", "com.app.a:layout/main", 0x7f020001)
-      .addString("com.app.a:string/text", "hi")
-      .addValue("com.app.a:id/foo", Id())
-      .setSymbolState("com.app.a:bool/foo", ResourceVisibility.UNDEFINED, 0, true)
-      .build()
+    val table =
+      ResourceTableBuilder()
+        .setPackageId("com.app.a", 0x7f)
+        .addFileReference("com.app.a:layout/main", "res/layout/main.xml", 0x7f020000)
+        .addReference("com.app.a:layout/other", "com.app.a:layout/main", 0x7f020001)
+        .addString("com.app.a:string/text", "hi")
+        .addValue("com.app.a:id/foo", Id())
+        .setSymbolState("com.app.a:bool/foo", ResourceVisibility.UNDEFINED, 0, true)
+        .build()
 
     val publicSymbol = Visibility(level = ResourceVisibility.PUBLIC)
-    Truth.assertThat(
-      table.setVisibilityWithId(
-        parseNameOrFail("com.app.a:layout/main"),
-        publicSymbol,
-        0x7f020000)).isTrue()
+    Truth.assertThat(table.setVisibilityWithId(parseNameOrFail("com.app.a:layout/main"), publicSymbol, 0x7f020000)).isTrue()
 
     val id = getValue(table, "com.app.a:id/foo") as? Id
     Truth.assertThat(id).isNotNull()
@@ -554,52 +534,54 @@ class ProtoSerializeTest {
     // Make a plural.
     val plural = Plural()
     plural.setValue(Plural.Type.ONE, BasicString(table.stringPool.makeRef("one")))
-    Truth.assertThat(
-      table.addResource(
-        parseNameOrFail("com.app.a:plurals/hey"),
-        ConfigDescription(),
-        "",
-        plural)).isTrue()
+    Truth.assertThat(table.addResource(parseNameOrFail("com.app.a:plurals/hey"), ConfigDescription(), "", plural)).isTrue()
 
     // Make a styled string.
     val styleString = StyleString("hello", listOf(Span("b", 0, 4)))
     Truth.assertThat(
-      table.addResource(
-        parseNameOrFail("com.app.a:string/styled"),
-        ConfigDescription(),
-        "",
-        StyledString(table.stringPool.makeRef(styleString), listOf()))).isTrue()
+        table.addResource(
+          parseNameOrFail("com.app.a:string/styled"),
+          ConfigDescription(),
+          "",
+          StyledString(table.stringPool.makeRef(styleString), listOf()),
+        )
+      )
+      .isTrue()
 
     // Make a resource with different products.
     Truth.assertThat(
-      table.addResource(
-        parseNameOrFail("com.app.a:integer/one"),
-        parse("land"),
-        "",
-        BinaryPrimitive(ResValue(ResValue.DataType.INT_DEC, 123)))).isTrue()
+        table.addResource(
+          parseNameOrFail("com.app.a:integer/one"),
+          parse("land"),
+          "",
+          BinaryPrimitive(ResValue(ResValue.DataType.INT_DEC, 123)),
+        )
+      )
+      .isTrue()
     Truth.assertThat(
-      table.addResource(
-        parseNameOrFail("com.app.a:integer/one"),
-        parse("land"),
-        "tablet",
-        BinaryPrimitive(ResValue(ResValue.DataType.INT_HEX, 321)))).isTrue()
+        table.addResource(
+          parseNameOrFail("com.app.a:integer/one"),
+          parse("land"),
+          "tablet",
+          BinaryPrimitive(ResValue(ResValue.DataType.INT_HEX, 321)),
+        )
+      )
+      .isTrue()
 
     // Make a reference with both resource name and resource ID.
     // The reference should point to a resource outside of this table to test that both name and id
     // get serialized.
     val expectedRef = Reference(parseNameOrFail("android:layout/main"))
     expectedRef.id = 0x01020000
-    Truth.assertThat(
-      table.addResource(
-        parseNameOrFail("com.app.a:layout/abc"), ConfigDescription(), "", expectedRef)).isTrue()
+    Truth.assertThat(table.addResource(parseNameOrFail("com.app.a:layout/abc"), ConfigDescription(), "", expectedRef)).isTrue()
 
     // Make an overlayable resource.
-    val overlayableItem = OverlayableItem(
-      Overlayable("OverlayableName", "overlay://theme", Source("res/values/overlayable.xml", 40)),
-      source = Source("res/values/overlayable.xml", 42))
-    Truth.assertThat(
-        table.setOverlayable(
-          parseNameOrFail("com.app.a:integer/overlayable"), overlayableItem)).isTrue()
+    val overlayableItem =
+      OverlayableItem(
+        Overlayable("OverlayableName", "overlay://theme", Source("res/values/overlayable.xml", 40)),
+        source = Source("res/values/overlayable.xml", 42),
+      )
+    Truth.assertThat(table.setOverlayable(parseNameOrFail("com.app.a:integer/overlayable"), overlayableItem)).isTrue()
 
     val pbTable = serializeTableToPb(table, null)
 
@@ -621,14 +603,12 @@ class ProtoSerializeTest {
     Truth.assertThat(newBool.entry.allowNew).isNotNull()
 
     // Find the product dependent values.
-    val newPrimitive =
-      getValue(newTable, "com.app.a:integer/one", parse("land"), "tablet") as? BinaryPrimitive
+    val newPrimitive = getValue(newTable, "com.app.a:integer/one", parse("land"), "tablet") as? BinaryPrimitive
     Truth.assertThat(newPrimitive).isNotNull()
     Truth.assertThat(newPrimitive!!.resValue.dataType).isEqualTo(ResValue.DataType.INT_HEX)
     Truth.assertThat(newPrimitive.resValue.data).isEqualTo(321)
 
-    val newPrimitive2 =
-      getValue(newTable, "com.app.a:integer/one", parse("land")) as? BinaryPrimitive
+    val newPrimitive2 = getValue(newTable, "com.app.a:integer/one", parse("land")) as? BinaryPrimitive
     Truth.assertThat(newPrimitive2).isNotNull()
     Truth.assertThat(newPrimitive2!!.resValue.dataType).isEqualTo(ResValue.DataType.INT_DEC)
     Truth.assertThat(newPrimitive2.resValue.data).isEqualTo(123)
@@ -657,29 +637,28 @@ class ProtoSerializeTest {
     Truth.assertThat(actualOverlayableItem).isNotNull()
     Truth.assertThat(actualOverlayableItem!!.overlayable.name).isEqualTo("OverlayableName")
     Truth.assertThat(actualOverlayableItem.overlayable.actor).isEqualTo("overlay://theme")
-    Truth.assertThat(actualOverlayableItem.overlayable.source)
-      .isEqualTo(Source("res/values/overlayable.xml", 40))
+    Truth.assertThat(actualOverlayableItem.overlayable.source).isEqualTo(Source("res/values/overlayable.xml", 40))
     Truth.assertThat(actualOverlayableItem.policies).isEqualTo(OverlayableItem.Policy.NONE)
-    Truth.assertThat(actualOverlayableItem.source)
-      .isEqualTo(Source("res/values/overlayable.xml", 42))
+    Truth.assertThat(actualOverlayableItem.source).isEqualTo(Source("res/values/overlayable.xml", 42))
   }
 
   @Test
   fun serializeAndDeserializeTableOfPrimitives() {
-    val table = ResourceTableBuilder()
-      .addValue("android:bool/boolean_true", tryParseBool("True")!!)
-      .addValue("android:bool/boolean_false", tryParseBool("False")!!)
-      .addValue("android:color/color_rgb8", tryParseColor("#AABBCC")!!)
-      .addValue("android:color/color_argb8", tryParseColor("#11223344")!!)
-      .addValue("android:color/color_rgb4", tryParseColor("#DEF")!!)
-      .addValue("android:color/color_argb4", tryParseColor("#5678")!!)
-      .addValue("android:integer/integer_444", tryParseInt("444")!!)
-      .addValue("android:integer/integer_neg333", tryParseInt("-333")!!)
-      .addValue("android:integer/hex_int_abcd", tryParseInt("0xABCD")!!)
-      .addValue("android:dimen/dimen_1_39mm", tryParseFloat("1.39mm")!!)
-      .addValue("android:fraction/fraction_27", tryParseFloat("27%")!!)
-      .addValue("android:integer/null", makeEmpty())
-      .build()
+    val table =
+      ResourceTableBuilder()
+        .addValue("android:bool/boolean_true", tryParseBool("True")!!)
+        .addValue("android:bool/boolean_false", tryParseBool("False")!!)
+        .addValue("android:color/color_rgb8", tryParseColor("#AABBCC")!!)
+        .addValue("android:color/color_argb8", tryParseColor("#11223344")!!)
+        .addValue("android:color/color_rgb4", tryParseColor("#DEF")!!)
+        .addValue("android:color/color_argb4", tryParseColor("#5678")!!)
+        .addValue("android:integer/integer_444", tryParseInt("444")!!)
+        .addValue("android:integer/integer_neg333", tryParseInt("-333")!!)
+        .addValue("android:integer/hex_int_abcd", tryParseInt("0xABCD")!!)
+        .addValue("android:dimen/dimen_1_39mm", tryParseFloat("1.39mm")!!)
+        .addValue("android:fraction/fraction_27", tryParseFloat("27%")!!)
+        .addValue("android:integer/null", makeEmpty())
+        .build()
 
     val pbTable = serializeTableToPb(table, null)
 
@@ -748,29 +727,32 @@ class ProtoSerializeTest {
 
   @Test
   fun serializeAndDeserializeOverlayable() {
-    val foo = OverlayableItem(
-      Overlayable("CustomizableResources", "overlay://customization", Source.EMPTY),
-      OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT)
-    val bar = OverlayableItem(
-      Overlayable("TaskBar", "overlay://theme", Source.EMPTY),
-      OverlayableItem.Policy.PUBLIC or OverlayableItem.Policy.VENDOR)
-    val baz = OverlayableItem(
-      Overlayable("FrontPack", "overlay://theme", Source.EMPTY),
-      OverlayableItem.Policy.PUBLIC)
-    val boz = OverlayableItem(
-      Overlayable("IconPack", "overlay://theme", Source.EMPTY),
-      OverlayableItem.Policy.SIGNATURE or OverlayableItem.Policy.ODM or OverlayableItem.Policy.OEM)
-    val biz = OverlayableItem(
-      Overlayable("Other", "overlay://customization", Source.EMPTY),
-      comment = "comment")
-    val table = ResourceTableBuilder()
-      .setOverlayable("com.app.a:bool/foo", foo)
-      .setOverlayable("com.app.a:bool/bar", bar)
-      .setOverlayable("com.app.a:bool/baz", baz)
-      .setOverlayable("com.app.a:bool/boz", boz)
-      .setOverlayable("com.app.a:bool/biz", biz)
-      .addValue("com.app.a:bool/fiz", tryParseBool("true")!!)
-      .build()
+    val foo =
+      OverlayableItem(
+        Overlayable("CustomizableResources", "overlay://customization", Source.EMPTY),
+        OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT,
+      )
+    val bar =
+      OverlayableItem(
+        Overlayable("TaskBar", "overlay://theme", Source.EMPTY),
+        OverlayableItem.Policy.PUBLIC or OverlayableItem.Policy.VENDOR,
+      )
+    val baz = OverlayableItem(Overlayable("FrontPack", "overlay://theme", Source.EMPTY), OverlayableItem.Policy.PUBLIC)
+    val boz =
+      OverlayableItem(
+        Overlayable("IconPack", "overlay://theme", Source.EMPTY),
+        OverlayableItem.Policy.SIGNATURE or OverlayableItem.Policy.ODM or OverlayableItem.Policy.OEM,
+      )
+    val biz = OverlayableItem(Overlayable("Other", "overlay://customization", Source.EMPTY), comment = "comment")
+    val table =
+      ResourceTableBuilder()
+        .setOverlayable("com.app.a:bool/foo", foo)
+        .setOverlayable("com.app.a:bool/bar", bar)
+        .setOverlayable("com.app.a:bool/baz", baz)
+        .setOverlayable("com.app.a:bool/boz", boz)
+        .setOverlayable("com.app.a:bool/biz", biz)
+        .addValue("com.app.a:bool/fiz", tryParseBool("true")!!)
+        .build()
 
     val pbTable = serializeTableToPb(table, null)
 
@@ -783,8 +765,7 @@ class ProtoSerializeTest {
     var item = searchResult.entry.overlayable!!
     Truth.assertThat(item.overlayable.name).isEqualTo("CustomizableResources")
     Truth.assertThat(item.overlayable.actor).isEqualTo("overlay://customization")
-    Truth.assertThat(item.policies)
-      .isEqualTo(OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT)
+    Truth.assertThat(item.policies).isEqualTo(OverlayableItem.Policy.SYSTEM or OverlayableItem.Policy.PRODUCT)
 
     searchResult = newTable.findResource(parseNameOrFail("com.app.a:bool/bar"))
     Truth.assertThat(searchResult).isNotNull()
@@ -792,8 +773,7 @@ class ProtoSerializeTest {
     item = searchResult.entry.overlayable!!
     Truth.assertThat(item.overlayable.name).isEqualTo("TaskBar")
     Truth.assertThat(item.overlayable.actor).isEqualTo("overlay://theme")
-    Truth.assertThat(item.policies)
-      .isEqualTo(OverlayableItem.Policy.PUBLIC or OverlayableItem.Policy.VENDOR)
+    Truth.assertThat(item.policies).isEqualTo(OverlayableItem.Policy.PUBLIC or OverlayableItem.Policy.VENDOR)
 
     searchResult = newTable.findResource(parseNameOrFail("com.app.a:bool/baz"))
     Truth.assertThat(searchResult).isNotNull()
@@ -809,11 +789,7 @@ class ProtoSerializeTest {
     item = searchResult.entry.overlayable!!
     Truth.assertThat(item.overlayable.name).isEqualTo("IconPack")
     Truth.assertThat(item.overlayable.actor).isEqualTo("overlay://theme")
-    Truth.assertThat(item.policies)
-      .isEqualTo(
-        OverlayableItem.Policy.SIGNATURE or
-          OverlayableItem.Policy.ODM or
-          OverlayableItem.Policy.OEM)
+    Truth.assertThat(item.policies).isEqualTo(OverlayableItem.Policy.SIGNATURE or OverlayableItem.Policy.ODM or OverlayableItem.Policy.OEM)
 
     searchResult = newTable.findResource(parseNameOrFail("com.app.a:bool/biz"))
     Truth.assertThat(searchResult).isNotNull()

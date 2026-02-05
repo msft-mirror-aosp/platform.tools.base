@@ -19,12 +19,7 @@ import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 
 class JdwpVmExitHandler : JdwpPacketHandler {
-  override fun handlePacket(
-    device: DeviceState,
-    client: ClientState,
-    packet: JdwpPacket,
-    jdwpHandlerOutput: JdwpHandlerOutput
-  ): Boolean {
+  override fun handlePacket(device: DeviceState, client: ClientState, packet: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput): Boolean {
     // Kill the client and the connection
     device.stopClient(client.pid)
     return false

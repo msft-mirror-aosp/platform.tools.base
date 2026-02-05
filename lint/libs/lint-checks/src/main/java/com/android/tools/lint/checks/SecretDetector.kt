@@ -39,47 +39,30 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.toUElementOfType
 
 /**
- * Reports secrets, such as API keys, that appear to have come from source code and are being passed
- * as arguments to recognized APIs. Only covers a few simple cases for the argument (string literal,
- * reference to a local variable with a string literal initializer, reference to a field with a
- * string literal initializer).
+ * Reports secrets, such as API keys, that appear to have come from source code and are being passed as arguments to recognized APIs. Only
+ * covers a few simple cases for the argument (string literal, reference to a local variable with a string literal initializer, reference to
+ * a field with a string literal initializer).
  */
 class SecretDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableConstructorTypes() = listOf(FQN_MODEL)
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
-    val keyArg =
-      node.getArgumentForParameter(CONSTRUCTOR_API_KEY_PARAM_INDEX)?.skipParenthesizedExprDown()
-        ?: return
-    if (
-      isLiteralStringKey(keyArg) ||
-        isReferenceToLocalVariableStringKey(keyArg) ||
-        isReferenceToFieldStringKey(keyArg, context)
-    ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
+    val keyArg = node.getArgumentForParameter(CONSTRUCTOR_API_KEY_PARAM_INDEX)?.skipParenthesizedExprDown() ?: return
+    if (isLiteralStringKey(keyArg) || isReferenceToLocalVariableStringKey(keyArg) || isReferenceToFieldStringKey(keyArg, context)) {
       context.report(
         ISSUE,
         keyArg,
         context.getLocation(keyArg),
         "This argument looks like an API key that has come from source code; API keys should not be included in source code",
-        fix()
-          .url("https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin")
-          .build(),
+        fix().url("https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin").build(),
       )
     }
   }
 
   private fun isLiteralStringKey(expression: UExpression): Boolean {
     // Even basic Kotlin string literals can appear as string templates.
-    if (
-      expression is UPolyadicExpression &&
-        expression.sourcePsi is KtStringTemplateExpression &&
-        expression.operands.size == 1
-    ) {
+    if (expression is UPolyadicExpression && expression.sourcePsi is KtStringTemplateExpression && expression.operands.size == 1) {
       return isLiteralStringKey(expression.operands[0].skipParenthesizedExprDown())
     }
     val literal = expression as? ULiteralExpression ?: return false
@@ -154,8 +137,7 @@ class SecretDetector : Detector(), SourceCodeScanner {
         priority = 9,
         severity = Severity.WARNING,
         implementation = Implementation(SecretDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        moreInfo =
-          "https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin",
+        moreInfo = "https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin",
       )
   }
 }

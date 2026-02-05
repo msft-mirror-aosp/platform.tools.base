@@ -24,135 +24,121 @@ import org.junit.Test
 
 class KotlinMultiplatformTestingTest {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    /**
-     * Regression test for b/369130174
-     */
-    @Test
-    fun testReturnDefaultValues() {
-        val kmpFirstLib = project.getSubproject("kmpFirstLib")
-        // Sst isReturnDefaultValues to true
-        TestFileUtils.appendToFile(
-            kmpFirstLib.ktsBuildFile,
-            """
-                kotlin.androidLibrary.compilations.withType(
-                    com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java
-                ) {
-                    isReturnDefaultValues = true
-                }
-            """.trimIndent()
-        )
+  /** Regression test for b/369130174 */
+  @Test
+  fun testReturnDefaultValues() {
+    val kmpFirstLib = project.getSubproject("kmpFirstLib")
+    // Sst isReturnDefaultValues to true
+    TestFileUtils.appendToFile(
+      kmpFirstLib.ktsBuildFile,
+      """
+      kotlin.androidLibrary.compilations.withType(
+          com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java
+      ) {
+          isReturnDefaultValues = true
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Add a test that requires isReturnDefaultValues to be true
-        val testFile =
-            FileUtils.join(
-                kmpFirstLib.projectDir,
-                "src",
-                "androidHostTest",
-                "kotlin",
-                "com",
-                "example",
-                "kmpfirstlib",
-                "ReturnDefaultValuesTest.kt"
-            )
-        testFile.parentFile.mkdirs()
-        // This is similar to the unit test file in the unitTestingDefaultValues test project.
-        TestFileUtils.appendToFile(
-            testFile,
-            """
-                package com.example.kmpfirstlib
+    // Add a test that requires isReturnDefaultValues to be true
+    val testFile =
+      FileUtils.join(
+        kmpFirstLib.projectDir,
+        "src",
+        "androidHostTest",
+        "kotlin",
+        "com",
+        "example",
+        "kmpfirstlib",
+        "ReturnDefaultValuesTest.kt",
+      )
+    testFile.parentFile.mkdirs()
+    // This is similar to the unit test file in the unitTestingDefaultValues test project.
+    TestFileUtils.appendToFile(
+      testFile,
+      """
+      package com.example.kmpfirstlib
 
-                import android.opengl.Matrix
-                import android.os.Debug
-                import android.util.ArrayMap
-                import org.junit.Assert
-                import org.junit.Test
+      import android.opengl.Matrix
+      import android.os.Debug
+      import android.util.ArrayMap
+      import org.junit.Assert
+      import org.junit.Test
 
-                class ReturnDefaultValuesTest {
-                    @Test
-                    fun defaultValues() {
-                        val map = ArrayMap<Any, Any>()
+      class ReturnDefaultValuesTest {
+          @Test
+          fun defaultValues() {
+              val map = ArrayMap<Any, Any>()
 
-                        // Check different return types.
-                        map.clear()
-                        Assert.assertEquals(0, map.size)
-                        Assert.assertEquals(false, map.isEmpty())
-                        Assert.assertNull(map.keys)
+              // Check different return types.
+              map.clear()
+              Assert.assertEquals(0, map.size)
+              Assert.assertEquals(false, map.isEmpty())
+              Assert.assertNull(map.keys)
 
-                        // Check a static method as well.
-                        Assert.assertEquals(0, Debug.getGlobalAllocCount())
+              // Check a static method as well.
+              Assert.assertEquals(0, Debug.getGlobalAllocCount())
 
-                        // Check a native method converted to a non-native one in the mockable jar.
-                        val result = FloatArray(16)
-                        val operand = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
-                        Matrix.multiplyMM(result, 0, operand, 0, operand, 0)
-                        Assert.assertArrayEquals(FloatArray(16), result, 0f)
-                    }
-                }
-            """.trimIndent()
-        )
+              // Check a native method converted to a non-native one in the mockable jar.
+              val result = FloatArray(16)
+              val operand = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+              Matrix.multiplyMM(result, 0, operand, 0, operand, 0)
+              Assert.assertArrayEquals(FloatArray(16), result, 0f)
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Check that the test runs successfully
-        executor().run(":kmpFirstLib:testAndroidHostTest")
+    // Check that the test runs successfully
+    executor().run(":kmpFirstLib:testAndroidHostTest")
 
-        // Check that the test fails as expected after toggling isReturnDefaultValues to false
-        TestFileUtils.searchAndReplace(
-            kmpFirstLib.ktsBuildFile,
-            "isReturnDefaultValues = true",
-            "isReturnDefaultValues = false"
-        )
-        executor().expectFailure().run(":kmpFirstLib:testAndroidHostTest")
-    }
+    // Check that the test fails as expected after toggling isReturnDefaultValues to false
+    TestFileUtils.searchAndReplace(kmpFirstLib.ktsBuildFile, "isReturnDefaultValues = true", "isReturnDefaultValues = false")
+    executor().expectFailure().run(":kmpFirstLib:testAndroidHostTest")
+  }
 
-    @Test
-    fun testConfigureTestTask() {
-        val kmpFirstLib = project.getSubproject("kmpFirstLib")
-        TestFileUtils.appendToFile(
-            kmpFirstLib.ktsBuildFile,
-            """
-                androidComponents {
-                  onVariants {
-                      it.hostTests.values.forEach { it.configureTestTask { it.maxHeapSize = "2g" } }
-                  }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testConfigureTestTask() {
+    val kmpFirstLib = project.getSubproject("kmpFirstLib")
+    TestFileUtils.appendToFile(
+      kmpFirstLib.ktsBuildFile,
+      """
+      androidComponents {
+        onVariants {
+            it.hostTests.values.forEach { it.configureTestTask { it.maxHeapSize = "2g" } }
+        }
+      }
+      """
+        .trimIndent(),
+    )
 
-        val testFile =
-            FileUtils.join(
-                kmpFirstLib.projectDir,
-                "src",
-                "androidHostTest",
-                "kotlin",
-                "com",
-                "example",
-                "kmpfirstlib",
-                "EasyTest.kt"
-            )
-        testFile.parentFile.mkdirs()
-        TestFileUtils.appendToFile(
-            testFile,
-            """
-                package com.example.kmpfirstlib
-                import org.junit.Assert
-                import org.junit.Test
+    val testFile =
+      FileUtils.join(kmpFirstLib.projectDir, "src", "androidHostTest", "kotlin", "com", "example", "kmpfirstlib", "EasyTest.kt")
+    testFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      testFile,
+      """
+      package com.example.kmpfirstlib
+      import org.junit.Assert
+      import org.junit.Test
 
-                class EasyTest {
-                    @Test
-                    fun defaultValues() {
-                        Assert.assertEquals(0, 0)
-                    }
-                }
-            """.trimIndent()
-        )
+      class EasyTest {
+          @Test
+          fun defaultValues() {
+              Assert.assertEquals(0, 0)
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        val result = executor().withArgument("--info").run(":kmpFirstLib:testAndroidHostTest")
-        result.assertOutputContains("-Xmx2g")
-    }
+    val result = executor().withArgument("--info").run(":kmpFirstLib:testAndroidHostTest")
+    result.assertOutputContains("-Xmx2g")
+  }
 
-    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

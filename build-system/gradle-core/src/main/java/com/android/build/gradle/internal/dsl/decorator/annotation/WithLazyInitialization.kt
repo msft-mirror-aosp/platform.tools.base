@@ -21,5 +21,4 @@ package com.android.build.gradle.internal.dsl.decorator.annotation
  *
  * Annotate the methods that should be called at the end of the DSL extension construction.
  */
-@Target(AnnotationTarget.FUNCTION)
-annotation class WithLazyInitialization
+@Target(AnnotationTarget.FUNCTION) annotation class WithLazyInitialization

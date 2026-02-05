@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.values_w820dp
 
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <resources>
     <!-- Example customization of dimensions originally defined in res/values/dimens.xml
          (such as screen margins) for screens with more than 820dp of available width. This

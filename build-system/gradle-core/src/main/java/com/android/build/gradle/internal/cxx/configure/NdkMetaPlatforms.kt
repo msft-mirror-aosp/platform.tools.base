@@ -24,41 +24,37 @@ import java.io.File
 import java.io.Reader
 
 data class NdkMetaPlatforms(
-    val min : Int = potentialPlatforms.first,
-    val max : Int = potentialPlatforms.last,
-    val aliases : Map<String, Int> = mapOf()) {
+  val min: Int = potentialPlatforms.first,
+  val max: Int = potentialPlatforms.last,
+  val aliases: Map<String, Int> = mapOf(),
+) {
 
-    init {
-        if (!potentialPlatforms.contains(min)) {
-            errorln(NDK_CORRUPTED, "potentialPlatforms range needs to include $min")
-        }
-        if (!potentialPlatforms.contains(max)) {
-            errorln(NDK_CORRUPTED, "potentialPlatforms range needs to include $max")
-        }
+  init {
+    if (!potentialPlatforms.contains(min)) {
+      errorln(NDK_CORRUPTED, "potentialPlatforms range needs to include $min")
+    }
+    if (!potentialPlatforms.contains(max)) {
+      errorln(NDK_CORRUPTED, "potentialPlatforms range needs to include $max")
+    }
+  }
+
+  companion object {
+
+    /**
+     * Theoretical range of platforms across all NDKs. Used to place limits on possible platforms when the meta/platforms.json hasn't yet
+     * been read.
+     */
+    val potentialPlatforms: IntRange = (0 until 64)
+
+    /** Given an NDK root file path, return the name of the platforms metadata JSON file. */
+    fun jsonFile(ndkRoot: File): File {
+      return File(ndkRoot, "meta/platforms.json")
     }
 
-    companion object {
-
-        /**
-         * Theoretical range of platforms across all NDKs. Used to place limits on possible
-         * platforms when the meta/platforms.json hasn't yet been read.
-         */
-        val potentialPlatforms : IntRange = (0 until 64)
-
-        /**
-         * Given an NDK root file path, return the name of the platforms metadata JSON file.
-         */
-        fun jsonFile(ndkRoot: File): File {
-            return File(ndkRoot, "meta/platforms.json")
-        }
-
-        /**
-         * Given a reader to reference some JSON convert to NdkMetaPlatforms.
-         */
-        fun fromReader(reader : Reader) : NdkMetaPlatforms {
-            val mapTypeToken = object : TypeToken<NdkMetaPlatforms>() {}.type
-            return Gson().fromJson(reader, mapTypeToken)
-        }
+    /** Given a reader to reference some JSON convert to NdkMetaPlatforms. */
+    fun fromReader(reader: Reader): NdkMetaPlatforms {
+      val mapTypeToken = object : TypeToken<NdkMetaPlatforms>() {}.type
+      return Gson().fromJson(reader, mapTypeToken)
     }
+  }
 }
-

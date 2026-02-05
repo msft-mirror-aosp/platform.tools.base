@@ -30,36 +30,31 @@ import org.mockito.kotlin.times
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledTestSuiteTargetTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteTarget = mock()
+  private val delegate: TestSuiteTarget = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuiteTarget by lazy {
-        object: AnalyticsEnabledTestSuiteTarget(delegate, stats) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledTestSuiteTarget by lazy { object : AnalyticsEnabledTestSuiteTarget(delegate, stats) {} }
 
-    @Test
-    fun testEnable() {
-        Mockito.`when`(delegate.enabled).thenReturn(true)
-        Truth.assertThat(proxy.enabled).isTrue()
-        Mockito.verify(delegate, times(1)).enabled
+  @Test
+  fun testEnable() {
+    Mockito.`when`(delegate.enabled).thenReturn(true)
+    Truth.assertThat(proxy.enabled).isTrue()
+    Mockito.verify(delegate, times(1)).enabled
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_ENABLE_VALUE)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_ENABLE_VALUE)
+  }
 
-    @Test
-    fun testTargetDevices() {
-        val targetDevices = listOf("device1")
-        Mockito.`when`(proxy.targetDevices).thenReturn(targetDevices)
-        Truth.assertThat(proxy.targetDevices).containsExactly("device1")
+  @Test
+  fun testTargetDevices() {
+    val targetDevices = listOf("device1")
+    Mockito.`when`(proxy.targetDevices).thenReturn(targetDevices)
+    Truth.assertThat(proxy.targetDevices).containsExactly("device1")
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_TARGET_DEVICES_VALUE)
-        Mockito.verify(delegate, times(1)).targetDevices
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_TARGET_DEVICES_VALUE)
+    Mockito.verify(delegate, times(1)).targetDevices
+  }
 }

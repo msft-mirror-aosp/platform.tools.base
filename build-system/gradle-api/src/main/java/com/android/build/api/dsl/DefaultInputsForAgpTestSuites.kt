@@ -19,8 +19,7 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 /**
- * List of default properties that can be used to initialize the [AgpTestSuite.testEngineInputs]
- * for a particular test suite.
+ * List of default properties that can be used to initialize the [AgpTestSuite.testEngineInputs] for a particular test suite.
  *
  * Can be used as :
  * ```
@@ -39,40 +38,25 @@ import org.gradle.api.Incubating
  */
 /** @suppress */
 enum class DefaultInputsForAgpTestSuites(
-    /**
-     * List of properties that will be made available to the junit test engine by the test task.
-     *
-     * At this time, the lists definition are mostly for testing purposes.
-     *
-     * TODO: change comment once property handover is implemented.
-     * These properties are guaranteed to be provided by the time the test start and a
-     * retrieval mechanism will be added in a subsequent CL.
-     */
-    val supportedProperties: List<AgpTestSuiteInputParameters>
+  /**
+   * List of properties that will be made available to the junit test engine by the test task.
+   *
+   * At this time, the lists definition are mostly for testing purposes.
+   *
+   * TODO: change comment once property handover is implemented. These properties are guaranteed to be provided by the time the test start
+   *   and a retrieval mechanism will be added in a subsequent CL.
+   */
+  val supportedProperties: List<AgpTestSuiteInputParameters>
 ) {
-    @Incubating
-    HOST_TEST(
-        listOf(
-            AgpTestSuiteInputParameters.TEST_CLASSES,
-        )
-    ),
-    @Incubating
-    DEVICE_TEST(
-        listOf(
-            AgpTestSuiteInputParameters.MERGED_MANIFEST,
-            AgpTestSuiteInputParameters.TESTED_APKS,
-            AgpTestSuiteInputParameters.TESTING_APK,
-        )
-    ),
-    @Incubating
-    JOURNEYS_TEST(
-        listOf(
-            AgpTestSuiteInputParameters.MERGED_MANIFEST,
-        ).plus(HOST_TEST.supportedProperties)
-    );
+  @Incubating HOST_TEST(listOf(AgpTestSuiteInputParameters.TEST_CLASSES)),
+  @Incubating
+  DEVICE_TEST(
+    listOf(AgpTestSuiteInputParameters.MERGED_MANIFEST, AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TESTING_APK)
+  ),
+  @Incubating JOURNEYS_TEST(listOf(AgpTestSuiteInputParameters.MERGED_MANIFEST).plus(HOST_TEST.supportedProperties));
 
-    @Incubating
-    fun initialize(testSuite: JUnitEngineSpec) {
-        testSuite.inputs.addAll(supportedProperties)
-    }
+  @Incubating
+  fun initialize(testSuite: JUnitEngineSpec) {
+    testSuite.inputs.addAll(supportedProperties)
+  }
 }

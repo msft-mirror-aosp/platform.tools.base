@@ -16,13 +16,11 @@
 
 package com.android.build.api.dsl
 
-/**
- * Local installation options for the adb tool.
- */
+/** Local installation options for the adb tool. */
 interface Installation {
-    /** The time out used for all adb operations. */
-    var timeOutInMs: Int
+  /** The time out used for all adb operations. */
+  var timeOutInMs: Int
 
-    /** The list of FULL_APK installation options. */
-    val installOptions: MutableList<String>
+  /** The list of FULL_APK installation options. */
+  val installOptions: MutableList<String>
 }

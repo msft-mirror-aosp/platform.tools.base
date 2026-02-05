@@ -127,73 +127,73 @@ class TypesTest : TestCase() {
 
     assertEquals(
       """
-            UFile (package = )
-                UClass (name = Kotlin)
-                    UField (name = property1)
-                        UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UPolyadicExpression (operator = +)
-                            ULiteralExpression (value = "Default Value")
-                    UField (name = property2)
-                        UAnnotation (fqName = org.jetbrains.annotations.Nullable)
-                        ULiteralExpression (value = null)
-                    UField (name = someField)
-                        UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        ULiteralExpression (value = 42)
-                    UField (name = someField2)
-                        UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UAnnotation (fqName = kotlin.jvm.JvmField)
-                        ULiteralExpression (value = 42)
-                    UMethod (name = method)
-                        UBlockExpression
-                            UReturnExpression
-                                UPolyadicExpression (operator = +)
-                                    ULiteralExpression (value = "Hello World")
-                    UMethod (name = otherMethod)
-                        UParameter (name = ok)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UParameter (name = times)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UBlockExpression
-                    UMethod (name = getProperty2)
-                    UMethod (name = setProperty2)
-                        UParameter (name = <set-?>)
-                            UAnnotation (fqName = org.jetbrains.annotations.Nullable)
-                    UMethod (name = getProperty1)
-                    UMethod (name = Kotlin)
-                        UParameter (name = property1)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                            UPolyadicExpression (operator = +)
-                                ULiteralExpression (value = "Default Value")
-                        UParameter (name = arg2)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UBlockExpression
-                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 0))
-                                UIdentifier (Identifier (Parent))
-                                USimpleNameReferenceExpression (identifier = Parent, resolvesTo = PsiClass: Parent)
-                UClass (name = Parent)
-                    UMethod (name = method)
-                        UBlockExpression
-                            UReturnExpression
-                                ULiteralExpression (value = null)
-                    UMethod (name = method2)
-                        UParameter (name = value)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UParameter (name = value)
-                            UAnnotation (fqName = org.jetbrains.annotations.Nullable)
-                        UBlockExpression
-                            UReturnExpression
-                                ULiteralExpression (value = null)
-                    UMethod (name = method3)
-                        UParameter (name = value)
-                            UAnnotation (fqName = org.jetbrains.annotations.Nullable)
-                        UParameter (name = value2)
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull)
-                        UBlockExpression
-                            UReturnExpression
-                                ULiteralExpression (value = null)
-                    UMethod (name = Parent)
+      UFile (package = )
+          UClass (name = Kotlin)
+              UField (name = property1)
+                  UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UPolyadicExpression (operator = +)
+                      ULiteralExpression (value = "Default Value")
+              UField (name = property2)
+                  UAnnotation (fqName = org.jetbrains.annotations.Nullable)
+                  ULiteralExpression (value = null)
+              UField (name = someField)
+                  UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  ULiteralExpression (value = 42)
+              UField (name = someField2)
+                  UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UAnnotation (fqName = kotlin.jvm.JvmField)
+                  ULiteralExpression (value = 42)
+              UMethod (name = method)
+                  UBlockExpression
+                      UReturnExpression
+                          UPolyadicExpression (operator = +)
+                              ULiteralExpression (value = "Hello World")
+              UMethod (name = otherMethod)
+                  UParameter (name = ok)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UParameter (name = times)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UBlockExpression
+              UMethod (name = getProperty2)
+              UMethod (name = setProperty2)
+                  UParameter (name = <set-?>)
+                      UAnnotation (fqName = org.jetbrains.annotations.Nullable)
+              UMethod (name = getProperty1)
+              UMethod (name = Kotlin)
+                  UParameter (name = property1)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                      UPolyadicExpression (operator = +)
+                          ULiteralExpression (value = "Default Value")
+                  UParameter (name = arg2)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UBlockExpression
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 0))
+                          UIdentifier (Identifier (Parent))
+                          USimpleNameReferenceExpression (identifier = Parent, resolvesTo = PsiClass: Parent)
+          UClass (name = Parent)
+              UMethod (name = method)
+                  UBlockExpression
+                      UReturnExpression
+                          ULiteralExpression (value = null)
+              UMethod (name = method2)
+                  UParameter (name = value)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UParameter (name = value)
+                      UAnnotation (fqName = org.jetbrains.annotations.Nullable)
+                  UBlockExpression
+                      UReturnExpression
+                          ULiteralExpression (value = null)
+              UMethod (name = method3)
+                  UParameter (name = value)
+                      UAnnotation (fqName = org.jetbrains.annotations.Nullable)
+                  UParameter (name = value2)
+                      UAnnotation (fqName = org.jetbrains.annotations.NotNull)
+                  UBlockExpression
+                      UReturnExpression
+                          ULiteralExpression (value = null)
+              UMethod (name = Parent)
 
-            """
+      """
         .trimIndent(),
       file?.asRecursiveLogString()?.replace("\r", ""),
     )
@@ -203,10 +203,7 @@ class TypesTest : TestCase() {
   fun testPrimitiveKotlinTypes2() {
     val pair =
       LintUtilsTest.parseKotlin(
-        "" +
-          "package test.pkg\n" +
-          "\n" +
-          "fun calc(@java.lang.Override x: Int, y: Int?, z: String?): Int = x * 2",
+        "" + "package test.pkg\n" + "\n" + "fun calc(@java.lang.Override x: Int, y: Int?, z: String?): Int = x * 2",
         File("src/test/pkg/test.kt"),
       )
 
@@ -285,12 +282,7 @@ class TypesTest : TestCase() {
   fun testPrimitiveKotlinTypes3() {
     val pair =
       LintUtilsTest.parseKotlin(
-        "" +
-          "open class Parent(val number: Int) {\n" +
-          "  fun test(): Int = 6" +
-          "}\n" +
-          "\n" +
-          "class Five : Parent(5)",
+        "" + "open class Parent(val number: Int) {\n" + "  fun test(): Int = 6" + "}\n" + "\n" + "class Five : Parent(5)",
         File("src/test/pkg/test.kt"),
       )
 
@@ -367,11 +359,7 @@ class TypesTest : TestCase() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-23456
     val pair =
       LintUtilsTest.parseKotlin(
-        "" +
-          "package test.pkg\n" +
-          "enum class KotlinEnum(val resId: Int) {\n" +
-          " FOO(1), BAR(2), BAZ(3) \n" +
-          "}",
+        "" + "package test.pkg\n" + "enum class KotlinEnum(val resId: Int) {\n" + " FOO(1), BAR(2), BAZ(3) \n" + "}",
         File("src/test/pkg/KotlinEnum.kt"),
       )
 
@@ -499,8 +487,7 @@ class TypesTest : TestCase() {
 }
 
 // From Kotlin's UAST unit test support, TypesTestBase
-fun UFile.asLogTypes(indent: String = "    ") =
-  TypesLogger(indent).apply { this@asLogTypes.accept(this) }.toString()
+fun UFile.asLogTypes(indent: String = "    ") = TypesLogger(indent).apply { this@asLogTypes.accept(this) }.toString()
 
 class TypesLogger(private val indent: String) : AbstractUastVisitor() {
 

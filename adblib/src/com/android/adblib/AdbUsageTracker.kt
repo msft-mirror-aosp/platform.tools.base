@@ -17,112 +17,105 @@ package com.android.adblib
 
 interface AdbUsageTracker {
 
-    /** Log data about the usage of an adblib feature */
-    fun logUsage(event: Event)
+  /** Log data about the usage of an adblib feature */
+  fun logUsage(event: Event)
 
-    data class Event(
-        // Info about the connected device
-        val deviceInfo: DeviceInfo?,
+  data class Event(
+    // Info about the connected device
+    val deviceInfo: DeviceInfo?,
 
-        // Info about `UsingJdwpSessionFlowUpdater` success/failure
-        val jdwpProcessPropertiesCollector: JdwpProcessPropertiesCollectorEvent? = null,
+    // Info about `UsingJdwpSessionFlowUpdater` success/failure
+    val jdwpProcessPropertiesCollector: JdwpProcessPropertiesCollectorEvent? = null,
 
-        // Info about `UsingAppInfoFlowUpdater` success/failure
-        val appInfoProcessPropertiesCollector: AppInfoProcessPropertiesCollectorEvent? = null,
+    // Info about `UsingAppInfoFlowUpdater` success/failure
+    val appInfoProcessPropertiesCollector: AppInfoProcessPropertiesCollectorEvent? = null,
 
-        // Info about device state change
-        val adbDeviceStateChange: AdbDeviceStateChangeEvent? = null,
-    )
+    // Info about device state change
+    val adbDeviceStateChange: AdbDeviceStateChangeEvent? = null,
+  )
 
-    data class DeviceInfo(
-        val serialNumber: String,
-        val buildTags:String = "",
-        val buildType:String = "",
-        val buildVersionRelease: String = "",
-        val buildApiLevelFull: String = "",
-        val cpuAbi: String = "",
-        val manufacturer: String = "",
-        val model: String = "",
-        val allCharacteristics: List<String> = emptyList()
-    ) {
+  data class DeviceInfo(
+    val serialNumber: String,
+    val buildTags: String = "",
+    val buildType: String = "",
+    val buildVersionRelease: String = "",
+    val buildApiLevelFull: String = "",
+    val cpuAbi: String = "",
+    val manufacturer: String = "",
+    val model: String = "",
+    val allCharacteristics: List<String> = emptyList(),
+  ) {
 
-        companion object {
+    companion object {
 
-            suspend fun createFrom(device: ConnectedDevice): DeviceInfo {
-                val properties = try {
-                    if (device.isOnline) device.deviceProperties().allReadonly() else emptyMap()
-                } catch (t: Throwable) {
-                    emptyMap()
-                }
+      suspend fun createFrom(device: ConnectedDevice): DeviceInfo {
+        val properties =
+          try {
+            if (device.isOnline) device.deviceProperties().allReadonly() else emptyMap()
+          } catch (t: Throwable) {
+            emptyMap()
+          }
 
-                return DeviceInfo(
-                    serialNumber = device.serialNumber,
-                    buildTags = properties[DevicePropertyNames.RO_BUILD_TAGS] ?: "",
-                    buildType = properties[DevicePropertyNames.RO_BUILD_TYPE] ?: "",
-                    buildVersionRelease = properties[DevicePropertyNames.RO_BUILD_VERSION_RELEASE] ?: "",
-                    buildApiLevelFull = properties[DevicePropertyNames.RO_BUILD_VERSION_SDK_FULL]
-                        ?: properties[DevicePropertyNames.RO_BUILD_VERSION_SDK] ?: "",
-                    cpuAbi = properties[DevicePropertyNames.RO_PRODUCT_CPU_ABI] ?: "",
-                    manufacturer = properties[DevicePropertyNames.RO_PRODUCT_MANUFACTURER] ?: "",
-                    model = properties[DevicePropertyNames.RO_PRODUCT_MODEL] ?: "",
-                    allCharacteristics = (properties[DevicePropertyNames.RO_BUILD_CHARACTERISTICS]
-                        ?: "").split(",")
-                )
-            }
-        }
+        return DeviceInfo(
+          serialNumber = device.serialNumber,
+          buildTags = properties[DevicePropertyNames.RO_BUILD_TAGS] ?: "",
+          buildType = properties[DevicePropertyNames.RO_BUILD_TYPE] ?: "",
+          buildVersionRelease = properties[DevicePropertyNames.RO_BUILD_VERSION_RELEASE] ?: "",
+          buildApiLevelFull =
+            properties[DevicePropertyNames.RO_BUILD_VERSION_SDK_FULL] ?: properties[DevicePropertyNames.RO_BUILD_VERSION_SDK] ?: "",
+          cpuAbi = properties[DevicePropertyNames.RO_PRODUCT_CPU_ABI] ?: "",
+          manufacturer = properties[DevicePropertyNames.RO_PRODUCT_MANUFACTURER] ?: "",
+          model = properties[DevicePropertyNames.RO_PRODUCT_MODEL] ?: "",
+          allCharacteristics = (properties[DevicePropertyNames.RO_BUILD_CHARACTERISTICS] ?: "").split(","),
+        )
+      }
     }
+  }
 
-    enum class JdwpProcessPropertiesCollectorFailureType {
-        NO_RESPONSE,
-        CLOSED_CHANNEL_EXCEPTION,
-        CONNECTION_CLOSED_ERROR,
-        IO_EXCEPTION,
-        OTHER_ERROR,
-    }
+  enum class JdwpProcessPropertiesCollectorFailureType {
+    NO_RESPONSE,
+    CLOSED_CHANNEL_EXCEPTION,
+    CONNECTION_CLOSED_ERROR,
+    IO_EXCEPTION,
+    OTHER_ERROR,
+  }
 
-    data class JdwpProcessPropertiesCollectorEvent(
-        val isSuccess: Boolean,
-        val failureType: JdwpProcessPropertiesCollectorFailureType? = null,
-        val previouslyFailedCount: Int,
-        val previousFailureType: JdwpProcessPropertiesCollectorFailureType? = null
-    )
+  data class JdwpProcessPropertiesCollectorEvent(
+    val isSuccess: Boolean,
+    val failureType: JdwpProcessPropertiesCollectorFailureType? = null,
+    val previouslyFailedCount: Int,
+    val previousFailureType: JdwpProcessPropertiesCollectorFailureType? = null,
+  )
 
-    enum class AppInfoProcessPropertiesCollectorEventType {
-        TRACK_APP_VALUE_COLLECTED,
-        VM_INFO_VALUE_COLLECTED,
-        TRACK_APP_IO_EXCEPTION,
-        TRACK_APP_OTHER_EXCEPTION,
-        VM_INFO_IO_EXCEPTION,
-        VM_INFO_OTHER_EXCEPTION,
-    }
+  enum class AppInfoProcessPropertiesCollectorEventType {
+    TRACK_APP_VALUE_COLLECTED,
+    VM_INFO_VALUE_COLLECTED,
+    TRACK_APP_IO_EXCEPTION,
+    TRACK_APP_OTHER_EXCEPTION,
+    VM_INFO_IO_EXCEPTION,
+    VM_INFO_OTHER_EXCEPTION,
+  }
 
-    data class AppInfoProcessPropertiesCollectorEvent(
-        val pid: Int,
-        val eventType: AppInfoProcessPropertiesCollectorEventType,
-    )
+  data class AppInfoProcessPropertiesCollectorEvent(val pid: Int, val eventType: AppInfoProcessPropertiesCollectorEventType)
 
-    enum class DeviceState {
-        BOOTLOADER,
-        AUTHORIZING,
-        CONNECTING,
-        OFFLINE,
-        ONLINE,
-        DISCONNECTED,
+  enum class DeviceState {
+    BOOTLOADER,
+    AUTHORIZING,
+    CONNECTING,
+    OFFLINE,
+    ONLINE,
+    DISCONNECTED,
 
-        // Other states (we are not interested in tracking these)
-        OTHER,
-    }
+    // Other states (we are not interested in tracking these)
+    OTHER,
+  }
 
-    data class AdbDeviceStateChangeEvent(
-        val deviceState: DeviceState,
-        val previousDeviceState: DeviceState?,
-        val lastOnlineMs: Long?
-    )
+  data class AdbDeviceStateChangeEvent(val deviceState: DeviceState, val previousDeviceState: DeviceState?, val lastOnlineMs: Long?)
 }
 
 internal class NoopAdbUsageTracker : AdbUsageTracker {
 
-    override fun logUsage(event: AdbUsageTracker.Event) {
-        // Do nothing
-    }
+  override fun logUsage(event: AdbUsageTracker.Event) {
+    // Do nothing
+  }
 }

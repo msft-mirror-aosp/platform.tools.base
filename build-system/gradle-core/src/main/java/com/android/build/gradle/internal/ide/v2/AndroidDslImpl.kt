@@ -27,21 +27,20 @@ import com.android.builder.model.v2.models.AndroidDsl
 import java.io.Serializable
 
 data class AndroidDslImpl(
-    override val groupId: String?,
-    override val defaultConfig: ProductFlavor,
-    override val buildTypes: List<BuildType>,
-    override val flavorDimensions: Collection<String>,
-    override val productFlavors: List<ProductFlavor>,
-    override val compileTarget: String,
-    override val signingConfigs: Collection<SigningConfig>,
-    override val aaptOptions: AaptOptions,
-    override val lintOptions: LintOptions?,
-    override val installation: Installation?,
-    override val buildToolsVersion: String,
-    override val dependenciesInfo: DependenciesInfo?,
-): AndroidDsl, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  override val groupId: String?,
+  override val defaultConfig: ProductFlavor,
+  override val buildTypes: List<BuildType>,
+  override val flavorDimensions: Collection<String>,
+  override val productFlavors: List<ProductFlavor>,
+  override val compileTarget: String,
+  override val signingConfigs: Collection<SigningConfig>,
+  override val aaptOptions: AaptOptions,
+  override val lintOptions: LintOptions?,
+  override val installation: Installation?,
+  override val buildToolsVersion: String,
+  override val dependenciesInfo: DependenciesInfo?,
+) : AndroidDsl, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

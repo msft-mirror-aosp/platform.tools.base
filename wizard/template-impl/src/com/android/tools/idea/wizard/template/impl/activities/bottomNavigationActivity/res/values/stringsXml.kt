@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.bottomNavigationActivity.res.values
 
-fun stringsXml() = """
+fun stringsXml() =
+  """
 <resources>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>

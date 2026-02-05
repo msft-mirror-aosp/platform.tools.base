@@ -27,46 +27,33 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 
 object KotlinJvmToolchain {
-    internal fun wireJvmTargetToToolchain(
-        compilerOptions: KotlinJvmCompilerOptions,
-        project: Project,
-    ) {
-        // Configure kotlin compiler with the jvm toolchain, similar to the JavaBasePlugin
-        // (https://github.com/gradle/gradle/blob/66010b2/subprojects/plugins/src/main/java/org/gradle/api/plugins/JavaBasePlugin.java#L204)
-        val toolchain = project.extensions.getByType(JavaPluginExtension::class.java).toolchain
-        val service = project.extensions.getByType(JavaToolchainService::class.java)
-        val javaLauncher = service.launcherFor(toolchain)
-        wireJvmTargetToJvm(compilerOptions, javaLauncher.map(::mapToJvm))
+  internal fun wireJvmTargetToToolchain(compilerOptions: KotlinJvmCompilerOptions, project: Project) {
+    // Configure kotlin compiler with the jvm toolchain, similar to the JavaBasePlugin
+    // (https://github.com/gradle/gradle/blob/66010b2/subprojects/plugins/src/main/java/org/gradle/api/plugins/JavaBasePlugin.java#L204)
+    val toolchain = project.extensions.getByType(JavaPluginExtension::class.java).toolchain
+    val service = project.extensions.getByType(JavaToolchainService::class.java)
+    val javaLauncher = service.launcherFor(toolchain)
+    wireJvmTargetToJvm(compilerOptions, javaLauncher.map(::mapToJvm))
+  }
+
+  private fun wireJvmTargetToJvm(jvmCompilerOptions: KotlinJvmCompilerOptions, toolchainJvm: Provider<Jvm>) {
+    jvmCompilerOptions.jvmTarget.convention(
+      toolchainJvm.map { jvm -> convertJavaVersionToJvmTarget(requireNotNull(jvm.javaVersion)) }.orElse(JvmTarget.DEFAULT)
+    )
+  }
+
+  @OptIn(ExperimentalStdlibApi::class)
+  private fun convertJavaVersionToJvmTarget(javaVersion: JavaVersion): JvmTarget =
+    try {
+      JvmTarget.fromTarget(javaVersion.toString())
+    } catch (_: IllegalArgumentException) {
+      val fallbackTarget = JvmTarget.entries.last()
+      fallbackTarget
     }
 
-    private fun wireJvmTargetToJvm(
-        jvmCompilerOptions: KotlinJvmCompilerOptions,
-        toolchainJvm: Provider<Jvm>,
-    ) {
-        jvmCompilerOptions.jvmTarget.convention(
-            toolchainJvm.map { jvm ->
-                convertJavaVersionToJvmTarget(requireNotNull(jvm.javaVersion))
-            }.orElse(JvmTarget.DEFAULT)
-        )
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun convertJavaVersionToJvmTarget(
-        javaVersion: JavaVersion,
-    ): JvmTarget = try {
-            JvmTarget.fromTarget(javaVersion.toString())
-        } catch (_: IllegalArgumentException) {
-            val fallbackTarget = JvmTarget.entries.last()
-            fallbackTarget
-        }
-
-    private fun mapToJvm(javaLauncher: JavaLauncher): Jvm {
-        val metadata = javaLauncher.metadata
-        @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-        return Jvm.discovered(
-            metadata.installationPath.asFile,
-            null,
-            metadata.languageVersion.asInt()
-        )
-    }
+  private fun mapToJvm(javaLauncher: JavaLauncher): Jvm {
+    val metadata = javaLauncher.metadata
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    return Jvm.discovered(metadata.installationPath.asFile, null, metadata.languageVersion.asInt())
+  }
 }

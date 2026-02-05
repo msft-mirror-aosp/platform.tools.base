@@ -27,82 +27,64 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A connection to a remote [ProcessInventoryServer] that provides access
- * to [ConnectionForDevice] services for a given [ConnectedDevice].
+ * A connection to a remote [ProcessInventoryServer] that provides access to [ConnectionForDevice] services for a given [ConnectedDevice].
  *
- * Implementation are guaranteed to be thread-safe, and typically shared across
- * a given [AdbSession] to ensure efficient use of th underlying communication
- * channel (i.e. socket).
+ * Implementation are guaranteed to be thread-safe, and typically shared across a given [AdbSession] to ensure efficient use of th
+ * underlying communication channel (i.e. socket).
  */
 interface ProcessInventoryServerConnection : AutoCloseable {
 
+  /**
+   * Invokes [block] with the [ConnectionForDevice] corresponding to [device]. [block] can be a long-running coroutine, but it will be
+   * cancelled when the [ConnectedDevice.cache] is cancelled.
+   */
+  suspend fun <R> withConnectionForDevice(device: ConnectedDevice, block: suspend ConnectionForDevice.() -> R): R
+
+  interface ConnectionForDevice {
+
+    /** The [ConnectedDevice] this connection applies to */
+    val device: ConnectedDevice
+
     /**
-     * Invokes [block] with the [ConnectionForDevice] corresponding to [device].
-     * [block] can be a long-running coroutine, but it will be cancelled when the
-     * [ConnectedDevice.cache] is cancelled.
+     * Asks the underlying [ProcessInventoryServer] to send notifications about [JdwpProcessProperties] updates of all processes of a given
+     * [device]. The returned [Flow] remains active as long as the [ConnectedDevice.scope][com.android.adblib.scope].
      */
-    suspend fun <R> withConnectionForDevice(
-        device: ConnectedDevice,
-        block: suspend ConnectionForDevice.() -> R
-    ): R
+    val processListStateFlow: StateFlow<List<JdwpProcessProperties>>
 
-    interface ConnectionForDevice {
+    /**
+     * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommand] that are dispatched from the underlying [ProcessInventoryServer].
+     * See [sendProcessCommand]
+     */
+    val processCommandSharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommand>
 
-        /**
-         * The [ConnectedDevice] this connection applies to
-         */
-        val device: ConnectedDevice
+    /**
+     * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommandReply] that are dispatched from the underlying
+     * [ProcessInventoryServer]. See [sendProcessCommandReply]
+     */
+    val processCommandReplySharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommandReply>
 
-        /**
-         * Asks the underlying [ProcessInventoryServer] to send notifications about [JdwpProcessProperties]
-         * updates of all processes of a given [device]. The returned [Flow] remains active as long as the
-         * [ConnectedDevice.scope][com.android.adblib.scope].
-         */
-        val processListStateFlow: StateFlow<List<JdwpProcessProperties>>
+    /** Sends the given [JdwpProcessProperties] of a given [process] to the underlying [ProcessInventoryServer] */
+    suspend fun sendProcessProperties(properties: JdwpProcessProperties)
 
-        /**
-         * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommand] that are dispatched from the underlying
-         * [ProcessInventoryServer]. See [sendProcessCommand]
-         */
-        val processCommandSharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommand>
+    /** Notify the underlying [ProcessInventoryServer] that the given process has exited. */
+    suspend fun notifyProcessExit(pid: Int)
 
-        /**
-         * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommandReply] that are dispatched from the underlying
-         * [ProcessInventoryServer]. See [sendProcessCommandReply]
-         */
-        val processCommandReplySharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommandReply>
+    /**
+     * Sends a [ProcessInventoryServerProto.ProcessCommand] to the underlying [ProcessInventoryServer]. The
+     * [ProcessInventoryServerProto.ProcessCommand] is dispatched to all clients through the [processCommandSharedFlow]
+     */
+    suspend fun sendProcessCommand(command: ProcessInventoryServerProto.ProcessCommand)
 
-        /**
-         * Sends the given [JdwpProcessProperties] of a given [process] to
-         * the underlying [ProcessInventoryServer]
-         */
-        suspend fun sendProcessProperties(properties: JdwpProcessProperties)
+    /**
+     * Sends a [ProcessInventoryServerProto.ProcessCommandReply] to the underlying [ProcessInventoryServer]. The
+     * [ProcessInventoryServerProto.ProcessCommandReply] is dispatched to all clients through the [processCommandReplySharedFlow]
+     */
+    suspend fun sendProcessCommandReply(commandReply: ProcessInventoryServerProto.ProcessCommandReply)
+  }
 
-        /**
-         * Notify the underlying [ProcessInventoryServer] that the given process has exited.
-         */
-        suspend fun notifyProcessExit(pid: Int)
-
-        /**
-         * Sends a [ProcessInventoryServerProto.ProcessCommand] to the underlying [ProcessInventoryServer]. The
-         * [ProcessInventoryServerProto.ProcessCommand] is dispatched to all clients through the [processCommandSharedFlow]
-         */
-        suspend fun sendProcessCommand(command: ProcessInventoryServerProto.ProcessCommand)
-
-        /**
-         * Sends a [ProcessInventoryServerProto.ProcessCommandReply] to the underlying [ProcessInventoryServer]. The
-         * [ProcessInventoryServerProto.ProcessCommandReply] is dispatched to all clients through the [processCommandReplySharedFlow]
-         */
-        suspend fun sendProcessCommandReply(commandReply: ProcessInventoryServerProto.ProcessCommandReply)
-
+  companion object {
+    fun create(session: AdbSession, config: ProcessInventoryServerConfiguration): ProcessInventoryServerConnection {
+      return ProcessInventoryServerConnectionImpl(session, config)
     }
-
-    companion object {
-        fun create(
-            session: AdbSession,
-            config: ProcessInventoryServerConfiguration
-        ): ProcessInventoryServerConnection {
-            return ProcessInventoryServerConnectionImpl(session, config)
-        }
-    }
+  }
 }

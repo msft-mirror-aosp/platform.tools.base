@@ -49,21 +49,18 @@ import org.jetbrains.uast.resolveToUElement
 /**
  * An abstract thread detector parameterized by:
  *
- * @param T an enumeration of thread categories of interest (e.g. "Ui", "Worker", "Binder", etc.).
- *   These are assumed incomplete, and *disjoint*.
+ * @param T an enumeration of thread categories of interest (e.g. "Ui", "Worker", "Binder", etc.). These are assumed incomplete, and
+ *   *disjoint*.
  *
- * The (induced) thread requirement [lattice] is ordered "more permissive" ⊑ "less permissive", with
- * [ThreadConstraintLattice.AnyThread] being (⊥) (the most permissive), and
- * [ThreadConstraintLattice.NoThread] (⊤) (the least).
+ * The (induced) thread requirement [lattice] is ordered "more permissive" ⊑ "less permissive", with [ThreadConstraintLattice.AnyThread]
+ * being (⊥) (the most permissive), and [ThreadConstraintLattice.NoThread] (⊤) (the least).
  *
- * Note that [ThreadConstraintLattice.AnyThread] is strictly more permissive than the "meet" over
- * all explicitly given categories [T]. For example, for Android threads,
- * [ThreadConstraintLattice.AnyThread] is not equivalent to `@Ui ⊓ @Worker ⊓ @Binder`, but
- * conceptually equivalent to `@Ui ⊓ @Worker ⊓ @Binder ⊓ Other`, where `Other` is an implicit,
- * programmer-inaccessible thread category.
+ * Note that [ThreadConstraintLattice.AnyThread] is strictly more permissive than the "meet" over all explicitly given categories [T]. For
+ * example, for Android threads, [ThreadConstraintLattice.AnyThread] is not equivalent to `@Ui ⊓ @Worker ⊓ @Binder`, but conceptually
+ * equivalent to `@Ui ⊓ @Worker ⊓ @Binder ⊓ Other`, where `Other` is an implicit, programmer-inaccessible thread category.
  *
- * The analysis is also parameterizable by [initialAssumptions], which can be provided either from
- * the analysis result of a dependent module, or assumed for primitives.
+ * The analysis is also parameterizable by [initialAssumptions], which can be provided either from the analysis result of a dependent
+ * module, or assumed for primitives.
  */
 abstract class ThreadConstraintDetector<T : Enum<T>>(
   protected val lattice: ThreadConstraintLattice<T>,
@@ -90,8 +87,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           when {
             error.calleeLowerBound == lattice.NoThread ->
               "$callLabel has an unsatisfiable thread requirement, but context is allowing ${error.callerAnnotation}"
-            else ->
-              "$callLabel must be from ${error.calleeLowerBound}, but context is allowing ${error.callerAnnotation}"
+            else -> "$callLabel must be from ${error.calleeLowerBound}, but context is allowing ${error.callerAnnotation}"
           }
         context.report(violationIssue, context.locationOf(error.site), message)
       }
@@ -103,23 +99,17 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           when (val parentSite = site.uastParent) {
             is UIfExpression ->
               when (site) {
-                parentSite.condition ->
-                  "Condition must run from $t1, while branches must run from $t2"
-                else ->
-                  "Branch must run from $t2, incompatible with the other that must run from $t1"
+                parentSite.condition -> "Condition must run from $t1, while branches must run from $t2"
+                else -> "Branch must run from $t2, incompatible with the other that must run from $t1"
               }
             is UExpressionList,
-            is UBlockExpression ->
-              "Statement must run from $t2, incompatible with earlier code that must run from $t1"
+            is UBlockExpression -> "Statement must run from $t2, incompatible with earlier code that must run from $t1"
             is USwitchExpression ->
               when (site) {
-                parentSite.expression ->
-                  "Condition must run from $t1, while branches must run from $t2"
-                else ->
-                  "Branch must run from $t2, incompatible with the another that must run from $t1"
+                parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
+                else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
               }
-            else ->
-              "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
+            else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
           }
         context.report(unsatisfiableConstraintIssue, context.locationOf(site), message)
       }
@@ -146,12 +136,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
             else -> mapOf()
           }
         when (val constraints = error.constraints) {
-          null ->
-            context.report(
-              violationIssue,
-              context.locationOf(call),
-              "Call fails thread requirements on arguments",
-            )
+          null -> context.report(violationIssue, context.locationOf(call), "Call fails thread requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
             val concreteReasons =
@@ -197,8 +182,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       }
       is Error.ConflictingAnnotations -> {
         val (self, bases) = error
-        val baseAnnotations =
-          bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
+        val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
 
         fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
           for ((i, elem) in this@join.withIndex()) {
@@ -224,42 +208,29 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           return originStrs.join(originStrs.size) { it }
         }
 
-        val baseStr =
-          baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) ->
-            "$ann (from ${originStr(origins)})"
-          }
+        val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
 
-        context.report(
-          violationIssue,
-          context.locationOf(self.origin),
-          "${self.annotated} restricts $baseStr",
-        )
+        context.report(violationIssue, context.locationOf(self.origin), "${self.annotated} restricts $baseStr")
       }
       is Error.ConflictingInference -> {
         val baseAnn = error.conflictingBase.annotated
         val baseStr =
-          when (
-            val baseName =
-              (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name
-          ) {
+          when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
             null -> "a super method"
             else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
           }
 
         val message =
           when (error.inferredLowerBound) {
-            lattice.NoThread ->
-              "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
-            else ->
-              "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
+            lattice.NoThread -> "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
+            else -> "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
           }
 
         context.report(violationIssue, context.locationOf(error.site), message)
       }
     }
 
-  private fun Context.locationOf(site: UElement) =
-    client.getUastParser(project).createLocation(site)
+  private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
 
   override fun resolveAnnotations(
     context: JavaContext,
@@ -282,13 +253,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       else -> EffectAnnotation.Implicit(baseAnns)
     }
 
-  override fun parseMethodImmediateAnnotations(
-    evaluator: JavaEvaluator,
-    method: UMethod,
-  ): ThreadConstraint<T>? {
+  override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): ThreadConstraint<T>? {
     fun fromMethod() = parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
-    fun fromClass() =
-      parseAnnotations(evaluator.getAnnotations(method.getContainingUClass()?.javaPsi, false))
+    fun fromClass() = parseAnnotations(evaluator.getAnnotations(method.getContainingUClass()?.javaPsi, false))
     fun fromClassOrDefault() =
       when {
         // Constructors don't inherit from class annotations.
@@ -319,8 +286,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
   protected abstract fun parse(ann: UAnnotation): ThreadConstraint<T>?
 
   /** A bit-set representation of ([T] ⊕ `Other`), assuming the enum [T] has few enough variants. */
-  data class ThreadConstraint<T : Enum<T>>
-  internal constructor(private val tag: ThreadConstraintLattice<T>, internal val cases: ULong) {
+  data class ThreadConstraint<T : Enum<T>> internal constructor(private val tag: ThreadConstraintLattice<T>, internal val cases: ULong) {
     internal fun isMostPermissive() = cases == tag.fullCases
 
     internal fun isLeastPermissive() = cases == 0UL
@@ -329,23 +295,17 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       when {
         isMostPermissive() -> "`@AnyThread`"
         isLeastPermissive() -> "`@NoThread`"
-        else ->
-          tag.threadTag.enumConstants
-            .asSequence()
-            .filterIndexed { i, _ -> cases and (1UL shl i) != 0UL }
-            .joinToString("|")
+        else -> tag.threadTag.enumConstants.asSequence().filterIndexed { i, _ -> cases and (1UL shl i) != 0UL }.joinToString("|")
       }
   }
 
   /**
-   * Given an enumeration of disjoint (but not necessarily exhaustive) thread tags, generate a
-   * lattice whose `⊥` is "most inclusive", and `⊤` is "least inclusive".
+   * Given an enumeration of disjoint (but not necessarily exhaustive) thread tags, generate a lattice whose `⊥` is "most inclusive", and
+   * `⊤` is "least inclusive".
    *
-   * There's always an implicit "other" thread tag. So `⊥` is strictly more inclusive than the
-   * inclusion of all user-specified tags.
+   * There's always an implicit "other" thread tag. So `⊥` is strictly more inclusive than the inclusion of all user-specified tags.
    */
-  class ThreadConstraintLattice<T : Enum<T>>(val threadTag: Class<T>) :
-    Lattice<ThreadConstraint<T>> {
+  class ThreadConstraintLattice<T : Enum<T>>(val threadTag: Class<T>) : Lattice<ThreadConstraint<T>> {
     internal val numExplicitCases = threadTag.enumConstants.size
     internal val fullCases = (1UL shl (numExplicitCases + 1)) - 1UL
 
@@ -360,8 +320,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     val NoThread = ThreadConstraint(this, 0UL)
     private val cache = Array(numExplicitCases + 1) { ThreadConstraint(this, 1UL shl it) }
 
-    fun of(vararg cases: T): ThreadConstraint<T> =
-      of(cases.fold(0UL) { acc, case -> acc or (1UL shl case.ordinal) })
+    fun of(vararg cases: T): ThreadConstraint<T> = of(cases.fold(0UL) { acc, case -> acc or (1UL shl case.ordinal) })
 
     /** Micro-optimized constructor, reusing common instances */
     private fun of(cases: ULong): ThreadConstraint<T> =
@@ -375,8 +334,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     override val bottom = AnyThread
     override val top = NoThread
 
-    override fun precede(first: ThreadConstraint<T>, second: ThreadConstraint<T>) =
-      (first.cases and second.cases) == second.cases
+    override fun precede(first: ThreadConstraint<T>, second: ThreadConstraint<T>) = (first.cases and second.cases) == second.cases
 
     override fun joinOf(first: ThreadConstraint<T>, second: ThreadConstraint<T>) =
       when {
@@ -398,14 +356,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
 
     val encoder: Encoder<ThreadConstraint<T>> =
       when {
-        fullCases < Byte.MAX_VALUE.toULong() ->
-          Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
+        fullCases < Byte.MAX_VALUE.toULong() -> Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
         else -> Encoder.int.adapt({ it.cases.toInt() }, { of(it.toULong()) })
       }
 
     companion object {
-      inline fun <reified T : Enum<T>> of(): ThreadConstraintLattice<T> =
-        ThreadConstraintLattice(T::class.java)
+      inline fun <reified T : Enum<T>> of(): ThreadConstraintLattice<T> = ThreadConstraintLattice(T::class.java)
     }
   }
 }

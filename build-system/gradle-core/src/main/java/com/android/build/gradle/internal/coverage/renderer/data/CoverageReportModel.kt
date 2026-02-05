@@ -23,8 +23,7 @@ package com.android.build.gradle.internal.coverage.renderer.data
 // =========================================================================================
 
 /**
- * The root data class for the entire code coverage report.
- * This is the top-level object that will be serialized to JSON.
+ * The root data class for the entire code coverage report. This is the top-level object that will be serialized to JSON.
  *
  * @property name The name of the project.
  * @property timeStamp The timestamp of when the report was generated.
@@ -33,11 +32,11 @@ package com.android.build.gradle.internal.coverage.renderer.data
  * @property numberOfTestsSuites The total count of test suites that contributed to this report.
  */
 data class CoverageReport(
-    val name: String,
-    val timeStamp: String,
-    val modules: List<ModuleReport>,
-    val variantCoverages: List<VariantCoverage>,
-    val numberOfTestsSuites: Int,
+  val name: String,
+  val timeStamp: String,
+  val modules: List<ModuleReport>,
+  val variantCoverages: List<VariantCoverage>,
+  val numberOfTestsSuites: Int,
 )
 
 /**
@@ -49,10 +48,10 @@ data class CoverageReport(
  * @property packages A list of packages within this module that have coverage data.
  */
 data class ModuleReport(
-    val name: String,
-    val variantCoverages: List<VariantCoverage>,
-    val testSuites: List<TestSuiteReport>,
-    val packages: List<PackageReport>,
+  val name: String,
+  val variantCoverages: List<VariantCoverage>,
+  val testSuites: List<TestSuiteReport>,
+  val packages: List<PackageReport>,
 )
 
 /**
@@ -64,28 +63,28 @@ data class ModuleReport(
  * @property packages A list of packages covered by this specific test suite.
  */
 data class TestSuiteReport(
-    val name: String,
-    val moduleName: String,
-    val variantCoverages: List<VariantCoverage>,
-    val packages: List<PackageReport>,
+  val name: String,
+  val moduleName: String,
+  val variantCoverages: List<VariantCoverage>,
+  val packages: List<PackageReport>,
 )
 
 /**
  * Represents coverage data for a single Java/Kotlin package.
  *
  * @property name The fully qualified name of the package.
- * @property moduleName The name of the module this package belongs to. Can be null if this
- *           report is part of a `TestSuiteReport`'s package list.
+ * @property moduleName The name of the module this package belongs to. Can be null if this report is part of a `TestSuiteReport`'s package
+ *   list.
  * @property testSuiteName The name of the test suite this package report belongs to. Can be null if report is grouped by package.
  * @property variantCoverages Aggregated coverage for each variant within this package.
  * @property classes A list of classes within this package that have coverage data.
  */
 data class PackageReport(
-    val name: String,
-    val moduleName: String?,
-    val testSuiteName: String?,
-    val variantCoverages: List<VariantCoverage>,
-    val classes: List<ClassReport>,
+  val name: String,
+  val moduleName: String?,
+  val testSuiteName: String?,
+  val variantCoverages: List<VariantCoverage>,
+  val classes: List<ClassReport>,
 )
 
 /**
@@ -100,27 +99,22 @@ data class PackageReport(
  * @property methods A list of methods within this class that have coverage data.
  */
 data class ClassReport(
-    val name: String,
-    val packageName: String,
-    val testSuiteName: String?,
-    val sourceFileName: String,
-    val variantCoverages: List<VariantCoverage>,
-    val variantSourceFilePaths: List<VariantSourceFilePath>,
-    val methods: List<MethodReport>,
+  val name: String,
+  val packageName: String,
+  val testSuiteName: String?,
+  val sourceFileName: String,
+  val variantCoverages: List<VariantCoverage>,
+  val variantSourceFilePaths: List<VariantSourceFilePath>,
+  val methods: List<MethodReport>,
 )
 
 /**
  * Represents coverage data for a single method within a class.
  *
  * @property name The signature of the method.
- * @property variantLineNumbers A list detailing the line numbers this method spans,
- *           potentially differing per variant.
+ * @property variantLineNumbers A list detailing the line numbers this method spans, potentially differing per variant.
  */
-data class MethodReport(
-    val name: String,
-    val variantLineNumbers: List<VariantLineNumber>
-)
-
+data class MethodReport(val name: String, val variantLineNumbers: List<VariantLineNumber>)
 
 // =========================================================================================
 // COMMON / SHARED DATA CLASSES
@@ -134,11 +128,7 @@ data class MethodReport(
  * @property instruction The instruction coverage information for this variant.
  * @property branch The branch coverage information for this variant.
  */
-data class VariantCoverage(
-    val name: String,
-    val instruction: CoverageInfo,
-    val branch: CoverageInfo
-)
+data class VariantCoverage(val name: String, val instruction: CoverageInfo, val branch: CoverageInfo)
 
 /**
  * A generic container for coverage metrics.
@@ -147,11 +137,7 @@ data class VariantCoverage(
  * @property covered The number of covered items.
  * @property total The total number of items.
  */
-data class CoverageInfo(
-    val percent: Int,
-    val covered: Int,
-    val total: Int,
-)
+data class CoverageInfo(val percent: Int, val covered: Int, val total: Int)
 
 /**
  * Associates a build variant with the absolute path to a specific source file.
@@ -159,19 +145,13 @@ data class CoverageInfo(
  * @property variantName The name of the variant.
  * @property path The absolute path to the source file for this variant.
  */
-data class VariantSourceFilePath(
-    val variantName: String,
-    val path: String
-)
+data class VariantSourceFilePath(val variantName: String, val path: String)
 
 /**
- * Associates a build variant with a specific line number. Useful for methods whose
- * line numbers might change across variants due to different source sets.
+ * Associates a build variant with a specific line number. Useful for methods whose line numbers might change across variants due to
+ * different source sets.
  *
  * @property variantName The name of the variant.
  * @property lineNumber The line number relevant to this variant.
  */
-data class VariantLineNumber(
-    val variantName: String,
-    val lineNumber: Int
-)
+data class VariantLineNumber(val variantName: String, val lineNumber: Int)

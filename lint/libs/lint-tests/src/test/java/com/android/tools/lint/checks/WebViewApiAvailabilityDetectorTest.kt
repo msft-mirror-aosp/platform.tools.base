@@ -156,35 +156,35 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
   fun testGuardedAndroidXAvailableMethods() {
     val expected =
       """
-            src/test/pkg/WebViewActivity.java:14: Warning: Consider using WebViewCompat.createWebMessageChannel instead which will support more devices. [WebViewApiAvailability]
-                        webView.createWebMessageChannel();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:15: Warning: Consider using WebViewCompat.postVisualStateCallback instead which will support more devices. [WebViewApiAvailability]
-                        webView.postVisualStateCallback(0, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:16: Warning: Consider using WebViewCompat.postWebMessage instead which will support more devices. [WebViewApiAvailability]
-                        webView.postWebMessage(null, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:17: Warning: Consider using WebViewCompat.getCurrentWebViewPackage instead which will support more devices. [WebViewApiAvailability]
-                        WebView.getCurrentWebViewPackage();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:18: Warning: Consider using WebViewCompat.getWebChromeClient instead which will support more devices. [WebViewApiAvailability]
-                        webView.getWebChromeClient();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:19: Warning: Consider using WebViewCompat.getWebViewClient instead which will support more devices. [WebViewApiAvailability]
-                        webView.getWebViewClient();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:20: Warning: Consider using WebViewCompat.getSafeBrowsingPrivacyPolicyUrl instead which will support more devices. [WebViewApiAvailability]
-                        WebView.getSafeBrowsingPrivacyPolicyUrl();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:21: Warning: Consider using WebViewCompat.setSafeBrowsingWhitelist instead which will support more devices. [WebViewApiAvailability]
-                        WebView.setSafeBrowsingWhitelist(null, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:22: Warning: Consider using WebViewCompat.startSafeBrowsing instead which will support more devices. [WebViewApiAvailability]
-                        WebView.startSafeBrowsing(this, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 9 warnings
-            """
+      src/test/pkg/WebViewActivity.java:14: Warning: Consider using WebViewCompat.createWebMessageChannel instead which will support more devices. [WebViewApiAvailability]
+                  webView.createWebMessageChannel();
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:15: Warning: Consider using WebViewCompat.postVisualStateCallback instead which will support more devices. [WebViewApiAvailability]
+                  webView.postVisualStateCallback(0, null);
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:16: Warning: Consider using WebViewCompat.postWebMessage instead which will support more devices. [WebViewApiAvailability]
+                  webView.postWebMessage(null, null);
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:17: Warning: Consider using WebViewCompat.getCurrentWebViewPackage instead which will support more devices. [WebViewApiAvailability]
+                  WebView.getCurrentWebViewPackage();
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:18: Warning: Consider using WebViewCompat.getWebChromeClient instead which will support more devices. [WebViewApiAvailability]
+                  webView.getWebChromeClient();
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:19: Warning: Consider using WebViewCompat.getWebViewClient instead which will support more devices. [WebViewApiAvailability]
+                  webView.getWebViewClient();
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:20: Warning: Consider using WebViewCompat.getSafeBrowsingPrivacyPolicyUrl instead which will support more devices. [WebViewApiAvailability]
+                  WebView.getSafeBrowsingPrivacyPolicyUrl();
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:21: Warning: Consider using WebViewCompat.setSafeBrowsingWhitelist instead which will support more devices. [WebViewApiAvailability]
+                  WebView.setSafeBrowsingWhitelist(null, null);
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/WebViewActivity.java:22: Warning: Consider using WebViewCompat.startSafeBrowsing instead which will support more devices. [WebViewApiAvailability]
+                  WebView.startSafeBrowsing(this, null);
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 9 warnings
+      """
         .trimIndent()
 
     lint()

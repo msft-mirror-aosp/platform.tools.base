@@ -23,88 +23,67 @@ import com.android.resources.ResourceType
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
-import org.junit.Before
-
-import org.junit.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import org.junit.Before
+import org.junit.Test
 
 class GenerateApiPublicTxtTaskTest {
 
-    private lateinit var dir: Path
+  private lateinit var dir: Path
 
-    @Before
-    fun setupFileSystem() {
-        dir = Jimfs.newFileSystem(Configuration.windows()).getPath("dir")
-    }
+  @Before
+  fun setupFileSystem() {
+    dir = Jimfs.newFileSystem(Configuration.windows()).getPath("dir")
+  }
 
-    @Test
-    fun `test copies when public txt exists`() {
-        Files.createDirectories(dir)
+  @Test
+  fun `test copies when public txt exists`() {
+    Files.createDirectories(dir)
 
-        val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
-        Files.write(internalPublicTxt, listOf("string public_string"))
+    val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
+    Files.write(internalPublicTxt, listOf("string public_string"))
 
-        val symbols = dir.resolve("rdef.txt")
-        Files.write(symbols, listOf("Invalid R-def file. Should not be loaded at all"))
+    val symbols = dir.resolve("rdef.txt")
+    Files.write(symbols, listOf("Invalid R-def file. Should not be loaded at all"))
 
-        val externalPublicTxt = dir.resolve("public.txt")
+    val externalPublicTxt = dir.resolve("public.txt")
 
-        GenerateApiPublicTxtTask.writeFile(
-            internalPublicTxt = internalPublicTxt,
-            symbols = symbols,
-            externalPublicTxt = externalPublicTxt
-        )
+    GenerateApiPublicTxtTask.writeFile(internalPublicTxt = internalPublicTxt, symbols = symbols, externalPublicTxt = externalPublicTxt)
 
-        assertThat(externalPublicTxt).hasContents("string public_string")
-    }
+    assertThat(externalPublicTxt).hasContents("string public_string")
+  }
 
-    @Test
-    fun `test generates when public txt does not exist`() {
-        Files.createDirectories(dir)
+  @Test
+  fun `test generates when public txt does not exist`() {
+    Files.createDirectories(dir)
 
-        val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
+    val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
 
-        val symbols = dir.resolve("rdef.txt")
-        SymbolIo.writeRDef(
-            SymbolTable.builder()
-                .tablePackage("foo.bar")
-                .add(normalSymbol(ResourceType.STRING, "foo")).build(),
-            symbols
-        )
+    val symbols = dir.resolve("rdef.txt")
+    SymbolIo.writeRDef(SymbolTable.builder().tablePackage("foo.bar").add(normalSymbol(ResourceType.STRING, "foo")).build(), symbols)
 
-        val externalPublicTxt = dir.resolve("public.txt")
+    val externalPublicTxt = dir.resolve("public.txt")
 
-        GenerateApiPublicTxtTask.writeFile(
-            internalPublicTxt = internalPublicTxt,
-            symbols = symbols,
-            externalPublicTxt = externalPublicTxt
-        )
+    GenerateApiPublicTxtTask.writeFile(internalPublicTxt = internalPublicTxt, symbols = symbols, externalPublicTxt = externalPublicTxt)
 
-        assertThat(externalPublicTxt).hasContents("string foo")
-    }
+    assertThat(externalPublicTxt).hasContents("string foo")
+  }
 
-    @Test
-    fun `test no resources at all`() {
-        Files.createDirectories(dir)
+  @Test
+  fun `test no resources at all`() {
+    Files.createDirectories(dir)
 
-        val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
-        // Not created as will not be if there are no resources
+    val internalPublicTxt = dir.resolve("internalPublicTxt.txt")
+    // Not created as will not be if there are no resources
 
-        val symbols = dir.resolve("rdef.txt")
-        SymbolIo.writeRDef(
-            SymbolTable.builder().tablePackage("foo.bar").build(),
-            symbols
-        )
+    val symbols = dir.resolve("rdef.txt")
+    SymbolIo.writeRDef(SymbolTable.builder().tablePackage("foo.bar").build(), symbols)
 
-        val externalPublicTxt = dir.resolve("public.txt")
+    val externalPublicTxt = dir.resolve("public.txt")
 
-        GenerateApiPublicTxtTask.writeFile(
-            internalPublicTxt = internalPublicTxt,
-            symbols = symbols,
-            externalPublicTxt = externalPublicTxt
-        )
+    GenerateApiPublicTxtTask.writeFile(internalPublicTxt = internalPublicTxt, symbols = symbols, externalPublicTxt = externalPublicTxt)
 
-        assertThat(externalPublicTxt).hasContents()
-    }
+    assertThat(externalPublicTxt).hasContents()
+  }
 }

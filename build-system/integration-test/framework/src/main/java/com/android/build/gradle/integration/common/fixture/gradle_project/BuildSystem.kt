@@ -25,106 +25,86 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-/**
- * The build system under which the integration tests are running.
- */
+/** The build system under which the integration tests are running. */
 internal enum class BuildSystem {
-    GRADLE {
-        override val localRepositories: List<Path>
-            get() {
-                val customRepo = System.getenv(GradleTestProject.ENV_CUSTOM_REPO)
-                // TODO: support USE_EXTERNAL_REPO
-                val repos = ImmutableList.builder<Path>()
-                for (path in Splitter.on(File.pathSeparatorChar).split(customRepo)) {
-                    repos.add(Paths.get(path))
-                }
-                return repos.build()
-            }
-    },
-    BAZEL {
-        override val localRepositories: List<Path>
-            get() = BazelIntegrationTestsSuite.MAVEN_REPOS
-    },
-    ;
+  GRADLE {
+    override val localRepositories: List<Path>
+      get() {
+        val customRepo = System.getenv(GradleTestProject.ENV_CUSTOM_REPO)
+        // TODO: support USE_EXTERNAL_REPO
+        val repos = ImmutableList.builder<Path>()
+        for (path in Splitter.on(File.pathSeparatorChar).split(customRepo)) {
+          repos.add(Paths.get(path))
+        }
+        return repos.build()
+      }
+  },
+  BAZEL {
+    override val localRepositories: List<Path>
+      get() = BazelIntegrationTestsSuite.MAVEN_REPOS
+  };
 
-    abstract val localRepositories: List<Path>
+  abstract val localRepositories: List<Path>
 
-    fun getCommonBuildScriptContent(
-        withAndroidGradlePlugin: Boolean,
-        withKotlinGradlePlugin: Boolean,
-        withKspGradlePlugin: Boolean,
-        withComposeCompilerGradlePlugin: Boolean,
-        withAndroidxPrivacySandboxLibraryPlugin: Boolean,
-        withDeviceProvider: Boolean,
-        withExtraPluginClasspath: String?,
-        withBuiltInKotlinSupport: Boolean,
-    ): String {
-        val script = StringBuilder()
-        script.append("def commonScriptFolder = buildscript.sourceFile.parent\n")
-        script.append("project.buildscript { buildscript ->\n")
-        script.append(
-            "    apply from: \"\$commonScriptFolder/commonLocalRepo.gradle\", to:buildscript\n"
-        )
-        if (withKotlinGradlePlugin || withKspGradlePlugin || withComposeCompilerGradlePlugin) {
-            // To get the Kotlin and/or KSP version
-            script.append("    apply from: \"\$commonScriptFolder/commonHeader.gradle\"\n")
-        }
-        script.append("    dependencies {\n")
-        if (withAndroidGradlePlugin) {
-            script.append(
-                "        classpath \"com.android.tools.build:gradle:\${libs.versions.buildVersion.get()}\"\n"
-            )
-        }
-        if (withKotlinGradlePlugin) {
-            script.append(
-                "        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n"
-            )
-        }
-        if (withKspGradlePlugin) {
-            script.append(
-                "        classpath \"com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:\${libs.versions.kspVersion.get()}\"\n"
-            )
-        }
-        if (withComposeCompilerGradlePlugin) {
-            script.append(
-                "        classpath \"org.jetbrains.kotlin:compose-compiler-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n"
-            )
-        }
-        if (withAndroidxPrivacySandboxLibraryPlugin) {
-            script.append(
-                "        classpath \"androidx.privacysandbox.plugins:plugins-privacysandbox-library:\${libs.versions.androidxPrivacySandboxLibraryVersion.get()}\"\n")
-        }
-        if (withDeviceProvider) {
-            script.append(
-                "        classpath 'com.android.tools.internal.build.test:devicepool:0.1'\n"
-            )
-        }
-        if (!withExtraPluginClasspath.isNullOrBlank()) {
-            script.append(
-                "        classpath '$withExtraPluginClasspath'\n"
-            )
-        }
-        if (withBuiltInKotlinSupport) {
-            script.append(
-                "        classpath \"com.android.tools.build:gradle-kotlin:\${libs.versions.buildVersion.get()}\"\n"
-            )
-        }
-        script.append("    }\n")
-        script.append("}")
-        return script.toString()
+  fun getCommonBuildScriptContent(
+    withAndroidGradlePlugin: Boolean,
+    withKotlinGradlePlugin: Boolean,
+    withKspGradlePlugin: Boolean,
+    withComposeCompilerGradlePlugin: Boolean,
+    withAndroidxPrivacySandboxLibraryPlugin: Boolean,
+    withExtraPluginClasspath: String?,
+    withBuiltInKotlinSupport: Boolean,
+  ): String {
+    val script = StringBuilder()
+    script.append("def commonScriptFolder = buildscript.sourceFile.parent\n")
+    script.append("project.buildscript { buildscript ->\n")
+    script.append("    apply from: \"\$commonScriptFolder/commonLocalRepo.gradle\", to:buildscript\n")
+    if (withKotlinGradlePlugin || withKspGradlePlugin || withComposeCompilerGradlePlugin) {
+      // To get the Kotlin and/or KSP version
+      script.append("    apply from: \"\$commonScriptFolder/commonHeader.gradle\"\n")
     }
-
-    companion object {
-        fun get(): BuildSystem {
-            return when {
-                TestUtils.runningFromBazel() -> {
-                    BAZEL
-                }
-                System.getenv(GradleTestProject.ENV_CUSTOM_REPO) != null -> {
-                    GRADLE
-                }
-                else -> throw IllegalStateException("Tests must be run from the build system")
-            }
-        }
+    script.append("    dependencies {\n")
+    if (withAndroidGradlePlugin) {
+      script.append("        classpath \"com.android.tools.build:gradle:\${libs.versions.buildVersion.get()}\"\n")
     }
+    if (withKotlinGradlePlugin) {
+      script.append("        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n")
+    }
+    if (withKspGradlePlugin) {
+      script.append(
+        "        classpath \"com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:\${libs.versions.kspVersion.get()}\"\n"
+      )
+    }
+    if (withComposeCompilerGradlePlugin) {
+      script.append("        classpath \"org.jetbrains.kotlin:compose-compiler-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n")
+    }
+    if (withAndroidxPrivacySandboxLibraryPlugin) {
+      script.append(
+        "        classpath \"androidx.privacysandbox.plugins:plugins-privacysandbox-library:\${libs.versions.androidxPrivacySandboxLibraryVersion.get()}\"\n"
+      )
+    }
+    if (!withExtraPluginClasspath.isNullOrBlank()) {
+      script.append("        classpath '$withExtraPluginClasspath'\n")
+    }
+    if (withBuiltInKotlinSupport) {
+      script.append("        classpath \"com.android.tools.build:gradle-kotlin:\${libs.versions.buildVersion.get()}\"\n")
+    }
+    script.append("    }\n")
+    script.append("}")
+    return script.toString()
+  }
+
+  companion object {
+    fun get(): BuildSystem {
+      return when {
+        TestUtils.runningFromBazel() -> {
+          BAZEL
+        }
+        System.getenv(GradleTestProject.ENV_CUSTOM_REPO) != null -> {
+          GRADLE
+        }
+        else -> throw IllegalStateException("Tests must be run from the build system")
+      }
+    }
+  }
 }

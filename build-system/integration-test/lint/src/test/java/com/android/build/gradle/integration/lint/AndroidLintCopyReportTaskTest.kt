@@ -24,39 +24,38 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test for [AndroidLintCopyReportTask]
- */
+/** Integration test for [AndroidLintCopyReportTask] */
 class AndroidLintCopyReportTaskTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                lintOptions {
-                                    textOutput = file("lint-results.txt")
-                                }
-                            }
-                        """.trimIndent()
-                    )
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
+            android {
+                lintOptions {
+                    textOutput = file("lint-results.txt")
+                }
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    // Regression test for b/189877657
-    @Test
-    fun testRunningTaskDirectly() {
-        project.executor().run("clean", "copyDebugLintReports")
-        ScannerSubject.assertThat(project.buildResult.stdout).contains("BUILD SUCCESSFUL")
-        ScannerSubject.assertThat(project.buildResult.stdout)
-            .contains("Unable to copy the lint text report")
-    }
+  // Regression test for b/189877657
+  @Test
+  fun testRunningTaskDirectly() {
+    project.executor().run("clean", "copyDebugLintReports")
+    ScannerSubject.assertThat(project.buildResult.stdout).contains("BUILD SUCCESSFUL")
+    ScannerSubject.assertThat(project.buildResult.stdout).contains("Unable to copy the lint text report")
+  }
 
-    @Test
-    fun testReportCopiedAfterLint() {
-        project.executor().run("clean", "lintDebug")
-        assertThat(project.file("lint-results.txt")).exists()
-    }
+  @Test
+  fun testReportCopiedAfterLint() {
+    project.executor().run("clean", "lintDebug")
+    assertThat(project.file("lint-results.txt")).exists()
+  }
 }

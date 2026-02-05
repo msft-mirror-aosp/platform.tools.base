@@ -15,10 +15,11 @@
  */
 package com.android.adblib.utils
 
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -28,32 +29,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * Same as [launch], except cancellation from the child coroutine [block] is propagated to the
- * parent coroutine (scope).
+ * Same as [launch], except cancellation from the child coroutine [block] is propagated to the parent coroutine (scope).
  *
  * The behavior is the same as [launch] wrt the following aspects:
  * * The parent coroutine won't complete until the child coroutine [block] completes.
- * * The parent coroutine fails with an exception if the child coroutine [block] throws
- *   an exception.
+ * * The parent coroutine fails with an exception if the child coroutine [block] throws an exception.
  */
 inline fun CoroutineScope.launchCancellable(
-    context: CoroutineContext = EmptyCoroutineContext,
-    start: CoroutineStart = CoroutineStart.DEFAULT,
-    crossinline block: suspend CoroutineScope.() -> Unit
+  context: CoroutineContext = EmptyCoroutineContext,
+  start: CoroutineStart = CoroutineStart.DEFAULT,
+  crossinline block: suspend CoroutineScope.() -> Unit,
 ): Job {
-    return launch(context, start) {
-        try {
-            block()
-        } catch (e: CancellationException) {
-            // Note: this is a no-op is the parent scope is already cancelled
-            this@launchCancellable.cancel(e)
-            throw e
-        }
+  return launch(context, start) {
+    try {
+      block()
+    } catch (e: CancellationException) {
+      // Note: this is a no-op is the parent scope is already cancelled
+      this@launchCancellable.cancel(e)
+      throw e
     }
+  }
 }
 
 /**
@@ -62,74 +59,61 @@ inline fun CoroutineScope.launchCancellable(
  * @param isSupervisor whether to use a regular [Job] or a [SupervisorJob]
  * @param context [CoroutineContext] to apply in addition to the parent scope [CoroutineContext]
  */
-fun CoroutineScope.createChildScope(
-    isSupervisor: Boolean = false,
-    context: CoroutineContext = EmptyCoroutineContext
-): CoroutineScope {
-    val newJob = if (isSupervisor) {
-        SupervisorJob(this.coroutineContext.job)
+fun CoroutineScope.createChildScope(isSupervisor: Boolean = false, context: CoroutineContext = EmptyCoroutineContext): CoroutineScope {
+  val newJob =
+    if (isSupervisor) {
+      SupervisorJob(this.coroutineContext.job)
     } else {
-        Job(this.coroutineContext.job)
+      Job(this.coroutineContext.job)
     }
-    return CoroutineScope(this.coroutineContext + newJob + context)
+  return CoroutineScope(this.coroutineContext + newJob + context)
 }
 
-/**
- * Runs [block] as a regular `suspend` function, except that it gets cancelled when [otherScope]
- * is cancelled.
- */
-suspend inline fun <R> runAlongOtherScope(
-    otherScope: CoroutineScope,
-    crossinline block: suspend () -> R
-): R {
-    // Attach a completion handler that cancels this coroutine when "otherScope" is cancelled
-    // The completion handler is removed as soon as the execution of `block` ends, so that
-    // we don't cancel the caller at some point later in the execution path.
-    val currentJob = currentCoroutineContext().job
-    val handler = otherScope.coroutineContext.job.invokeOnCompletion { throwable ->
-        when (throwable) {
-            is CancellationException -> {
-                currentJob.cancel(throwable)
-            }
-
-            null -> {
-                /* Nothing to do */
-            }
-
-            else -> {
-                currentJob.cancel(CancellationException(throwable.message, throwable))
-            }
+/** Runs [block] as a regular `suspend` function, except that it gets cancelled when [otherScope] is cancelled. */
+suspend inline fun <R> runAlongOtherScope(otherScope: CoroutineScope, crossinline block: suspend () -> R): R {
+  // Attach a completion handler that cancels this coroutine when "otherScope" is cancelled
+  // The completion handler is removed as soon as the execution of `block` ends, so that
+  // we don't cancel the caller at some point later in the execution path.
+  val currentJob = currentCoroutineContext().job
+  val handler =
+    otherScope.coroutineContext.job.invokeOnCompletion { throwable ->
+      when (throwable) {
+        is CancellationException -> {
+          currentJob.cancel(throwable)
         }
+
+        null -> {
+          /* Nothing to do */
+        }
+
+        else -> {
+          currentJob.cancel(CancellationException(throwable.message, throwable))
+        }
+      }
     }
 
-    return try {
-        block()
-    } finally {
-        handler.dispose()
-    }
+  return try {
+    block()
+  } finally {
+    handler.dispose()
+  }
 }
 
 /**
  * Re-entrant version of [Mutex.lock]
  *
- * See [Phantom of the Coroutine](https://elizarov.medium.com/phantom-of-the-coroutine-afc63b03a131)
- * See [Reentrant lock #1686](https://github.com/Kotlin/kotlinx.coroutines/issues/1686#issuecomment-777357672)
- * See [ReentrantMutex implementation for Kotlin Coroutines](https://gist.github.com/elizarov/9a48b9709ffd508909d34fab6786acfe)
+ * See [Phantom of the Coroutine](https://elizarov.medium.com/phantom-of-the-coroutine-afc63b03a131) See
+ * [Reentrant lock #1686](https://github.com/Kotlin/kotlinx.coroutines/issues/1686#issuecomment-777357672) See
+ * [ReentrantMutex implementation for Kotlin Coroutines](https://gist.github.com/elizarov/9a48b9709ffd508909d34fab6786acfe)
  */
 suspend fun <T> Mutex.withReentrantLock(block: suspend () -> T): T {
-    val key = ReentrantMutexContextKey(this)
-    // call block directly when this mutex is already locked in the context
-    if (currentCoroutineContext()[key] != null) return block()
-    // otherwise add it to the context and lock the mutex
-    return withContext(ReentrantMutexContextElement(key)) {
-        withLock(null) { block() }
-    }
+  val key = ReentrantMutexContextKey(this)
+  // call block directly when this mutex is already locked in the context
+  if (currentCoroutineContext()[key] != null) return block()
+  // otherwise add it to the context and lock the mutex
+  return withContext(ReentrantMutexContextElement(key)) { withLock(null) { block() } }
 }
 
-private class ReentrantMutexContextElement(
-    override val key: ReentrantMutexContextKey
-) : CoroutineContext.Element
+private class ReentrantMutexContextElement(override val key: ReentrantMutexContextKey) : CoroutineContext.Element
 
-private data class ReentrantMutexContextKey(
-    val mutex: Mutex
-) : CoroutineContext.Key<ReentrantMutexContextElement>
+private data class ReentrantMutexContextKey(val mutex: Mutex) : CoroutineContext.Key<ReentrantMutexContextElement>

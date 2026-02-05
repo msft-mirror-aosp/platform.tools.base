@@ -19,10 +19,10 @@ import org.gradle.api.file.DirectoryProperty
 
 /** Generates boilerplate code for ML models. */
 interface ModelGenerator {
-    /**
-     * Generate concrete classes for Gradle to build.
-     *
-     * @param outputDirProperty where to store generated classes.
-     */
-    fun generateBuildClass(outputDirProperty: DirectoryProperty)
+  /**
+   * Generate concrete classes for Gradle to build.
+   *
+   * @param outputDirProperty where to store generated classes.
+   */
+  fun generateBuildClass(outputDirProperty: DirectoryProperty)
 }

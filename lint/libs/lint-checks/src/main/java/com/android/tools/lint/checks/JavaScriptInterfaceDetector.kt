@@ -37,10 +37,7 @@ import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UastVisibility
 
-/**
- * Looks for addJavascriptInterface calls on interfaces have been properly annotated with
- * `@JavaScriptInterface`
- */
+/** Looks for addJavascriptInterface calls on interfaces have been properly annotated with `@JavaScriptInterface` */
 class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
 
   // ---- implements SourceCodeScanner ----
@@ -78,8 +75,7 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-    listOf(UDeclaration::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>>? = listOf(UDeclaration::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
     return object : UElementHandler() {
@@ -90,12 +86,7 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
         for (annotation in node.uAnnotations) {
           if (annotation.qualifiedName == JAVASCRIPT_INTERFACE_CLS) {
             val incident =
-              Incident(
-                ISSUE,
-                node as UElement,
-                context.getNameLocation(node),
-                "Must be public when using `@JavascriptInterface`",
-              )
+              Incident(ISSUE, node as UElement, context.getNameLocation(node), "Must be public when using `@JavascriptInterface`")
             context.report(incident, isAndroidProject())
           }
         }
@@ -121,8 +112,7 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
           androidSpecific = true,
           priority = 8,
           severity = Severity.ERROR,
-          implementation =
-            Implementation(JavaScriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          implementation = Implementation(JavaScriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
         )
         .addMoreInfo("https://goo.gle/JavascriptInterface")
 

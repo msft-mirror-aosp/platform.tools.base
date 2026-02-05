@@ -65,8 +65,7 @@ class UseCompoundDrawableDetector : LayoutDetector() {
         ISSUE,
         element,
         context.getElementLocation(element),
-        "This tag and its children can be replaced by one `<TextView/>` and " +
-          "a compound drawable",
+        "This tag and its children can be replaced by one `<TextView/>` and " + "a compound drawable",
       )
     }
   }
@@ -94,8 +93,7 @@ class UseCompoundDrawableDetector : LayoutDetector() {
         priority = 6,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(UseCompoundDrawableDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(UseCompoundDrawableDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
 
     private fun canCombineImage(image: Element): Boolean {

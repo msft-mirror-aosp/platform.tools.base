@@ -18,15 +18,14 @@ package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow
 
 import com.android.tools.idea.wizard.template.renderIf
 
-
 fun stringsXml(
   collection_name: String,
   detailNameLayout: String,
   isNewModule: Boolean,
   objectKind: String,
-  objectKindPlural: String
+  objectKindPlural: String,
 ): String {
-  val nameBlock = renderIf(!isNewModule) {"<string name=\"title_${collection_name}\">${objectKindPlural}</string>"}
+  val nameBlock = renderIf(!isNewModule) { "<string name=\"title_${collection_name}\">${objectKindPlural}</string>" }
   return """
 <resources>
     $nameBlock 

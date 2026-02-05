@@ -17,107 +17,89 @@
 package com.android.build.gradle.internal.dependency
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class ExtractAarTransformTest {
 
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun `test extract aar`() {
-        val aarContents = sampleAarContents()
+  @Test
+  fun `test extract aar`() {
+    val aarContents = sampleAarContents()
 
-        val aarFile = tmp.newFile("foo.aar")
-        createAar(aarFile, aarContents)
+    val aarFile = tmp.newFile("foo.aar")
+    createAar(aarFile, aarContents)
 
-        val extractedAarDir = tmp.newFolder("extracted-aar")
-        AarExtractor().extract(aarFile, extractedAarDir)
+    val extractedAarDir = tmp.newFolder("extracted-aar")
+    AarExtractor().extract(aarFile, extractedAarDir)
 
-        val extractedAarDirContents = readDirectoryContents(extractedAarDir)
-        val expectedDirContents = aarContents.toMutableMap().also {
-            it["jars/classes.jar"] = it["classes.jar"]!!
-            it.remove("classes.jar")
-        }
-        assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
-        extractedAarDirContents.forEach {
-            assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue()
-        }
+    val extractedAarDirContents = readDirectoryContents(extractedAarDir)
+    val expectedDirContents =
+      aarContents.toMutableMap().also {
+        it["jars/classes.jar"] = it["classes.jar"]!!
+        it.remove("classes.jar")
+      }
+    assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
+    extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
+  }
+
+  /** Regression test for b/315336689. */
+  @Test
+  fun `test extract aar which does not have classes jar`() {
+    val aarContents = sampleAarContents()
+    val aarContentsWithoutClassesJar = aarContents.toMutableMap().also { it.remove("classes.jar") }
+
+    val aarFile = tmp.newFile("foo.aar")
+    createAar(aarFile, aarContentsWithoutClassesJar)
+
+    val extractedAarDir = tmp.newFolder("extracted-aar")
+    AarExtractor().extract(aarFile, extractedAarDir)
+
+    val extractedAarDirContents = readDirectoryContents(extractedAarDir)
+    val expectedDirContents = aarContentsWithoutClassesJar.toMutableMap().also { it["jars/classes.jar"] = emptyJar() }
+    assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
+    extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
+  }
+
+  private fun sampleAarContents(): Map<String, ByteArray> =
+    mapOf(
+      "AndroidManifest.xml" to "<manifest/>".toByteArray(),
+      "res/values/value.xml" to "<resources/>".toByteArray(),
+      "classes.jar" to sampleJarContents(),
+    )
+
+  private fun sampleJarContents(): ByteArray =
+    ByteArrayOutputStream()
+      .apply { JarOutputStream(this).use { it.writeEntry("com/example/SomeClass.class", byteArrayOf()) } }
+      .toByteArray()
+
+  private fun emptyJar(): ByteArray = ByteArrayOutputStream().apply { JarOutputStream(this).use {} }.toByteArray()
+
+  private fun createAar(aarFile: File, aarContents: Map<String, ByteArray>) {
+    ZipOutputStream(FileOutputStream(aarFile).buffered()).use { zos -> aarContents.forEach { zos.writeEntry(it.key, it.value) } }
+  }
+
+  private fun ZipOutputStream.writeEntry(name: String, contents: ByteArray) {
+    putNextEntry(ZipEntry(name))
+    write(contents)
+    closeEntry()
+  }
+
+  private fun readDirectoryContents(directory: File): Map<String, ByteArray> {
+    val contents = mutableMapOf<String, ByteArray>()
+    directory.walk().forEach {
+      if (it.isFile) {
+        contents[it.relativeTo(directory).invariantSeparatorsPath] = it.readBytes()
+      }
     }
-
-    /** Regression test for b/315336689. */
-    @Test
-    fun `test extract aar which does not have classes jar`() {
-        val aarContents = sampleAarContents()
-        val aarContentsWithoutClassesJar = aarContents.toMutableMap().also {
-            it.remove("classes.jar")
-        }
-
-        val aarFile = tmp.newFile("foo.aar")
-        createAar(aarFile, aarContentsWithoutClassesJar)
-
-        val extractedAarDir = tmp.newFolder("extracted-aar")
-        AarExtractor().extract(aarFile, extractedAarDir)
-
-        val extractedAarDirContents = readDirectoryContents(extractedAarDir)
-        val expectedDirContents = aarContentsWithoutClassesJar.toMutableMap().also {
-            it["jars/classes.jar"] = emptyJar()
-        }
-        assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
-        extractedAarDirContents.forEach {
-            assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue()
-        }
-    }
-
-    private fun sampleAarContents(): Map<String, ByteArray> =
-        mapOf(
-            "AndroidManifest.xml" to "<manifest/>".toByteArray(),
-            "res/values/value.xml" to "<resources/>".toByteArray(),
-            "classes.jar" to sampleJarContents()
-        )
-
-    private fun sampleJarContents(): ByteArray =
-        ByteArrayOutputStream().apply {
-            JarOutputStream(this).use {
-                it.writeEntry("com/example/SomeClass.class", byteArrayOf())
-            }
-        }.toByteArray()
-
-    private fun emptyJar(): ByteArray =
-        ByteArrayOutputStream().apply {
-            JarOutputStream(this).use { }
-        }.toByteArray()
-
-    private fun createAar(aarFile: File, aarContents: Map<String, ByteArray>) {
-        ZipOutputStream(FileOutputStream(aarFile).buffered()).use { zos ->
-            aarContents.forEach {
-                zos.writeEntry(it.key, it.value)
-            }
-        }
-    }
-
-    private fun ZipOutputStream.writeEntry(name: String, contents: ByteArray) {
-        putNextEntry(ZipEntry(name))
-        write(contents)
-        closeEntry()
-    }
-
-    private fun readDirectoryContents(directory: File): Map<String, ByteArray> {
-        val contents = mutableMapOf<String, ByteArray>()
-        directory.walk().forEach {
-            if (it.isFile) {
-                contents[it.relativeTo(directory).invariantSeparatorsPath] = it.readBytes()
-            }
-        }
-        return contents
-    }
-
+    return contents
+  }
 }

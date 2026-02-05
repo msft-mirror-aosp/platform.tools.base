@@ -23,106 +23,64 @@ import com.android.ddmlib.clientmanager.DeviceClientManagerListener
 
 class TestDeviceClientManagerListener : DeviceClientManagerListener {
 
-    /**
-     * Events are added any time [DeviceClientManager] invokes this listener.
-     */
-    @GuardedBy("eventList")
-    private val eventList = mutableListOf<Event>()
+  /** Events are added any time [DeviceClientManager] invokes this listener. */
+  @GuardedBy("eventList") private val eventList = mutableListOf<Event>()
 
-    /**
-     * Returns a snapshot copy of the current list of [Event].
-     */
-    fun events(): List<Event> {
-        return synchronized(eventList) {
-            eventList.toList()
-        }
-    }
+  /** Returns a snapshot copy of the current list of [Event]. */
+  fun events(): List<Event> {
+    return synchronized(eventList) { eventList.toList() }
+  }
 
-    /**
-     * Process the current list of [Event] in a synchronized block.
-     */
-    fun <R> filterEvents(processor: (List<Event>) -> R): R {
-        return synchronized(eventList) {
-            processor(eventList)
-        }
-    }
+  /** Process the current list of [Event] in a synchronized block. */
+  fun <R> filterEvents(processor: (List<Event>) -> R): R {
+    return synchronized(eventList) { processor(eventList) }
+  }
 
-    fun clearEvents() {
-        synchronized(eventList) {
-            eventList.clear()
-        }
-    }
+  fun clearEvents() {
+    synchronized(eventList) { eventList.clear() }
+  }
 
-    override fun processListUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager
-    ) {
-        sendEvent(EventKind.PROCESS_LIST_UPDATED, bridge, deviceClientManager)
-    }
+  override fun processListUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager) {
+    sendEvent(EventKind.PROCESS_LIST_UPDATED, bridge, deviceClientManager)
+  }
 
-    override fun profileableProcessListUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager
-    ) {
-        sendEvent(EventKind.APP_PROCESS_LIST_UPDATED, bridge, deviceClientManager)
-    }
+  override fun profileableProcessListUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager) {
+    sendEvent(EventKind.APP_PROCESS_LIST_UPDATED, bridge, deviceClientManager)
+  }
 
-    override fun processNameUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager,
-        client: Client
-    ) {
-        sendEvent(EventKind.PROCESS_NAME_UPDATED, bridge, deviceClientManager, client)
-    }
+  override fun processNameUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
+    sendEvent(EventKind.PROCESS_NAME_UPDATED, bridge, deviceClientManager, client)
+  }
 
-    override fun processDebuggerStatusUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager,
-        client: Client
-    ) {
-        sendEvent(EventKind.PROCESS_DEBUGGER_STATUS_UPDATED, bridge, deviceClientManager)
-    }
+  override fun processDebuggerStatusUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
+    sendEvent(EventKind.PROCESS_DEBUGGER_STATUS_UPDATED, bridge, deviceClientManager)
+  }
 
-    override fun processHeapAllocationsUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager,
-        client: Client
-    ) {
-        sendEvent(EventKind.HEAP_ALLOCATIONS_UPDATED, bridge, deviceClientManager)
-    }
+  override fun processHeapAllocationsUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
+    sendEvent(EventKind.HEAP_ALLOCATIONS_UPDATED, bridge, deviceClientManager)
+  }
 
-    override fun processMethodProfilingStatusUpdated(
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager,
-        client: Client
-    ) {
-        sendEvent(EventKind.METHOD_PROFILING_STATUS_UPDATED, bridge, deviceClientManager)
-    }
+  override fun processMethodProfilingStatusUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
+    sendEvent(EventKind.METHOD_PROFILING_STATUS_UPDATED, bridge, deviceClientManager)
+  }
 
-    private fun sendEvent(
-        kind: EventKind,
-        bridge: AndroidDebugBridge,
-        deviceClientManager: DeviceClientManager,
-        client: Client? = null
-    ) {
-        synchronized(eventList) {
-            eventList.add(Event(kind, bridge, deviceClientManager, client))
-        }
-    }
+  private fun sendEvent(kind: EventKind, bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client? = null) {
+    synchronized(eventList) { eventList.add(Event(kind, bridge, deviceClientManager, client)) }
+  }
 
-    data class Event(
-        val kind: EventKind,
-        val bridge: AndroidDebugBridge,
-        val deviceClientManager: DeviceClientManager,
-        val client: Client? = null
-    )
+  data class Event(
+    val kind: EventKind,
+    val bridge: AndroidDebugBridge,
+    val deviceClientManager: DeviceClientManager,
+    val client: Client? = null,
+  )
 
-    enum class EventKind {
-        PROCESS_LIST_UPDATED,
-        PROCESS_NAME_UPDATED,
-        PROCESS_DEBUGGER_STATUS_UPDATED,
-        APP_PROCESS_LIST_UPDATED,
-        HEAP_ALLOCATIONS_UPDATED,
-        METHOD_PROFILING_STATUS_UPDATED
-    }
+  enum class EventKind {
+    PROCESS_LIST_UPDATED,
+    PROCESS_NAME_UPDATED,
+    PROCESS_DEBUGGER_STATUS_UPDATED,
+    APP_PROCESS_LIST_UPDATED,
+    HEAP_ALLOCATIONS_UPDATED,
+    METHOD_PROFILING_STATUS_UPDATED,
+  }
 }

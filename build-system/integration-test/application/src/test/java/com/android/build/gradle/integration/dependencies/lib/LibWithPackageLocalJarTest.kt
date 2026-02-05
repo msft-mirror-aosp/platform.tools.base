@@ -27,17 +27,13 @@ import org.junit.Test
 
 class LibWithPackageLocalJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithLocalDeps")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.library"
                 android {
                     namespace = 'com.android.tests.libWithProvidedLocalJar'
@@ -47,27 +43,25 @@ class LibWithPackageLocalJarTest : ModelComparator() {
                 dependencies {
                     runtimeOnly files("libs/util-1.0.jar")
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 
-    @Test
-    fun `check provided local jar is packaged`() {
-        project.execute("clean", "assembleDebug")
-        project.assertAar(AarSelector.DEBUG) {
-            secondaryJars().classes().containsExactly(
-                "com/example/android/multiproject/person/People",
-                "com/example/android/multiproject/person/Person"
-            )
-        }
+  @Test
+  fun `check provided local jar is packaged`() {
+    project.execute("clean", "assembleDebug")
+    project.assertAar(AarSelector.DEBUG) {
+      secondaryJars()
+        .classes()
+        .containsExactly("com/example/android/multiproject/person/People", "com/example/android/multiproject/person/Person")
     }
+  }
 }

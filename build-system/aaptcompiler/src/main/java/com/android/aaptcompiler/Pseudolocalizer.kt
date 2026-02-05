@@ -15,95 +15,109 @@ private const val PDF = "\u202c"
 private const val ARG_START = '{'
 private const val ARG_END = '}'
 
-private fun Char.pseudoLocalize() = when (this) {
-  'a' -> "\u00e5"
-  'b' -> "\u0253"
-  'c' -> "\u00e7"
-  'd' -> "\u00f0"
-  'e' -> "\u00e9"
-  'f' -> "\u0192"
-  'g' -> "\u011d"
-  'h' -> "\u0125"
-  'i' -> "\u00ee"
-  'j' -> "\u0135"
-  'k' -> "\u0137"
-  'l' -> "\u013c"
-  'm' -> "\u1e3f"
-  'n' -> "\u00f1"
-  'o' -> "\u00f6"
-  'p' -> "\u00fe"
-  'q' -> "\u0051"
-  'r' -> "\u0155"
-  's' -> "\u0161"
-  't' -> "\u0163"
-  'u' -> "\u00fb"
-  'v' -> "\u0056"
-  'w' -> "\u0175"
-  'x' -> "\u0445"
-  'y' -> "\u00fd"
-  'z' -> "\u017e"
-  'A' -> "\u00c5"
-  'B' -> "\u03b2"
-  'C' -> "\u00c7"
-  'D' -> "\u00d0"
-  'E' -> "\u00c9"
-  /* No 'F' */
-  'G' -> "\u011c"
-  'H' -> "\u0124"
-  'I' -> "\u00ce"
-  'J' -> "\u0134"
-  'K' -> "\u0136"
-  'L' -> "\u013b"
-  'M' -> "\u1e3e"
-  'N' -> "\u00d1"
-  'O' -> "\u00d6"
-  'P' -> "\u00de"
-  'Q' -> "\u0071"
-  'R' -> "\u0154"
-  'S' -> "\u0160"
-  'T' -> "\u0162"
-  'U' -> "\u00db"
-  'V' -> "\u03bd"
-  'W' -> "\u0174"
-  'X' -> "\u00d7"
-  'Y' -> "\u00dd"
-  'Z' -> "\u017d"
-  '!' -> "\u00a1"
-  '?' -> "\u00bf"
-  '$' -> "\u20ac"
-  else -> null
-}
+private fun Char.pseudoLocalize() =
+  when (this) {
+    'a' -> "\u00e5"
+    'b' -> "\u0253"
+    'c' -> "\u00e7"
+    'd' -> "\u00f0"
+    'e' -> "\u00e9"
+    'f' -> "\u0192"
+    'g' -> "\u011d"
+    'h' -> "\u0125"
+    'i' -> "\u00ee"
+    'j' -> "\u0135"
+    'k' -> "\u0137"
+    'l' -> "\u013c"
+    'm' -> "\u1e3f"
+    'n' -> "\u00f1"
+    'o' -> "\u00f6"
+    'p' -> "\u00fe"
+    'q' -> "\u0051"
+    'r' -> "\u0155"
+    's' -> "\u0161"
+    't' -> "\u0163"
+    'u' -> "\u00fb"
+    'v' -> "\u0056"
+    'w' -> "\u0175"
+    'x' -> "\u0445"
+    'y' -> "\u00fd"
+    'z' -> "\u017e"
+    'A' -> "\u00c5"
+    'B' -> "\u03b2"
+    'C' -> "\u00c7"
+    'D' -> "\u00d0"
+    'E' -> "\u00c9"
+    /* No 'F' */
+    'G' -> "\u011c"
+    'H' -> "\u0124"
+    'I' -> "\u00ce"
+    'J' -> "\u0134"
+    'K' -> "\u0136"
+    'L' -> "\u013b"
+    'M' -> "\u1e3e"
+    'N' -> "\u00d1"
+    'O' -> "\u00d6"
+    'P' -> "\u00de"
+    'Q' -> "\u0071"
+    'R' -> "\u0154"
+    'S' -> "\u0160"
+    'T' -> "\u0162"
+    'U' -> "\u00db"
+    'V' -> "\u03bd"
+    'W' -> "\u0174"
+    'X' -> "\u00d7"
+    'Y' -> "\u00dd"
+    'Z' -> "\u017d"
+    '!' -> "\u00a1"
+    '?' -> "\u00bf"
+    '$' -> "\u20ac"
+    else -> null
+  }
 
-private fun Char.isPossiblePlaceHolderEnd() = when (this) {
-  's', 'S',
-  'c', 'C',
-  'd',
-  'o',
-  'x', 'X',
-  'f',
-  'e', 'E',
-  'g', 'G',
-  'a', 'A',
-  'b', 'B',
-  'h', 'H',
-  '%',
-  'n' -> true
-  else -> false
-}
+private fun Char.isPossiblePlaceHolderEnd() =
+  when (this) {
+    's',
+    'S',
+    'c',
+    'C',
+    'd',
+    'o',
+    'x',
+    'X',
+    'f',
+    'e',
+    'E',
+    'g',
+    'G',
+    'a',
+    'A',
+    'b',
+    'B',
+    'h',
+    'H',
+    '%',
+    'n' -> true
+    else -> false
+  }
 
 abstract class PseudoMethodImpl {
   open fun start() = ""
+
   open fun end() = ""
+
   abstract fun text(originalText: String): String
+
   abstract fun placeholder(originalText: String): String
 }
 
 object PseudoMethodNone : PseudoMethodImpl() {
   override fun text(originalText: String) = originalText
+
   override fun placeholder(originalText: String) = originalText
 }
 
-object PseudoMethodBidi: PseudoMethodImpl() {
+object PseudoMethodBidi : PseudoMethodImpl() {
   private const val ESCAPE_CHAR = '\\'
 
   override fun text(originalText: String): String {
@@ -120,8 +134,7 @@ object PseudoMethodBidi: PseudoMethodImpl() {
         continue
       }
 
-      space = (!escape && currentChar.isWhitespace()) ||
-        (escape && (currentChar == 'n' || currentChar == 't'))
+      space = (!escape && currentChar.isWhitespace()) || (escape && (currentChar == 'n' || currentChar == 't'))
       if (lastSpace && !space) {
         // Word start.
         result.append(RLM + RLO)
@@ -147,7 +160,7 @@ object PseudoMethodBidi: PseudoMethodImpl() {
     RLM + RLO + originalText + PDF + RLM
 }
 
-class PseudoMethodAccent: PseudoMethodImpl() {
+class PseudoMethodAccent : PseudoMethodImpl() {
   var depth = 0
   var wordCount = 0
   var length = 0
@@ -167,7 +180,7 @@ class PseudoMethodAccent: PseudoMethodImpl() {
     val result = StringBuilder()
     if (length.isTruthy()) {
       result.append(' ')
-      result.append(pseudoGenerateExpansion(if (wordCount > 3) length else length/2))
+      result.append(pseudoGenerateExpansion(if (wordCount > 3) length else length / 2))
     }
     wordCount = 0
     length = 0
@@ -195,7 +208,8 @@ class PseudoMethodAccent: PseudoMethodImpl() {
           // Placeholder syntax, no need to pseudolocalize.
           currentIndex = processMaybePlaceholder(result, originalText, currentIndex)
         }
-        '<', '&' -> {
+        '<',
+        '&' -> {
           // Html syntax, no need to pseudolocalize
           currentIndex = processHtml(result, originalText, currentIndex)
         }
@@ -236,8 +250,7 @@ class PseudoMethodAccent: PseudoMethodImpl() {
     return result.substring(0, if (lastSpace == -1) result.length else lastSpace)
   }
 
-  private fun processMaybePlaceholder(
-    partial: StringBuilder, source: String, startIndex: Int) : Int {
+  private fun processMaybePlaceholder(partial: StringBuilder, source: String, startIndex: Int): Int {
 
     val size = source.length
     var currentIndex = startIndex
@@ -262,7 +275,7 @@ class PseudoMethodAccent: PseudoMethodImpl() {
     }
 
     // Treat chunk as a placeholder unless it ends with '%'.
-    partial.append(if(currentChar == '%') chunk else placeholder(chunk.toString()))
+    partial.append(if (currentChar == '%') chunk else placeholder(chunk.toString()))
     return currentIndex
   }
 
@@ -289,7 +302,10 @@ class PseudoMethodAccent: PseudoMethodImpl() {
               currentIndex = htmlCodePosition
               break@htmlCode
             }
-            '#', in 'a'..'z', in 'A'..'Z', in '0'..'9' -> {
+            '#',
+            in 'a'..'z',
+            in 'A'..'Z',
+            in '0'..'9' -> {
               // Valid html, skip.
             }
             else -> {
@@ -325,11 +341,9 @@ class PseudoMethodAccent: PseudoMethodImpl() {
   }
 
   // Yes, "fiveteen".
-  private val EXPANSION_STRING = "one two three four five six seven eight nine ten eleven " +
-    "twelve thirteen fourteen fiveteen sixteen seventeen nineteen twenty"
-
+  private val EXPANSION_STRING =
+    "one two three four five six seven eight nine ten eleven " + "twelve thirteen fourteen fiveteen sixteen seventeen nineteen twenty"
 }
-
 
 class Pseudolocalizer(method: Method) {
   private var implementation: PseudoMethodImpl
@@ -341,11 +355,12 @@ class Pseudolocalizer(method: Method) {
     ACCENT,
     BIDI;
 
-    fun getMethod() = when (this) {
-      Method.NONE -> PseudoMethodNone
-      Method.ACCENT -> PseudoMethodAccent()
-      Method.BIDI -> PseudoMethodBidi
-    }
+    fun getMethod() =
+      when (this) {
+        Method.NONE -> PseudoMethodNone
+        Method.ACCENT -> PseudoMethodAccent()
+        Method.BIDI -> PseudoMethodBidi
+      }
   }
 
   init {
@@ -355,8 +370,11 @@ class Pseudolocalizer(method: Method) {
   fun setMethod(method: Method) {
     implementation = method.getMethod()
   }
+
   fun start() = implementation.start()
+
   fun end() = implementation.end()
+
   fun text(originalText: String): String {
     val out = StringBuilder()
     var depth = lastDepth

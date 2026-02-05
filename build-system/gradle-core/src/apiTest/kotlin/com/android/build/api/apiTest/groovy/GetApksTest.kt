@@ -18,17 +18,18 @@ package com.android.build.api.apiTest.groovy
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetApksTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
-    @Test
-    fun getApksTest() {
-        given {
-            tasksToInvoke.add(":app:debugDisplayApks")
+class GetApksTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+  @Test
+  fun getApksTest() {
+    given {
+      tasksToInvoke.add(":app:debugDisplayApks")
 
-            addModule(":app") {
-                buildFile = """
+      addModule(":app") {
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -47,28 +48,30 @@ class GetApksTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy)
                     }
                 })
             }
-                """.trimIndent()
+                """
+            .trimIndent()
 
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                    """
-# Test get operation
-
-This sample shows how to use the get operation, which provides the final version of the artifact.
-It shows the location of the apk for the all variants.
-
-## To Run
-./gradlew debugDisplayApks
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Got an APK")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        testingElements.addManifest(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Test get operation
+
+        This sample shows how to use the get operation, which provides the final version of the artifact.
+        It shows the location of the apk for the all variants.
+
+        ## To Run
+        ./gradlew debugDisplayApks
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Got an APK")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

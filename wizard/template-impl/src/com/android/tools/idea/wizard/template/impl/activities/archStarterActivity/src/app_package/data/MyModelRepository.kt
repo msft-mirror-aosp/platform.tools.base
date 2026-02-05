@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.repository() = """
+fun ArchStarterActivityTemplateVariables.repository() =
+  """
 package $dataPackage
 
 import kotlinx.coroutines.flow.Flow

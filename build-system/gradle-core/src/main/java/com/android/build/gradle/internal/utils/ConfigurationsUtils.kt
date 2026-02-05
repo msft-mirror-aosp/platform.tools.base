@@ -20,14 +20,14 @@ import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 
-/**
- * Looks for an item with the given name, registering it and adding it to this container if it does
- * not exist
- */
-fun ConfigurationContainer.maybeRegister(name: String, configuration: Configuration.() -> Unit = {}): NamedDomainObjectProvider<Configuration> {
-    return if (this.names.contains(name)) {
-        this.named(name)
-    } else {
-        this.register(name, configuration)
-    }
+/** Looks for an item with the given name, registering it and adding it to this container if it does not exist */
+fun ConfigurationContainer.maybeRegister(
+  name: String,
+  configuration: Configuration.() -> Unit = {},
+): NamedDomainObjectProvider<Configuration> {
+  return if (this.names.contains(name)) {
+    this.named(name)
+  } else {
+    this.register(name, configuration)
+  }
 }

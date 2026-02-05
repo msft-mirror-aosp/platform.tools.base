@@ -24,6 +24,7 @@ import com.android.build.api.artifact.OutOperationRequest
 import com.android.build.api.artifact.TaskBasedOperation
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
@@ -31,80 +32,71 @@ import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import javax.inject.Inject
 
-open class AnalyticsEnabledTaskBaseOperation<TaskT: Task> @Inject constructor(
-    val delegate: TaskBasedOperation<TaskT>,
-    val stats: GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory
-) : TaskBasedOperation<TaskT> {
+open class AnalyticsEnabledTaskBaseOperation<TaskT : Task>
+@Inject
+constructor(val delegate: TaskBasedOperation<TaskT>, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) :
+  TaskBasedOperation<TaskT> {
 
-    override fun <FileTypeT : FileSystemLocation> wiredWith(
-        taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
-    ): OutOperationRequest<FileTypeT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.WIRED_WITH_VALUE
-        @Suppress("UNCHECKED_CAST")
-        return objectFactory.newInstance(
-            AnalyticsEnabledOutOperationRequest::class.java as Class<OutOperationRequest<FileTypeT>>,
-            delegate.wiredWith(taskOutput),
-            stats)
-    }
+  override fun <FileTypeT : FileSystemLocation> wiredWith(
+    taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
+  ): OutOperationRequest<FileTypeT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WIRED_WITH_VALUE
+    @Suppress("UNCHECKED_CAST")
+    return objectFactory.newInstance(
+      AnalyticsEnabledOutOperationRequest::class.java as Class<OutOperationRequest<FileTypeT>>,
+      delegate.wiredWith(taskOutput),
+      stats,
+    )
+  }
 
-    override fun <FileTypeT : FileSystemLocation> wiredWithMultiple(
-        taskInput: (TaskT) -> ListProperty<FileTypeT>
-    ): MultipleArtifactTypeOutOperationRequest<FileTypeT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.WIRED_WITH_MULTIPLE_VALUE
-        @Suppress("UNCHECKED_CAST")
-        return objectFactory.newInstance(
-            AnalyticsEnabledMultipleArtifactTypeOutOperationRequest::class.java
-                    as Class<MultipleArtifactTypeOutOperationRequest<FileTypeT>>,
-            delegate.wiredWithMultiple(taskInput),
-            stats
-        )
-    }
+  override fun <FileTypeT : FileSystemLocation> wiredWithMultiple(
+    taskInput: (TaskT) -> ListProperty<FileTypeT>
+  ): MultipleArtifactTypeOutOperationRequest<FileTypeT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WIRED_WITH_MULTIPLE_VALUE
+    @Suppress("UNCHECKED_CAST")
+    return objectFactory.newInstance(
+      AnalyticsEnabledMultipleArtifactTypeOutOperationRequest::class.java as Class<MultipleArtifactTypeOutOperationRequest<FileTypeT>>,
+      delegate.wiredWithMultiple(taskInput),
+      stats,
+    )
+  }
 
-    override fun wiredWithFiles(
-        taskInput: (TaskT) -> RegularFileProperty,
-        taskOutput: (TaskT) -> RegularFileProperty
-    ): InAndOutFileOperationRequest {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.WIRED_WITH_FILES_VALUE
-        return objectFactory.newInstance(
-            AnalyticsEnabledInAndOutFileOperationRequest::class.java,
-            delegate.wiredWithFiles(taskInput, taskOutput),
-            stats
-        )
-    }
+  override fun wiredWithFiles(
+    taskInput: (TaskT) -> RegularFileProperty,
+    taskOutput: (TaskT) -> RegularFileProperty,
+  ): InAndOutFileOperationRequest {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WIRED_WITH_FILES_VALUE
+    return objectFactory.newInstance(
+      AnalyticsEnabledInAndOutFileOperationRequest::class.java,
+      delegate.wiredWithFiles(taskInput, taskOutput),
+      stats,
+    )
+  }
 
-    override fun <FileTypeT : FileSystemLocation> wiredWith(
-        taskInput: (TaskT) -> ListProperty<FileTypeT>,
-        taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
-    ): CombiningOperationRequest<FileTypeT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.WIRED_WITH_LIST_VALUE
-        @Suppress("UNCHECKED_CAST")
-        return objectFactory.newInstance(
-            AnalyticsEnabledCombiningOperationRequest::class.java
-                    as Class<CombiningOperationRequest<FileTypeT>>,
-            delegate.wiredWith(taskInput, taskOutput),
-            stats
-        )
-    }
+  override fun <FileTypeT : FileSystemLocation> wiredWith(
+    taskInput: (TaskT) -> ListProperty<FileTypeT>,
+    taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>,
+  ): CombiningOperationRequest<FileTypeT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WIRED_WITH_LIST_VALUE
+    @Suppress("UNCHECKED_CAST")
+    return objectFactory.newInstance(
+      AnalyticsEnabledCombiningOperationRequest::class.java as Class<CombiningOperationRequest<FileTypeT>>,
+      delegate.wiredWith(taskInput, taskOutput),
+      stats,
+    )
+  }
 
-    override fun wiredWithDirectories(
-        taskInput: (TaskT) -> DirectoryProperty,
-        taskOutput: (TaskT) -> DirectoryProperty
-    ): InAndOutDirectoryOperationRequest<TaskT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.WIRED_WITH_DIRECTORIES_VALUE
-        @Suppress("UNCHECKED_CAST")
-        return objectFactory.newInstance(
-            AnalyticsEnabledInAndOutDirectoryOperationRequest::class.java as
-                    Class<InAndOutDirectoryOperationRequest<TaskT>>,
-            delegate.wiredWithDirectories(taskInput, taskOutput),
-            stats
-        )
-    }
+  override fun wiredWithDirectories(
+    taskInput: (TaskT) -> DirectoryProperty,
+    taskOutput: (TaskT) -> DirectoryProperty,
+  ): InAndOutDirectoryOperationRequest<TaskT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WIRED_WITH_DIRECTORIES_VALUE
+    @Suppress("UNCHECKED_CAST")
+    return objectFactory.newInstance(
+      AnalyticsEnabledInAndOutDirectoryOperationRequest::class.java as Class<InAndOutDirectoryOperationRequest<TaskT>>,
+      delegate.wiredWithDirectories(taskInput, taskOutput),
+      stats,
+    )
+  }
 }

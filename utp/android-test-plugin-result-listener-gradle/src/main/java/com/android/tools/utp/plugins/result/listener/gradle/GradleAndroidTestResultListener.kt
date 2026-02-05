@@ -27,104 +27,95 @@ import com.google.testing.platform.api.result.TestResultListener
 import com.google.testing.platform.proto.api.core.TestCaseProto
 import com.google.testing.platform.proto.api.core.TestResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import org.gradle.api.logging.Logging
 import java.io.File
 import java.util.Base64
+import org.gradle.api.logging.Logging
 
-/**
- * A UTP Android test result listener plugin which reports the results to AGP.
- */
+/** A UTP Android test result listener plugin which reports the results to AGP. */
 class GradleAndroidTestResultListener(
-    private val onTestResultEventFunc: GradleAndroidTestResultListener.(TestResultEvent) -> Unit
-    = GradleAndroidTestResultListener::onTestResultEvent) : TestResultListener, Configurable {
+  private val onTestResultEventFunc: GradleAndroidTestResultListener.(TestResultEvent) -> Unit =
+    GradleAndroidTestResultListener::onTestResultEvent
+) : TestResultListener, Configurable {
 
-    private lateinit var deviceId: String
-    private lateinit var ddmlibTestResultAdapter: DdmlibTestResultAdapter
-    private var enableUtpTestReportingForAndroidStudio: Boolean = false
-    private lateinit var utpResultProtoOutputFilePath: String
+  private lateinit var deviceId: String
+  private lateinit var ddmlibTestResultAdapter: DdmlibTestResultAdapter
+  private var enableUtpTestReportingForAndroidStudio: Boolean = false
+  private lateinit var utpResultProtoOutputFilePath: String
 
-    override fun configure(context: Context) {
-        val config = context[Context.CONFIG_KEY] as ProtoConfig
-        val pluginConfig = GradleAndroidTestResultListenerConfig.parseFrom(
-                config.configProto!!.value)
+  override fun configure(context: Context) {
+    val config = context[Context.CONFIG_KEY] as ProtoConfig
+    val pluginConfig = GradleAndroidTestResultListenerConfig.parseFrom(config.configProto!!.value)
 
-        deviceId = pluginConfig.deviceId
-        ddmlibTestResultAdapter = DdmlibTestResultAdapter(
-            pluginConfig.deviceName,
-            CustomTestRunListener(
-                pluginConfig.deviceShardName,
-                pluginConfig.gradleProjectPath,
-                pluginConfig.variantName,
-                LoggerWrapper(Logging.getLogger(GradleAndroidTestResultListener::class.java)),
-            ).apply { setReportDir(File(pluginConfig.xmlTestReportOutputDirectoryPath)) }
-        )
-        enableUtpTestReportingForAndroidStudio = pluginConfig.enableUtpTestReportingForAndroidStudio
-        utpResultProtoOutputFilePath = pluginConfig.utpResultProtoOutputFilePath
-    }
+    deviceId = pluginConfig.deviceId
+    ddmlibTestResultAdapter =
+      DdmlibTestResultAdapter(
+        pluginConfig.deviceName,
+        CustomTestRunListener(
+            pluginConfig.deviceShardName,
+            pluginConfig.gradleProjectPath,
+            pluginConfig.variantName,
+            LoggerWrapper(Logging.getLogger(GradleAndroidTestResultListener::class.java)),
+          )
+          .apply { setReportDir(File(pluginConfig.xmlTestReportOutputDirectoryPath)) },
+      )
+    enableUtpTestReportingForAndroidStudio = pluginConfig.enableUtpTestReportingForAndroidStudio
+    utpResultProtoOutputFilePath = pluginConfig.utpResultProtoOutputFilePath
+  }
 
-    override fun beforeTestSuite(testSuiteMetaData: TestSuiteResultProto.TestSuiteMetaData?) {
-        val suiteStarted = TestSuiteStarted.newBuilder().apply {
-            if (testSuiteMetaData != null) {
-                this.testSuiteMetadata = Any.pack(testSuiteMetaData)
-            }
-        }.build()
-        val event = createTestResultEvent().apply {
-            testSuiteStarted = suiteStarted
-        }.build()
-
-        onTestResultEventFunc(event)
-    }
-
-    override fun beforeTest(testCase: TestCaseProto.TestCase?) {
-        val testCaseStarted = TestResultEvent.TestCaseStarted.newBuilder().apply {
-            if (testCase != null) {
-                this.testCase = Any.pack(testCase)
-            }
-        }.build()
-        val event = createTestResultEvent().apply {
-            this.testCaseStarted = testCaseStarted
-        }.build()
-
-        onTestResultEventFunc(event)
-    }
-
-    override fun afterTest(testResult: TestResultProto.TestResult) {
-        val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().apply {
-            testCaseResult = Any.pack(testResult)
-        }.build()
-        val event = createTestResultEvent().apply {
-            this.testCaseFinished = testCaseFinished
-        }.build()
-
-        onTestResultEventFunc(event)
-    }
-
-    override fun afterTestSuite(testSuiteResult: TestSuiteResultProto.TestSuiteResult) {
-        val testSuiteFinished = TestResultEvent.TestSuiteFinished.newBuilder().apply {
-            this.testSuiteResult = Any.pack(testSuiteResult)
-        }.build()
-        val event = createTestResultEvent().apply {
-            this.testSuiteFinished = testSuiteFinished
-        }.build()
-
-        onTestResultEventFunc(event)
-
-        File(utpResultProtoOutputFilePath).outputStream().use { outputFileStream ->
-            testSuiteResult.writeTo(outputFileStream)
+  override fun beforeTestSuite(testSuiteMetaData: TestSuiteResultProto.TestSuiteMetaData?) {
+    val suiteStarted =
+      TestSuiteStarted.newBuilder()
+        .apply {
+          if (testSuiteMetaData != null) {
+            this.testSuiteMetadata = Any.pack(testSuiteMetaData)
+          }
         }
-    }
+        .build()
+    val event = createTestResultEvent().apply { testSuiteStarted = suiteStarted }.build()
 
-    private fun createTestResultEvent(): TestResultEvent.Builder {
-        return TestResultEvent.newBuilder().apply {
-            deviceId = this@GradleAndroidTestResultListener.deviceId
-        }
-    }
+    onTestResultEventFunc(event)
+  }
 
-    private fun onTestResultEvent(testResultEvent: TestResultEvent) {
-        if (enableUtpTestReportingForAndroidStudio) {
-            val encodedEvent = Base64.getEncoder().encodeToString(testResultEvent.toByteArray())
-            println("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>$encodedEvent</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
+  override fun beforeTest(testCase: TestCaseProto.TestCase?) {
+    val testCaseStarted =
+      TestResultEvent.TestCaseStarted.newBuilder()
+        .apply {
+          if (testCase != null) {
+            this.testCase = Any.pack(testCase)
+          }
         }
-        ddmlibTestResultAdapter.onTestResultEvent(testResultEvent)
+        .build()
+    val event = createTestResultEvent().apply { this.testCaseStarted = testCaseStarted }.build()
+
+    onTestResultEventFunc(event)
+  }
+
+  override fun afterTest(testResult: TestResultProto.TestResult) {
+    val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().apply { testCaseResult = Any.pack(testResult) }.build()
+    val event = createTestResultEvent().apply { this.testCaseFinished = testCaseFinished }.build()
+
+    onTestResultEventFunc(event)
+  }
+
+  override fun afterTestSuite(testSuiteResult: TestSuiteResultProto.TestSuiteResult) {
+    val testSuiteFinished =
+      TestResultEvent.TestSuiteFinished.newBuilder().apply { this.testSuiteResult = Any.pack(testSuiteResult) }.build()
+    val event = createTestResultEvent().apply { this.testSuiteFinished = testSuiteFinished }.build()
+
+    onTestResultEventFunc(event)
+
+    File(utpResultProtoOutputFilePath).outputStream().use { outputFileStream -> testSuiteResult.writeTo(outputFileStream) }
+  }
+
+  private fun createTestResultEvent(): TestResultEvent.Builder {
+    return TestResultEvent.newBuilder().apply { deviceId = this@GradleAndroidTestResultListener.deviceId }
+  }
+
+  private fun onTestResultEvent(testResultEvent: TestResultEvent) {
+    if (enableUtpTestReportingForAndroidStudio) {
+      val encodedEvent = Base64.getEncoder().encodeToString(testResultEvent.toByteArray())
+      println("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>$encodedEvent</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
+    ddmlibTestResultAdapter.onTestResultEvent(testResultEvent)
+  }
 }

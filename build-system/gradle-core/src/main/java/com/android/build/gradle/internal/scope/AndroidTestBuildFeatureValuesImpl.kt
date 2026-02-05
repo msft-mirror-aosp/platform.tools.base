@@ -20,14 +20,8 @@ import com.android.build.api.dsl.BuildFeatures
 import com.android.build.gradle.internal.services.ProjectServices
 
 class AndroidTestBuildFeatureValuesImpl(
-    buildFeatures: BuildFeatures,
-    projectServices: ProjectServices,
-    dataBindingOverride: Boolean? = null,
-    mlModelBindingOverride: Boolean? = null
-) : BuildFeatureValuesImpl(
-    buildFeatures,
-    projectServices,
-    dataBindingOverride,
-    mlModelBindingOverride
-) {
-}
+  buildFeatures: BuildFeatures,
+  projectServices: ProjectServices,
+  dataBindingOverride: Boolean? = null,
+  mlModelBindingOverride: Boolean? = null,
+) : BuildFeatureValuesImpl(buildFeatures, projectServices, dataBindingOverride, mlModelBindingOverride) {}

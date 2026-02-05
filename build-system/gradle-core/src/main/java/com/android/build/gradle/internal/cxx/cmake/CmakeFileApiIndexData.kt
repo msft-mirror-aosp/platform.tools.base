@@ -20,44 +20,24 @@ import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.FileReader
 
-/**
- * The main entry point into a CMake query API result
- */
-data class IndexData(val objects : List<IndexObjectData>) {
+/** The main entry point into a CMake query API result */
+data class IndexData(val objects: List<IndexObjectData>) {
 
-    /**
-     * Get an object of specific name and type by looking it up in the index and
-     * reading the corresponding JSON file.
-     */
-    fun <T> getIndexObject(name : String, replyFolder : File, type : Class<T>) : T? {
-        return objects
-                .filter { obj -> obj.kind == name }
-                .map { obj ->
-                    val json = replyFolder.resolve(obj.jsonFile)
-                    FileReader(json).use { reader ->
-                        GSON.fromJson(reader, type)
-                    }
-                }
-                .singleOrNull()
-    }
+  /** Get an object of specific name and type by looking it up in the index and reading the corresponding JSON file. */
+  fun <T> getIndexObject(name: String, replyFolder: File, type: Class<T>): T? {
+    return objects
+      .filter { obj -> obj.kind == name }
+      .map { obj ->
+        val json = replyFolder.resolve(obj.jsonFile)
+        FileReader(json).use { reader -> GSON.fromJson(reader, type) }
+      }
+      .singleOrNull()
+  }
 }
 
-/**
- *  "jsonFile" : "codemodel-v2-ba560e640682820c771e.json",
- *  "kind" : "codemodel",
- *  "version" : { "major" : 2, "minor" : 0 }
- */
-data class IndexObjectData(
-        val jsonFile : String,
-        val kind : String,
-        val version : IndexObjectVersionData
-)
+/** "jsonFile" : "codemodel-v2-ba560e640682820c771e.json", "kind" : "codemodel", "version" : { "major" : 2, "minor" : 0 } */
+data class IndexObjectData(val jsonFile: String, val kind: String, val version: IndexObjectVersionData)
 
-data class IndexObjectVersionData(
-        val major : Int,
-        val minor : Int
-)
+data class IndexObjectVersionData(val major: Int, val minor: Int)
 
-private val GSON = GsonBuilder()
-        .setPrettyPrinting()
-        .create()
+private val GSON = GsonBuilder().setPrettyPrinting().create()

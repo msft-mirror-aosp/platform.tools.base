@@ -85,8 +85,8 @@ import org.w3c.dom.Node
 /** Checks to ensure that classes referenced in the manifest actually exist and are included. */
 class MissingClassDetector : LayoutDetector(), ClassScanner {
   /**
-   * Prevent checking the same class more than once since it can be referenced repeatedly. The value
-   * in the map is true if the class is okay and false if it is not.
+   * Prevent checking the same class more than once since it can be referenced repeatedly. The value in the map is true if the class is okay
+   * and false if it is not.
    */
   private var checkedClasses: MutableMap<String, Boolean> = mutableMapOf()
 
@@ -110,17 +110,9 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
     @Suppress("NON_EXHAUSTIVE_WHEN")
     when (context.resourceFolderType) {
       null -> { // Manifest file
-        if (
-          TAG_APPLICATION == tag ||
-            TAG_ACTIVITY == tag ||
-            TAG_SERVICE == tag ||
-            TAG_RECEIVER == tag ||
-            TAG_PROVIDER == tag
-        ) {
+        if (TAG_APPLICATION == tag || TAG_ACTIVITY == tag || TAG_SERVICE == tag || TAG_RECEIVER == tag || TAG_PROVIDER == tag) {
           val attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: return
-          val pkg =
-            context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value
-              ?: context.project.getPackage()
+          val pkg = context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value ?: context.project.getPackage()
           val className = resolvePlaceHolders(context.project, attr.value) ?: return
           if (className.isEmpty()) return
           checkClassReference(
@@ -165,29 +157,11 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
           }
           tag == VIEW_TAG -> {
             val attr = element.getAttributeNode(ATTR_CLASS) ?: return
-            checkClassReference(
-              context,
-              null,
-              attr.value,
-              attr,
-              element,
-              expectedParent = if (isStudio) null else CLASS_VIEW,
-            )
+            checkClassReference(context, null, attr.value, attr, element, expectedParent = if (isStudio) null else CLASS_VIEW)
           }
           tag == VIEW_FRAGMENT -> {
-            val attr =
-              element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
-                ?: element.getAttributeNode(ATTR_CLASS)
-                ?: return
-            checkClassReference(
-              context,
-              null,
-              attr.value,
-              attr,
-              element,
-              requireInstantiatable = true,
-              expectedParent = CLASS_FRAGMENT,
-            )
+            val attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: element.getAttributeNode(ATTR_CLASS) ?: return
+            checkClassReference(context, null, attr.value, attr, element, requireInstantiatable = true, expectedParent = CLASS_FRAGMENT)
           }
         }
       }
@@ -198,61 +172,29 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
           }
           tag == "drawable" -> {
             val attr = element.getAttributeNode(ATTR_CLASS) ?: return
-            checkClassReference(
-              context,
-              null,
-              attr.value,
-              attr,
-              element,
-              expectedParent = "android.graphics.drawable.Drawable",
-            )
+            checkClassReference(context, null, attr.value, attr, element, expectedParent = "android.graphics.drawable.Drawable")
           }
         }
       }
       TRANSITION -> {
         if (tag == "transition" || tag == "pathMotion") {
           val attr = element.getAttributeNode(ATTR_CLASS) ?: return
-          val expectedParent =
-            if (tag == "transition") "android.transition.Transition"
-            else "android.transition.PathMotion"
-          checkClassReference(
-            context,
-            null,
-            attr.value,
-            attr,
-            element,
-            expectedParent = expectedParent,
-          )
+          val expectedParent = if (tag == "transition") "android.transition.Transition" else "android.transition.PathMotion"
+          checkClassReference(context, null, attr.value, attr, element, expectedParent = expectedParent)
         }
       }
       XML -> {
         if (tag == TAG_HEADER) {
           val attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_FRAGMENT) ?: return
-          checkClassReference(
-            context,
-            null,
-            attr.value,
-            attr,
-            element,
-            requireInstantiatable = true,
-            expectedParent = CLASS_FRAGMENT,
-          )
+          checkClassReference(context, null, attr.value, attr, element, requireInstantiatable = true, expectedParent = CLASS_FRAGMENT)
         }
       }
       MENU -> {
         if (tag == TAG_ITEM) {
           val view =
-            element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_VIEW_CLASS)
-              ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_VIEW_CLASS)
+            element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_VIEW_CLASS) ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_VIEW_CLASS)
           if (view != null) {
-            checkClassReference(
-              context,
-              null,
-              view.value,
-              view,
-              element,
-              expectedParent = CLASS_VIEW,
-            )
+            checkClassReference(context, null, view.value, view, element, expectedParent = CLASS_VIEW)
           }
           val provider =
             element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_PROVIDER_CLASS)
@@ -335,13 +277,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
     }
   }
 
-  private fun checkExpectedParent(
-    context: XmlContext,
-    evaluator: JavaEvaluator,
-    nameNode: Node,
-    cls: PsiClass,
-    expectedParent: String,
-  ) {
+  private fun checkExpectedParent(context: XmlContext, evaluator: JavaEvaluator, nameNode: Node, cls: PsiClass, expectedParent: String) {
     if (!evaluator.inheritsFrom(cls, expectedParent, false)) {
       if (expectedParent == CLASS_FRAGMENT) {
         checkExpectedParent(context, evaluator, nameNode, cls, CLASS_V4_FRAGMENT.oldName())
@@ -399,13 +335,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
     }
   }
 
-  private fun checkInnerClassReference(
-    context: XmlContext,
-    cls: PsiClass,
-    className: String,
-    nameNode: Node,
-    element: Element,
-  ) {
+  private fun checkInnerClassReference(context: XmlContext, cls: PsiClass, className: String, nameNode: Node, element: Element) {
     val name = cls.name
     if (cls.containingClass == null || name == null || className.contains("$")) {
       return
@@ -419,13 +349,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
   }
 
   /** Make sure [cls] is instantiatable. */
-  private fun checkInstantiatable(
-    context: XmlContext,
-    evaluator: JavaEvaluator,
-    cls: PsiClass,
-    fqcn: String,
-    nameNode: Node,
-  ) {
+  private fun checkInstantiatable(context: XmlContext, evaluator: JavaEvaluator, cls: PsiClass, fqcn: String, nameNode: Node) {
     if (evaluator.isPrivate(cls)) {
       val message = "This class should be public (`$fqcn`)"
       context.report(INSTANTIATABLE, getRefLocation(context, nameNode), message)
@@ -455,8 +379,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
         }
       }
 
-      val message =
-        "This class should provide a default constructor (a public constructor with no arguments) (`$fqcn`)"
+      val message = "This class should provide a default constructor (a public constructor with no arguments) (`$fqcn`)"
       context.report(INSTANTIATABLE, getRefLocation(context, nameNode), message)
     }
   }
@@ -486,19 +409,13 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
       } else {
         "the manifest"
       }
-    val message =
-      "Class referenced in the $target, `$fqcn`, was not found in the project or the libraries"
+    val message = "Class referenced in the $target, `$fqcn`, was not found in the project or the libraries"
     context.report(MISSING, location, message)
   }
 
   companion object {
     val IMPLEMENTATION =
-      Implementation(
-        MissingClassDetector::class.java,
-        Scope.MANIFEST_AND_RESOURCE_SCOPE,
-        Scope.MANIFEST_SCOPE,
-        Scope.RESOURCE_FILE_SCOPE,
-      )
+      Implementation(MissingClassDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.MANIFEST_SCOPE, Scope.RESOURCE_FILE_SCOPE)
 
     /** Manifest or layout referenced classes missing from the project or libraries. */
     @JvmField

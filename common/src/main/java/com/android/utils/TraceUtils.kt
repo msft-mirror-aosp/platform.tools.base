@@ -52,17 +52,17 @@ object TraceUtils {
       return buf.toString()
     }
 
-  /**
-   * Returns the current stack of the caller. Optionally, removes [numberOfTopFramesToRemove] frames
-   * at the top of the stack.
-   */
+  /** Returns the current stack of the caller. Optionally, removes [numberOfTopFramesToRemove] frames at the top of the stack. */
   @JvmStatic
   fun getCurrentStack(numberOfTopFramesToRemove: Int = 1): String {
-    val fullStack = getStackTrace(object : Throwable() {
-      override fun toString(): String {
-        return ""
-      }
-    })
+    val fullStack =
+      getStackTrace(
+        object : Throwable() {
+          override fun toString(): String {
+            return ""
+          }
+        }
+      )
     // Remove our own frame and numberOfTopFramesToRemove frames requested by the caller.
     var start = 0
     // The first character of the stack is always '\n'.
@@ -87,21 +87,18 @@ object TraceUtils {
   }
 
   /**
-   * A string consisting of the object's class name without the package part, '@' separator,
-   * and the hexadecimal identity hash code, e.g. AndroidResGroupNode@5A1D1719.
+   * A string consisting of the object's class name without the package part, '@' separator, and the hexadecimal identity hash code, e.g.
+   * AndroidResGroupNode@5A1D1719.
    */
   @JvmStatic
   val Any?.simpleId: String
     get() {
-      return this?.let {
-        String.format("%s@%08X", javaClass.name.substringAfterLast('.'), identityHashCode(this))
-      } ?: "null"
+      return this?.let { String.format("%s@%08X", javaClass.name.substringAfterLast('.'), identityHashCode(this)) } ?: "null"
     }
 
   /**
-   * A string containing comma-separated simple IDs of the elements of this iterable.
-   * Each simple ID is the object's class name without the package part, '@' separator,
-   * and the hexadecimal identity hash code, e.g. AndroidResGroupNode@5A1D1719.
+   * A string containing comma-separated simple IDs of the elements of this iterable. Each simple ID is the object's class name without the
+   * package part, '@' separator, and the hexadecimal identity hash code, e.g. AndroidResGroupNode@5A1D1719.
    */
   @JvmStatic
   val Iterable<*>.simpleIds: String

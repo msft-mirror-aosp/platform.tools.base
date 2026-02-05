@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
 import org.gradle.api.attributes.java.TargetJvmEnvironment
@@ -32,76 +31,58 @@ import org.junit.Rule
 import org.junit.Test
 
 /** Regression test for http://b/229298359. */
-class DependencyWithoutFileWithDependenciesTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies{
-                testImplementation("com.foo:bar:1.0") {
-                    requireCapability("com.foo:bar-custom:1.0")
-                }
-            }
-        }
+class DependencyWithoutFileWithDependenciesTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { testImplementation("com.foo:bar:1.0") { requireCapability("com.foo:bar-custom:1.0") } }
+      }
 
-        genericProject(":bar") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            applyPlugin(PluginType.MAVEN_PUBLISH)
+      genericProject(":bar") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        applyPlugin(PluginType.MAVEN_PUBLISH)
 
-            group = "com.foo"
-            version = "1.0"
+        group = "com.foo"
+        version = "1.0"
 
-            pluginCallbacks += TestCallback::class.java
-        }
+        pluginCallbacks += TestCallback::class.java
+      }
 
-        settings {
-            addRepository("repo")
-        }
+      settings { addRepository("repo") }
     }
 
-    class TestCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            val customCapability = project.configurations.create("customCapability")
-            customCapability.isCanBeConsumed = true
-            customCapability.isCanBeResolved = false
-            customCapability.attributes.attribute(
-                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM)
-            )
-            customCapability.outgoing.capability("com.foo:bar-custom:1.0")
-            project.dependencies.add("customCapability", "androidx.annotation:annotation:$ANDROIDX_VERSION")
-            val javaComponent = project.components.getByName("java") as AdhocComponentWithVariants
-            javaComponent.addVariantsFromConfiguration(customCapability) {
-                it.mapToOptional()
-            }
+  class TestCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      val customCapability = project.configurations.create("customCapability")
+      customCapability.isCanBeConsumed = true
+      customCapability.isCanBeResolved = false
+      customCapability.attributes.attribute(
+        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+        project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM),
+      )
+      customCapability.outgoing.capability("com.foo:bar-custom:1.0")
+      project.dependencies.add("customCapability", "androidx.annotation:annotation:$ANDROIDX_VERSION")
+      val javaComponent = project.components.getByName("java") as AdhocComponentWithVariants
+      javaComponent.addVariantsFromConfiguration(customCapability) { it.mapToOptional() }
 
-            val publishing = project.extensions.findByType(PublishingExtension::class.java)
-                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+      val publishing =
+        project.extensions.findByType(PublishingExtension::class.java)
+          ?: throw RuntimeException("Could not find extension of type PublishingExtension")
 
-            publishing.apply {
-                repositories {
-                    it.maven {
-                        it.url = project.uri(project.projectDir.parentFile.resolve("repo"))
-                    }
-                }
-                publications.create("mavenJava", MavenPublication::class.java) {
-                    it.from(javaComponent)
-                }
-            }
-        }
+      publishing.apply {
+        repositories { it.maven { it.url = project.uri(project.projectDir.parentFile.resolve("repo")) } }
+        publications.create("mavenJava", MavenPublication::class.java) { it.from(javaComponent) }
+      }
     }
+  }
 
-    @Test
-    fun `test models`() {
-        rule.build.executor.run(":bar:publish")
-        val result = rule.build
-            .modelBuilder
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-        //todo fix me
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+  @Test
+  fun `test models`() {
+    rule.build.executor.run(":bar:publish")
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+    // todo fix me
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

@@ -32,101 +32,89 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-/**
- * Base interface for all project definition, including but not limited to
- * [GenericProjectDefinition] and [AndroidProjectDefinition].
- */
+/** Base interface for all project definition, including but not limited to [GenericProjectDefinition] and [AndroidProjectDefinition]. */
 @GradleDefinitionDsl
-interface GradleProjectDefinition: ExtensionAwareDefinition {
+interface GradleProjectDefinition : ExtensionAwareDefinition {
 
-    /**
-     * the Gradle path of the project
-     */
-    val path: String
+  /** the Gradle path of the project */
+  val path: String
 
-    /**
-     * Applies a plugin with an optional version string. If null, the default version is used.
-     *
-     * For core gradle plugin, the version should always be null.
-     *
-     * @param type the type of the plugin to apply
-     * @param version the version of the plugin.
-     * @param applyFirst if true, applies this plugin first, before other plugins
-     */
-    fun applyPlugin(type: PluginType, version: String? = null, applyFirst: Boolean = false)
+  /**
+   * Applies a plugin with an optional version string. If null, the default version is used.
+   *
+   * For core gradle plugin, the version should always be null.
+   *
+   * @param type the type of the plugin to apply
+   * @param version the version of the plugin.
+   * @param applyFirst if true, applies this plugin first, before other plugins
+   */
+  fun applyPlugin(type: PluginType, version: String? = null, applyFirst: Boolean = false)
 
-    /**
-     * Applies a plugin that has an associated extension, with an optional version string.
-     * If null, the default version is used.
-     *
-     * For core gradle plugin, the version should always be null.
-     *
-     * Optionally, an action can be provided to configure the extension associated with the plugin
-     *
-     * @param type the type of the plugin to apply
-     * @param version the version of the plugin.
-     * @param applyFirst if true, applies this plugin first, before other plugins
-     * @param action the action to configure the plugin's extension
-     */
-    fun <T> applyPlugin(
-        type: PluginTypeWithExtension<T>,
-        version: String? = null,
-        applyFirst: Boolean = false,
-        action: (T.() -> Unit)? = null)
+  /**
+   * Applies a plugin that has an associated extension, with an optional version string. If null, the default version is used.
+   *
+   * For core gradle plugin, the version should always be null.
+   *
+   * Optionally, an action can be provided to configure the extension associated with the plugin
+   *
+   * @param type the type of the plugin to apply
+   * @param version the version of the plugin.
+   * @param applyFirst if true, applies this plugin first, before other plugins
+   * @param action the action to configure the plugin's extension
+   */
+  fun <T> applyPlugin(
+    type: PluginTypeWithExtension<T>,
+    version: String? = null,
+    applyFirst: Boolean = false,
+    action: (T.() -> Unit)? = null,
+  )
 
-    /**
-     * Replaces an applied plugin, with a provided version
-     *
-     * This replaces the plugin in the same place as the previous one.
-     */
-    fun replaceAppliedPlugin(type: PluginType, version: String)
+  /**
+   * Replaces an applied plugin, with a provided version
+   *
+   * This replaces the plugin in the same place as the previous one.
+   */
+  fun replaceAppliedPlugin(type: PluginType, version: String)
 
-    /**
-     * If a plugin was applied with a custom extension, then
-     * this call can be called later to update the plugin configuration
-     */
-    fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit)
+  /** If a plugin was applied with a custom extension, then this call can be called later to update the plugin configuration */
+  fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit)
 
-    var group: String?
-    var version: String?
+  var group: String?
+  var version: String?
 
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
+  /** the object that allows to add/update/remove files from the project */
+  val files: GradleProjectFiles
 
-    /**
-     * Configures dependencies of the project
-     */
-    fun dependencies(action: DependenciesBuilder.() -> Unit)
-    val dependencies: DependenciesBuilder
+  /** Configures dependencies of the project */
+  fun dependencies(action: DependenciesBuilder.() -> Unit)
 
-    /**
-     * The list of plugin callbacks for this project.
-     *
-     * The callbacks from all the subprojects are all added to a single jar that is setup
-     * in the buildscript classpath of the root project. Dependencies required by the callbacks
-     * must be added to the build classpath by updating [buildscript] on
-     * [GradleBuildDefinition.rootProject]
-     */
-    val pluginCallbacks: MutableList<Class<out PluginCallback>>
+  val dependencies: DependenciesBuilder
 
-    /**
-     * Configures the buildscript for this project
-     */
-    fun buildscript(action: BuildscriptBuilder.() -> Unit)
+  /**
+   * The list of plugin callbacks for this project.
+   *
+   * The callbacks from all the subprojects are all added to a single jar that is setup in the buildscript classpath of the root project.
+   * Dependencies required by the callbacks must be added to the build classpath by updating [buildscript] on
+   * [GradleBuildDefinition.rootProject]
+   */
+  val pluginCallbacks: MutableList<Class<out PluginCallback>>
 
-    /**
-     * Configures the repositories section for a subproject.
-     *
-     * This is normally not needed, but can be useful in some niche scenarios
-     */
-    fun repositories(action: RepositoriesBuilder.() -> Unit)
+  /** Configures the buildscript for this project */
+  fun buildscript(action: BuildscriptBuilder.() -> Unit)
 
-    /**
-     * returns a [File] that encodes the call to `project.file()`.
-     *
-     * This can be used to provide File instance into the DSL.
-     */
-    fun projectDotFile(relativePath: String): File
+  /**
+   * Configures the repositories section for a subproject.
+   *
+   * This is normally not needed, but can be useful in some niche scenarios
+   */
+  fun repositories(action: RepositoriesBuilder.() -> Unit)
+
+  /**
+   * returns a [File] that encodes the call to `project.file()`.
+   *
+   * This can be used to provide File instance into the DSL.
+   */
+  fun projectDotFile(relativePath: String): File
 }
 
 /**
@@ -137,446 +125,397 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
 @GradleDefinitionDsl
 interface BuildscriptBuilder {
 
-    /**
-     * Adds a dependency to the buildscript classpath for this project
-     */
-    fun classpath(dependency: Any)
+  /** Adds a dependency to the buildscript classpath for this project */
+  fun classpath(dependency: Any)
 
-    /**
-     * Creates a [LocalJarBuilder] to be passed to [classpath] or any other scope
-     */
-    fun localJar(name: String, action: JarBuilder.() -> Unit) : LocalJarDependency
+  /** Creates a [LocalJarBuilder] to be passed to [classpath] or any other scope */
+  fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency
 }
 
 @GradleDefinitionDsl
 interface RepositoriesBuilder {
-    /**
-     * Whether to include the default repositories setup by the fixture.
-     * This should generally be true.
-     * Default is true.
-     */
-    var includeDefault: Boolean
-    fun flatDir(action: FlatDirBuilder.() -> Unit)
+  /** Whether to include the default repositories setup by the fixture. This should generally be true. Default is true. */
+  var includeDefault: Boolean
+
+  fun flatDir(action: FlatDirBuilder.() -> Unit)
 }
 
 @GradleDefinitionDsl
 interface FlatDirBuilder {
-    // the normal API uses Object but let's use Strings here to make it simpler
-    // as the tests will use a strings anyway.
-    val dirs: MutableList<String>
+  // the normal API uses Object but let's use Strings here to make it simpler
+  // as the tests will use a strings anyway.
+  val dirs: MutableList<String>
 }
 
-internal data class AppliedPlugin(
-    val plugin: PluginType,
-    val version: String
-)
+internal data class AppliedPlugin(val plugin: PluginType, val version: String)
 
-private data class PluginExtensionData(
-    val name: String,
-    val dslRecorder: DslRecorder
-)
+private data class PluginExtensionData(val name: String, val dslRecorder: DslRecorder)
 
-/**
- * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
- */
-internal abstract class GradleProjectDefinitionImpl(
-    override val path: String
-): GradleProjectDefinition {
+/** Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition] */
+internal abstract class GradleProjectDefinitionImpl(override val path: String) : GradleProjectDefinition {
 
-    protected val dslRecorder = DefaultDslRecorder()
+  protected val dslRecorder = DefaultDslRecorder()
 
-    // ordered list of applied plugins with their versions
-    internal val plugins = mutableListOf<AppliedPlugin>()
-    // map of plugins to custom extensions
-    private val pluginExtensions = mutableMapOf<PluginType, PluginExtensionData>()
+  // ordered list of applied plugins with their versions
+  internal val plugins = mutableListOf<AppliedPlugin>()
+  // map of plugins to custom extensions
+  private val pluginExtensions = mutableMapOf<PluginType, PluginExtensionData>()
 
-    private val buildscriptBuilder = BuildscriptBuilderImpl()
-    internal val repositoriesBuilder = RepositoriesBuilderImpl()
+  private val buildscriptBuilder = BuildscriptBuilderImpl()
+  internal val repositoriesBuilder = RepositoriesBuilderImpl()
 
-    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
+  override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
-    override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
+  override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
 
-    override var group: String? = null
-    override var version: String? = null
+  override var group: String? = null
+  override var version: String? = null
 
-    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
-        if (type.isSettings) {
-            throw RuntimeException("Cannot apply settings plugin to a project")
-        }
-        // search for existing one
-        plugins.firstOrNull { it.plugin == type }?.let {
-            throw RuntimeException("Plugin $type is already applied! (version: ${it.version}")
-        }
-
-        val appliedPlugin = AppliedPlugin(type, version ?: type.version ?: INTERNAL_PLUGIN_VERSION)
-        if (applyFirst) {
-            plugins.add(0, appliedPlugin)
-        } else {
-            plugins += appliedPlugin
-        }
+  override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+    if (type.isSettings) {
+      throw RuntimeException("Cannot apply settings plugin to a project")
     }
+    // search for existing one
+    plugins.firstOrNull { it.plugin == type }?.let { throw RuntimeException("Plugin $type is already applied! (version: ${it.version}") }
 
-    override fun <T> applyPlugin(
-        type: PluginTypeWithExtension<T>,
-        version: String?,
-        applyFirst: Boolean,
-        action: (T.() -> Unit)?
-    ) {
-        applyPlugin(type as PluginType, version, applyFirst)
-        action?.let {
-            val dslRecorder = DefaultDslRecorder()
-            val proxy = DslProxy.createProxy( type.extensionType, dslRecorder)
-            it(proxy)
-
-            pluginExtensions[type] = PluginExtensionData(type.extensionName, dslRecorder)
-        }
+    val appliedPlugin = AppliedPlugin(type, version ?: type.version ?: INTERNAL_PLUGIN_VERSION)
+    if (applyFirst) {
+      plugins.add(0, appliedPlugin)
+    } else {
+      plugins += appliedPlugin
     }
+  }
 
-    override fun replaceAppliedPlugin(type: PluginType, version: String) {
-        if (type.isSettings) {
-            throw RuntimeException("Cannot apply settings plugin to a project")
-        }
-        val match = plugins.firstOrNull { it.plugin == type }
-            ?: throw RuntimeException("Plugin $type not yet applied")
+  override fun <T> applyPlugin(type: PluginTypeWithExtension<T>, version: String?, applyFirst: Boolean, action: (T.() -> Unit)?) {
+    applyPlugin(type as PluginType, version, applyFirst)
+    action?.let {
+      val dslRecorder = DefaultDslRecorder()
+      val proxy = DslProxy.createProxy(type.extensionType, dslRecorder)
+      it(proxy)
 
-        val appliedPlugin = AppliedPlugin(type, version)
-        val index = plugins.indexOf(match)
-        plugins[index] = appliedPlugin
+      pluginExtensions[type] = PluginExtensionData(type.extensionName, dslRecorder)
     }
+  }
 
-    override fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit) {
-        val data = pluginExtensions[plugin]
-            ?: throw RuntimeException("Cannot reconfigurePlugin plugin $plugin has it has not yet been configured")
-
-        val proxy = DslProxy.createProxy(plugin.extensionType, data.dslRecorder)
-        action(proxy)
+  override fun replaceAppliedPlugin(type: PluginType, version: String) {
+    if (type.isSettings) {
+      throw RuntimeException("Cannot apply settings plugin to a project")
     }
+    val match = plugins.firstOrNull { it.plugin == type } ?: throw RuntimeException("Plugin $type not yet applied")
 
-    internal fun hasPlugin(plugin: PluginType): Boolean = plugins.any { it.plugin == plugin }
+    val appliedPlugin = AppliedPlugin(type, version)
+    val index = plugins.indexOf(match)
+    plugins[index] = appliedPlugin
+  }
 
-    override val dependencies: DependenciesBuilderImpl = DependenciesBuilderImpl()
+  override fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit) {
+    val data =
+      pluginExtensions[plugin] ?: throw RuntimeException("Cannot reconfigurePlugin plugin $plugin has it has not yet been configured")
 
-    override fun dependencies(action: DependenciesBuilder.() -> Unit) {
-        action(dependencies)
-    }
+    val proxy = DslProxy.createProxy(plugin.extensionType, data.dslRecorder)
+    action(proxy)
+  }
 
-    override fun buildscript(action: BuildscriptBuilder.() -> Unit) {
-        action(buildscriptBuilder)
-    }
+  internal fun hasPlugin(plugin: PluginType): Boolean = plugins.any { it.plugin == plugin }
 
-    override fun repositories(action: RepositoriesBuilder.() -> Unit) {
-        action(repositoriesBuilder)
-        repositoriesBuilder.isUsed = true
-    }
+  override val dependencies: DependenciesBuilderImpl = DependenciesBuilderImpl()
 
-    override fun projectDotFile(relativePath: String): File {
-        return MethodReturnedFile("project.file", relativePath)
-    }
+  override fun dependencies(action: DependenciesBuilder.() -> Unit) {
+    action(dependencies)
+  }
 
-    internal fun writeSubProject(
-        location: Path,
-        allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, Set<String>>,
-        useOldPluginStyle: Boolean,
-        projectRepositories: Collection<Path>,
-        buildWriter: BuildWriter,
-    ) {
-        write(
-            location,
-            allPlugins,
-            customPluginMap,
-            isRoot = false,
-            useOldPluginStyle,
-            useLatestKgpVersion = false, // useLatestKgpVersion is relevant only for root project
-            projectRepositories,
-            buildWriter
-        )
-    }
+  override fun buildscript(action: BuildscriptBuilder.() -> Unit) {
+    action(buildscriptBuilder)
+  }
 
-    internal fun writeRoot(
-        location: Path,
-        allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, Set<String>>,
-        useOldPluginStyle: Boolean,
-        useLatestKgpVersion: Boolean,
-        projectRepositories: Collection<Path>,
-        buildWriter: BuildWriter,
-    ) {
-        write(
-            location,
-            allPlugins,
-            customPluginMap,
-            isRoot = true,
-            useOldPluginStyle,
-            useLatestKgpVersion,
-            projectRepositories,
-            buildWriter
-        )
-    }
+  override fun repositories(action: RepositoriesBuilder.() -> Unit) {
+    action(repositoriesBuilder)
+    repositoriesBuilder.isUsed = true
+  }
 
-    @VisibleForTesting
-    internal open fun writeExtension(writer: BuildWriter, location: Path) {
-        // nothing to do here
-    }
+  override fun projectDotFile(relativePath: String): File {
+    return MethodReturnedFile("project.file", relativePath)
+  }
 
-    private fun write(
-        location: Path,
-        allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, Set<String>>,
-        isRoot: Boolean,
-        useOldPluginStyle: Boolean,
-        useLatestKgpVersion: Boolean, // Note: useLatestKgpVersion is relevant only when isRoot=true
-        projectRepositories: Collection<Path>,
-        buildWriter: BuildWriter,
-    ) {
-        location.createDirectories()
+  internal fun writeSubProject(
+    location: Path,
+    allPlugins: Map<PluginType, Set<String>>,
+    customPluginMap: Map<String, Set<String>>,
+    useOldPluginStyle: Boolean,
+    projectRepositories: Collection<Path>,
+    buildWriter: BuildWriter,
+  ) {
+    write(
+      location,
+      allPlugins,
+      customPluginMap,
+      isRoot = false,
+      useOldPluginStyle,
+      useLatestKgpVersion = false, // useLatestKgpVersion is relevant only for root project
+      projectRepositories,
+      buildWriter,
+    )
+  }
 
-        buildWriter.apply {
-            if (useOldPluginStyle) {
-                // in the old plugin style, we will write a buildscript in every project, with
-                // all the repositories and all the artifacts containing in the plugins.
-                // This should only be used to recreate cases where different projects use different
-                // classloaders
-                if (plugins.isNotEmpty()) {
-                    block("buildscript") {
-                        block("repositories") {
-                            for (repo in projectRepositories) {
-                                mavenSnippet(repo)
-                            }
-                        }
-                        block("dependencies") {
-                            // write the plugins dependencies
-                            for (plugin in plugins) {
-                                plugin.plugin.artifact?.let {
-                                    if (plugin.version != INTERNAL_PLUGIN_VERSION) {
-                                        dependency("classpath", "$it:${plugin.version}")
-                                    }
-                                }
-                            }
-                            writeDependencyBuilderContent(location)
+  internal fun writeRoot(
+    location: Path,
+    allPlugins: Map<PluginType, Set<String>>,
+    customPluginMap: Map<String, Set<String>>,
+    useOldPluginStyle: Boolean,
+    useLatestKgpVersion: Boolean,
+    projectRepositories: Collection<Path>,
+    buildWriter: BuildWriter,
+  ) {
+    write(location, allPlugins, customPluginMap, isRoot = true, useOldPluginStyle, useLatestKgpVersion, projectRepositories, buildWriter)
+  }
 
-                            if (customPluginMap.isNotEmpty()) {
-                                // we need to make a path relative to where the build logic jar will
-                                // be. We can compute that based on the number segments in the gradle
-                                // path.
-                                val count = path.split(":").size
+  @VisibleForTesting
+  internal open fun writeExtension(writer: BuildWriter, location: Path) {
+    // nothing to do here
+  }
 
-                                val buildLogicPath = buildString {
-                                    for (i in 1..<count) {
-                                        append("../")
-                                    }
-                                    append("build-logic.jar")
-                                }
-                                dependency("classpath", rawMethod("files", buildLogicPath))
-                            }
-                        }
-                    }
+  private fun write(
+    location: Path,
+    allPlugins: Map<PluginType, Set<String>>,
+    customPluginMap: Map<String, Set<String>>,
+    isRoot: Boolean,
+    useOldPluginStyle: Boolean,
+    useLatestKgpVersion: Boolean, // Note: useLatestKgpVersion is relevant only when isRoot=true
+    projectRepositories: Collection<Path>,
+    buildWriter: BuildWriter,
+  ) {
+    location.createDirectories()
 
-                    emptyLine()
-
-                    // write the plugins
-                    for (plugin in plugins) {
-                        applyPluginByName(plugin.plugin.id)
-                    }
-
-                    val customPluginsToApply = customPluginMap[path]
-                    customPluginsToApply?.let {
-                        // If there is a plugin class, apply them
-                        it.forEach { plugin ->
-                            applyPluginByName(plugin)
-                        }
-                    }
+    buildWriter
+      .apply {
+        if (useOldPluginStyle) {
+          // in the old plugin style, we will write a buildscript in every project, with
+          // all the repositories and all the artifacts containing in the plugins.
+          // This should only be used to recreate cases where different projects use different
+          // classloaders
+          if (plugins.isNotEmpty()) {
+            block("buildscript") {
+              block("repositories") {
+                for (repo in projectRepositories) {
+                  mavenSnippet(repo)
                 }
-            } else {
-
-                val isRootWithCustomPlugin = isRoot && customPluginMap.isNotEmpty()
-
-                val pluginsWithNoMarkers = allPlugins.keys.filter { !it.hasMarker && it.artifact != null }
-                val isRootWithNonMarkerPlugin = isRoot && pluginsWithNoMarkers.isNotEmpty()
-                val isRootAndUseLatestKgpVersion = isRoot && useLatestKgpVersion
-
-                if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || isRootAndUseLatestKgpVersion) {
-                    block("buildscript") {
-                        block("dependencies") {
-                            writeDependencyBuilderContent(location)
-                            if (isRootWithCustomPlugin) {
-                                dependency("classpath", rawMethod("files", "build-logic.jar"))
-                            }
-                            if (isRootWithNonMarkerPlugin) {
-                                for (plugin in pluginsWithNoMarkers) {
-                                    dependency("classpath", "${plugin.artifact}:${plugin.version}")
-                                }
-                            }
-                            if (isRootAndUseLatestKgpVersion) {
-                                dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                            }
-                        }
+              }
+              block("dependencies") {
+                // write the plugins dependencies
+                for (plugin in plugins) {
+                  plugin.plugin.artifact?.let {
+                    if (plugin.version != INTERNAL_PLUGIN_VERSION) {
+                      dependency("classpath", "$it:${plugin.version}")
                     }
+                  }
                 }
+                writeDependencyBuilderContent(location)
 
-                block("plugins") {
-                    // write the plugins used by this project
-                    for ((plugin, version) in plugins) {
-                        // we display the version if:
-                        // - this is the root project
-                        // - this is not the root project, but there are 2+ versions used in the build
-                        // If the version is INTERNAL_PLUGIN_VERSION then we also skip it
-                        val versionToWrite =
-                            if ((isRoot || allPlugins[plugin]!!.size > 2) && version != INTERNAL_PLUGIN_VERSION)
-                                version
-                            else null
-                        pluginId(plugin.id, versionToWrite)
+                if (customPluginMap.isNotEmpty()) {
+                  // we need to make a path relative to where the build logic jar will
+                  // be. We can compute that based on the number segments in the gradle
+                  // path.
+                  val count = path.split(":").size
+
+                  val buildLogicPath = buildString {
+                    for (i in 1..<count) {
+                      append("../")
                     }
-
-                    // write the plugins used by the other projects (only for root project)
-                    if (isRoot) {
-                        val remainingPlugins = allPlugins - plugins.map { it.plugin }.toSet()
-
-                        // we can exclude plugin with no versions
-                        for ((plugin, versions) in remainingPlugins) {
-                            // if there are 2+ versions we don't write it there.
-                            if (versions.size > 1) continue
-
-                            val version = versions.first()
-                            // no need to write core plugins since there's no version to define
-                            // (if it's used by this project, it's written above)
-                            if (version == INTERNAL_PLUGIN_VERSION) continue
-
-                            pluginId(plugin.id, version, apply = false)
-                        }
-                    }
-
-                    val customPluginsToApply = customPluginMap[path]
-                    customPluginsToApply?.let {
-                        // If there is a plugin class, apply them
-                        it.forEach { plugin ->
-                            pluginId(plugin, null)
-                        }
-                    }
+                    append("build-logic.jar")
+                  }
+                  dependency("classpath", rawMethod("files", buildLogicPath))
                 }
+              }
             }
 
             emptyLine()
 
-            if (repositoriesBuilder.isUsed) {
-                block("repositories") {
-                    for (repo in projectRepositories) {
-                        mavenSnippet(repo)
-                    }
-                    block("flatDir") {
-                        when (repositoriesBuilder.flatDirBuilder.dirs.size) {
-                            0 ->  {
-                                // do nothing
-                            }
-                            1 -> {
-                                method("dirs", repositoriesBuilder.flatDirBuilder.dirs[0])
-                            }
-                            else -> { // 2+
-                                method("dirs", repositoriesBuilder.flatDirBuilder.dirs, isVarArg = true)
-                            }
-                        }
-                    }
-                }
-                emptyLine()
+            // write the plugins
+            for (plugin in plugins) {
+              applyPluginByName(plugin.plugin.id)
             }
 
-            if (group != null || version != null) {
-                group?.let {
-                    set("group", it)
-                }
-                version?.let {
-                    set("version", it)
-                }
+            val customPluginsToApply = customPluginMap[path]
+            customPluginsToApply?.let {
+              // If there is a plugin class, apply them
+              it.forEach { plugin -> applyPluginByName(plugin) }
+            }
+          }
+        } else {
 
-                emptyLine()
+          val isRootWithCustomPlugin = isRoot && customPluginMap.isNotEmpty()
+
+          val pluginsWithNoMarkers = allPlugins.keys.filter { !it.hasMarker && it.artifact != null }
+          val isRootWithNonMarkerPlugin = isRoot && pluginsWithNoMarkers.isNotEmpty()
+          val isRootAndUseLatestKgpVersion = isRoot && useLatestKgpVersion
+
+          if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || isRootAndUseLatestKgpVersion) {
+            block("buildscript") {
+              block("dependencies") {
+                writeDependencyBuilderContent(location)
+                if (isRootWithCustomPlugin) {
+                  dependency("classpath", rawMethod("files", "build-logic.jar"))
+                }
+                if (isRootWithNonMarkerPlugin) {
+                  for (plugin in pluginsWithNoMarkers) {
+                    dependency("classpath", "${plugin.artifact}:${plugin.version}")
+                  }
+                }
+                if (isRootAndUseLatestKgpVersion) {
+                  dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                }
+              }
+            }
+          }
+
+          block("plugins") {
+            // write the plugins used by this project
+            for ((plugin, version) in plugins) {
+              // we display the version if:
+              // - this is the root project
+              // - this is not the root project, but there are 2+ versions used in the build
+              // If the version is INTERNAL_PLUGIN_VERSION then we also skip it
+              val versionToWrite = if ((isRoot || allPlugins[plugin]!!.size > 2) && version != INTERNAL_PLUGIN_VERSION) version else null
+              pluginId(plugin.id, versionToWrite)
             }
 
-            // write the Android extension if it exists
-            writeExtension(this, location)
+            // write the plugins used by the other projects (only for root project)
+            if (isRoot) {
+              val remainingPlugins = allPlugins - plugins.map { it.plugin }.toSet()
 
-            // write the other custom extensions
-            for (extensionData in pluginExtensions.values) {
-                block(extensionData.name) {
-                    extensionData.dslRecorder.writeContent(this)
-                }
-                emptyLine()
+              // we can exclude plugin with no versions
+              for ((plugin, versions) in remainingPlugins) {
+                // if there are 2+ versions we don't write it there.
+                if (versions.size > 1) continue
+
+                val version = versions.first()
+                // no need to write core plugins since there's no version to define
+                // (if it's used by this project, it's written above)
+                if (version == INTERNAL_PLUGIN_VERSION) continue
+
+                pluginId(plugin.id, version, apply = false)
+              }
             }
 
-            dependencies.write(this, location)
-        }.also {
-            val file = location.resolve(it.buildFileName)
-            file.writeText(it.toString())
+            val customPluginsToApply = customPluginMap[path]
+            customPluginsToApply?.let {
+              // If there is a plugin class, apply them
+              it.forEach { plugin -> pluginId(plugin, null) }
+            }
+          }
         }
 
-        // write the rest of the content.
-        (files as? DelayedGradleProjectFiles)?.let { files->
-            if (!files.isDirect) {
-                files.write(location)
-                // once the project is written on disk, we want to move the files to a direct
-                // mode so that reconfigure can update them.
-                // Keeping them delayed would not work as they must be in memory and that would mean
-                // having to load all the files when doing a reconfigure.
-                files.makeDirect(location)
+        emptyLine()
+
+        if (repositoriesBuilder.isUsed) {
+          block("repositories") {
+            for (repo in projectRepositories) {
+              mavenSnippet(repo)
             }
+            block("flatDir") {
+              when (repositoriesBuilder.flatDirBuilder.dirs.size) {
+                0 -> {
+                  // do nothing
+                }
+                1 -> {
+                  method("dirs", repositoriesBuilder.flatDirBuilder.dirs[0])
+                }
+                else -> { // 2+
+                  method("dirs", repositoriesBuilder.flatDirBuilder.dirs, isVarArg = true)
+                }
+              }
+            }
+          }
+          emptyLine()
         }
+
+        if (group != null || version != null) {
+          group?.let { set("group", it) }
+          version?.let { set("version", it) }
+
+          emptyLine()
+        }
+
+        // write the Android extension if it exists
+        writeExtension(this, location)
+
+        // write the other custom extensions
+        for (extensionData in pluginExtensions.values) {
+          block(extensionData.name) { extensionData.dslRecorder.writeContent(this) }
+          emptyLine()
+        }
+
+        dependencies.write(this, location)
+      }
+      .also {
+        val file = location.resolve(it.buildFileName)
+        file.writeText(it.toString())
+      }
+
+    // write the rest of the content.
+    (files as? DelayedGradleProjectFiles)?.let { files ->
+      if (!files.isDirect) {
+        files.write(location)
+        // once the project is written on disk, we want to move the files to a direct
+        // mode so that reconfigure can update them.
+        // Keeping them delayed would not work as they must be in memory and that would mean
+        // having to load all the files when doing a reconfigure.
+        files.makeDirect(location)
+      }
     }
+  }
 
-    private fun BuildWriter.writeDependencyBuilderContent(location: Path) {
-        buildscriptBuilder.dependencies.forEach { dependency ->
-            when (dependency) {
-                is String -> dependency("classpath", dependency)
-                is LocalJarDependency -> {
-                    val path = createLocalJar(dependency, location)
-                    dependency("classpath", rawMethod("files", path))
-                }
-
-                else -> throw RuntimeException("Unsupported dependency type: ${dependency.javaClass}")
-            }
+  private fun BuildWriter.writeDependencyBuilderContent(location: Path) {
+    buildscriptBuilder.dependencies.forEach { dependency ->
+      when (dependency) {
+        is String -> dependency("classpath", dependency)
+        is LocalJarDependency -> {
+          val path = createLocalJar(dependency, location)
+          dependency("classpath", rawMethod("files", path))
         }
+
+        else -> throw RuntimeException("Unsupported dependency type: ${dependency.javaClass}")
+      }
     }
+  }
 }
 
-private class BuildscriptBuilderImpl: BuildscriptBuilder {
-    val dependencies = mutableListOf<Any>()
+private class BuildscriptBuilderImpl : BuildscriptBuilder {
+  val dependencies = mutableListOf<Any>()
 
-    val isEmpty: Boolean
-        get() = dependencies.isEmpty()
+  val isEmpty: Boolean
+    get() = dependencies.isEmpty()
 
-    override fun classpath(dependency: Any) {
-        dependencies.add(dependency)
-    }
+  override fun classpath(dependency: Any) {
+    dependencies.add(dependency)
+  }
 
-    override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
-        val builder = JarBuilderImpl().also {
-            action(it)
-        }
+  override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
+    val builder = JarBuilderImpl().also { action(it) }
 
-        return LocalJarDependencyImpl(name, builder.getContent())
-    }
+    return LocalJarDependencyImpl(name, builder.getContent())
+  }
 }
 
-internal class RepositoriesBuilderImpl: RepositoriesBuilder {
+internal class RepositoriesBuilderImpl : RepositoriesBuilder {
 
-    override var includeDefault: Boolean = true
-    var isUsed = false
+  override var includeDefault: Boolean = true
+  var isUsed = false
 
-    internal lateinit var flatDirBuilder: FlatDirBuilderImpl
+  internal lateinit var flatDirBuilder: FlatDirBuilderImpl
 
-    override fun flatDir(action: FlatDirBuilder.() -> Unit) {
-        flatDirBuilder = FlatDirBuilderImpl()
-        action(flatDirBuilder)
-    }
+  override fun flatDir(action: FlatDirBuilder.() -> Unit) {
+    flatDirBuilder = FlatDirBuilderImpl()
+    action(flatDirBuilder)
+  }
 }
 
-internal class FlatDirBuilderImpl: FlatDirBuilder {
-    override val dirs: MutableList<String> = mutableListOf()
+internal class FlatDirBuilderImpl : FlatDirBuilder {
+  override val dirs: MutableList<String> = mutableListOf()
 }
 
 /**
- * Internal version. This is used so that plugins always have a version
- * even if it's the same as Gradle.
- * As we pass plugins and their versions in various maps, this is easier to handle
- * than a null value.
+ * Internal version. This is used so that plugins always have a version even if it's the same as Gradle. As we pass plugins and their
+ * versions in various maps, this is easier to handle than a null value.
  */
 internal const val INTERNAL_PLUGIN_VERSION: String = "__internal_version__"

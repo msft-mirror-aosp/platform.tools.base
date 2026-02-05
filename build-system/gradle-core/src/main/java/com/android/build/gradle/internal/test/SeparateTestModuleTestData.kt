@@ -18,39 +18,26 @@ package com.android.build.gradle.internal.test
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import org.gradle.api.file.Directory
-import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 
-/** Implementation of [TestData] for separate test modules.  */
+/** Implementation of [TestData] for separate test modules. */
 class SeparateTestModuleTestData(
-    namespace: Provider<String>,
-    creationConfig: TestVariantCreationConfig,
-    testApkDir: Provider<Directory>,
-    testedApksDir: Provider<Directory>,
-    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>,
-) : AbstractTestDataImpl(
-    namespace,
-    creationConfig,
-    testApkDir,
-    testedApksDir,
-    extraInstrumentationTestRunnerArgs
-) {
+  namespace: Provider<String>,
+  creationConfig: TestVariantCreationConfig,
+  testApkDir: Provider<Directory>,
+  testedApksDir: Provider<Directory>,
+  extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>,
+) : AbstractTestDataImpl(namespace, creationConfig, testApkDir, testedApksDir, extraInstrumentationTestRunnerArgs) {
 
-    @get: Input
-    override val supportedAbis: Set<String> = emptySet()
+  @get:Input override val supportedAbis: Set<String> = emptySet()
 
-    override val libraryType = creationConfig.services.provider { false }
+  override val libraryType = creationConfig.services.provider { false }
 
-    // AbstractTestDataImpl.testedApplicationId relies on creationConfig.testedApplicationId,
-    // which returns the instrumentation target application name. If
-    // ModulePropertyKeys.SELF_INSTRUMENTING is enabled, the instrumentation targets to the test
-    // application instead of tested application. To always return the tested application ID from
-    // this method, we override this method.
-    override val testedApplicationId: Provider<String> =
-        testedApksDir.map {
-            BuiltArtifactsLoaderImpl().load(it)?.applicationId!!
-        }
+  // AbstractTestDataImpl.testedApplicationId relies on creationConfig.testedApplicationId,
+  // which returns the instrumentation target application name. If
+  // ModulePropertyKeys.SELF_INSTRUMENTING is enabled, the instrumentation targets to the test
+  // application instead of tested application. To always return the tested application ID from
+  // this method, we override this method.
+  override val testedApplicationId: Provider<String> = testedApksDir.map { BuiltArtifactsLoaderImpl().load(it)?.applicationId!! }
 }
-
-

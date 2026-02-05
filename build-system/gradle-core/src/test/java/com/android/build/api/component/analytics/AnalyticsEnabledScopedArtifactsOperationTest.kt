@@ -22,130 +22,78 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.junit.Rule
-import org.junit.Test
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.junit.Rule
+import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 internal class AnalyticsEnabledScopedArtifactsOperationTest {
 
-    abstract class FakeTask: DefaultTask() {
-        abstract val inputJars: ListProperty<RegularFile>
-        abstract val inputDirectories: ListProperty<Directory>
-        abstract val output: RegularFileProperty
-    }
+  abstract class FakeTask : DefaultTask() {
+    abstract val inputJars: ListProperty<RegularFile>
+    abstract val inputDirectories: ListProperty<Directory>
+    abstract val output: RegularFileProperty
+  }
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: ScopedArtifactsOperation<FakeTask> = mock()
+  private val delegate: ScopedArtifactsOperation<FakeTask> = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledScopedArtifactsOperation<FakeTask> by lazy {
-        AnalyticsEnabledScopedArtifactsOperation<FakeTask>(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledScopedArtifactsOperation<FakeTask> by lazy {
+    AnalyticsEnabledScopedArtifactsOperation<FakeTask>(delegate, stats, FakeObjectFactory.factory)
+  }
 
-    @Test
-    fun testToGet() {
+  @Test
+  fun testToGet() {
 
-        proxy.toGet(
-            ScopedArtifact.CLASSES,
-            FakeTask::inputJars,
-            FakeTask::inputDirectories,
-        )
+    proxy.toGet(ScopedArtifact.CLASSES, FakeTask::inputJars, FakeTask::inputDirectories)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE
-            )
-        )
-        verify(delegate, times(1)).toGet(
-            ScopedArtifact.CLASSES,
-            FakeTask::inputJars,
-            FakeTask::inputDirectories,
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE))
+    verify(delegate, times(1)).toGet(ScopedArtifact.CLASSES, FakeTask::inputJars, FakeTask::inputDirectories)
+  }
 
-    @Test
-    fun testToAppend() {
+  @Test
+  fun testToAppend() {
 
-        proxy.toAppend(
-            ScopedArtifact.CLASSES,
-            FakeTask::output
-        )
+    proxy.toAppend(ScopedArtifact.CLASSES, FakeTask::output)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE
-            )
-        )
-        verify(delegate, times(1)).toAppend(
-            ScopedArtifact.CLASSES,
-            FakeTask::output
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE))
+    verify(delegate, times(1)).toAppend(ScopedArtifact.CLASSES, FakeTask::output)
+  }
 
-    @Test
-    fun testToReplace() {
+  @Test
+  fun testToReplace() {
 
-        proxy.toReplace(
-            ScopedArtifact.CLASSES,
-            FakeTask::output
-        )
+    proxy.toReplace(ScopedArtifact.CLASSES, FakeTask::output)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE
-            )
-        )
-        verify(delegate, times(1)).toReplace(
-            ScopedArtifact.CLASSES,
-            FakeTask::output
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE))
+    verify(delegate, times(1)).toReplace(ScopedArtifact.CLASSES, FakeTask::output)
+  }
 
-    @Test
-    fun testToTransform() {
+  @Test
+  fun testToTransform() {
 
-        proxy.toTransform(
-            ScopedArtifact.CLASSES,
-            FakeTask::inputJars,
-            FakeTask::inputDirectories,
-            FakeTask::output
-        )
+    proxy.toTransform(ScopedArtifact.CLASSES, FakeTask::inputJars, FakeTask::inputDirectories, FakeTask::output)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE
-            )
-        )
-        verify(delegate, times(1)).toTransform(
-            ScopedArtifact.CLASSES,
-            FakeTask::inputJars,
-            FakeTask::inputDirectories,
-            FakeTask::output
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE))
+    verify(delegate, times(1)).toTransform(ScopedArtifact.CLASSES, FakeTask::inputJars, FakeTask::inputDirectories, FakeTask::output)
+  }
 }

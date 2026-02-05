@@ -18,13 +18,13 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ToolOptions
 
-open class ToolOptionsImpl: ToolOptions {
-    override var runInSeparateProcess: Boolean = false
+open class ToolOptionsImpl : ToolOptions {
+  override var runInSeparateProcess: Boolean = false
 
-    override val jvmOptions: MutableList<String> = mutableListOf()
+  override val jvmOptions: MutableList<String> = mutableListOf()
 
-    fun setJvmOptions(from: List<String>) {
-        jvmOptions.clear()
-        jvmOptions.addAll(from)
-    }
+  fun setJvmOptions(from: List<String>) {
+    jvmOptions.clear()
+    jvmOptions.addAll(from)
+  }
 }

@@ -45,13 +45,14 @@ import com.android.ide.common.resources.MergingException
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Lists
+import java.io.File
+import java.io.IOException
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileType
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -65,477 +66,372 @@ import org.gradle.work.DisableCachingByDefault
 import org.gradle.work.FileChange
 import org.gradle.work.Incremental
 import org.gradle.work.InputChanges
-import java.io.File
-import java.io.IOException
 
 @DisableCachingByDefault(because = SIMPLE_MERGING_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MISC, secondaryTaskCategories = [TaskCategory.SOURCE_PROCESSING, TaskCategory.MERGING])
 abstract class MergeSourceSetFolders : NewIncrementalTask() {
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @get:LocalState
-    abstract val incrementalFolder: DirectoryProperty
+  @get:LocalState abstract val incrementalFolder: DirectoryProperty
 
-    // supplier of the assets set, for execution only.
-    @get:Internal("for testing")
-    internal abstract val assetSets: ListProperty<AssetSet>
+  // supplier of the assets set, for execution only.
+  @get:Internal("for testing") internal abstract val assetSets: ListProperty<AssetSet>
 
-    // for the dependencies
-    @get:Internal("for testing")
-    internal var libraryCollection: ArtifactCollection? = null
+  // for the dependencies
+  @get:Internal("for testing") internal var libraryCollection: ArtifactCollection? = null
 
-    @get:InputFiles
-    @get:Incremental
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val shadersOutputDir: DirectoryProperty
+  @get:InputFiles
+  @get:Incremental
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val shadersOutputDir: DirectoryProperty
 
-    @get:InputFiles
-    @get:Incremental
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val mlModelsOutputDir: DirectoryProperty
+  @get:InputFiles
+  @get:Incremental
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val mlModelsOutputDir: DirectoryProperty
 
-    @get:Input
-    @get:Optional
-    abstract val ignoreAssetsPatterns: ListProperty<String>
+  @get:Input @get:Optional abstract val ignoreAssetsPatterns: ListProperty<String>
 
-    private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
+  private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
 
-    private val fileValidity = FileValidity<AssetSet>()
+  private val fileValidity = FileValidity<AssetSet>()
 
-    @get:Input
-    @get:Optional
-    abstract val aaptEnv: Property<String>
+  @get:Input @get:Optional abstract val aaptEnv: Property<String>
 
-    override fun doTaskAction(inputChanges: InputChanges) {
-        if (inputChanges.isIncremental) {
-            val changes = mutableMapOf<File, FileStatus>()
-            changes.collectChanges(inputChanges.getFileChanges(shadersOutputDir))
-            changes.collectChanges(inputChanges.getFileChanges(mlModelsOutputDir))
-            changes.collectChanges(inputChanges.getFileChanges(sourceFolderInputs))
-            changes.collectChanges(inputChanges.getFileChanges(libraries))
-            doIncrementalTaskAction(changes)
-        } else {
-            doFullTaskAction()
+  override fun doTaskAction(inputChanges: InputChanges) {
+    if (inputChanges.isIncremental) {
+      val changes = mutableMapOf<File, FileStatus>()
+      changes.collectChanges(inputChanges.getFileChanges(shadersOutputDir))
+      changes.collectChanges(inputChanges.getFileChanges(mlModelsOutputDir))
+      changes.collectChanges(inputChanges.getFileChanges(sourceFolderInputs))
+      changes.collectChanges(inputChanges.getFileChanges(libraries))
+      doIncrementalTaskAction(changes)
+    } else {
+      doFullTaskAction()
+    }
+  }
+
+  private fun MutableMap<File, FileStatus>.collectChanges(changes: Iterable<FileChange>) {
+    changes.forEach { change ->
+      if (change.fileType == FileType.FILE) {
+        put(change.file, change.changeType.toSerializable())
+      }
+    }
+  }
+
+  @Throws(IOException::class)
+  private fun doFullTaskAction() {
+    val incFolder = incrementalFolder.get().asFile
+
+    // this is full run, clean the previous output
+    val destinationDir = outputDir.get().asFile
+    FileUtils.cleanOutputDir(destinationDir)
+
+    val assetSets = computeAssetSetList()
+
+    // create a new merger and populate it with the sets.
+    val merger = AssetMerger()
+
+    val logger = LoggerWrapper(logger)
+    try {
+      Workers.withGradleWorkers(projectPath.get(), path, workerExecutor, analyticsService).use { workerExecutor ->
+        for (assetSet in assetSets) {
+          // set needs to be loaded.
+          assetSet.loadFromFiles(logger)
+          merger.addDataSet(assetSet)
         }
 
-    }
+        // get the merged set and write it down.
+        val writer = MergedAssetWriter(destinationDir, workerExecutor)
 
-    private fun MutableMap<File, FileStatus>.collectChanges(changes: Iterable<FileChange>) {
-        changes.forEach { change ->
-            if (change.fileType == FileType.FILE) {
-                put(change.file, change.changeType.toSerializable())
-            }
+        merger.mergeData(writer, false /*doCleanUp*/)
+
+        // No exception? Write the known state.
+        merger.writeBlobTo(incFolder, writer, false)
+      }
+    } catch (e: Exception) {
+      MergingException.findAndReportMergingException(e, MessageReceiverImpl(errorFormatMode, getLogger()))
+      try {
+        throw e
+      } catch (mergingException: MergingException) {
+        merger.cleanBlob(incFolder)
+        throw ResourceException(mergingException.message, mergingException)
+      }
+    }
+  }
+
+  @Throws(IOException::class)
+  private fun doIncrementalTaskAction(changedInputs: Map<File, FileStatus>) {
+    val incrementalFolder = incrementalFolder.get().asFile
+
+    // create a merger and load the known state.
+    val merger = AssetMerger()
+    try {
+      Workers.withGradleWorkers(projectPath.get(), path, workerExecutor, analyticsService).use { workerExecutor ->
+        if (! /*incrementalState*/merger.loadFromBlob(incrementalFolder, true, aaptEnv.orNull)) {
+          doFullTaskAction()
+          return
         }
-    }
 
-    @Throws(IOException::class)
-    private fun doFullTaskAction() {
-        val incFolder = incrementalFolder.get().asFile
-
-        // this is full run, clean the previous output
-        val destinationDir = outputDir.get().asFile
-        FileUtils.cleanOutputDir(destinationDir)
-
+        // compare the known state to the current sets to detect incompatibility.
+        // This is in case there's a change that's too hard to do incrementally. In this case
+        // we'll simply revert to full build.
         val assetSets = computeAssetSetList()
 
-        // create a new merger and populate it with the sets.
-        val merger = AssetMerger()
+        if (!merger.checkValidUpdate(assetSets)) {
+          logger.info("Changed Asset sets: full task run!")
+          doFullTaskAction()
+          return
+        }
 
         val logger = LoggerWrapper(logger)
-        try {
-            Workers.withGradleWorkers(projectPath.get(), path, workerExecutor, analyticsService).use { workerExecutor ->
-                for (assetSet in assetSets) {
-                    // set needs to be loaded.
-                    assetSet.loadFromFiles(logger)
-                    merger.addDataSet(assetSet)
-                }
 
-                // get the merged set and write it down.
-                val writer = MergedAssetWriter(destinationDir, workerExecutor)
+        // The incremental process is the following:
+        // Loop on all the changed files, find which ResourceSet it belongs to, then ask
+        // the resource set to update itself with the new file.
+        for ((changedFile, value) in changedInputs) {
 
-                merger.mergeData(writer, false /*doCleanUp*/)
+          // Ignore directories.
+          if (changedFile.isDirectory) {
+            continue
+          }
 
-                // No exception? Write the known state.
-                merger.writeBlobTo(incFolder, writer, false)
+          merger.findDataSetContaining(changedFile, fileValidity)
+          if (fileValidity.status == FileValidity.FileStatus.UNKNOWN_FILE) {
+            doFullTaskAction()
+            return
+          } else if (fileValidity.status == FileValidity.FileStatus.VALID_FILE) {
+            if (!fileValidity.dataSet.updateWith(fileValidity.sourceFile, changedFile, value, logger)) {
+              getLogger().info("Failed to process {} event! Full task run", value)
+              doFullTaskAction()
+              return
             }
-        } catch (e: Exception) {
-            MergingException.findAndReportMergingException(
-                e, MessageReceiverImpl(errorFormatMode, getLogger())
-            )
-            try {
-                throw e
-            } catch (mergingException: MergingException) {
-                merger.cleanBlob(incFolder)
-                throw ResourceException(mergingException.message, mergingException)
-            }
-
+          }
         }
+
+        val writer = MergedAssetWriter(outputDir.get().asFile, workerExecutor)
+
+        merger.mergeData(writer, false /*doCleanUp*/)
+
+        // No exception? Write the known state.
+        merger.writeBlobTo(incrementalFolder, writer, false)
+      }
+    } catch (e: Exception) {
+      MergingException.findAndReportMergingException(e, MessageReceiverImpl(errorFormatMode, logger))
+      try {
+        throw e
+      } catch (mergingException: MergingException) {
+        merger.cleanBlob(incrementalFolder)
+        throw ResourceException(mergingException.message, mergingException)
+      }
+    } finally {
+      // some clean up after the task to help multi variant/module builds.
+      fileValidity.clear()
+    }
+  }
+
+  @get:Optional
+  @get:InputFiles
+  @get:Incremental
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val libraries: ConfigurableFileCollection
+
+  // input list for the source folder based asset folders.
+  @get:InputFiles @get:Incremental @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sourceFolderInputs: ConfigurableFileCollection
+
+  /** Compute the list of Asset set to be used during execution based all the inputs. */
+  @VisibleForTesting
+  internal fun computeAssetSetList(): List<AssetSet> {
+    var assetSetList = mutableListOf<AssetSet>()
+
+    val assetSetsMap = mutableMapOf<String, AssetSet>()
+    assetSets.get().forEach { assetSet ->
+      val combinedAssetSet = assetSetsMap.getOrPut(assetSet.configName) { AssetSet(assetSet.configName, aaptEnv.orNull) }
+      combinedAssetSet.addSources(assetSet.sourceFiles)
     }
 
-    @Throws(IOException::class)
-    private fun doIncrementalTaskAction(changedInputs: Map<File, FileStatus>) {
-        val incrementalFolder = incrementalFolder.get().asFile
-
-        // create a merger and load the known state.
-        val merger = AssetMerger()
-        try {
-            Workers.withGradleWorkers(projectPath.get(), path, workerExecutor, analyticsService).use { workerExecutor ->
-                if (!/*incrementalState*/merger.loadFromBlob(incrementalFolder, true, aaptEnv.orNull)) {
-                    doFullTaskAction()
-                    return
-                }
-
-                // compare the known state to the current sets to detect incompatibility.
-                // This is in case there's a change that's too hard to do incrementally. In this case
-                // we'll simply revert to full build.
-                val assetSets = computeAssetSetList()
-
-                if (!merger.checkValidUpdate(assetSets)) {
-                    logger.info("Changed Asset sets: full task run!")
-                    doFullTaskAction()
-                    return
-
-                }
-
-                val logger = LoggerWrapper(logger)
-
-                // The incremental process is the following:
-                // Loop on all the changed files, find which ResourceSet it belongs to, then ask
-                // the resource set to update itself with the new file.
-                for ((changedFile, value) in changedInputs) {
-
-                    // Ignore directories.
-                    if (changedFile.isDirectory) {
-                        continue
-                    }
-
-                    merger.findDataSetContaining(changedFile, fileValidity)
-                    if (fileValidity.status == FileValidity.FileStatus.UNKNOWN_FILE) {
-                        doFullTaskAction()
-                        return
-
-                    } else if (fileValidity.status == FileValidity.FileStatus.VALID_FILE) {
-                        if (!fileValidity
-                                .dataSet
-                                .updateWith(
-                                    fileValidity.sourceFile,
-                                    changedFile,
-                                    value,
-                                    logger
-                                )
-                        ) {
-                            getLogger().info(
-                                "Failed to process {} event! Full task run", value
-                            )
-                            doFullTaskAction()
-                            return
-                        }
-                    }
-                }
-
-                val writer = MergedAssetWriter(outputDir.get().asFile, workerExecutor)
-
-                merger.mergeData(writer, false /*doCleanUp*/)
-
-                // No exception? Write the known state.
-                merger.writeBlobTo(incrementalFolder, writer, false)
-            }
-        } catch (e: Exception) {
-            MergingException.findAndReportMergingException(
-                e, MessageReceiverImpl(errorFormatMode, logger)
-            )
-            try {
-                throw e
-            } catch (mergingException: MergingException) {
-                merger.cleanBlob(incrementalFolder)
-                throw ResourceException(mergingException.message, mergingException)
-            }
-
-        } finally {
-            // some clean up after the task to help multi variant/module builds.
-            fileValidity.clear()
-        }
-    }
-
-    @get:Optional
-    @get:InputFiles
-    @get:Incremental
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val libraries: ConfigurableFileCollection
-
-
-    // input list for the source folder based asset folders.
-    @get:InputFiles
-    @get:Incremental
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceFolderInputs: ConfigurableFileCollection
-
-    /**
-     * Compute the list of Asset set to be used during execution based all the inputs.
-     */
-    @VisibleForTesting
-    internal fun computeAssetSetList(): List<AssetSet> {
-        var assetSetList= mutableListOf<AssetSet>()
-
-        val assetSetsMap = mutableMapOf<String, AssetSet>()
-        assetSets.get().forEach { assetSet ->
-            val combinedAssetSet = assetSetsMap.getOrPut(
-                assetSet.configName
-            ) { AssetSet(assetSet.configName, aaptEnv.orNull) }
-            combinedAssetSet.addSources(assetSet.sourceFiles)
-        }
-
-        val assetSets =  mutableListOf<AssetSet>().also { it.addAll(assetSetsMap.values) }
-        val ignoreAssetsPatternsList = ignoreAssetsPatterns.orNull
-        if (!shadersOutputDir.isPresent
-            && !mlModelsOutputDir.isPresent
-            && ignoreAssetsPatternsList.isNullOrEmpty()
-            && libraryCollection == null
-        ) {
-            assetSetList.addAll(assetSets)
-        } else {
-            var size = assetSets.size + 3
-            libraryCollection?.let {
-                size += it.artifacts.size
-            }
-
-            assetSetList = Lists.newArrayListWithExpectedSize(size)
-
-            // get the dependency base assets sets.
-            // add at the beginning since the libraries are less important than the folder based
-            // asset sets.
-            libraryCollection?.let {
-                // the order of the artifact is descending order, so we need to reverse it.
-                val libArtifacts = it.artifacts
-                for (artifact in libArtifacts) {
-                    val assetSet =
-                        AssetSet(ProcessApplicationManifest.getArtifactName(artifact), aaptEnv.orNull)
-                    assetSet.addSource(artifact.file)
-
-                    // add to 0 always, since we need to reverse the order.
-                    assetSetList.add(0, assetSet)
-                }
-            }
-
-            // add the generated folders to the first set of the folder-based sets.
-            val generatedAssetFolders = Lists.newArrayList<File>()
-
-            if (shadersOutputDir.isPresent) {
-                generatedAssetFolders.add(shadersOutputDir.get().asFile)
-            }
-
-            if (mlModelsOutputDir.isPresent) {
-                generatedAssetFolders.add(mlModelsOutputDir.get().asFile)
-            }
-
-            // if generated files exist, add them to the generated source set.
-            if (generatedAssetFolders.isNotEmpty()) {
-                val generatedAssetSet = assetSets.find {
-                    it.configName.equals(BuilderConstants.GENERATED)
-                } ?: AssetSet(BuilderConstants.GENERATED, aaptEnv.orNull).also {
-                    assetSets.add(it)
-                }
-
-                generatedAssetSet.addSources(generatedAssetFolders)
-            }
-
-            assetSetList.addAll(assetSets)
-        }
-
-        if (!ignoreAssetsPatternsList.isNullOrEmpty()) {
-            for (set in assetSetList) {
-                set.setIgnoredPatterns(ignoreAssetsPatternsList)
-            }
-        }
-
-        return assetSetList
-    }
-
-    abstract class CreationAction protected constructor(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<MergeSourceSetFolders, ComponentCreationConfig>(
-        creationConfig
+    val assetSets = mutableListOf<AssetSet>().also { it.addAll(assetSetsMap.values) }
+    val ignoreAssetsPatternsList = ignoreAssetsPatterns.orNull
+    if (
+      !shadersOutputDir.isPresent && !mlModelsOutputDir.isPresent && ignoreAssetsPatternsList.isNullOrEmpty() && libraryCollection == null
     ) {
+      assetSetList.addAll(assetSets)
+    } else {
+      var size = assetSets.size + 3
+      libraryCollection?.let { size += it.artifacts.size }
 
-        override val type: Class<MergeSourceSetFolders>
-            get() = MergeSourceSetFolders::class.java
+      assetSetList = Lists.newArrayListWithExpectedSize(size)
 
-        override fun configure(
-            task: MergeSourceSetFolders
-        ) {
-            super.configure(task)
+      // get the dependency base assets sets.
+      // add at the beginning since the libraries are less important than the folder based
+      // asset sets.
+      libraryCollection?.let {
+        // the order of the artifact is descending order, so we need to reverse it.
+        val libArtifacts = it.artifacts
+        for (artifact in libArtifacts) {
+          val assetSet = AssetSet(ProcessApplicationManifest.getArtifactName(artifact), aaptEnv.orNull)
+          assetSet.addSource(artifact.file)
 
-            task.incrementalFolder.set(creationConfig.paths.getIncrementalDir(name))
-
-            task.errorFormatMode = SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions)
+          // add to 0 always, since we need to reverse the order.
+          assetSetList.add(0, assetSet)
         }
+      }
 
-        protected fun configureWithAssets(
-            task: MergeSourceSetFolders,
-            assets: LayeredSourceDirectoriesImpl
-        ) {
-            task.aaptEnv.setDisallowChanges(
-                creationConfig.services.gradleEnvironmentProvider.getEnvVariable(
-                    ANDROID_AAPT_IGNORE
-                )
-            )
-            task.assetSets.setDisallowChanges(assets.getAscendingOrderAssetSets(task.aaptEnv))
+      // add the generated folders to the first set of the folder-based sets.
+      val generatedAssetFolders = Lists.newArrayList<File>()
 
-            task.sourceFolderInputs.fromDisallowChanges(assets.all)
-        }
+      if (shadersOutputDir.isPresent) {
+        generatedAssetFolders.add(shadersOutputDir.get().asFile)
+      }
+
+      if (mlModelsOutputDir.isPresent) {
+        generatedAssetFolders.add(mlModelsOutputDir.get().asFile)
+      }
+
+      // if generated files exist, add them to the generated source set.
+      if (generatedAssetFolders.isNotEmpty()) {
+        val generatedAssetSet =
+          assetSets.find { it.configName.equals(BuilderConstants.GENERATED) }
+            ?: AssetSet(BuilderConstants.GENERATED, aaptEnv.orNull).also { assetSets.add(it) }
+
+        generatedAssetSet.addSources(generatedAssetFolders)
+      }
+
+      assetSetList.addAll(assetSets)
     }
 
-    open class MergeAssetBaseCreationAction(
-        creationConfig: ComponentCreationConfig,
-        private val includeDependencies: Boolean
-    ) : CreationAction(creationConfig) {
-
-        override val name: String
-            get() = computeTaskName("merge", "Assets")
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<MergeSourceSetFolders>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.mergeAssetsTask = taskProvider
-        }
-
-        override fun configure(
-            task: MergeSourceSetFolders
-        ) {
-            super.configure(task)
-            creationConfig.sources.assets {
-                super.configureWithAssets(task, it)
-            }
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.SHADER_ASSETS,
-                task.shadersOutputDir
-            )
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.MERGED_ML_MODELS,
-                task.mlModelsOutputDir
-            )
-
-            creationConfig.androidResources?.let {
-                task.ignoreAssetsPatterns.setDisallowChanges(
-                    it.ignoreAssetsPatterns
-                )
-            }
-
-            if (includeDependencies) {
-                task.libraryCollection = creationConfig.variantDependencies.getArtifactCollection(RUNTIME_CLASSPATH, ALL, ASSETS)
-                task.libraries.from(task.libraryCollection?.artifactFiles)
-            }
-            task.libraries.disallowChanges()
-
-            task.dependsOn(creationConfig.taskContainer.assetGenTask)
-        }
+    if (!ignoreAssetsPatternsList.isNullOrEmpty()) {
+      for (set in assetSetList) {
+        set.setIgnoredPatterns(ignoreAssetsPatternsList)
+      }
     }
 
-    class MergeAssetCreationAction(
-        creationConfig: ComponentCreationConfig,
-        includeDependencies: Boolean,
-    ) : MergeAssetBaseCreationAction(
-                creationConfig,
-                includeDependencies
-            ) {
+    return assetSetList
+  }
 
-        override val name: String
-            get() = computeTaskName("merge", "Assets")
+  abstract class CreationAction protected constructor(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<MergeSourceSetFolders, ComponentCreationConfig>(creationConfig) {
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<MergeSourceSetFolders>
-        ) {
-            super.handleProvider(taskProvider)
+    override val type: Class<MergeSourceSetFolders>
+      get() = MergeSourceSetFolders::class.java
 
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    MergeSourceSetFolders::outputDir
-            ).on(SingleArtifact.ASSETS)
-        }
+    override fun configure(task: MergeSourceSetFolders) {
+      super.configure(task)
+
+      task.incrementalFolder.set(creationConfig.paths.getIncrementalDir(name))
+
+      task.errorFormatMode = SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions)
     }
 
-    class MergeJniLibFoldersCreationAction(creationConfig: ConsumableCreationConfig) :
-        CreationAction(creationConfig) {
+    protected fun configureWithAssets(task: MergeSourceSetFolders, assets: LayeredSourceDirectoriesImpl) {
+      task.aaptEnv.setDisallowChanges(creationConfig.services.gradleEnvironmentProvider.getEnvVariable(ANDROID_AAPT_IGNORE))
+      task.assetSets.setDisallowChanges(assets.getAscendingOrderAssetSets(task.aaptEnv))
 
-        override val name: String
-            get() = computeTaskName("merge", "JniLibFolders")
+      task.sourceFolderInputs.fromDisallowChanges(assets.all)
+    }
+  }
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<MergeSourceSetFolders>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                MergeSourceSetFolders::outputDir
-            ).withName("out").on(InternalArtifactType.MERGED_JNI_LIBS)
-        }
+  open class MergeAssetBaseCreationAction(creationConfig: ComponentCreationConfig, private val includeDependencies: Boolean) :
+    CreationAction(creationConfig) {
 
-        override fun configure(
-            task: MergeSourceSetFolders
-        ) {
-            super.configure(task)
-            creationConfig.sources.jniLibs {
-                super.configureWithAssets(task, it)
-            }
-        }
+    override val name: String
+      get() = computeTaskName("merge", "Assets")
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.mergeAssetsTask = taskProvider
     }
 
-    class MergeShaderSourceFoldersCreationAction(creationConfig: ConsumableCreationConfig) :
-        CreationAction(creationConfig) {
+    override fun configure(task: MergeSourceSetFolders) {
+      super.configure(task)
+      creationConfig.sources.assets { super.configureWithAssets(task, it) }
 
-        override val name: String
-            get() = computeTaskName("merge", "Shaders")
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.SHADER_ASSETS, task.shadersOutputDir)
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<MergeSourceSetFolders>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                MergeSourceSetFolders::outputDir
-            ).withName("out").on(InternalArtifactType.MERGED_SHADERS)
-        }
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.MERGED_ML_MODELS, task.mlModelsOutputDir)
 
-        override fun configure(
-            task: MergeSourceSetFolders
-        ) {
-            super.configure(task)
-            creationConfig.sources.shaders {
-                super.configureWithAssets(task, it)
-            }
-        }
+      creationConfig.androidResources?.let { task.ignoreAssetsPatterns.setDisallowChanges(it.ignoreAssetsPatterns) }
+
+      if (includeDependencies) {
+        task.libraryCollection = creationConfig.variantDependencies.getArtifactCollection(RUNTIME_CLASSPATH, ALL, ASSETS)
+        task.libraries.from(task.libraryCollection?.artifactFiles)
+      }
+      task.libraries.disallowChanges()
+
+      task.dependsOn(creationConfig.taskContainer.assetGenTask)
+    }
+  }
+
+  class MergeAssetCreationAction(creationConfig: ComponentCreationConfig, includeDependencies: Boolean) :
+    MergeAssetBaseCreationAction(creationConfig, includeDependencies) {
+
+    override val name: String
+      get() = computeTaskName("merge", "Assets")
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts.setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir).on(SingleArtifact.ASSETS)
+    }
+  }
+
+  class MergeJniLibFoldersCreationAction(creationConfig: ConsumableCreationConfig) : CreationAction(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("merge", "JniLibFolders")
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
+        .withName("out")
+        .on(InternalArtifactType.MERGED_JNI_LIBS)
     }
 
-    class MergeMlModelsSourceFoldersCreationAction(creationConfig: ComponentCreationConfig) :
-        CreationAction(creationConfig) {
-
-        override val name: String
-            get() = computeTaskName("merge", "MlModels")
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<MergeSourceSetFolders>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                MergeSourceSetFolders::outputDir
-            ).withName("out").on(InternalArtifactType.MERGED_ML_MODELS)
-        }
-
-        override fun configure(
-            task: MergeSourceSetFolders
-        ) {
-            super.configure(task)
-            creationConfig.sources.mlModels {
-                super.configureWithAssets(task, it)
-            }
-        }
+    override fun configure(task: MergeSourceSetFolders) {
+      super.configure(task)
+      creationConfig.sources.jniLibs { super.configureWithAssets(task, it) }
     }
+  }
+
+  class MergeShaderSourceFoldersCreationAction(creationConfig: ConsumableCreationConfig) : CreationAction(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("merge", "Shaders")
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
+        .withName("out")
+        .on(InternalArtifactType.MERGED_SHADERS)
+    }
+
+    override fun configure(task: MergeSourceSetFolders) {
+      super.configure(task)
+      creationConfig.sources.shaders { super.configureWithAssets(task, it) }
+    }
+  }
+
+  class MergeMlModelsSourceFoldersCreationAction(creationConfig: ComponentCreationConfig) : CreationAction(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("merge", "MlModels")
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
+        .withName("out")
+        .on(InternalArtifactType.MERGED_ML_MODELS)
+    }
+
+    override fun configure(task: MergeSourceSetFolders) {
+      super.configure(task)
+      creationConfig.sources.mlModels { super.configureWithAssets(task, it) }
+    }
+  }
 }

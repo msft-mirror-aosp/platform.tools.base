@@ -20,77 +20,73 @@ import com.android.build.gradle.internal.cxx.codeText
 import com.android.build.gradle.internal.cxx.logging.PassThroughRecordingLoggingEnvironment
 import com.android.utils.cxx.CxxDiagnosticCode.BUILD_SETTINGS_JSON_EMPTY
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.File
+import org.junit.Test
 
 class BuildSettingsFactoryKtTest {
-    private val exampleJsonString = """
-        {
-            "environmentVariables": [
-                {
-                    "name": "USE_CACHE",
-                    "value": "false"
-                },
-                {
-                    "name": "USE_LOCAL",
-                    "value": "true"
-                }
-            ]
-        }
-        """.trimIndent()
-
-    @Test
-    fun `parse basic json string`() {
-        val setting = createBuildSettingsFromJson(exampleJsonString)
-        assertThat(setting.environmentVariables).isEqualTo(
-            listOf(
-                EnvironmentVariable("USE_CACHE", "false"),
-                EnvironmentVariable("USE_LOCAL", "true")
-            )
-        )
+  private val exampleJsonString =
+    """
+    {
+        "environmentVariables": [
+            {
+                "name": "USE_CACHE",
+                "value": "false"
+            },
+            {
+                "name": "USE_LOCAL",
+                "value": "true"
+            }
+        ]
     }
+    """
+      .trimIndent()
 
-    @Test
-    fun `invalid json shows error and returns empty model`() {
-        val invalidJson = ""
+  @Test
+  fun `parse basic json string`() {
+    val setting = createBuildSettingsFromJson(exampleJsonString)
+    assertThat(setting.environmentVariables)
+      .isEqualTo(listOf(EnvironmentVariable("USE_CACHE", "false"), EnvironmentVariable("USE_LOCAL", "true")))
+  }
 
-        PassThroughRecordingLoggingEnvironment().apply {
-            val model = createBuildSettingsFromJson(invalidJson)
+  @Test
+  fun `invalid json shows error and returns empty model`() {
+    val invalidJson = ""
 
-            assertThat(errors.single()).isEqualTo("${BUILD_SETTINGS_JSON_EMPTY.codeText} Json is empty")
-            assertThat(model).isEqualTo(BuildSettingsConfiguration())
-            assertThat(model.environmentVariables?.size).isEqualTo(0)
-        }
+    PassThroughRecordingLoggingEnvironment().apply {
+      val model = createBuildSettingsFromJson(invalidJson)
+
+      assertThat(errors.single()).isEqualTo("${BUILD_SETTINGS_JSON_EMPTY.codeText} Json is empty")
+      assertThat(model).isEqualTo(BuildSettingsConfiguration())
+      assertThat(model.environmentVariables?.size).isEqualTo(0)
     }
+  }
 
-    @Test
-    fun `missing BuildSettings file returns empty model`() {
-        val model = createBuildSettingsFromFile(File("invalid/path"))
-        assertThat(model).isEqualTo(BuildSettingsConfiguration())
-    }
+  @Test
+  fun `missing BuildSettings file returns empty model`() {
+    val model = createBuildSettingsFromFile(File("invalid/path"))
+    assertThat(model).isEqualTo(BuildSettingsConfiguration())
+  }
 
-    @Test
-    fun `returns environment variable map`() {
-        val setting = createBuildSettingsFromJson(exampleJsonString)
-        assertThat(setting.getEnvironmentVariableMap()).isEqualTo(
-            mapOf("USE_CACHE" to "false", "USE_LOCAL" to "true")
-        )
-    }
+  @Test
+  fun `returns environment variable map`() {
+    val setting = createBuildSettingsFromJson(exampleJsonString)
+    assertThat(setting.getEnvironmentVariableMap()).isEqualTo(mapOf("USE_CACHE" to "false", "USE_LOCAL" to "true"))
+  }
 
-    @Test
-    fun `environment variables with no name is not included`() {
-        val invalidString = """
-        {
-            "environmentVariables": [
-                { "value": "false" },
-                { "name": "USE_LOCAL", "value": "true" }
-            ]
-        }
-        """.trimIndent()
+  @Test
+  fun `environment variables with no name is not included`() {
+    val invalidString =
+      """
+      {
+          "environmentVariables": [
+              { "value": "false" },
+              { "name": "USE_LOCAL", "value": "true" }
+          ]
+      }
+      """
+        .trimIndent()
 
-        val setting = createBuildSettingsFromJson(invalidString)
-        assertThat(setting.getEnvironmentVariableMap()).isEqualTo(
-            mapOf("USE_LOCAL" to "true")
-        )
-    }
+    val setting = createBuildSettingsFromJson(invalidString)
+    assertThat(setting.getEnvironmentVariableMap()).isEqualTo(mapOf("USE_LOCAL" to "true"))
+  }
 }

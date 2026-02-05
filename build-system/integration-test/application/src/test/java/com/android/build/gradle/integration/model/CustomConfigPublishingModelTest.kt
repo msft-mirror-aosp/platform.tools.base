@@ -30,52 +30,32 @@ import org.junit.Rule
 import org.junit.Test
 
 class CustomConfigPublishingModelTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH, configuration = "custom"))
-            }
-        }
-        androidLibrary {
-            pluginCallbacks += LibCallback::class.java
-
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_LIB_PATH, configuration = "custom")) }
+      }
+      androidLibrary { pluginCallbacks += LibCallback::class.java }
     }
 
-    class LibCallback: LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            project.configurations.maybeCreate("custom")
+  class LibCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      project.configurations.maybeCreate("custom")
 
-            val customTask = project.tasks.register("customJar", Jar::class.java) {
-                it.archiveBaseName.set("custom")
-            }
+      val customTask = project.tasks.register("customJar", Jar::class.java) { it.archiveBaseName.set("custom") }
 
-            project.artifacts {
-                it.add("custom", customTask)
-            }
-        }
+      project.artifacts { it.add("custom", customTask) }
     }
+  }
 
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+    val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(DEFAULT_APP_PATH) }
 
-        val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(DEFAULT_APP_PATH) }
-
-        with(result).compareVariantDependencies(
-            projectAction = appModelAction,
-            goldenFile = "_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = appModelAction, goldenFile = "_VariantDependencies")
+  }
 }

@@ -15,30 +15,29 @@
  */
 
 @file:JvmName("ArtifactTypeUtil")
+
 package com.android.build.gradle.internal.scope
 
 import com.android.build.api.artifact.Artifact
 import com.android.utils.FileUtils
+import java.io.File
+import java.util.Locale
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.io.File
-import java.util.Locale
 
 /**
- * Returns a suitable output directory for this receiving artifact type.
- * This folder will be independent of variant or tasks names and should be further qualified
- * if necessary.
+ * Returns a suitable output directory for this receiving artifact type. This folder will be independent of variant or tasks names and
+ * should be further qualified if necessary.
  *
  * @param parentFile the parent directory.
  */
-fun Artifact<*>.getOutputDir(parentDir: File): File =
-    FileUtils.join(parentDir, category.name.lowercase(Locale.US), getFolderName())
+fun Artifact<*>.getOutputDir(parentDir: File): File = FileUtils.join(parentDir, category.name.lowercase(Locale.US), getFolderName())
 
 fun Artifact<*>.getIntermediateOutputDir(parentDir: File): File =
-    FileUtils.join(parentDir, Artifact.Category.INTERMEDIATES.name.lowercase(Locale.US), getFolderName())
+  FileUtils.join(parentDir, Artifact.Category.INTERMEDIATES.name.lowercase(Locale.US), getFolderName())
 
 /**
  * Returns a [File] representing the artifact type location (could be a directory or regular file).
@@ -50,52 +49,34 @@ fun Artifact<*>.getIntermediateOutputDir(parentDir: File): File =
  * @return a [File] that can be safely use as task output.
  */
 fun Artifact<*>.getOutputPath(
-    buildDirectory: DirectoryProperty,
-    variantIdentifier: String,
-    vararg paths: String,
-    forceFilename: String? = null,
-) = FileUtils.join(
-    getOutputDir(buildDirectory.get().asFile),
-    variantIdentifier,
-    *paths,
-    forceFilename ?: getFileSystemLocationName()
-)
+  buildDirectory: DirectoryProperty,
+  variantIdentifier: String,
+  vararg paths: String,
+  forceFilename: String? = null,
+) = FileUtils.join(getOutputDir(buildDirectory.get().asFile), variantIdentifier, *paths, forceFilename ?: getFileSystemLocationName())
 
-/**
- * Force intermediate directory
- */
+/** Force intermediate directory */
 fun Artifact<*>.getIntermediateOutputPath(
-    buildDirectory: DirectoryProperty,
-    variantIdentifier: String,
-    vararg paths: String,
-    forceFilename: String? = null
-): File = FileUtils.join(
+  buildDirectory: DirectoryProperty,
+  variantIdentifier: String,
+  vararg paths: String,
+  forceFilename: String? = null,
+): File =
+  FileUtils.join(
     getIntermediateOutputDir(buildDirectory.get().asFile),
     variantIdentifier,
     *paths,
-    forceFilename ?: getFileSystemLocationName()
-)
+    forceFilename ?: getFileSystemLocationName(),
+  )
 
-/**
- * Converts a [FileCollection] to a [Provider] of a [List] of [RegularFile], filtering other types
- * like [Directory]
- */
+/** Converts a [FileCollection] to a [Provider] of a [List] of [RegularFile], filtering other types like [Directory] */
 fun FileCollection.getRegularFiles(projectDirectory: Directory): Provider<List<RegularFile>> =
-    elements.map {
-        it.filter { file -> file.asFile.isFile }
-            .map {
-                fileSystemLocation -> projectDirectory.file(fileSystemLocation.asFile.absolutePath)
-        }
-    }
+  elements.map {
+    it.filter { file -> file.asFile.isFile }.map { fileSystemLocation -> projectDirectory.file(fileSystemLocation.asFile.absolutePath) }
+  }
 
-/**
- * Converts a [FileCollection] to a [Provider] of a [List] of [Directory], ignoring other types
- * like [RegularFile]
- */
+/** Converts a [FileCollection] to a [Provider] of a [List] of [Directory], ignoring other types like [RegularFile] */
 fun FileCollection.getDirectories(projectDirectory: Directory): Provider<List<Directory>> =
-    elements.map {
-        it.filter { file -> file.asFile.isDirectory }
-            .map {
-                fileSystemLocation -> projectDirectory.dir(fileSystemLocation.asFile.absolutePath)
-        }
-    }
+  elements.map {
+    it.filter { file -> file.asFile.isDirectory }.map { fileSystemLocation -> projectDirectory.dir(fileSystemLocation.asFile.absolutePath) }
+  }

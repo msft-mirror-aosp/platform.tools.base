@@ -64,20 +64,12 @@ class ChromeOsSourceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun reportRearCameraOnlySystemFeatureViolations(
-    node: UCallExpression,
-    context: JavaContext,
-  ) {
+  private fun reportRearCameraOnlySystemFeatureViolations(node: UCallExpression, context: JavaContext) {
     val cameraFeatureRequested = determinePropertyString(node)
     if (FEATURE_CAMERA_STRING == cameraFeatureRequested) {
       val message = "You should look for any camera available on the device, not just the rear"
       val fix =
-        fix()
-          .name("Switch to look for FEATURE_CAMERA_ANY")
-          .replace()
-          .text(cameraFeatureRequested)
-          .with(FEATURE_CAMERA_ANY_STRING)
-          .build()
+        fix().name("Switch to look for FEATURE_CAMERA_ANY").replace().text(cameraFeatureRequested).with(FEATURE_CAMERA_ANY_STRING).build()
 
       context.report(UNSUPPORTED_CAMERA_FEATURE, node, context.getLocation(node), message, fix)
     }
@@ -113,8 +105,7 @@ class ChromeOsSourceDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(ChromeOsSourceDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ChromeOsSourceDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val CHROMEOS_ON_CONFIGURATION_CHANGED =
@@ -157,8 +148,7 @@ class ChromeOsSourceDetector : Detector(), SourceCodeScanner {
           severity = Severity.WARNING,
           androidSpecific = true,
           implementation = IMPLEMENTATION,
-          moreInfo =
-            "https://developer.android.com/guide/topics/large-screens/large-screen-cookbook#restricted_app_orientation",
+          moreInfo = "https://developer.android.com/guide/topics/large-screens/large-screen-cookbook#restricted_app_orientation",
         )
         .setEnabledByDefault(true)
 
@@ -181,8 +171,7 @@ class ChromeOsSourceDetector : Detector(), SourceCodeScanner {
           severity = Severity.WARNING,
           androidSpecific = true,
           implementation = IMPLEMENTATION,
-          moreInfo =
-            "https://developer.android.com/guide/topics/large-screens/large-screen-cookbook#chromebook_camera_support",
+          moreInfo = "https://developer.android.com/guide/topics/large-screens/large-screen-cookbook#chromebook_camera_support",
         )
         .setEnabledByDefault(true)
 

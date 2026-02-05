@@ -21,81 +21,78 @@ import java.util.function.IntFunction
 
 const val ATTR_OFFSET = 0x7F010000
 
-/**
- * Class which wraps a [PropertyMapper] but adds support for using enums instead of managing your
- * own integer index list.
- */
+/** Class which wraps a [PropertyMapper] but adds support for using enums instead of managing your own integer index list. */
 class EnumPropertyMapper<E : Enum<E>>(
-    private val delegateMapper: PropertyMapper,
-    private val indexOffset: Int = 0,
-    private val namePrefix: String = ""
+  private val delegateMapper: PropertyMapper,
+  private val indexOffset: Int = 0,
+  private val namePrefix: String = "",
 ) {
-    fun mapBoolean(e: E) {
-        delegateMapper.mapBoolean(nameOf(e), attributeIdOf(e))
-    }
+  fun mapBoolean(e: E) {
+    delegateMapper.mapBoolean(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapByte(e: E) {
-        delegateMapper.mapByte(nameOf(e), attributeIdOf(e))
-    }
+  fun mapByte(e: E) {
+    delegateMapper.mapByte(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapChar(e: E) {
-        delegateMapper.mapChar(nameOf(e), attributeIdOf(e))
-    }
+  fun mapChar(e: E) {
+    delegateMapper.mapChar(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapDouble(e: E) {
-        delegateMapper.mapDouble(nameOf(e), attributeIdOf(e))
-    }
+  fun mapDouble(e: E) {
+    delegateMapper.mapDouble(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapFloat(e: E) {
-        delegateMapper.mapFloat(nameOf(e), attributeIdOf(e))
-    }
+  fun mapFloat(e: E) {
+    delegateMapper.mapFloat(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapInt(e: E) {
-        delegateMapper.mapInt(nameOf(e), attributeIdOf(e))
-    }
+  fun mapInt(e: E) {
+    delegateMapper.mapInt(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapLong(e: E) {
-        delegateMapper.mapLong(nameOf(e), attributeIdOf(e))
-    }
+  fun mapLong(e: E) {
+    delegateMapper.mapLong(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapShort(e: E) {
-        delegateMapper.mapShort(nameOf(e), attributeIdOf(e))
-    }
+  fun mapShort(e: E) {
+    delegateMapper.mapShort(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapObject(e: E) {
-        delegateMapper.mapObject(nameOf(e), attributeIdOf(e))
-    }
+  fun mapObject(e: E) {
+    delegateMapper.mapObject(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapColor(e: E) {
-        delegateMapper.mapColor(nameOf(e), attributeIdOf(e))
-    }
+  fun mapColor(e: E) {
+    delegateMapper.mapColor(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapGravity(e: E) {
-        delegateMapper.mapGravity(nameOf(e), attributeIdOf(e))
-    }
+  fun mapGravity(e: E) {
+    delegateMapper.mapGravity(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapIntEnum(e: E, mapping: IntFunction<String?>) {
-        delegateMapper.mapIntEnum(nameOf(e), attributeIdOf(e), mapping)
-    }
+  fun mapIntEnum(e: E, mapping: IntFunction<String?>) {
+    delegateMapper.mapIntEnum(nameOf(e), attributeIdOf(e), mapping)
+  }
 
-    fun mapResourceId(e: E) {
-        delegateMapper.mapResourceId(nameOf(e), attributeIdOf(e))
-    }
+  fun mapResourceId(e: E) {
+    delegateMapper.mapResourceId(nameOf(e), attributeIdOf(e))
+  }
 
-    fun mapIntFlag(e: E, mapping: IntFunction<Set<String?>>) {
-        delegateMapper.mapIntFlag(nameOf(e), attributeIdOf(e), mapping)
-    }
+  fun mapIntFlag(e: E, mapping: IntFunction<Set<String?>>) {
+    delegateMapper.mapIntFlag(nameOf(e), attributeIdOf(e), mapping)
+  }
 
-    /**
-     * Takes an enum instance and converts the uppercase name to an Android style attribute name.
-     *
-     * Example: STATE_LIST_ANIMATOR -> stateListAnimator
-     */
-    private fun nameOf(e: E): String {
-        return namePrefix + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, e.name)
-    }
+  /**
+   * Takes an enum instance and converts the uppercase name to an Android style attribute name.
+   *
+   * Example: STATE_LIST_ANIMATOR -> stateListAnimator
+   */
+  private fun nameOf(e: E): String {
+    return namePrefix + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, e.name)
+  }
 
-    private fun attributeIdOf(e: E): Int {
-        return ATTR_OFFSET + indexOffset + e.ordinal
-    }
+  private fun attributeIdOf(e: E): Int {
+    return ATTR_OFFSET + indexOffset + e.ordinal
+  }
 }

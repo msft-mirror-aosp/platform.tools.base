@@ -34,214 +34,175 @@ import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
-/**
- * Factory class for various implementations of [AdbInputChannel] and [AdbOutputChannel]
- */
+/** Factory class for various implementations of [AdbInputChannel] and [AdbOutputChannel] */
 @IsThreadSafe
 interface AdbChannelFactory {
 
-    /**
-     * Opens an existing file, and returns an [AdbInputChannel] for reading from it.
-     *
-     * @throws IOException if the operation fails
-     */
-    suspend fun openFile(path: Path): AdbInputChannel
+  /**
+   * Opens an existing file, and returns an [AdbInputChannel] for reading from it.
+   *
+   * @throws IOException if the operation fails
+   */
+  suspend fun openFile(path: Path): AdbInputChannel
 
-    /**
-     * Creates a new file, or truncates an existing file, and returns an [AdbOutputChannel]
-     * for writing to it.
-     *
-     * @throws IOException if the operation fails
-     */
-    suspend fun createFile(path: Path): AdbOutputChannel
+  /**
+   * Creates a new file, or truncates an existing file, and returns an [AdbOutputChannel] for writing to it.
+   *
+   * @throws IOException if the operation fails
+   */
+  suspend fun createFile(path: Path): AdbOutputChannel
 
-    /**
-     * Creates a new file that does not already exist on disk, and returns an [AdbOutputChannel]
-     * for writing to it.
-     *
-     * @throws IOException if the operation fails or if the file already exists on disk
-     */
-    suspend fun createNewFile(path: Path): AdbOutputChannel
+  /**
+   * Creates a new file that does not already exist on disk, and returns an [AdbOutputChannel] for writing to it.
+   *
+   * @throws IOException if the operation fails or if the file already exists on disk
+   */
+  suspend fun createNewFile(path: Path): AdbOutputChannel
 
-    /**
-     * Opens a client socket and connects to the given [remote address][InetSocketAddress],
-     * returning an [AdbChannel] for sending/receiving data.
-     *
-     * @throws IOException if the operation fails
-     * @see AsynchronousSocketChannel
-     * @see AsynchronousSocketChannel.connect
-     */
-    suspend fun connectSocket(
-        remote: InetSocketAddress,
-        timeout: Long = Long.MAX_VALUE,
-        unit: TimeUnit = TimeUnit.MILLISECONDS
-    ): AdbChannel
+  /**
+   * Opens a client socket and connects to the given [remote address][InetSocketAddress], returning an [AdbChannel] for sending/receiving
+   * data.
+   *
+   * @throws IOException if the operation fails
+   * @see AsynchronousSocketChannel
+   * @see AsynchronousSocketChannel.connect
+   */
+  suspend fun connectSocket(remote: InetSocketAddress, timeout: Long = Long.MAX_VALUE, unit: TimeUnit = TimeUnit.MILLISECONDS): AdbChannel
 
-    /**
-     * Creates an [AdbServerSocket], a coroutine friendly version of
-     * [AsynchronousServerSocketChannel].
-     *
-     * @throws IOException if the operation fails
-     * @see AsynchronousServerSocketChannel.open
-     */
-    suspend fun createServerSocket(): AdbServerSocket
+  /**
+   * Creates an [AdbServerSocket], a coroutine friendly version of [AsynchronousServerSocketChannel].
+   *
+   * @throws IOException if the operation fails
+   * @see AsynchronousServerSocketChannel.open
+   */
+  suspend fun createServerSocket(): AdbServerSocket
 
-    /**
-     * Creates an [AdbPipedInputChannel] that can be fed data in a thread-safe way from
-     * an [AdbOutputChannel], i.e. write operations to the [AdbOutputChannel]
-     * end up feeding pending (or future) [read] operations on this [AdbPipedInputChannel].
-     *
-     * @see java.io.PipedInputStream
-     * @see java.io.PipedOutputStream
-     */
-    fun createPipedChannel(bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): AdbPipedInputChannel
+  /**
+   * Creates an [AdbPipedInputChannel] that can be fed data in a thread-safe way from an [AdbOutputChannel], i.e. write operations to the
+   * [AdbOutputChannel] end up feeding pending (or future) [read] operations on this [AdbPipedInputChannel].
+   *
+   * @see java.io.PipedInputStream
+   * @see java.io.PipedOutputStream
+   */
+  fun createPipedChannel(bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): AdbPipedInputChannel
 
-    /**
-     * Creates an [AdbInputChannel] that reads data from another [AdbInputChannel] using an
-     * internal [ByteBuffer] of the given [bufferSize].
-     *
-     * This class is similar to [BufferedInputStream], but for [AdbInputChannel] instead of
-     * [InputStream].
-     *
-     * If [closeInputChannel] is set to `true` then the [input] channel is closed when this channel
-     * is [closed][AdbInputChannel.close].
-     */
-    fun createBufferedInputChannel(
-        input: AdbInputChannel,
-        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
-        closeInputChannel: Boolean = true
-    ): AdbInputChannel
+  /**
+   * Creates an [AdbInputChannel] that reads data from another [AdbInputChannel] using an internal [ByteBuffer] of the given [bufferSize].
+   *
+   * This class is similar to [BufferedInputStream], but for [AdbInputChannel] instead of [InputStream].
+   *
+   * If [closeInputChannel] is set to `true` then the [input] channel is closed when this channel is [closed][AdbInputChannel.close].
+   */
+  fun createBufferedInputChannel(
+    input: AdbInputChannel,
+    bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
+    closeInputChannel: Boolean = true,
+  ): AdbInputChannel
 
-    /**
-     * Creates an [AdbBufferedOutputChannel] that writes data to another [AdbOutputChannel] using
-     * an internal [ByteBuffer] of the given [bufferSize].
-     *
-     * This class is similar to [java.io.BufferedOutputStream], but for [AdbOutputChannel]
-     * instead of [OutputStream].
-     *
-     * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this
-     * channel is [closed][AdbInputChannel.close].
-     */
-    fun createBufferedOutputChannel(
-        output: AdbOutputChannel,
-        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
-        closeOutputChannel: Boolean = true
-    ): AdbBufferedOutputChannel
+  /**
+   * Creates an [AdbBufferedOutputChannel] that writes data to another [AdbOutputChannel] using an internal [ByteBuffer] of the given
+   * [bufferSize].
+   *
+   * This class is similar to [java.io.BufferedOutputStream], but for [AdbOutputChannel] instead of [OutputStream].
+   *
+   * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this channel is [closed][AdbInputChannel.close].
+   */
+  fun createBufferedOutputChannel(
+    output: AdbOutputChannel,
+    bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
+    closeOutputChannel: Boolean = true,
+  ): AdbBufferedOutputChannel
 
-    /**
-     * Creates an [AdbInputChannel] that eagerly reads data from [input], i.e. starts a
-     * coroutine that reads data from [input] concurrently with calls to [AdbInputChannel.read],
-     * so that data is available as fast as possible. [bufferSize] is the size of the
-     * read-ahead buffer.
-     *
-     * The [input] channel is closed when this channel is [closed][AdbInputChannel.close].
-     */
-    fun createReadAheadChannel(
-        input: AdbInputChannel,
-        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
-    ): AdbInputChannel
+  /**
+   * Creates an [AdbInputChannel] that eagerly reads data from [input], i.e. starts a coroutine that reads data from [input] concurrently
+   * with calls to [AdbInputChannel.read], so that data is available as fast as possible. [bufferSize] is the size of the read-ahead buffer.
+   *
+   * The [input] channel is closed when this channel is [closed][AdbInputChannel.close].
+   */
+  fun createReadAheadChannel(input: AdbInputChannel, bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): AdbInputChannel
 
-    /**
-     * Creates an [AdbBufferedOutputChannel] that caches [AdbOutputChannel.write] write operations
-     * to an in-memory buffer of [bufferSize] bytes, so that multiple successive write operations
-     * of a small amount of data can potentially be combined into larger "write-back"
-     * write operations.
-     *
-     * Actual writes to [output] are performed by a "write-back" coroutine
-     * running concurrently with calls to [AdbOutputChannel.write]. If the in-memory cache is
-     * full when [write] is called, the [write] operation waits for the "write-back" coroutine
-     * to make room available in the in-memory cache.
-     *
-     * * [AdbBufferedOutputChannel.shutdown] should be called before
-     * [closing][AdbBufferedOutputChannel.close] so that the "write-back" finishes flushing
-     * the in-memory cache to [output].
-     *
-     * * Calling [AdbBufferedOutputChannel.close] without [AdbBufferedOutputChannel.shutdown]
-     * may result in data loss. This should be done only in cases where "prompt cancellation"
-     * is warranted.
-     *
-     * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this
-     * channel is [closed][AdbInputChannel.close].
-     */
-    fun createWriteBackChannel(
-        output: AdbOutputChannel,
-        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
-        closeOutputChannel: Boolean = true
-    ): AdbBufferedOutputChannel
+  /**
+   * Creates an [AdbBufferedOutputChannel] that caches [AdbOutputChannel.write] write operations to an in-memory buffer of [bufferSize]
+   * bytes, so that multiple successive write operations of a small amount of data can potentially be combined into larger "write-back"
+   * write operations.
+   *
+   * Actual writes to [output] are performed by a "write-back" coroutine running concurrently with calls to [AdbOutputChannel.write]. If the
+   * in-memory cache is full when [write] is called, the [write] operation waits for the "write-back" coroutine to make room available in
+   * the in-memory cache.
+   * * [AdbBufferedOutputChannel.shutdown] should be called before [closing][AdbBufferedOutputChannel.close] so that the "write-back"
+   *   finishes flushing the in-memory cache to [output].
+   * * Calling [AdbBufferedOutputChannel.close] without [AdbBufferedOutputChannel.shutdown] may result in data loss. This should be done
+   *   only in cases where "prompt cancellation" is warranted.
+   *
+   * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this channel is [closed][AdbInputChannel.close].
+   */
+  fun createWriteBackChannel(
+    output: AdbOutputChannel,
+    bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
+    closeOutputChannel: Boolean = true,
+  ): AdbBufferedOutputChannel
 
-    /**
-     * Creates a [SuspendingWriter] that allows writing text to an [AdbOutputChannel] with
-     * a given [charset] encoding.
-     */
-    fun createOutputChannelWriter(
-        output: AdbOutputChannel,
-        autoFlush: Boolean = true,
-        throwsOnMalformed: Boolean = false,
-        bufferCapacity: Int = 256,
-        charset: Charset = AdbProtocolUtils.ADB_CHARSET
-    ): SuspendingWriter {
-        return AdbOutputChannelWriter(
-            channel = output,
-            autoFlush = autoFlush,
-            throwsOnMalformed = throwsOnMalformed,
-            bufferCapacity = bufferCapacity,
-            charset = charset
-        )
-    }
+  /** Creates a [SuspendingWriter] that allows writing text to an [AdbOutputChannel] with a given [charset] encoding. */
+  fun createOutputChannelWriter(
+    output: AdbOutputChannel,
+    autoFlush: Boolean = true,
+    throwsOnMalformed: Boolean = false,
+    bufferCapacity: Int = 256,
+    charset: Charset = AdbProtocolUtils.ADB_CHARSET,
+  ): SuspendingWriter {
+    return AdbOutputChannelWriter(
+      channel = output,
+      autoFlush = autoFlush,
+      throwsOnMalformed = throwsOnMalformed,
+      bufferCapacity = bufferCapacity,
+      charset = charset,
+    )
+  }
 
+  /**
+   * Creates an [AdbInputChannel] that wraps the provided [InputStream] to read from it.
+   *
+   * The [inputStream] is closed when this channel is [closed][AdbInputChannel.close].
+   */
+  fun wrapInputStream(inputStream: InputStream): AdbInputChannel
 
-    /**
-     * Creates an [AdbInputChannel] that wraps the provided [InputStream] to read from it.
-     *
-     * The [inputStream] is closed when this channel is [closed][AdbInputChannel.close].
-     */
-    fun wrapInputStream(inputStream: InputStream): AdbInputChannel
-
-    /**
-     * Creates an [AdbOutputChannel] that wraps the provided [OutputStream] to write to it.
-     *
-     * The [outputStream] is closed when this channel is [closed][AdbOutputChannel.close].
-     */
-    fun wrapOutputStream(outputStream: OutputStream): AdbOutputChannel
+  /**
+   * Creates an [AdbOutputChannel] that wraps the provided [OutputStream] to write to it.
+   *
+   * The [outputStream] is closed when this channel is [closed][AdbOutputChannel.close].
+   */
+  fun wrapOutputStream(outputStream: OutputStream): AdbOutputChannel
 }
 
-/**
- * Creates an [AdbInputChannel] that contains no data.
- */
+/** Creates an [AdbInputChannel] that contains no data. */
 @Suppress("FunctionName") // Mirroring coroutines API, with many functions that look like constructors.
 fun EmptyAdbInputChannel(): AdbInputChannel {
-    return EmptyAdbInputChannelImpl
+  return EmptyAdbInputChannelImpl
 }
 
-/**
- * Returns an [AdbInputChannel] that reads at most [length] bytes from another [AdbInputChannel].
- */
+/** Returns an [AdbInputChannel] that reads at most [length] bytes from another [AdbInputChannel]. */
 @Suppress("FunctionName") // Mirroring coroutines API, with many functions that look like constructors.
 fun AdbInputChannelSlice(inputChannel: AdbInputChannel, length: Int): AdbInputChannel {
-    return AdbInputChannelSliceImpl(inputChannel, length)
+  return AdbInputChannelSliceImpl(inputChannel, length)
 }
 
 /**
- * Returns an [AdbInputChannel] that reads bytes from a [ByteBuffer]. Once all bytes
- * are read (i.e. [AdbInputChannel.read] returns -1), the [ByteBuffer.remaining] value
- * is zero.
+ * Returns an [AdbInputChannel] that reads bytes from a [ByteBuffer]. Once all bytes are read (i.e. [AdbInputChannel.read] returns -1), the
+ * [ByteBuffer.remaining] value is zero.
  */
 @Suppress("FunctionName") // Mirroring coroutines API, with many functions that look like constructors.
 fun ByteBufferAdbInputChannel(buffer: ByteBuffer): AdbInputChannel {
-    return ByteBufferAdbInputChannelImpl(buffer)
+  return ByteBufferAdbInputChannelImpl(buffer)
 }
 
 /**
- * Returns an [AdbOutputChannel] that appends bytes to a [ResizableBuffer]. The
- * [ResizableBuffer][buffer] grows as needed to allow [AdbOutputChannel.write] calls
- * to succeed.
+ * Returns an [AdbOutputChannel] that appends bytes to a [ResizableBuffer]. The [ResizableBuffer][buffer] grows as needed to allow
+ * [AdbOutputChannel.write] calls to succeed.
  *
- * Once [AdbOutputChannel.close] is called, use [ResizableBuffer.forChannelWrite] to
- * access the underlying [ByteBuffer] that will contain data written to the buffer
- * from [ByteBuffer.position] `0` to [ByteBuffer.limit].
+ * Once [AdbOutputChannel.close] is called, use [ResizableBuffer.forChannelWrite] to access the underlying [ByteBuffer] that will contain
+ * data written to the buffer from [ByteBuffer.position] `0` to [ByteBuffer.limit].
  */
 @Suppress("FunctionName") // Mirroring coroutines API, with many functions that look like constructors.
 fun ByteBufferAdbOutputChannel(buffer: ResizableBuffer): AdbOutputChannel {
-    return ByteBufferAdbOutputChannelImpl(buffer)
+  return ByteBufferAdbOutputChannelImpl(buffer)
 }
-

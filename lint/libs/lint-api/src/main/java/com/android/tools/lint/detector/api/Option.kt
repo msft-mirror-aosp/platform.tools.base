@@ -19,17 +19,14 @@ import com.android.tools.lint.client.api.Configuration
 import com.android.utils.SdkUtils.wrap
 import java.io.File
 
-/**
- * Represents an option associated with a given [Issue] that can be configured in a `lint.xml` file.
- */
+/** Represents an option associated with a given [Issue] that can be configured in a `lint.xml` file. */
 sealed class Option(
   /** The name of the option, referenced in the `lint.xml` file */
   val name: String,
 
   /**
-   * A brief (1 line) explanation of what this option represents, such as "Whether to include
-   * deprecated members" or "Maximum number of views to allow". Should be capitalized but not end
-   * with punctuation like a period. The string should be in format [TextFormat.RAW].
+   * A brief (1 line) explanation of what this option represents, such as "Whether to include deprecated members" or "Maximum number of
+   * views to allow". Should be capitalized but not end with punctuation like a period. The string should be in format [TextFormat.RAW].
    */
   private val description: String,
 
@@ -122,19 +119,13 @@ sealed class Option(
 
   protected fun ensureRegistered() {
     if (!this::issue.isInitialized) {
-      error(
-        "Option $name has not been registered with an associated `Issue`; see `Issue.options()`"
-      )
+      error("Option $name has not been registered with an associated `Issue`; see `Issue.options()`")
     }
   }
 
   companion object {
     /** Describes a list of options */
-    fun describe(
-      options: List<Option>,
-      format: TextFormat = TextFormat.RAW,
-      includeExample: Boolean = true,
-    ): String {
+    fun describe(options: List<Option>, format: TextFormat = TextFormat.RAW, includeExample: Boolean = true): String {
       if (options.isNotEmpty()) {
         val sb = StringBuilder()
         sb.append("Available options:\n")
@@ -169,8 +160,7 @@ class StringOption(
     return configuration.getOption(this) as String? ?: defaultValue
   }
 
-  override fun getValue(context: Context): String? =
-    getValue(context.findConfiguration(context.file))
+  override fun getValue(context: Context): String? = getValue(context.findConfiguration(context.file))
 
   override fun defaultAsString(): String? {
     return defaultValue?.let { "\"$it\"" }

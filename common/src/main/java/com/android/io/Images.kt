@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("Images")
+
 package com.android.io
 
 import java.awt.image.BufferedImage
@@ -27,20 +28,18 @@ import javax.imageio.ImageIO
 /**
  * Reads an image from a file.
  *
- * Similar to [ImageIO.read], but throws an [IOException] if the format of the input file was not
- * recognized and a [java.nio.file.NoSuchFileException] if the input file is not found.
+ * Similar to [ImageIO.read], but throws an [IOException] if the format of the input file was not recognized and a
+ * [java.nio.file.NoSuchFileException] if the input file is not found.
  *
  * @return a [BufferedImage] containing the decoded contents of the image file
- *
  * @exception java.nio.file.NoSuchFileException if the input file is not found
- * @exception IOException if an error occurs during reading or if the format of the input file was
- *     not recognized
+ * @exception IOException if an error occurs during reading or if the format of the input file was not recognized
  */
 @Throws(IOException::class)
 fun Path.readImage(): BufferedImage {
-    Files.newInputStream(this).use { stream ->
-        return ImageIO.read(stream) ?: throw IIOException("Unrecognized image format in file $this")
-    }
+  Files.newInputStream(this).use { stream ->
+    return ImageIO.read(stream) ?: throw IIOException("Unrecognized image format in file $this")
+  }
 }
 
 /**
@@ -48,8 +47,8 @@ fun Path.readImage(): BufferedImage {
  *
  * Similar to [ImageIO.write], but throws an [IOException] if [formatName] is not recognized.
  *
- * Writes an image using an arbitrary `ImageWriter` that supports the given format to
- * a file. If there is already a file present, its contents are overwritten.
+ * Writes an image using an arbitrary `ImageWriter` that supports the given format to a file. If there is already a file present, its
+ * contents are overwritten.
  *
  * @param formatName the informal name of the format, e.g. "PNG", "JPEG" or "WEBP"
  * @param output the file to write the image to
@@ -57,9 +56,9 @@ fun Path.readImage(): BufferedImage {
  */
 @Throws(IOException::class)
 fun RenderedImage.writeImage(formatName: String, output: Path) {
-    Files.newOutputStream(output).use { stream ->
-        if (!ImageIO.write(this, formatName, stream)) {
-            throw IIOException("Unrecognized image format \"$formatName\"")
-        }
+  Files.newOutputStream(output).use { stream ->
+    if (!ImageIO.write(this, formatName, stream)) {
+      throw IIOException("Unrecognized image format \"$formatName\"")
     }
+  }
 }

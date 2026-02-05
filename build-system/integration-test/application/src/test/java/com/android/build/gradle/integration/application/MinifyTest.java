@@ -161,7 +161,6 @@ public class MinifyTest {
         Files.createDirectories(toBeKept.getParent());
         Files.write(toBeKept, classContent.getBytes());
 
-        project.addUseAndroidXProperty();
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 ""

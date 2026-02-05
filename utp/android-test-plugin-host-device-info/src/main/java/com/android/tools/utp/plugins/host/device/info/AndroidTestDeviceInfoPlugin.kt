@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.android.tools.utp.plugins.host.device.info
 
 import com.android.tools.utp.plugins.common.HostPluginAdapter
@@ -37,170 +36,164 @@ import java.io.FileOutputStream
 
 const val MANAGED_DEVICE_NAME_KEY = "gradleManagedDeviceDslName"
 
-/**
- * A plugin to write device info in test results.
- */
+/** A plugin to write device info in test results. */
 class AndroidTestDeviceInfoPlugin : HostPluginAdapter() {
-    private lateinit var outputDir: File
-    private lateinit var deviceMemInfoFile: File
-    private lateinit var deviceCpuInfoFile: File
-    private lateinit var deviceInfoFile: File
-    private lateinit var context: Context
+  private lateinit var outputDir: File
+  private lateinit var deviceMemInfoFile: File
+  private lateinit var deviceCpuInfoFile: File
+  private lateinit var deviceInfoFile: File
+  private lateinit var context: Context
 
-    /**
-     * Configures the plugin, updates the output directory.
-     *
-     * @param config: a configuration.
-     */
-    override fun configure(context: Context) {
-        val config = context[Context.CONFIG_KEY] as Config
-        outputDir = File(config.environment.outputDirectory)
-        deviceMemInfoFile = File(outputDir, "meminfo")
-        deviceCpuInfoFile = File(outputDir, "cpuinfo")
-        deviceInfoFile = File(outputDir, "device-info.pb")
-        this.context = context
-    }
+  /**
+   * Configures the plugin, updates the output directory.
+   *
+   * @param config: a configuration.
+   */
+  override fun configure(context: Context) {
+    val config = context[Context.CONFIG_KEY] as Config
+    outputDir = File(config.environment.outputDirectory)
+    deviceMemInfoFile = File(outputDir, "meminfo")
+    deviceCpuInfoFile = File(outputDir, "cpuinfo")
+    deviceInfoFile = File(outputDir, "device-info.pb")
+    this.context = context
+  }
 
-    /**
-     * Writes device information files, which will be referenced by {@link #afterEach(TestResult)}.
-     *
-     * Currently we only have the SingleDeviceExecutor so all tests should share the same device
-     * info files. We might need to rename those files in future once we have a MultiDeviceExecutor.
-     *
-     * @param deviceController: a device controller which controls an Android device.
-     */
-    override fun beforeAll(deviceController: DeviceController) {
-        val deviceMemInfo = deviceController.deviceShell(listOf("cat", "/proc/meminfo")).output
-        val deviceCpuInfo = deviceController.deviceShell(listOf("cat", "/proc/cpuinfo")).output
+  /**
+   * Writes device information files, which will be referenced by {@link #afterEach(TestResult)}.
+   *
+   * Currently we only have the SingleDeviceExecutor so all tests should share the same device info files. We might need to rename those
+   * files in future once we have a MultiDeviceExecutor.
+   *
+   * @param deviceController: a device controller which controls an Android device.
+   */
+  override fun beforeAll(deviceController: DeviceController) {
+    val deviceMemInfo = deviceController.deviceShell(listOf("cat", "/proc/meminfo")).output
+    val deviceCpuInfo = deviceController.deviceShell(listOf("cat", "/proc/cpuinfo")).output
 
-        // Write the files
-        deviceMemInfoFile.printWriter().use { out ->
-            deviceMemInfo.forEach {
-                out.println(it)
-            }
-        }
-        deviceCpuInfoFile.printWriter().use { out ->
-            deviceCpuInfo.forEach {
-                out.println(it)
-            }
-        }
+    // Write the files
+    deviceMemInfoFile.printWriter().use { out -> deviceMemInfo.forEach { out.println(it) } }
+    deviceCpuInfoFile.printWriter().use { out -> deviceCpuInfo.forEach { out.println(it) } }
 
-        val device = deviceController.getDevice()
-        val deviceProperties = device.properties as AndroidDeviceProperties
-        val deviceSerial = device.serial
-        val deviceAvdName = deviceProperties.avdName ?: ""
-        val deviceName = if (deviceAvdName != "") {
-            deviceAvdName
-        } else {
-            deviceSerial
-        }
-        val dslName = deviceProperties.map.getOrDefault(MANAGED_DEVICE_NAME_KEY, "")
-        val deviceApiLevel = deviceProperties.deviceApiLevel
-        val deviceRam = deviceMemInfo.getDeviceMemory()
-        val deviceProcessors = deviceCpuInfo.getDeviceProcessors()
-        val deviceAbis = deviceProperties.map["ro.product.cpu.abilist"]?.split(',')
-        val deviceManufacturer = deviceProperties.map["ro.product.manufacturer"] ?: ""
-        val deviceModel = deviceProperties.map["ro.product.model"] ?: ""
+    val device = deviceController.getDevice()
+    val deviceProperties = device.properties as AndroidDeviceProperties
+    val deviceSerial = device.serial
+    val deviceAvdName = deviceProperties.avdName ?: ""
+    val deviceName =
+      if (deviceAvdName != "") {
+        deviceAvdName
+      } else {
+        deviceSerial
+      }
+    val dslName = deviceProperties.map.getOrDefault(MANAGED_DEVICE_NAME_KEY, "")
+    val deviceApiLevel = deviceProperties.deviceApiLevel
+    val deviceRam = deviceMemInfo.getDeviceMemory()
+    val deviceProcessors = deviceCpuInfo.getDeviceProcessors()
+    val deviceAbis = deviceProperties.map["ro.product.cpu.abilist"]?.split(',')
+    val deviceManufacturer = deviceProperties.map["ro.product.manufacturer"] ?: ""
+    val deviceModel = deviceProperties.map["ro.product.model"] ?: ""
 
-        val androidTestDeviceInfo = AndroidTestDeviceInfo.newBuilder()
-                .setName(deviceName)
-                .setApiLevel(deviceApiLevel)
-                .setRamInBytes(deviceRam)
-                .addAllProcessors(deviceProcessors)
-                .addAllAbis(deviceAbis ?: emptyList())
-                .setManufacturer(deviceManufacturer)
-                .setSerial(deviceSerial)
-                .setAvdName(deviceAvdName)
-                .setGradleDslDeviceName(dslName)
-                .setModel(deviceModel)
-                .build()
-        FileOutputStream(deviceInfoFile).use {
-            androidTestDeviceInfo.writeTo(it)
-        }
-    }
+    val androidTestDeviceInfo =
+      AndroidTestDeviceInfo.newBuilder()
+        .setName(deviceName)
+        .setApiLevel(deviceApiLevel)
+        .setRamInBytes(deviceRam)
+        .addAllProcessors(deviceProcessors)
+        .addAllAbis(deviceAbis ?: emptyList())
+        .setManufacturer(deviceManufacturer)
+        .setSerial(deviceSerial)
+        .setAvdName(deviceAvdName)
+        .setGradleDslDeviceName(dslName)
+        .setModel(deviceModel)
+        .build()
+    FileOutputStream(deviceInfoFile).use { androidTestDeviceInfo.writeTo(it) }
+  }
 
-    /** No-op */
-    override fun beforeEach(testCase: TestCaseProto.TestCase?, deviceController: DeviceController) = Unit
+  /** No-op */
+  override fun beforeEach(testCase: TestCaseProto.TestCase?, deviceController: DeviceController) = Unit
 
-    /**
-     * Updates device information artifacts in testResult. The device information was produced when
-     * {@link #beforeAll(DeviceController)} was called.
-     *
-     * @param testResult: a base test result. Its copy will be returned with extra device
-     *                    information artifacts.
-     *
-     * @return a copied TestResult with extra artifact, including "device-info.pb", "meminfo" and
-     *         "cpuinfo".
-     */
-    override fun afterEachWithReturn(
-        testResult: TestResult,
-        deviceController: DeviceController,
-        cancelled: Boolean): TestResult {
-        return testResult.toBuilder().apply {
-            addOutputArtifact(Artifact.newBuilder().apply {
-                labelBuilder.label = "device-info"
-                labelBuilder.namespace = "android"
-                sourcePathBuilder.path = deviceInfoFile.getPath()
-            })
-            addOutputArtifact(Artifact.newBuilder().apply {
-                labelBuilder.label = "device-info.meminfo"
-                labelBuilder.namespace = "android"
-                sourcePathBuilder.path = deviceMemInfoFile.getPath()
-            })
-            addOutputArtifact(Artifact.newBuilder().apply {
-                labelBuilder.label = "device-info.cpuinfo"
-                labelBuilder.namespace = "android"
-                sourcePathBuilder.path = deviceCpuInfoFile.getPath()
-            })
-        }.build().also{ context.events.sendTestResultUpdate(it) }
-    }
+  /**
+   * Updates device information artifacts in testResult. The device information was produced when {@link #beforeAll(DeviceController)} was
+   * called.
+   *
+   * @param testResult: a base test result. Its copy will be returned with extra device information artifacts.
+   * @return a copied TestResult with extra artifact, including "device-info.pb", "meminfo" and "cpuinfo".
+   */
+  override fun afterEachWithReturn(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean): TestResult {
+    return testResult
+      .toBuilder()
+      .apply {
+        addOutputArtifact(
+          Artifact.newBuilder().apply {
+            labelBuilder.label = "device-info"
+            labelBuilder.namespace = "android"
+            sourcePathBuilder.path = deviceInfoFile.getPath()
+          }
+        )
+        addOutputArtifact(
+          Artifact.newBuilder().apply {
+            labelBuilder.label = "device-info.meminfo"
+            labelBuilder.namespace = "android"
+            sourcePathBuilder.path = deviceMemInfoFile.getPath()
+          }
+        )
+        addOutputArtifact(
+          Artifact.newBuilder().apply {
+            labelBuilder.label = "device-info.cpuinfo"
+            labelBuilder.namespace = "android"
+            sourcePathBuilder.path = deviceCpuInfoFile.getPath()
+          }
+        )
+      }
+      .build()
+      .also { context.events.sendTestResultUpdate(it) }
+  }
 
-    /** No-op */
-    override fun afterAllWithReturn(
-        testSuiteResult: TestSuiteResult,
-        deviceController: DeviceController,
-        cancelled: Boolean
-    ) = testSuiteResult
+  /** No-op */
+  override fun afterAllWithReturn(testSuiteResult: TestSuiteResult, deviceController: DeviceController, cancelled: Boolean) =
+    testSuiteResult
 
-    override fun canRun(): Boolean = true
+  override fun canRun(): Boolean = true
 }
 
 private fun Double.fromKilobytesToLong() = (this * 1000L).toLong()
+
 private fun Double.fromMegabytesToLong() = (this * 1000L * 1000L).toLong()
+
 private fun Double.fromGigabytesToLong() = (this * 1000L * 1000L * 1000L).toLong()
+
 private fun Double.fromTerabytesToLong() = (this * 1000L * 1000L * 1000L * 1000L).toLong()
 
 // Parse memory from string. Return 0 if parser fails.
 @VisibleForTesting
 fun List<String>.getDeviceMemory(): Long {
-    for (it in this) {
-        val (key, value) = it.split(':', ignoreCase = true, limit = 2) + listOf("", "")
-        if (key.trim() == "MemTotal") {
-            val (ramSize, unit) = value.trim().split(' ', ignoreCase = true, limit = 2)
-            val ramSizeFloat = ramSize.toDoubleOrNull() ?: return 0
-            // According to Wiki, kB means 1000 bytes and KB means 1024 bytes.
-            // https://en.wikipedia.org/wiki/Kilobyte
-            when (unit) {
-                "kB" -> return ramSizeFloat.fromKilobytesToLong()
-                "MB" -> return ramSizeFloat.fromMegabytesToLong()
-                "GB" -> return ramSizeFloat.fromGigabytesToLong()
-                "TB" -> return ramSizeFloat.fromTerabytesToLong()
-                else -> return 0
-            }
-        }
+  for (it in this) {
+    val (key, value) = it.split(':', ignoreCase = true, limit = 2) + listOf("", "")
+    if (key.trim() == "MemTotal") {
+      val (ramSize, unit) = value.trim().split(' ', ignoreCase = true, limit = 2)
+      val ramSizeFloat = ramSize.toDoubleOrNull() ?: return 0
+      // According to Wiki, kB means 1000 bytes and KB means 1024 bytes.
+      // https://en.wikipedia.org/wiki/Kilobyte
+      when (unit) {
+        "kB" -> return ramSizeFloat.fromKilobytesToLong()
+        "MB" -> return ramSizeFloat.fromMegabytesToLong()
+        "GB" -> return ramSizeFloat.fromGigabytesToLong()
+        "TB" -> return ramSizeFloat.fromTerabytesToLong()
+        else -> return 0
+      }
     }
-    // Return 0 if parser fails.
-    return 0
+  }
+  // Return 0 if parser fails.
+  return 0
 }
 
 @VisibleForTesting
 fun List<String>.getDeviceProcessors(): Iterable<String> {
-    val processors = mutableSetOf<String>()
-    this.forEach {
-        val (key, value) = it.split(':', ignoreCase = true, limit = 2) + listOf("", "")
-        if (key.trim() == "model name") {
-            processors.add(value.trim())
-        }
+  val processors = mutableSetOf<String>()
+  this.forEach {
+    val (key, value) = it.split(':', ignoreCase = true, limit = 2) + listOf("", "")
+    if (key.trim() == "model name") {
+      processors.add(value.trim())
     }
-    return processors
+  }
+  return processors
 }

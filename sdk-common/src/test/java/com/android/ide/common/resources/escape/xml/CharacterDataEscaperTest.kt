@@ -46,75 +46,82 @@ class CharacterDataEscaperTest {
   @Test
   fun escape_firstQuestionMark() {
     assertThat(CharacterDataEscaper.escape("???")).isEqualTo("""\???""")
-    assertThat(CharacterDataEscaper.escape("""?<xliff:g id="id">?</xliff:g>?"""))
-        .isEqualTo("""\?<xliff:g id="id">?</xliff:g>?""")
-    assertThat(CharacterDataEscaper.escape("""?<xliff:g id='id'>?</xliff:g>?"""))
-        .isEqualTo("""\?<xliff:g id="id">?</xliff:g>?""")
+    assertThat(CharacterDataEscaper.escape("""?<xliff:g id="id">?</xliff:g>?""")).isEqualTo("""\?<xliff:g id="id">?</xliff:g>?""")
+    assertThat(CharacterDataEscaper.escape("""?<xliff:g id='id'>?</xliff:g>?""")).isEqualTo("""\?<xliff:g id="id">?</xliff:g>?""")
     assertThat(CharacterDataEscaper.escape("""?<![CDATA[?]]>?""")).isEqualTo("""\?<![CDATA[?]]>?""")
   }
 
   @Test
   fun escape_firstAtSign() {
     assertThat(CharacterDataEscaper.escape("@@@")).isEqualTo("""\@@@""")
-    assertThat(CharacterDataEscaper.escape("""@<xliff:g id="id">@</xliff:g>@"""))
-        .isEqualTo("""\@<xliff:g id="id">@</xliff:g>@""")
-    assertThat(CharacterDataEscaper.escape("""@<xliff:g id='id'>@</xliff:g>@"""))
-        .isEqualTo("""\@<xliff:g id="id">@</xliff:g>@""")
+    assertThat(CharacterDataEscaper.escape("""@<xliff:g id="id">@</xliff:g>@""")).isEqualTo("""\@<xliff:g id="id">@</xliff:g>@""")
+    assertThat(CharacterDataEscaper.escape("""@<xliff:g id='id'>@</xliff:g>@""")).isEqualTo("""\@<xliff:g id="id">@</xliff:g>@""")
     assertThat(CharacterDataEscaper.escape("""@<![CDATA[@]]>@""")).isEqualTo("""\@<![CDATA[@]]>@""")
   }
 
   @Test
   fun escape_quotationMarks() {
     assertThat(CharacterDataEscaper.escape(""""""")).isEqualTo("""\"""")
-    assertThat(CharacterDataEscaper.escape(""""<xliff:g id="id">"</xliff:g>""""))
-        .isEqualTo("""\"<xliff:g id="id">\"</xliff:g>\"""")
-    assertThat(CharacterDataEscaper.escape(""""<xliff:g id='id'>"</xliff:g>""""))
-        .isEqualTo("""\"<xliff:g id="id">\"</xliff:g>\"""")
-    assertThat(CharacterDataEscaper.escape(""""<![CDATA["]]>""""))
-        .isEqualTo("""\"<![CDATA["]]>\"""")
+    assertThat(CharacterDataEscaper.escape(""""<xliff:g id="id">"</xliff:g>"""")).isEqualTo("""\"<xliff:g id="id">\"</xliff:g>\"""")
+    assertThat(CharacterDataEscaper.escape(""""<xliff:g id='id'>"</xliff:g>"""")).isEqualTo("""\"<xliff:g id="id">\"</xliff:g>\"""")
+    assertThat(CharacterDataEscaper.escape(""""<![CDATA["]]>"""")).isEqualTo("""\"<![CDATA["]]>\"""")
   }
 
   @Test
   fun escape_backslashes() {
     assertThat(CharacterDataEscaper.escape("""\""")).isEqualTo("""\\""")
-    assertThat(CharacterDataEscaper.escape("""\<xliff:g id="id">\</xliff:g>\"""))
-        .isEqualTo("""\\<xliff:g id="id">\\</xliff:g>\\""")
-    assertThat(CharacterDataEscaper.escape("""\<xliff:g id='id'>\</xliff:g>\"""))
-        .isEqualTo("""\\<xliff:g id="id">\\</xliff:g>\\""")
-    assertThat(CharacterDataEscaper.escape("""\<![CDATA[\]]>\"""))
-        .isEqualTo("""\\<![CDATA[\]]>\\""")
+    assertThat(CharacterDataEscaper.escape("""\<xliff:g id="id">\</xliff:g>\""")).isEqualTo("""\\<xliff:g id="id">\\</xliff:g>\\""")
+    assertThat(CharacterDataEscaper.escape("""\<xliff:g id='id'>\</xliff:g>\""")).isEqualTo("""\\<xliff:g id="id">\\</xliff:g>\\""")
+    assertThat(CharacterDataEscaper.escape("""\<![CDATA[\]]>\""")).isEqualTo("""\\<![CDATA[\]]>\\""")
   }
 
   @Test
   fun escape_newlines() {
-    assertThat(CharacterDataEscaper.escape("""
-""")).isEqualTo("""\n""")
-    assertThat(CharacterDataEscaper.escape("""
+    assertThat(
+        CharacterDataEscaper.escape(
+          """
+"""
+        )
+      )
+      .isEqualTo("""\n""")
+    assertThat(
+        CharacterDataEscaper.escape(
+          """
 <xliff:g id="id">
 </xliff:g>
-"""))
-        .isEqualTo("""\n<xliff:g id="id">\n</xliff:g>\n""")
-    assertThat(CharacterDataEscaper.escape("""
+"""
+        )
+      )
+      .isEqualTo("""\n<xliff:g id="id">\n</xliff:g>\n""")
+    assertThat(
+        CharacterDataEscaper.escape(
+          """
 <xliff:g id='id'>
 </xliff:g>
-"""))
-        .isEqualTo("""\n<xliff:g id="id">\n</xliff:g>\n""")
-    assertThat(CharacterDataEscaper.escape("""
+"""
+        )
+      )
+      .isEqualTo("""\n<xliff:g id="id">\n</xliff:g>\n""")
+    assertThat(
+        CharacterDataEscaper.escape(
+          """
 <![CDATA[
 ]]>
-"""))
-        .isEqualTo("""\n<![CDATA[
-]]>\n""")
+"""
+        )
+      )
+      .isEqualTo(
+        """\n<![CDATA[
+]]>\n"""
+      )
   }
 
   @Test
   fun escape_tabs() {
     // No raw string literals here as tabs are not allowed in our source.
     assertThat(CharacterDataEscaper.escape("\t")).isEqualTo("\\t")
-    assertThat(CharacterDataEscaper.escape("\t<xliff:g id=\"id\">\t</xliff:g>\t"))
-        .isEqualTo("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t")
-    assertThat(CharacterDataEscaper.escape("\t<xliff:g id='id'>\t</xliff:g>\t"))
-        .isEqualTo("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t")
+    assertThat(CharacterDataEscaper.escape("\t<xliff:g id=\"id\">\t</xliff:g>\t")).isEqualTo("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t")
+    assertThat(CharacterDataEscaper.escape("\t<xliff:g id='id'>\t</xliff:g>\t")).isEqualTo("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t")
     assertThat(CharacterDataEscaper.escape("\t<![CDATA[\t]]>\t")).isEqualTo("\\t<![CDATA[\t]]>\\t")
   }
 
@@ -124,27 +131,18 @@ class CharacterDataEscaperTest {
     assertThat(CharacterDataEscaper.escape("' ")).isEqualTo(""""' """")
     assertThat(CharacterDataEscaper.escape(" '")).isEqualTo("""" '"""")
     assertThat(CharacterDataEscaper.escape(" ' ")).isEqualTo("""" ' """")
-    assertThat(CharacterDataEscaper.escape("""'<xliff:g id="id">'</xliff:g>'"""))
-        .isEqualTo("""\'<xliff:g id="id">\'</xliff:g>\'""")
-    assertThat(CharacterDataEscaper.escape("""'<xliff:g id="id">'</xliff:g>' """))
-        .isEqualTo(""""'<xliff:g id="id">'</xliff:g>' """")
-    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id="id">'</xliff:g>'"""))
-        .isEqualTo("""" '<xliff:g id="id">'</xliff:g>'"""")
-    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id="id">'</xliff:g>' """))
-        .isEqualTo("""" '<xliff:g id="id">'</xliff:g>' """")
-    assertThat(CharacterDataEscaper.escape("""'<xliff:g id='id'>'</xliff:g>'"""))
-        .isEqualTo("""\'<xliff:g id="id">\'</xliff:g>\'""")
-    assertThat(CharacterDataEscaper.escape("""'<xliff:g id='id'>'</xliff:g>' """))
-        .isEqualTo(""""'<xliff:g id="id">'</xliff:g>' """")
-    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id='id'>'</xliff:g>'"""))
-        .isEqualTo("""" '<xliff:g id="id">'</xliff:g>'"""")
-    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id='id'>'</xliff:g>' """))
-        .isEqualTo("""" '<xliff:g id="id">'</xliff:g>' """")
+    assertThat(CharacterDataEscaper.escape("""'<xliff:g id="id">'</xliff:g>'""")).isEqualTo("""\'<xliff:g id="id">\'</xliff:g>\'""")
+    assertThat(CharacterDataEscaper.escape("""'<xliff:g id="id">'</xliff:g>' """)).isEqualTo(""""'<xliff:g id="id">'</xliff:g>' """")
+    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id="id">'</xliff:g>'""")).isEqualTo("""" '<xliff:g id="id">'</xliff:g>'"""")
+    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id="id">'</xliff:g>' """)).isEqualTo("""" '<xliff:g id="id">'</xliff:g>' """")
+    assertThat(CharacterDataEscaper.escape("""'<xliff:g id='id'>'</xliff:g>'""")).isEqualTo("""\'<xliff:g id="id">\'</xliff:g>\'""")
+    assertThat(CharacterDataEscaper.escape("""'<xliff:g id='id'>'</xliff:g>' """)).isEqualTo(""""'<xliff:g id="id">'</xliff:g>' """")
+    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id='id'>'</xliff:g>'""")).isEqualTo("""" '<xliff:g id="id">'</xliff:g>'"""")
+    assertThat(CharacterDataEscaper.escape(""" '<xliff:g id='id'>'</xliff:g>' """)).isEqualTo("""" '<xliff:g id="id">'</xliff:g>' """")
     assertThat(CharacterDataEscaper.escape("'<![CDATA[']]>'")).isEqualTo("""\'<![CDATA[']]>\'""")
     assertThat(CharacterDataEscaper.escape("'<![CDATA[']]>' ")).isEqualTo(""""'<![CDATA[']]>' """")
     assertThat(CharacterDataEscaper.escape(" '<![CDATA[']]>'")).isEqualTo("""" '<![CDATA[']]>'"""")
-    assertThat(CharacterDataEscaper.escape(" '<![CDATA[']]>' "))
-        .isEqualTo("""" '<![CDATA[']]>' """")
+    assertThat(CharacterDataEscaper.escape(" '<![CDATA[']]>' ")).isEqualTo("""" '<![CDATA[']]>' """")
   }
 
   @Test
@@ -163,15 +161,13 @@ class CharacterDataEscaperTest {
 
   @Test
   fun escape_comment() {
-    assertThat(CharacterDataEscaper.escape("<!-- This is a comment -->"))
-        .isEqualTo("<!-- This is a comment -->")
+    assertThat(CharacterDataEscaper.escape("<!-- This is a comment -->")).isEqualTo("<!-- This is a comment -->")
   }
 
   @Test
   fun escape_processingInstruction() {
-    assertThat(
-            CharacterDataEscaper.escape("""<?xml-stylesheet type="text/css" href="style.css"?>"""))
-        .isEqualTo("""<?xml-stylesheet type="text/css" href="style.css"?>""")
+    assertThat(CharacterDataEscaper.escape("""<?xml-stylesheet type="text/css" href="style.css"?>"""))
+      .isEqualTo("""<?xml-stylesheet type="text/css" href="style.css"?>""")
   }
 
   @Test
@@ -202,78 +198,77 @@ class CharacterDataEscaperTest {
   @Test
   fun unescape_firstQuestionMark() {
     assertThat(CharacterDataEscaper.unescape("""\???""")).isEqualTo("???")
-    assertThat(CharacterDataEscaper.unescape("""\?<xliff:g id="id">?</xliff:g>?"""))
-        .isEqualTo("""?<xliff:g id="id">?</xliff:g>?""")
-    assertThat(CharacterDataEscaper.unescape("""\?<xliff:g id='id'>?</xliff:g>?"""))
-        .isEqualTo("""?<xliff:g id="id">?</xliff:g>?""")
-    assertThat(CharacterDataEscaper.unescape("""\?<![CDATA[?]]>?"""))
-        .isEqualTo("""?<![CDATA[?]]>?""")
+    assertThat(CharacterDataEscaper.unescape("""\?<xliff:g id="id">?</xliff:g>?""")).isEqualTo("""?<xliff:g id="id">?</xliff:g>?""")
+    assertThat(CharacterDataEscaper.unescape("""\?<xliff:g id='id'>?</xliff:g>?""")).isEqualTo("""?<xliff:g id="id">?</xliff:g>?""")
+    assertThat(CharacterDataEscaper.unescape("""\?<![CDATA[?]]>?""")).isEqualTo("""?<![CDATA[?]]>?""")
   }
 
   @Test
   fun unescape_firstAtSign() {
     assertThat(CharacterDataEscaper.unescape("""\@@@""")).isEqualTo("@@@")
-    assertThat(CharacterDataEscaper.unescape("""\@<xliff:g id="id">@</xliff:g>@"""))
-        .isEqualTo("""@<xliff:g id="id">@</xliff:g>@""")
-    assertThat(CharacterDataEscaper.unescape("""\@<xliff:g id='id'>@</xliff:g>@"""))
-        .isEqualTo("""@<xliff:g id="id">@</xliff:g>@""")
+    assertThat(CharacterDataEscaper.unescape("""\@<xliff:g id="id">@</xliff:g>@""")).isEqualTo("""@<xliff:g id="id">@</xliff:g>@""")
+    assertThat(CharacterDataEscaper.unescape("""\@<xliff:g id='id'>@</xliff:g>@""")).isEqualTo("""@<xliff:g id="id">@</xliff:g>@""")
     assertThat(CharacterDataEscaper.unescape("""\@<![CDATA[@]]>@""")).isEqualTo("@<![CDATA[@]]>@")
   }
 
   @Test
   fun unescape_quotationMarks() {
     assertThat(CharacterDataEscaper.unescape("""\"""")).isEqualTo(""""""")
-    assertThat(CharacterDataEscaper.unescape("""\"<xliff:g id="id">\"</xliff:g>\""""))
-        .isEqualTo(""""<xliff:g id="id">"</xliff:g>"""")
-    assertThat(CharacterDataEscaper.unescape("""\"<xliff:g id='id'>\"</xliff:g>\""""))
-        .isEqualTo(""""<xliff:g id="id">"</xliff:g>"""")
-    assertThat(CharacterDataEscaper.unescape("""\"<![CDATA["]]>\""""))
-        .isEqualTo(""""<![CDATA["]]>"""")
+    assertThat(CharacterDataEscaper.unescape("""\"<xliff:g id="id">\"</xliff:g>\"""")).isEqualTo(""""<xliff:g id="id">"</xliff:g>"""")
+    assertThat(CharacterDataEscaper.unescape("""\"<xliff:g id='id'>\"</xliff:g>\"""")).isEqualTo(""""<xliff:g id="id">"</xliff:g>"""")
+    assertThat(CharacterDataEscaper.unescape("""\"<![CDATA["]]>\"""")).isEqualTo(""""<![CDATA["]]>"""")
   }
 
   @Test
   fun unescape_backslashes() {
     assertThat(CharacterDataEscaper.unescape("""\\""")).isEqualTo("""\""")
-    assertThat(CharacterDataEscaper.unescape("""\\<xliff:g id="id">\\</xliff:g>\\"""))
-        .isEqualTo("""\<xliff:g id="id">\</xliff:g>\""")
-    assertThat(CharacterDataEscaper.unescape("""\\<xliff:g id='id'>\\</xliff:g>\\"""))
-        .isEqualTo("""\<xliff:g id="id">\</xliff:g>\""")
-    assertThat(CharacterDataEscaper.unescape("""\\<![CDATA[\]]>\\"""))
-        .isEqualTo("""\<![CDATA[\]]>\""")
+    assertThat(CharacterDataEscaper.unescape("""\\<xliff:g id="id">\\</xliff:g>\\""")).isEqualTo("""\<xliff:g id="id">\</xliff:g>\""")
+    assertThat(CharacterDataEscaper.unescape("""\\<xliff:g id='id'>\\</xliff:g>\\""")).isEqualTo("""\<xliff:g id="id">\</xliff:g>\""")
+    assertThat(CharacterDataEscaper.unescape("""\\<![CDATA[\]]>\\""")).isEqualTo("""\<![CDATA[\]]>\""")
   }
 
   @Test
   fun unescape_newlines() {
-    assertThat(CharacterDataEscaper.unescape("""\n""")).isEqualTo("""
-""")
+    assertThat(CharacterDataEscaper.unescape("""\n"""))
+      .isEqualTo(
+        """
+"""
+      )
     assertThat(CharacterDataEscaper.unescape("""\n<xliff:g id="id">\n</xliff:g>\n"""))
-        .isEqualTo("""
+      .isEqualTo(
+        """
 <xliff:g id="id">
 </xliff:g>
-""")
+"""
+      )
     assertThat(CharacterDataEscaper.unescape("""\n<xliff:g id='id'>\n</xliff:g>\n"""))
-        .isEqualTo("""
+      .isEqualTo(
+        """
 <xliff:g id="id">
 </xliff:g>
-""")
-    assertThat(CharacterDataEscaper.unescape("""\n<![CDATA[
-]]>\n"""))
-        .isEqualTo("""
+"""
+      )
+    assertThat(
+        CharacterDataEscaper.unescape(
+          """\n<![CDATA[
+]]>\n"""
+        )
+      )
+      .isEqualTo(
+        """
 <![CDATA[
 ]]>
-""")
+"""
+      )
   }
 
   @Test
   fun unescape_tabs() {
     // Tabs are not allowed so this does not use raw strings literals.
     assertThat(CharacterDataEscaper.unescape("\\t")).isEqualTo("\t")
-    assertThat(CharacterDataEscaper.unescape("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t"))
-        .isEqualTo("\t<xliff:g id=\"id\">\t</xliff:g>\t")
-    assertThat(CharacterDataEscaper.unescape("\\t<xliff:g id='id'>\\t</xliff:g>\\t"))
-        .isEqualTo("\t<xliff:g id=\"id\">\t</xliff:g>\t")
-    assertThat(CharacterDataEscaper.unescape("\\t<![CDATA[\t]]>\\t"))
-        .isEqualTo("\t<![CDATA[\t]]>\t")
+    assertThat(CharacterDataEscaper.unescape("\\t<xliff:g id=\"id\">\\t</xliff:g>\\t")).isEqualTo("\t<xliff:g id=\"id\">\t</xliff:g>\t")
+    assertThat(CharacterDataEscaper.unescape("\\t<xliff:g id='id'>\\t</xliff:g>\\t")).isEqualTo("\t<xliff:g id=\"id\">\t</xliff:g>\t")
+    assertThat(CharacterDataEscaper.unescape("\\t<![CDATA[\t]]>\\t")).isEqualTo("\t<![CDATA[\t]]>\t")
   }
 
   @Test
@@ -282,30 +277,18 @@ class CharacterDataEscaperTest {
     assertThat(CharacterDataEscaper.unescape(""""' """")).isEqualTo("' ")
     assertThat(CharacterDataEscaper.unescape("""" '"""")).isEqualTo(" '")
     assertThat(CharacterDataEscaper.unescape("""" ' """")).isEqualTo(" ' ")
-    assertThat(CharacterDataEscaper.unescape("""\'<xliff:g id="id">\'</xliff:g>\'"""))
-        .isEqualTo("""'<xliff:g id="id">'</xliff:g>'""")
-    assertThat(CharacterDataEscaper.unescape(""""'<xliff:g id="id">'</xliff:g>' """"))
-        .isEqualTo("""'<xliff:g id="id">'</xliff:g>' """)
-    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id="id">'</xliff:g>'""""))
-        .isEqualTo(""" '<xliff:g id="id">'</xliff:g>'""")
-    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id="id">'</xliff:g>' """"))
-        .isEqualTo(""" '<xliff:g id="id">'</xliff:g>' """)
-    assertThat(CharacterDataEscaper.unescape("""\'<xliff:g id='id'>\'</xliff:g>\'"""))
-        .isEqualTo("""'<xliff:g id="id">'</xliff:g>'""")
-    assertThat(CharacterDataEscaper.unescape(""""'<xliff:g id='id'>'</xliff:g>' """"))
-        .isEqualTo("""'<xliff:g id="id">'</xliff:g>' """)
-    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id='id'>'</xliff:g>'""""))
-        .isEqualTo(""" '<xliff:g id="id">'</xliff:g>'""")
-    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id='id'>'</xliff:g>' """"))
-        .isEqualTo(""" '<xliff:g id="id">'</xliff:g>' """)
-    assertThat(CharacterDataEscaper.unescape("""\'<![CDATA[']]>\'"""))
-        .isEqualTo("'<![CDATA[']]>'")
-    assertThat(CharacterDataEscaper.unescape(""""'<![CDATA[']]>' """"))
-        .isEqualTo("'<![CDATA[']]>' ")
-    assertThat(CharacterDataEscaper.unescape("""" '<![CDATA[']]>'""""))
-        .isEqualTo(" '<![CDATA[']]>'")
-    assertThat(CharacterDataEscaper.unescape("""" '<![CDATA[']]>' """"))
-        .isEqualTo(" '<![CDATA[']]>' ")
+    assertThat(CharacterDataEscaper.unescape("""\'<xliff:g id="id">\'</xliff:g>\'""")).isEqualTo("""'<xliff:g id="id">'</xliff:g>'""")
+    assertThat(CharacterDataEscaper.unescape(""""'<xliff:g id="id">'</xliff:g>' """")).isEqualTo("""'<xliff:g id="id">'</xliff:g>' """)
+    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id="id">'</xliff:g>'"""")).isEqualTo(""" '<xliff:g id="id">'</xliff:g>'""")
+    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id="id">'</xliff:g>' """")).isEqualTo(""" '<xliff:g id="id">'</xliff:g>' """)
+    assertThat(CharacterDataEscaper.unescape("""\'<xliff:g id='id'>\'</xliff:g>\'""")).isEqualTo("""'<xliff:g id="id">'</xliff:g>'""")
+    assertThat(CharacterDataEscaper.unescape(""""'<xliff:g id='id'>'</xliff:g>' """")).isEqualTo("""'<xliff:g id="id">'</xliff:g>' """)
+    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id='id'>'</xliff:g>'"""")).isEqualTo(""" '<xliff:g id="id">'</xliff:g>'""")
+    assertThat(CharacterDataEscaper.unescape("""" '<xliff:g id='id'>'</xliff:g>' """")).isEqualTo(""" '<xliff:g id="id">'</xliff:g>' """)
+    assertThat(CharacterDataEscaper.unescape("""\'<![CDATA[']]>\'""")).isEqualTo("'<![CDATA[']]>'")
+    assertThat(CharacterDataEscaper.unescape(""""'<![CDATA[']]>' """")).isEqualTo("'<![CDATA[']]>' ")
+    assertThat(CharacterDataEscaper.unescape("""" '<![CDATA[']]>'"""")).isEqualTo(" '<![CDATA[']]>'")
+    assertThat(CharacterDataEscaper.unescape("""" '<![CDATA[']]>' """")).isEqualTo(" '<![CDATA[']]>' ")
   }
 
   @Test
@@ -329,15 +312,12 @@ class CharacterDataEscaperTest {
 
   @Test
   fun unescape_comment() {
-    assertThat(CharacterDataEscaper.unescape("<!-- This is a comment -->"))
-        .isEqualTo("<!-- This is a comment -->")
+    assertThat(CharacterDataEscaper.unescape("<!-- This is a comment -->")).isEqualTo("<!-- This is a comment -->")
   }
 
   @Test
   fun unescape_processingInstruction() {
-    assertThat(
-            CharacterDataEscaper.unescape(
-                """<?xml-stylesheet type="text/css" href="style.css"?>"""))
-        .isEqualTo("""<?xml-stylesheet type="text/css" href="style.css"?>""")
+    assertThat(CharacterDataEscaper.unescape("""<?xml-stylesheet type="text/css" href="style.css"?>"""))
+      .isEqualTo("""<?xml-stylesheet type="text/css" href="style.css"?>""")
   }
 }

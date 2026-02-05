@@ -27,16 +27,12 @@ internal interface MapBinding<T> {
 }
 
 /**
- * Constructs a MapBinding that binds a single property within a class T. It uses a ValueConverter,
- * for converting between values and their string representation; a key, for identifying the map
- * element to read / write; and a KMutableProperty, for reading and writing the value to the T
- * object.
+ * Constructs a MapBinding that binds a single property within a class T. It uses a ValueConverter, for converting between values and their
+ * string representation; a key, for identifying the map element to read / write; and a KMutableProperty, for reading and writing the value
+ * to the T object.
  */
-internal class PropertyMapBinding<T, V>(
-  val converter: ValueConverter<V>,
-  val key: String,
-  val property: KMutableProperty1<T, V>,
-) : MapBinding<T> {
+internal class PropertyMapBinding<T, V>(val converter: ValueConverter<V>, val key: String, val property: KMutableProperty1<T, V>) :
+  MapBinding<T> {
   override fun read(t: T, source: Map<String, String>) {
     source[key]?.let { converter.fromString(it) }?.let { property.set(t, it) }
   }
@@ -49,21 +45,15 @@ internal class PropertyMapBinding<T, V>(
   }
 }
 
-/**
- * Constructs a MapBinding for the receiver property, using its type to determine the necessary
- * converter.
- */
+/** Constructs a MapBinding for the receiver property, using its type to determine the necessary converter. */
 @JvmName("bindToKeyString")
-internal infix fun <T> KMutableProperty1<T, String>.bindToKey(key: String) =
-  PropertyMapBinding(StringConverter, key, this)
+internal infix fun <T> KMutableProperty1<T, String>.bindToKey(key: String) = PropertyMapBinding(StringConverter, key, this)
 
 @JvmName("bindToKeyInt")
-internal infix fun <T> KMutableProperty1<T, Int>.bindToKey(key: String) =
-  PropertyMapBinding(IntConverter, key, this)
+internal infix fun <T> KMutableProperty1<T, Int>.bindToKey(key: String) = PropertyMapBinding(IntConverter, key, this)
 
 @JvmName("bindToKeyBoolean")
-internal infix fun <T> KMutableProperty1<T, Boolean>.bindToKey(key: String) =
-  PropertyMapBinding(BooleanConverter, key, this)
+internal infix fun <T> KMutableProperty1<T, Boolean>.bindToKey(key: String) = PropertyMapBinding(BooleanConverter, key, this)
 
 @JvmName("bindToKeyConfigEnum")
 internal inline infix fun <T, reified E> KMutableProperty1<T, E>.bindToKey(key: String) //
@@ -73,13 +63,8 @@ where E : Enum<E>, E : ConfigEnum = PropertyMapBinding(enumConverter<E>(), key, 
 internal inline infix fun <T, reified E> KMutableProperty1<T, E>.bindToKey(key: String) //
 where E : Enum<E>, E : ResourceEnum = PropertyMapBinding(resourceEnumConverter<E>(), key, this)
 
-/**
- * Constructs a MapBinding for the receiver property, based on an explicitly supplied
- * ValueConverter.
- */
-internal infix fun <T, V> KMutableProperty1<T, V>.bindVia(
-  converter: ValueConverter<V>
-): BindVia<T> =
+/** Constructs a MapBinding for the receiver property, based on an explicitly supplied ValueConverter. */
+internal infix fun <T, V> KMutableProperty1<T, V>.bindVia(converter: ValueConverter<V>): BindVia<T> =
   object : BindVia<T> {
     override fun toKey(key: String) = PropertyMapBinding(converter, key, this@bindVia)
   }
@@ -104,9 +89,7 @@ internal class CompositeBinding<T>(vararg val bindings: MapBinding<T>) : MapBind
 
 /** Defines a conversion of a type to and from String. */
 internal interface ValueConverter<V> {
-  /**
-   * Parses the given String as an instance of type V. Returns null if it cannot be parsed as a V.
-   */
+  /** Parses the given String as an instance of type V. Returns null if it cannot be parsed as a V. */
   fun fromString(string: String): V?
 
   /** Converts the given V to a String. */
@@ -134,38 +117,31 @@ internal object StringConverter : ValueConverter<String> {
 /**
  * Converts Storage to/from strings.
  *
- * @param defaultUnit the unit to assume if no suffix is present when reading; when writing, this
- *   unit will be left implicit
- * @param allowUnitSuffix if false, all values will be converted into [defaultUnit] and no suffix
- *   will be written; otherwise, the suffix will be determined by [Storage.getAppropriateUnits].
+ * @param defaultUnit the unit to assume if no suffix is present when reading; when writing, this unit will be left implicit
+ * @param allowUnitSuffix if false, all values will be converted into [defaultUnit] and no suffix will be written; otherwise, the suffix
+ *   will be determined by [Storage.getAppropriateUnits].
  */
-internal class StorageConverter(
-  val defaultUnit: Storage.Unit = Storage.Unit.MiB,
-  val allowUnitSuffix: Boolean = true,
-) : ValueConverter<Storage> {
+internal class StorageConverter(val defaultUnit: Storage.Unit = Storage.Unit.MiB, val allowUnitSuffix: Boolean = true) :
+  ValueConverter<Storage> {
   init {
     check(defaultUnit != Storage.Unit.TiB)
   }
 
-  override fun fromString(string: String): Storage? =
-    Storage.getStorageFromString(string, defaultUnit)
+  override fun fromString(string: String): Storage? = Storage.getStorageFromString(string, defaultUnit)
 
   override fun toString(value: Storage): String {
-    val unit =
-      if (allowUnitSuffix) value.appropriateUnits.coerceAtMost(Storage.Unit.GiB) else defaultUnit
+    val unit = if (allowUnitSuffix) value.appropriateUnits.coerceAtMost(Storage.Unit.GiB) else defaultUnit
     val unitString = if (unit == defaultUnit) "" else unit.toString().substring(0, 1)
     return "${value.getSizeAsUnit(unit)}$unitString"
   }
 }
 
-internal inline fun <reified T> enumConverter() where T : Enum<T>, T : ConfigEnum =
-  EnumConverter(T::class.java, ConfigEnum::getAsParameter)
+internal inline fun <reified T> enumConverter() where T : Enum<T>, T : ConfigEnum = EnumConverter(T::class.java, ConfigEnum::getAsParameter)
 
 internal inline fun <reified T> resourceEnumConverter() where T : Enum<T>, T : ResourceEnum =
   EnumConverter(T::class.java, ResourceEnum::getShortDisplayValue)
 
-internal class EnumConverter<E : Enum<E>>(val enumClass: Class<E>, val parameter: E.() -> String) :
-  ValueConverter<E> {
+internal class EnumConverter<E : Enum<E>>(val enumClass: Class<E>, val parameter: E.() -> String) : ValueConverter<E> {
   override fun fromString(string: String): E? {
     val lowercase = string.lowercase()
     return enumClass.enumConstants.firstOrNull { it.parameter().lowercase() == lowercase }

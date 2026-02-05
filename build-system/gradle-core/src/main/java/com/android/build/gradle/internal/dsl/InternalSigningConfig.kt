@@ -21,8 +21,4 @@ import com.android.build.api.dsl.SigningConfig
 import org.gradle.api.Named
 
 /** Serves the same purpose as [InternalBuildType] */
-interface InternalSigningConfig:
-    SigningConfig,
-    ApkSigningConfig,
-    Named,
-    com.android.builder.model.SigningConfig
+interface InternalSigningConfig : SigningConfig, ApkSigningConfig, Named, com.android.builder.model.SigningConfig

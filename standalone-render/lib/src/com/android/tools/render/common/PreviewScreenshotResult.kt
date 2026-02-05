@@ -19,19 +19,12 @@ package com.android.tools.render.common
 import java.io.Serializable
 
 /**
- * Result of a screenshot creation. It will contain
- * [previewId] is a string that is designed to uniquely identify the preview, currently an image
- * name without the suffix for method params is used.
- * [methodFQN] fully qualified name of the test method that this result is generated from,
- * [imagePath] relative path of the screenshot image in the output directory - if successful,
- * image will be created in the output folder with this path, else it is used to identify the exact
- * screenshot that failed. This file separators in this path are OS dependent.
- * and [error] contains info about issues encountered during rendering. It is possible that we managed to render an image, but we found a number of
- * problems during its rendering that might have affected the fidelity of the result; so image and error would both exist
+ * Result of a screenshot creation. It will contain [previewId] is a string that is designed to uniquely identify the preview, currently an
+ * image name without the suffix for method params is used. [methodFQN] fully qualified name of the test method that this result is
+ * generated from, [imagePath] relative path of the screenshot image in the output directory - if successful, image will be created in the
+ * output folder with this path, else it is used to identify the exact screenshot that failed. This file separators in this path are OS
+ * dependent. and [error] contains info about issues encountered during rendering. It is possible that we managed to render an image, but we
+ * found a number of problems during its rendering that might have affected the fidelity of the result; so image and error would both exist
  */
-data class PreviewScreenshotResult(
-    val previewId: String,
-    val methodFQN: String,
-    val imagePath: String,
-    val error: ScreenshotError?,
-) : Serializable
+data class PreviewScreenshotResult(val previewId: String, val methodFQN: String, val imagePath: String, val error: ScreenshotError?) :
+  Serializable

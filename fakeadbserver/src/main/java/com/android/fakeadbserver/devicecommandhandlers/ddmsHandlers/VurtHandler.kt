@@ -17,49 +17,47 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
 class VurtHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        // We only support "capture" view, which is
-        // Opcode: 4 bytes
-        // view root: length prefixed UTF16 string
-        // skipChildren: 4-byte boolean
-        // includeProperties: 4-byte boolean
-        // useV2: 4-byte boolean
-        val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
-        val opCode = payload.readInt()
-        if (opCode != VURT_DUMP_HIERARCHY) {
-            replyDdmFail(jdwpHandlerOutput, packet.id)
-            return true // Keep JDWP connection open
-        }
-        val viewRoot = payload.readLengthPrefixedString()
-        val skipChildren = payload.readBooleanInt()
-        val includeProperties = payload.readBooleanInt()
-        val useV2 = payload.readBooleanInt()
-
-        client.viewsState.viewHierarchyData(viewRoot, skipChildren, includeProperties, useV2)?.also {
-            val responsePacket = DdmPacket.createResponse(packet.id, CHUNK_TYPE, it.array())
-            responsePacket.write(jdwpHandlerOutput)
-        } ?: run {
-            replyDdmFail(jdwpHandlerOutput, packet.id)
-        }
-
-        return true // Keep JDWP connection open
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    // We only support "capture" view, which is
+    // Opcode: 4 bytes
+    // view root: length prefixed UTF16 string
+    // skipChildren: 4-byte boolean
+    // includeProperties: 4-byte boolean
+    // useV2: 4-byte boolean
+    val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
+    val opCode = payload.readInt()
+    if (opCode != VURT_DUMP_HIERARCHY) {
+      replyDdmFail(jdwpHandlerOutput, packet.id)
+      return true // Keep JDWP connection open
     }
+    val viewRoot = payload.readLengthPrefixedString()
+    val skipChildren = payload.readBooleanInt()
+    val includeProperties = payload.readBooleanInt()
+    val useV2 = payload.readBooleanInt()
 
-    companion object {
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("VURT")
+    client.viewsState.viewHierarchyData(viewRoot, skipChildren, includeProperties, useV2)?.also {
+      val responsePacket = DdmPacket.createResponse(packet.id, CHUNK_TYPE, it.array())
+      responsePacket.write(jdwpHandlerOutput)
+    } ?: run { replyDdmFail(jdwpHandlerOutput, packet.id) }
 
-        const val VURT_DUMP_HIERARCHY = 1
-    }
+    return true // Keep JDWP connection open
+  }
+
+  companion object {
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("VURT")
+
+    const val VURT_DUMP_HIERARCHY = 1
+  }
 }

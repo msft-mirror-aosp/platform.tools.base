@@ -28,13 +28,16 @@ fun appWidgetConfigureActivityKt(
   className: String,
   layoutName: String,
   packageName: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
   val layout = "${layoutName}_configure"
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layout)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layout)"
+  """
+    else "setContentView(R.layout.$layout)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -88,12 +91,12 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "appwidget_text",
-          className = "View")} as EditText
+          className = "View",)} as EditText
         ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "add_button",
-          className = "View")}.setOnClickListener(onClickListener)
+          className = "View",)}.setOnClickListener(onClickListener)
 
         // Find the widget id from the intent.
         val intent = intent

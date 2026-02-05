@@ -25,64 +25,49 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 fun extractProfileAsDm(
-        apkFile: File,
-        profileSerializer: ArtProfileSerializer,
-        metadataSerializer: ArtProfileSerializer,
-        outputStream: OutputStream
+  apkFile: File,
+  profileSerializer: ArtProfileSerializer,
+  metadataSerializer: ArtProfileSerializer,
+  outputStream: OutputStream,
 ) {
-    ZipFile(apkFile).use { zipFile ->
-        val profEntry = zipFile.entries()
-                .asSequence()
-                .firstOrNull { it.name == "assets/dexopt/baseline.prof" }
-        val profmEntry = zipFile.entries()
-                .asSequence()
-                .firstOrNull { it.name == "assets/dexopt/baseline.profm" }
+  ZipFile(apkFile).use { zipFile ->
+    val profEntry = zipFile.entries().asSequence().firstOrNull { it.name == "assets/dexopt/baseline.prof" }
+    val profmEntry = zipFile.entries().asSequence().firstOrNull { it.name == "assets/dexopt/baseline.profm" }
 
-        // Theoretically we could support if the output version matches current version,
-        // but this would complicate user experience, so we don't bother for now.
-        check(profEntry != null && profmEntry != null) {
-            "Apk must contain profile at assets/dexopt/baseline.prof " +
-                    "and assets/dexopt/baseline.profm"
-        }
-        val profInputStream = zipFile.getInputStream(profEntry)!!
-        val profmInputStream = zipFile.getInputStream(profmEntry)!!
-        val prof = ArtProfile(profInputStream)
-        check(prof != null) {
-            "Unable to read profile from apk ${apkFile.absolutePath}"
-        }
-        val profmSerializer = profmInputStream.readProfileVersion()
-        check(profmSerializer != null) {
-            "Unable to read profile metadata from apk ${apkFile.absolutePath}"
-        }
-        val metadata = ArtProfile(profmSerializer.read(profmInputStream!!))
-        val merged = prof.addMetadata(metadata, profmSerializer.metadataVersion!!)
-        outputStream.writeDm(merged, metadata, profileSerializer, metadataSerializer)
+    // Theoretically we could support if the output version matches current version,
+    // but this would complicate user experience, so we don't bother for now.
+    check(profEntry != null && profmEntry != null) {
+      "Apk must contain profile at assets/dexopt/baseline.prof " + "and assets/dexopt/baseline.profm"
     }
+    val profInputStream = zipFile.getInputStream(profEntry)!!
+    val profmInputStream = zipFile.getInputStream(profmEntry)!!
+    val prof = ArtProfile(profInputStream)
+    check(prof != null) { "Unable to read profile from apk ${apkFile.absolutePath}" }
+    val profmSerializer = profmInputStream.readProfileVersion()
+    check(profmSerializer != null) { "Unable to read profile metadata from apk ${apkFile.absolutePath}" }
+    val metadata = ArtProfile(profmSerializer.read(profmInputStream!!))
+    val merged = prof.addMetadata(metadata, profmSerializer.metadataVersion!!)
+    outputStream.writeDm(merged, metadata, profileSerializer, metadataSerializer)
+  }
 }
 
 private fun ZipOutputStream.put(name: String, block: (OutputStream) -> Unit) {
-    putNextEntry(ZipEntry(name))
-    val stream = ByteArrayOutputStream()
-    block(stream)
-    write(stream.toByteArray())
-    closeEntry()
+  putNextEntry(ZipEntry(name))
+  val stream = ByteArrayOutputStream()
+  block(stream)
+  write(stream.toByteArray())
+  closeEntry()
 }
 
 internal fun OutputStream.writeDm(
-        prof: ArtProfile,
-        profm: ArtProfile?,
-        profileVersion: ArtProfileSerializer,
-        metadataVersion: ArtProfileSerializer
+  prof: ArtProfile,
+  profm: ArtProfile?,
+  profileVersion: ArtProfileSerializer,
+  metadataVersion: ArtProfileSerializer,
 ) {
-    ZipOutputStream(this).use {
-        it.setLevel(Deflater.NO_COMPRESSION)
-        it.put("primary.prof") { zipFileOutStream ->
-            prof.save(zipFileOutStream, profileVersion)
-        }
-        profm?.apply {
-            it.put("primary.profm") { zipFileOutStream ->
-                save(zipFileOutStream, metadataVersion)
-            }
-        }
-    }
+  ZipOutputStream(this).use {
+    it.setLevel(Deflater.NO_COMPRESSION)
+    it.put("primary.prof") { zipFileOutStream -> prof.save(zipFileOutStream, profileVersion) }
+    profm?.apply { it.put("primary.profm") { zipFileOutStream -> save(zipFileOutStream, metadataVersion) } }
+  }
 }

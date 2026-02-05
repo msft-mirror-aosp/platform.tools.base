@@ -20,23 +20,15 @@ import java.time.Instant
 
 data class InstallMetrics(
 
-    /**
-     * The time when the install operation started
-     */
-    val startTime: Instant,
+  /** The time when the install operation started */
+  val startTime: Instant,
 
-    /**
-     * The [Duration] of the install operation
-     */
-    val duration: Duration,
+  /** The [Duration] of the install operation */
+  val duration: Duration,
 
-    /**
-     * The time when the install operation started to push files to package manager
-     */
-    val uploadStartTime: Instant,
+  /** The time when the install operation started to push files to package manager */
+  val uploadStartTime: Instant,
 
-    /**
-     * The subset of [druration] spent on uploading APK files to the device.
-     */
-    val uploadDuration: Duration,
+  /** The subset of [druration] spent on uploading APK files to the device. */
+  val uploadDuration: Duration,
 )

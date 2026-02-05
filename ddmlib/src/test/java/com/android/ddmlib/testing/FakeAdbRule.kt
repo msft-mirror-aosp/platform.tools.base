@@ -36,13 +36,9 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import org.junit.rules.ExternalResource
 
-/**
- * Rule that sets up and tears down a FakeAdbServer, and provides some convenience methods for interacting with it.
- */
+/** Rule that sets up and tears down a FakeAdbServer, and provides some convenience methods for interacting with it. */
 class FakeAdbRule : ExternalResource() {
-  /**
-   * An [AndroidDebugBridge] that will be initialized.
-   */
+  /** An [AndroidDebugBridge] that will be initialized. */
   lateinit var bridge: AndroidDebugBridge
     private set
 
@@ -52,12 +48,12 @@ class FakeAdbRule : ExternalResource() {
   private val isJdwpProxyEnabledDefault = DdmPreferences.isJdwpProxyEnabled()
   private lateinit var fakeAdbServer: FakeAdbServer
   private val startingDevices: MutableMap<String, CountDownLatch> = mutableMapOf()
-  private var consoleFactory: (String, String) -> EmulatorConsole =
-        { name, path -> FakeEmulatorConsole(name, path) }
+  private var consoleFactory: (String, String) -> EmulatorConsole = { name, path -> FakeEmulatorConsole(name, path) }
   private val hostCommandHandlers: MutableList<HostCommandHandler> = mutableListOf()
-  private val deviceCommandHandlers: MutableList<DeviceCommandHandler> = mutableListOf(
-    object : DeviceCommandHandler("track-jdwp") {
-      override fun accept(
+  private val deviceCommandHandlers: MutableList<DeviceCommandHandler> =
+    mutableListOf(
+      object : DeviceCommandHandler("track-jdwp") {
+        override fun accept(
           server: FakeAdbServer,
           socketScope: CoroutineScope,
           socket: Socket,
@@ -65,66 +61,56 @@ class FakeAdbRule : ExternalResource() {
           command: String,
           args: String,
           statusWriter: StatusWriter,
-          shellCommandOutputProvider: (() -> ShellCommandOutput)?
-      ): Boolean {
-        startingDevices[device.deviceId]?.countDown()
-        return false
+          shellCommandOutputProvider: (() -> ShellCommandOutput)?,
+        ): Boolean {
+          startingDevices[device.deviceId]?.countDown()
+          return false
+        }
       }
-    }
-  )
+    )
 
-  /**
-   * Adds a [HostCommandHandler]. Must be called before @Before tasks are run.
-   */
-  fun withHostCommandHandler(handler: HostCommandHandler) = apply {
-    hostCommandHandlers.add(handler)
-  }
+  /** Adds a [HostCommandHandler]. Must be called before @Before tasks are run. */
+  fun withHostCommandHandler(handler: HostCommandHandler) = apply { hostCommandHandlers.add(handler) }
 
-  /**
-   * Adds a [DeviceCommandHandler]. Must be called before @Before tasks are run.
-   */
-  fun withDeviceCommandHandler(handler: DeviceCommandHandler) = apply {
-    deviceCommandHandlers.add(handler)
-  }
+  /** Adds a [DeviceCommandHandler]. Must be called before @Before tasks are run. */
+  fun withDeviceCommandHandler(handler: DeviceCommandHandler) = apply { deviceCommandHandlers.add(handler) }
 
-  /**
-   * Adds a [EmulatorConsole] factory.
-   */
-  fun withEmulatorConsoleFactory(factory: (String, String) -> EmulatorConsole) = apply {
-    consoleFactory = factory
-  }
+  /** Adds a [EmulatorConsole] factory. */
+  fun withEmulatorConsoleFactory(factory: (String, String) -> EmulatorConsole) = apply { consoleFactory = factory }
 
   @JvmOverloads
   fun attachDevice(
-      deviceId: String,
-      manufacturer: String,
-      model: String,
-      release: String,
-      sdk: AndroidApiLevel,
-      abi: String = "x86_64",
-      properties: Map<String, String> = emptyMap(),
-      hostConnectionType: DeviceState.HostConnectionType = DeviceState.HostConnectionType.USB,
-      avdName: String? = null,
-      avdPath: String? = null,
-      maxSpeedMbps : Long = DEFAULT_SPEED,
-      negotiatedSpeedMbps: Long = DEFAULT_SPEED,
+    deviceId: String,
+    manufacturer: String,
+    model: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    abi: String = "x86_64",
+    properties: Map<String, String> = emptyMap(),
+    hostConnectionType: DeviceState.HostConnectionType = DeviceState.HostConnectionType.USB,
+    avdName: String? = null,
+    avdPath: String? = null,
+    maxSpeedMbps: Long = DEFAULT_SPEED,
+    negotiatedSpeedMbps: Long = DEFAULT_SPEED,
   ): DeviceState {
     val startLatch = CountDownLatch(1)
     startingDevices[deviceId] = startLatch
     if (avdName != null && avdPath != null) {
       EmulatorConsole.registerConsoleForTest(deviceId, consoleFactory(avdName, avdPath))
     }
-    val deviceFuture = fakeAdbServer.connectDevice(
-            deviceId,
-            manufacturer,
-            model,
-            release,
-            sdk,
-            abi,
-            properties,
-            hostConnectionType,
-            maxSpeedMbps = maxSpeedMbps,
-            negotiatedSpeedMbps = negotiatedSpeedMbps)
+    val deviceFuture =
+      fakeAdbServer.connectDevice(
+        deviceId,
+        manufacturer,
+        model,
+        release,
+        sdk,
+        abi,
+        properties,
+        hostConnectionType,
+        maxSpeedMbps = maxSpeedMbps,
+        negotiatedSpeedMbps = negotiatedSpeedMbps,
+      )
     val device = deviceFuture.get()
     device.deviceStatus = DeviceState.DeviceStatus.ONLINE
     assertThat(startLatch.await(30, TimeUnit.SECONDS)).isTrue()
@@ -136,7 +122,7 @@ class FakeAdbRule : ExternalResource() {
   }
 
   /**
-   * Adds a [DeviceCommandHandler] to an already initialized  [FakeAdbServer].
+   * Adds a [DeviceCommandHandler] to an already initialized [FakeAdbServer].
    *
    * The handler is inserted as the first to be evaluated so handlers can override preexisting ones.
    */
@@ -144,7 +130,7 @@ class FakeAdbRule : ExternalResource() {
     fakeAdbServer.handlers.add(0, deviceCommandHandler)
   }
 
-  fun stop()  {
+  fun stop() {
     fakeAdbServer.stop()
   }
 
@@ -158,15 +144,13 @@ class FakeAdbRule : ExternalResource() {
     AndroidDebugBridge.disconnectBridge()
     AndroidDebugBridge.terminate()
     AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.port)
-    val options = AdbInitOptions.builder()
-        .setClientSupportEnabled(true)
-        .useJdwpProxyService(false)
-        .build()
+    val options = AdbInitOptions.builder().setClientSupportEnabled(true).useJdwpProxyService(false).build()
     AndroidDebugBridge.init(options)
     bridge = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Could not create ADB bridge")
     val startTime = System.currentTimeMillis()
-    while ((!bridge.isConnected || !bridge.hasInitialDeviceList()) &&
-           System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(10)) {
+    while (
+      (!bridge.isConnected || !bridge.hasInitialDeviceList()) && System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(10)
+    ) {
       Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS)
     }
   }
@@ -184,28 +168,25 @@ class FakeAdbRule : ExternalResource() {
   }
 }
 
-class FakeEmulatorConsole(
-    private val _avdName: String,
-    private val _avdPath: String
-) : EmulatorConsole() {
+class FakeEmulatorConsole(private val _avdName: String, private val _avdPath: String) : EmulatorConsole() {
 
-    override fun getAvdName(): String {
-        return _avdName
-    }
+  override fun getAvdName(): String {
+    return _avdName
+  }
 
-    override fun getAvdPath(): String {
-        return _avdPath
-    }
+  override fun getAvdPath(): String {
+    return _avdPath
+  }
 
-    override fun close() {}
+  override fun close() {}
 
-    override fun kill() {}
+  override fun kill() {}
 
-    override fun startEmulatorScreenRecording(args: String?): String {
-        TODO("Not yet implemented")
-    }
+  override fun startEmulatorScreenRecording(args: String?): String {
+    TODO("Not yet implemented")
+  }
 
-    override fun stopScreenRecording(): String {
-        TODO("Not yet implemented")
-    }
+  override fun stopScreenRecording(): String {
+    TODO("Not yet implemented")
+  }
 }

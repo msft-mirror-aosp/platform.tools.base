@@ -21,55 +21,47 @@ import com.android.build.gradle.integration.common.truth.TaskStateList
 import com.google.common.truth.Truth
 
 /** Utility to assert actual task states against expected task states. */
-class TaskStateAssertionHelper(
-    private val result: GradleBuildResult,
-) {
+class TaskStateAssertionHelper(private val result: GradleBuildResult) {
 
-    /**
-     * Checks if the actual task states match the given expected task states.
-     *
-     * @param expectedTaskStates the expected task states
-     * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of
-     *     expected tasks must equal the number of actual tasks)
-     */
-    fun assertTaskStates(
-        expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
-        exhaustive: Boolean
-    ): TaskStateAssertionHelper {
-        val failedAssertions = mutableListOf<String>()
+  /**
+   * Checks if the actual task states match the given expected task states.
+   *
+   * @param expectedTaskStates the expected task states
+   * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of expected tasks must equal the number of
+   *   actual tasks)
+   */
+  fun assertTaskStates(expectedTaskStates: Map<String, TaskStateList.ExecutionState>, exhaustive: Boolean): TaskStateAssertionHelper {
+    val failedAssertions = mutableListOf<String>()
 
-        if (exhaustive) {
-            Truth.assertThat(result.tasks).containsExactlyElementsIn(expectedTaskStates.keys)
-        } else {
-            Truth.assertThat(result.tasks).containsAtLeastElementsIn(expectedTaskStates.keys)
-        }
-
-        for (task in expectedTaskStates.keys) {
-            result.assertTask(task).hasState(expectedTaskStates[task])
-        }
-
-        check(failedAssertions.isEmpty()) { failedAssertions.joinToString("\n") }
-
-        return this
+    if (exhaustive) {
+      Truth.assertThat(result.tasks).containsExactlyElementsIn(expectedTaskStates.keys)
+    } else {
+      Truth.assertThat(result.tasks).containsAtLeastElementsIn(expectedTaskStates.keys)
     }
 
-    /**
-     * Checks if the actual task states match the given expected task states.
-     *
-     * @param expectedTaskStates the expected task states
-     * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of
-     *     expected tasks must equal the number of actual tasks)
-     */
-    fun assertTaskStatesByGroups(
-        expectedTaskStates: Map<TaskStateList.ExecutionState, Set<String>>,
-        exhaustive: Boolean
-    ) {
-        val taskStates = mutableMapOf<String, TaskStateList.ExecutionState>()
-        for (state in expectedTaskStates.keys) {
-            for (task in expectedTaskStates.getValue(state)) {
-                taskStates[task] = state
-            }
-        }
-        assertTaskStates(taskStates.toMap(), exhaustive)
+    for (task in expectedTaskStates.keys) {
+      result.assertTask(task).hasState(expectedTaskStates[task])
     }
+
+    check(failedAssertions.isEmpty()) { failedAssertions.joinToString("\n") }
+
+    return this
+  }
+
+  /**
+   * Checks if the actual task states match the given expected task states.
+   *
+   * @param expectedTaskStates the expected task states
+   * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of expected tasks must equal the number of
+   *   actual tasks)
+   */
+  fun assertTaskStatesByGroups(expectedTaskStates: Map<TaskStateList.ExecutionState, Set<String>>, exhaustive: Boolean) {
+    val taskStates = mutableMapOf<String, TaskStateList.ExecutionState>()
+    for (state in expectedTaskStates.keys) {
+      for (task in expectedTaskStates.getValue(state)) {
+        taskStates[task] = state
+      }
+    }
+    assertTaskStates(taskStates.toMap(), exhaustive)
+  }
 }

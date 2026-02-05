@@ -25,58 +25,33 @@ import org.junit.Test
 
 class OverriddenAapt2VersionTest {
 
-    @get:Rule
-    val project =
-            GradleTestProject
-                    .builder()
-                    .fromTestApp(MinimalSubProject.app("com.example.app"))
-                    .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app")).create()
 
-    @Test
-    fun testOptions() {
-        project.executor().run("assembleDebug")
+  @Test
+  fun testOptions() {
+    project.executor().run("assembleDebug")
 
-        var error = project
-                .executor()
-                .with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "/incorrect/path")
-                .expectFailure()
-                .run("assembleDebug")
-        error.stderr.use {
-            ScannerSubject.assertThat(it)
-                    .contains("Custom AAPT2 location does not point to an AAPT2 executable: /incorrect/path")
-        }
-
-        error = project
-                .executor()
-                .with(StringOption.AAPT2_FROM_MAVEN_VERSION_OVERRIDE, "0.0.0-123456")
-                .expectFailure()
-                .run("assembleDebug")
-        error.stderr.use {
-            ScannerSubject.assertThat(it)
-                    .contains("Could not find com.android.tools.build:aapt2:0.0.0-123456")
-        }
-
-        error = project
-                .executor()
-                .with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "/incorrect/path")
-                .with(StringOption.AAPT2_FROM_MAVEN_VERSION_OVERRIDE, "0.0.0-123456")
-                .expectFailure()
-                .run("assembleDebug")
-        error.stderr.use {
-            ScannerSubject.assertThat(it)
-                    .contains("You cannot specify both local and remote custom versions of AAPT2")
-        }
-
-        error = project
-                .executor()
-                .with(StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE, "unsupported")
-                .expectFailure()
-                .run("assembleDebug")
-        error.stderr.use {
-            ScannerSubject.assertThat(it).contains("Unknown platform 'unsupported'")
-        }
-
-        // Flag with no value should result in default behaviour (no overrides specified).
-        project.executor().with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "").run("assembleDebug")
+    var error = project.executor().with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "/incorrect/path").expectFailure().run("assembleDebug")
+    error.stderr.use {
+      ScannerSubject.assertThat(it).contains("Custom AAPT2 location does not point to an AAPT2 executable: /incorrect/path")
     }
+
+    error = project.executor().with(StringOption.AAPT2_FROM_MAVEN_VERSION_OVERRIDE, "0.0.0-123456").expectFailure().run("assembleDebug")
+    error.stderr.use { ScannerSubject.assertThat(it).contains("Could not find com.android.tools.build:aapt2:0.0.0-123456") }
+
+    error =
+      project
+        .executor()
+        .with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "/incorrect/path")
+        .with(StringOption.AAPT2_FROM_MAVEN_VERSION_OVERRIDE, "0.0.0-123456")
+        .expectFailure()
+        .run("assembleDebug")
+    error.stderr.use { ScannerSubject.assertThat(it).contains("You cannot specify both local and remote custom versions of AAPT2") }
+
+    error = project.executor().with(StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE, "unsupported").expectFailure().run("assembleDebug")
+    error.stderr.use { ScannerSubject.assertThat(it).contains("Unknown platform 'unsupported'") }
+
+    // Flag with no value should result in default behaviour (no overrides specified).
+    project.executor().with(StringOption.AAPT2_FROM_MAVEN_OVERRIDE, "").run("assembleDebug")
+  }
 }

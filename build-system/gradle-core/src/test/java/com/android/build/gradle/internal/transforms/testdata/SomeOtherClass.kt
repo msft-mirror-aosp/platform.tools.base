@@ -20,14 +20,14 @@ import java.io.IOException
 import java.lang.Exception
 
 class SomeOtherClass(s: SomeClass) {
-    @Throws(Exception::class)
-    fun someMethod(@YetAnotherClass m: Map<Cat, Dog>, t1: Toy): Animal? {
-        val n = arrayOf<Array<Array<NewClass>>>()
-        val enumOne = EnumClass.ONE
-        if (t1 is CarbonForm) {
-            return null
-        }
-        try { } catch (e1: IOException) { }
-        return t1 as Tiger
+  @Throws(Exception::class)
+  fun someMethod(@YetAnotherClass m: Map<Cat, Dog>, t1: Toy): Animal? {
+    val n = arrayOf<Array<Array<NewClass>>>()
+    val enumOne = EnumClass.ONE
+    if (t1 is CarbonForm) {
+      return null
     }
+    try {} catch (e1: IOException) {}
+    return t1 as Tiger
+  }
 }

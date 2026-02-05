@@ -108,9 +108,7 @@ class CordovaVersionDetectorTest : AbstractCheckTest() {
 
   /** Check whether the detector picks up the version from the Device class. */
   fun testVulnerableCordovaVersionInClasses() {
-    @Suppress(
-      "DEPRECATION"
-    ) // this test still uses base64 instead of base64zip (and tests that it continues to work)
+    @Suppress("DEPRECATION") // this test still uses base64 instead of base64zip (and tests that it continues to work)
     lint()
       .files(
         base64(
@@ -136,9 +134,8 @@ class CordovaVersionDetectorTest : AbstractCheckTest() {
   }
 
   /**
-   * In the presence of both a class as well as the js, detecting the version in the .class wins. In
-   * the real world, this won't happen since cordova versions >= 3.x.x have this version declared
-   * only in the JS.
+   * In the presence of both a class as well as the js, detecting the version in the .class wins. In the real world, this won't happen since
+   * cordova versions >= 3.x.x have this version declared only in the JS.
    */
   fun testVulnerableVersionInBothJsAndClasses() {
     lint()

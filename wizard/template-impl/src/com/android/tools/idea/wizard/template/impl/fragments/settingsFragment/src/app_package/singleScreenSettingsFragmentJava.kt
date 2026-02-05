@@ -16,11 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.settingsFragment.src.app_package
 
-
-fun singleScreenSettingsFragmentJava(
-  fragmentClass: String,
-  packageName: String
-) = """
+fun singleScreenSettingsFragmentJava(fragmentClass: String, packageName: String) =
+  """
 package ${packageName};
 
 import android.os.Bundle;

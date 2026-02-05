@@ -19,8 +19,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks the normal Java Proxy feature (class is
+ * considered broken)
  */
-class UnusableDynamicFeatureProductFlavorProxy(
-): UnusableProductFlavorProxy(), DynamicFeatureProductFlavor
+class UnusableDynamicFeatureProductFlavorProxy() : UnusableProductFlavorProxy(), DynamicFeatureProductFlavor

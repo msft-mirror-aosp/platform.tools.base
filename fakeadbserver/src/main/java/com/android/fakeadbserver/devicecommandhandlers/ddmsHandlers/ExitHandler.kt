@@ -22,20 +22,20 @@ import kotlinx.coroutines.CoroutineScope
 
 class ExitHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        // Kill the client and the connection
-        device.stopClient(client.pid)
-        return false
-    }
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    // Kill the client and the connection
+    device.stopClient(client.pid)
+    return false
+  }
 
-    companion object {
+  companion object {
 
-        val CHUNK_TYPE = encodeChunkType("EXIT")
-    }
+    val CHUNK_TYPE = encodeChunkType("EXIT")
+  }
 }

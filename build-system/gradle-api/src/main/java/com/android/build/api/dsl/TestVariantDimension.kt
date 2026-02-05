@@ -21,15 +21,14 @@ package com.android.build.api.dsl
  *
  * That is, [TestBuildType] and [TestProductFlavor] and [TestDefaultConfig].
  */
-interface TestVariantDimension :
-    VariantDimension {
-    /**
-     * Returns whether multi-dex is enabled.
-     *
-     * This can be null if the flag is not set, in which case the default value is used.
-     */
-    var multiDexEnabled: Boolean?
+interface TestVariantDimension : VariantDimension {
+  /**
+   * Returns whether multi-dex is enabled.
+   *
+   * This can be null if the flag is not set, in which case the default value is used.
+   */
+  var multiDexEnabled: Boolean?
 
-    /** The associated signing config or null if none are set on the variant dimension. */
-    var signingConfig: ApkSigningConfig?
+  /** The associated signing config or null if none are set on the variant dimension. */
+  var signingConfig: ApkSigningConfig?
 }

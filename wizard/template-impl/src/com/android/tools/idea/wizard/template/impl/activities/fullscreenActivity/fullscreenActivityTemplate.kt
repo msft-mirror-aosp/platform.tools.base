@@ -41,7 +41,8 @@ import java.io.File
 val fullscreenActivityTemplate
   get() = template {
     name = "Fullscreen Views Activity"
-    description = "Creates a new activity that toggles the visibility of the system UI (status and navigation bars) and action bar upon user interaction"
+    description =
+      "Creates a new activity that toggles the visibility of the system UI (status and navigation bars) and action bar upon user interaction"
     minApi = MIN_API
     category = Category.Activity
     formFactor = FormFactor.Mobile
@@ -78,15 +79,12 @@ val fullscreenActivityTemplate
       TextFieldWidget(layoutName),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("fullscreen-activity").resolve("template_fullscreen_activity.png") }
 
     recipe = { data: TemplateData ->
-      fullscreenActivityRecipe(
-        data as ModuleTemplateData,
-        activityClass.value, isLauncher.value, layoutName.value, packageName.value
-      )
+      fullscreenActivityRecipe(data as ModuleTemplateData, activityClass.value, isLauncher.value, layoutName.value, packageName.value)
     }
   }

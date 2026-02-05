@@ -25,97 +25,85 @@ import java.io.File
 
 /** Utility to write tests for cacheable tasks. */
 class CacheabilityTestHelper(
-    private val projectCopy1: GradleTestProject,
-    private val projectCopy2: GradleTestProject,
-    private val buildCacheDir: File
+  private val projectCopy1: GradleTestProject,
+  private val projectCopy2: GradleTestProject,
+  private val buildCacheDir: File,
 ) {
 
-    private var executorSetter: ((GradleTaskExecutor) -> GradleTaskExecutor)? = null
+  private var executorSetter: ((GradleTaskExecutor) -> GradleTaskExecutor)? = null
 
-    /**
-     * Sets a custom executor to run tasks by providing a lambda that replaces the default executor
-     * (project.executor()) with another one.
-     *
-     * @param executorSetter a lambda that takes the default executor and returns another one that
-     *     replaces it
-     */
-    fun useCustomExecutor(executorSetter: (GradleTaskExecutor) -> GradleTaskExecutor): CacheabilityTestHelper {
-        this.executorSetter = executorSetter
-        return this
+  /**
+   * Sets a custom executor to run tasks by providing a lambda that replaces the default executor (project.executor()) with another one.
+   *
+   * @param executorSetter a lambda that takes the default executor and returns another one that replaces it
+   */
+  fun useCustomExecutor(executorSetter: (GradleTaskExecutor) -> GradleTaskExecutor): CacheabilityTestHelper {
+    this.executorSetter = executorSetter
+    return this
+  }
+
+  /** Runs the specified tasks on both projects. */
+  fun runTasks(vararg tasks: String): CacheabilityTestHelperAssertionStage {
+    for (project in listOf(projectCopy1, projectCopy2)) {
+      setBuildCacheDirForProject(project, buildCacheDir)
+      // Set rootProject.name because the maven group is an input for the lint analysis task
+      TestFileUtils.appendToFile(project.settingsFile, "\n\nrootProject.name = \"Project\"\n")
     }
 
-    /** Runs the specified tasks on both projects. */
-    fun runTasks(vararg tasks: String): CacheabilityTestHelperAssertionStage {
-        for (project in listOf(projectCopy1, projectCopy2)) {
-            setBuildCacheDirForProject(project, buildCacheDir)
-            // Set rootProject.name because the maven group is an input for the lint analysis task
-            TestFileUtils.appendToFile(project.settingsFile, "\n\nrootProject.name = \"Project\"\n")
-        }
+    // Run tasks on the first project
+    projectCopy1.executor().withArgument("--build-cache").run(executorSetter ?: { it }).run(tasks.asList())
 
-        // Run tasks on the first project
-        projectCopy1
-            .executor()
-            .withArgument("--build-cache")
-            .run(executorSetter ?: { it })
-            .run(tasks.asList())
+    // Check that the build cache has been populated
+    assertThat(buildCacheDir).exists()
 
-        // Check that the build cache has been populated
-        assertThat(buildCacheDir).exists()
+    // Run tasks on the second project
+    val result = projectCopy2.executor().withArgument("--build-cache").run(executorSetter ?: { it }).run(tasks.asList())
 
-        // Run tasks on the second project
-        val result =
-            projectCopy2
-                .executor()
-                .withArgument("--build-cache")
-                .run(executorSetter ?: { it })
-                .run(tasks.asList())
+    return CacheabilityTestHelperAssertionStage(result)
+  }
 
-        return CacheabilityTestHelperAssertionStage(result)
-    }
-
-    private fun setBuildCacheDirForProject(project: GradleTestProject, buildCacheDir: File) {
-        val buildCacheString =
-            """|buildCache {
+  private fun setBuildCacheDirForProject(project: GradleTestProject, buildCacheDir: File) {
+    val buildCacheString =
+      """|buildCache {
             |    local {
             |        directory = "${buildCacheDir.path.replace("\\", "\\\\")}"
             |    }
-            |}""".trimMargin("|")
+            |}"""
+        .trimMargin("|")
 
-        TestFileUtils.appendToFile(project.settingsFile, buildCacheString)
+    TestFileUtils.appendToFile(project.settingsFile, buildCacheString)
+  }
+
+  class CacheabilityTestHelperAssertionStage(private val buildResult: GradleBuildResult) {
+
+    /**
+     * Checks if the actual task states match the given expected task states.
+     *
+     * @param expectedTaskStates the expected task states
+     * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of expected tasks must equal the number of
+     *   actual tasks)
+     */
+    fun assertTaskStates(
+      expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
+      exhaustive: Boolean = false,
+    ): CacheabilityTestHelperAssertionStage {
+      TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
+      return this
     }
 
-    class CacheabilityTestHelperAssertionStage(
-        private val buildResult: GradleBuildResult
-    ) {
-
-        /**
-         * Checks if the actual task states match the given expected task states.
-         *
-         * @param expectedTaskStates the expected task states
-         * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of
-         *     expected tasks must equal the number of actual tasks)
-         */
-        fun assertTaskStates(
-            expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
-            exhaustive: Boolean = false
-        ): CacheabilityTestHelperAssertionStage {
-            TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
-            return this
-        }
-
-        /**
-         * Checks if the actual task states match the given expected task states.
-         *
-         * @param expectedTaskStates the expected task states
-         * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of
-         *     expected tasks must equal the number of actual tasks)
-         */
-        fun assertTaskStatesByGroups(
-            expectedTaskStates: Map<TaskStateList.ExecutionState, Set<String>>,
-            exhaustive: Boolean = false
-        ): CacheabilityTestHelperAssertionStage {
-            TaskStateAssertionHelper(buildResult).assertTaskStatesByGroups(expectedTaskStates, exhaustive)
-            return this
-        }
+    /**
+     * Checks if the actual task states match the given expected task states.
+     *
+     * @param expectedTaskStates the expected task states
+     * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of expected tasks must equal the number of
+     *   actual tasks)
+     */
+    fun assertTaskStatesByGroups(
+      expectedTaskStates: Map<TaskStateList.ExecutionState, Set<String>>,
+      exhaustive: Boolean = false,
+    ): CacheabilityTestHelperAssertionStage {
+      TaskStateAssertionHelper(buildResult).assertTaskStatesByGroups(expectedTaskStates, exhaustive)
+      return this
     }
+  }
 }

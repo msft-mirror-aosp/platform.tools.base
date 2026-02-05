@@ -20,27 +20,23 @@ import com.google.gson.JsonElement
 import java.io.File
 
 interface FileNormalizer {
-    /**
-     * Converts the given file path to a normalized string form. If the path is absolute and its
-     * prefix matches a known directory, for example, project root, Android SDK, etc, the prefix is
-     * replaced by a descriptive placeholder. Hence test assertion does not need to worry about
-     * changes introduced by the platform or test session.
-     *
-     * In addition, the normalized string contains a suffix indicating the presence of the file:
-     *
-     * - `{!}`: the path does not exist
-     * - `{F}`: the path refers to a file
-     * - `{D}`: the path refers to a directory
-     */
-    fun normalize(file: File): String
+  /**
+   * Converts the given file path to a normalized string form. If the path is absolute and its prefix matches a known directory, for
+   * example, project root, Android SDK, etc, the prefix is replaced by a descriptive placeholder. Hence test assertion does not need to
+   * worry about changes introduced by the platform or test session.
+   *
+   * In addition, the normalized string contains a suffix indicating the presence of the file:
+   * - `{!}`: the path does not exist
+   * - `{F}`: the path refers to a file
+   * - `{D}`: the path refers to a directory
+   */
+  fun normalize(file: File): String
 
-    /**
-     * Normalizes any strings that match the build environment in the given [JsonElement] so that
-     * the returned result is invariant across build.
-     *
-     * Note that this method replace all matched strings and it could return non-sense result if
-     * some well-known paths are too common.
-     */
-    fun normalize(value: JsonElement): JsonElement
+  /**
+   * Normalizes any strings that match the build environment in the given [JsonElement] so that the returned result is invariant across
+   * build.
+   *
+   * Note that this method replace all matched strings and it could return non-sense result if some well-known paths are too common.
+   */
+  fun normalize(value: JsonElement): JsonElement
 }
-

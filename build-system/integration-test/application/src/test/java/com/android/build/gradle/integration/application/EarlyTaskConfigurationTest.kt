@@ -23,30 +23,27 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests that the build still succeeds when tasks are configured early. (Even though we expect tasks
- * to be configured lazily, users' build script or plugins may cause them to be configured early, as
- * in bug 139821728.)
+ * Tests that the build still succeeds when tasks are configured early. (Even though we expect tasks to be configured lazily, users' build
+ * script or plugins may cause them to be configured early, as in bug 139821728.)
  */
 class EarlyTaskConfigurationTest {
 
-    @get:Rule
-    var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
+  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
 
-    @Test // Regression test for bug 139821728
-    fun `check that build succeeds when tasks are configured early`() {
-        // Force tasks to be configured early
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            allprojects {
-                tasks.all { }
-            }
-            """.trimIndent()
-        )
+  @Test // Regression test for bug 139821728
+  fun `check that build succeeds when tasks are configured early`() {
+    // Force tasks to be configured early
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      allprojects {
+          tasks.all { }
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Check that the build succeeds
-        project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .run("clean", "assembleDebug", "testDebugUnitTest")
-    }
+    // Check that the build succeeds
+    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("clean", "assembleDebug", "testDebugUnitTest")
+  }
 }

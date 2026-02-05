@@ -31,67 +31,54 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Task that processes profiles files for library.
- */
+/** Task that processes profiles files for library. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ART_PROFILE)
-abstract class ProcessLibraryArtProfileTask: MergeFileTask() {
+abstract class ProcessLibraryArtProfileTask : MergeFileTask() {
 
-    @get: [InputFiles PathSensitive(PathSensitivity.RELATIVE)]
-    abstract val baselineProfileSources: ConfigurableFileCollection
+  @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
+  abstract val baselineProfileSources: ConfigurableFileCollection
 
-    override fun doTaskAction() {
-        if (!baselineProfileSources.isEmpty) {
-            val baselineProfiles = baselineProfileSources.files.filter { it.isFile }
+  override fun doTaskAction() {
+    if (!baselineProfileSources.isEmpty) {
+      val baselineProfiles = baselineProfileSources.files.filter { it.isFile }
 
-            baselineProfiles.forEach { baselineProfile ->
-                // verify the human-readable profile is valid so we error early if necessary
-                HumanReadableProfile(baselineProfile) {
-                    throw RuntimeException(
-                        "Error while parsing ${outputFile.get().asFile.absolutePath} : $it")
-                }
-            }
-
-            mergeFiles(baselineProfiles, outputFile.get().asFile)
+      baselineProfiles.forEach { baselineProfile ->
+        // verify the human-readable profile is valid so we error early if necessary
+        HumanReadableProfile(baselineProfile) {
+          throw RuntimeException("Error while parsing ${outputFile.get().asFile.absolutePath} : $it")
         }
+      }
+
+      mergeFiles(baselineProfiles, outputFile.get().asFile)
+    }
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<ProcessLibraryArtProfileTask, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("prepare", "ArtProfile")
+
+    override val type: Class<ProcessLibraryArtProfileTask>
+      get() = ProcessLibraryArtProfileTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ProcessLibraryArtProfileTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ProcessLibraryArtProfileTask::outputFile)
+        .on(InternalArtifactType.LIBRARY_ART_PROFILE)
     }
 
-    class CreationAction(
-            creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<ProcessLibraryArtProfileTask, ComponentCreationConfig>(
-            creationConfig) {
+    override fun configure(task: ProcessLibraryArtProfileTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("prepare", "ArtProfile")
-        override val type: Class<ProcessLibraryArtProfileTask>
-            get() = ProcessLibraryArtProfileTask::class.java
+      // for backwards compat we need to keep reading the old location for baseline profile
+      creationConfig.sources.artProfile?.let { artProfile -> task.baselineProfileSources.from(artProfile) }
 
-        override fun handleProvider(taskProvider: TaskProvider<ProcessLibraryArtProfileTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessLibraryArtProfileTask::outputFile
-            ).on(InternalArtifactType.LIBRARY_ART_PROFILE)
-        }
-
-        override fun configure(task: ProcessLibraryArtProfileTask) {
-            super.configure(task)
-
-            // for backwards compat we need to keep reading the old location for baseline profile
-            creationConfig.sources.artProfile?.let { artProfile ->
-                task.baselineProfileSources.from(artProfile)
-            }
-
-            creationConfig.sources.baselineProfiles {
-                task.baselineProfileSources.fromDisallowChanges(
-                    it.all.map { directories ->
-                        directories.map { directory ->
-                            directory.asFileTree
-                        }
-                    }
-                )
-            }
-        }
+      creationConfig.sources.baselineProfiles {
+        task.baselineProfileSources.fromDisallowChanges(it.all.map { directories -> directories.map { directory -> directory.asFileTree } })
+      }
     }
+  }
 }

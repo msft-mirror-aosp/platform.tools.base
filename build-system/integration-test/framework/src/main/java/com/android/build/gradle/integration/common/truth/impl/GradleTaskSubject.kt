@@ -21,75 +21,58 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 
 /**
- * Implementation of the interface in a separate package so that it keeps the same class
- * name so that Truth can be happy inferring the object name from the impl name.
+ * Implementation of the interface in a separate package so that it keeps the same class name so that Truth can be happy inferring the
+ * object name from the impl name.
  */
-internal class GradleTaskSubject(
-    metadata: FailureMetadata,
-    actual: TaskStateList.TaskInfo,
-    private val info: String?
-): Subject<GradleTaskSubject, TaskStateList.TaskInfo>(metadata, actual),
-    com.android.build.gradle.integration.common.truth.GradleTaskSubject {
+internal class GradleTaskSubject(metadata: FailureMetadata, actual: TaskStateList.TaskInfo, private val info: String?) :
+  Subject<GradleTaskSubject, TaskStateList.TaskInfo>(metadata, actual),
+  com.android.build.gradle.integration.common.truth.GradleTaskSubject {
 
-    override fun hasState(state: TaskStateList.ExecutionState?) {
-        check("${checkPrefix()}.state()")
-            .that(actual().executionState)
-            .isEqualTo(state)
-    }
+  override fun hasState(state: TaskStateList.ExecutionState?) {
+    check("${checkPrefix()}.state()").that(actual().executionState).isEqualTo(state)
+  }
 
-    override fun wasUpToDate() {
-        check("${checkPrefix()}.wasUpToDate()")
-            .that(actual().executionState == TaskStateList.ExecutionState.UP_TO_DATE)
-            .isTrue()
-    }
+  override fun wasUpToDate() {
+    check("${checkPrefix()}.wasUpToDate()").that(actual().executionState == TaskStateList.ExecutionState.UP_TO_DATE).isTrue()
+  }
 
-    override fun wasFromCache() {
-        check("${checkPrefix()}.wasFromCache()")
-            .that(actual().executionState == TaskStateList.ExecutionState.FROM_CACHE)
-            .isTrue()
-    }
+  override fun wasFromCache() {
+    check("${checkPrefix()}.wasFromCache()").that(actual().executionState == TaskStateList.ExecutionState.FROM_CACHE).isTrue()
+  }
 
-    override fun didWork() {
-        check("${checkPrefix()}.didWork()")
-            .that(actual().executionState == TaskStateList.ExecutionState.DID_WORK)
-            .isTrue()
-    }
+  override fun didWork() {
+    check("${checkPrefix()}.didWork()").that(actual().executionState == TaskStateList.ExecutionState.DID_WORK).isTrue()
+  }
 
-    override fun wasSkipped() {
-        check("${checkPrefix()}.wasSkipped()")
-            .that(actual().executionState == TaskStateList.ExecutionState.SKIPPED)
-            .isTrue()
-    }
+  override fun wasSkipped() {
+    check("${checkPrefix()}.wasSkipped()").that(actual().executionState == TaskStateList.ExecutionState.SKIPPED).isTrue()
+  }
 
-    override fun failed() {
-        check("${checkPrefix()}.failed()")
-            .that(actual().executionState == TaskStateList.ExecutionState.FAILED)
-            .isTrue()
-    }
+  override fun failed() {
+    check("${checkPrefix()}.failed()").that(actual().executionState == TaskStateList.ExecutionState.FAILED).isTrue()
+  }
 
-    override fun ranBefore(taskName: String) {
-        val taskStateList = actual().taskStateList
+  override fun ranBefore(taskName: String) {
+    val taskStateList = actual().taskStateList
 
-        check("${checkPrefix()}.ranBefore($taskName)")
-            .that(taskStateList.getTaskIndex(actual().taskName) <= taskStateList.getTaskIndex(taskName))
-            .isTrue()
-    }
+    check("${checkPrefix()}.ranBefore($taskName)")
+      .that(taskStateList.getTaskIndex(actual().taskName) <= taskStateList.getTaskIndex(taskName))
+      .isTrue()
+  }
 
-    override fun ranAfter(taskName: String) {
-        val taskStateList = actual().taskStateList
+  override fun ranAfter(taskName: String) {
+    val taskStateList = actual().taskStateList
 
-        check("${checkPrefix()}.ranAfter($taskName)")
-            .that(taskStateList.getTaskIndex(actual().taskName) >= taskStateList.getTaskIndex(taskName))
-            .isTrue()
-    }
+    check("${checkPrefix()}.ranAfter($taskName)")
+      .that(taskStateList.getTaskIndex(actual().taskName) >= taskStateList.getTaskIndex(taskName))
+      .isTrue()
+  }
 
-    private fun checkPrefix(): String {
-        return "named(${actual().taskName}${computeInfoString()})"
-    }
+  private fun checkPrefix(): String {
+    return "named(${actual().taskName}${computeInfoString()})"
+  }
 
-    private fun computeInfoString(): String {
-        return info?.let {
-            ".message($it)"
-        } ?: ""
-    }
+  private fun computeInfoString(): String {
+    return info?.let { ".message($it)" } ?: ""
+  }
 }

@@ -70,13 +70,12 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.toUElement
 
 /**
- * Looks for calls to APIs annotated with `@RequiresWindowSdkExtension` without first checking for a
- * compatible `WindowSdkExtensions.extensionVersion` level.
+ * Looks for calls to APIs annotated with `@RequiresWindowSdkExtension` without first checking for a compatible
+ * `WindowSdkExtensions.extensionVersion` level.
  */
 class WindowExtensionsDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(WindowExtensionsDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WindowExtensionsDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Accessing an `@RequiresWindowSdkExtension` annotated API without a version check. */
     @JvmField
@@ -160,11 +159,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
     val member = usageInfo.referenced as? PsiMember
     val location: Location
     val qualifiedName: String = getQualifiedName(member, element)
-    if (
-      element is UCallExpression &&
-        element.kind != UastCallKind.METHOD_CALL &&
-        element.classReference != null
-    ) {
+    if (element is UCallExpression && element.kind != UastCallKind.METHOD_CALL && element.classReference != null) {
       val classReference = element.classReference!!
       location = context.getRangeLocation(element, 0, classReference, 0)
     } else {
@@ -173,8 +168,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
     val typeString = getUsageTypePrefix(usageInfo, qualifiedName)
 
     val currentDesc = if (currentLevel != null) " (current is ${currentLevel.minString()})" else ""
-    val message =
-      "$typeString requires window SDK extension level ${api.minString()}$currentDesc: `$qualifiedName`"
+    val message = "$typeString requires window SDK extension level ${api.minString()}$currentDesc: `$qualifiedName`"
     context.report(ISSUE, element, context.getLocation(element), message)
   }
 
@@ -222,10 +216,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Returns the currently inferred SDK level (from things like @RequiresWindowSdkExtension
-   * annotations)
-   */
+  /** Returns the currently inferred SDK level (from things like @RequiresWindowSdkExtension annotations) */
   private fun currentLevel(evaluator: JavaEvaluator, element: UElement?): ApiConstraint? {
     var prev = element
     var curr = element
@@ -245,8 +236,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
         val pkg = evaluator.getPackage(curr.javaPsi ?: curr.sourcePsi)
         if (pkg != null) {
           for (psiAnnotation in pkg.annotations) {
-            val annotation =
-              UastFacade.convertElement(psiAnnotation, null) as? UAnnotation ?: continue
+            val annotation = UastFacade.convertElement(psiAnnotation, null) as? UAnnotation ?: continue
             if (annotation.qualifiedName == REQUIRES_WINDOW_SDK_EXTENSION) {
               annotation.getSdkLevel()?.let {
                 return it
@@ -330,10 +320,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
   }
 
   /** Returns the actual API constraint enforced by the given SDK_INT comparison. */
-  private fun getWindowsExtensionConstraint(
-    binary: UBinaryExpression,
-    evaluator: JavaEvaluator,
-  ): ApiConstraint? {
+  private fun getWindowsExtensionConstraint(binary: UBinaryExpression, evaluator: JavaEvaluator): ApiConstraint? {
     var tokenType = binary.operator
     if (
       tokenType === UastBinaryOperator.GREATER ||
@@ -419,8 +406,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
       val resolvedName = element.resolvedName
       if (
         GET_EXTENSION_VERSION == resolvedName &&
-          (element.resolve() as? PsiMethod)?.containingClass?.qualifiedName ==
-            WINDOW_SDK_EXTENSIONS_CLASS
+          (element.resolve() as? PsiMethod)?.containingClass?.qualifiedName == WINDOW_SDK_EXTENSIONS_CLASS
       ) {
         return true
       }
@@ -442,10 +428,7 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
       }
     } else if (element is UCallExpression) {
       val methodName = getMethodName(element)
-      if (
-        GET_EXTENSION_VERSION == methodName &&
-          element.resolve()?.containingClass?.qualifiedName == WINDOW_SDK_EXTENSIONS_CLASS
-      ) {
+      if (GET_EXTENSION_VERSION == methodName && element.resolve()?.containingClass?.qualifiedName == WINDOW_SDK_EXTENSIONS_CLASS) {
         return true
       }
     } else if (element is UParenthesizedExpression) {

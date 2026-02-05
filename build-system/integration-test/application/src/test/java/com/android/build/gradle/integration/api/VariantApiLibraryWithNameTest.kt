@@ -19,61 +19,53 @@ package com.android.build.gradle.integration.api
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class VariantApiLibraryWithNameTest {
 
-    @get: Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library")).create()
 
-    @Test
-    fun testToCreateFileWithName() {
-        project.buildFile.appendText(
-            """
-        import com.android.build.api.artifact.SingleArtifact
-        import java.nio.file.Files
+  @Test
+  fun testToCreateFileWithName() {
+    project.buildFile.appendText(
+      """
+      import com.android.build.api.artifact.SingleArtifact
+      import java.nio.file.Files
 
-        abstract class CreateAar extends DefaultTask {
+      abstract class CreateAar extends DefaultTask {
 
-            @OutputFile
-            abstract RegularFileProperty getOutput()
+          @OutputFile
+          abstract RegularFileProperty getOutput()
 
-            @TaskAction
-            void taskAction() {
-                File output = getOutput().get().getAsFile()
-                output.createNewFile()
-                output.text = '''some AAR file'''
-            }
-        }
+          @TaskAction
+          void taskAction() {
+              File output = getOutput().get().getAsFile()
+              output.createNewFile()
+              output.text = '''some AAR file'''
+          }
+      }
 
-        androidComponents {
-            onVariants(selector().all(), { variant ->
-                TaskProvider createAar = tasks.register("create" + variant.name + "Aar", CreateAar.class)
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              TaskProvider createAar = tasks.register("create" + variant.name + "Aar", CreateAar.class)
 
-                variant
-                    .artifacts
-                    .use(createAar)
-                    .wiredWith(
-                        { it.getOutput() }
-                    )
-                    .withName("my-fancy-library.aar")
-                    .toCreate(SingleArtifact.AAR.INSTANCE)
-            })
-        }
-        """.trimIndent()
-        )
+              variant
+                  .artifacts
+                  .use(createAar)
+                  .wiredWith(
+                      { it.getOutput() }
+                  )
+                  .withName("my-fancy-library.aar")
+                  .toCreate(SingleArtifact.AAR.INSTANCE)
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        project.executor().run("assembleDebug")
-        Truth.assertThat(
-            File(
-                project.buildDir,
-                "outputs/aar/debug/createdebugAar/my-fancy-library.aar"
-            ).exists()
-        ).isTrue()
-    }
+    project.executor().run("assembleDebug")
+    Truth.assertThat(File(project.buildDir, "outputs/aar/debug/createdebugAar/my-fancy-library.aar").exists()).isTrue()
+  }
 }

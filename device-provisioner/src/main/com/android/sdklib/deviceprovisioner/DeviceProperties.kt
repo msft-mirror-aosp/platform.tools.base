@@ -63,8 +63,7 @@ interface DeviceProperties {
     get() = abiList.firstOrNull()
 
   /**
-   * The ABI that should be used to build and deploy, instead of supported ABIs in [abiList]. Can be
-   * null if no preferred ABI is desired.
+   * The ABI that should be used to build and deploy, instead of supported ABIs in [abiList]. Can be null if no preferred ABI is desired.
    */
   val preferredAbi: String?
   val abiList: List<Abi>
@@ -72,8 +71,7 @@ interface DeviceProperties {
   /**
    * The Android API level. May include a codename if not a release version.
    *
-   * This should be set for any device we can read properties from; if this is null, the device is
-   * probably offline.
+   * This should be set for any device we can read properties from; if this is null, the device is probably offline.
    */
   val androidVersion: AndroidVersion?
   /** The user-visible version of Android, like "7.1" or "11". */
@@ -81,15 +79,12 @@ interface DeviceProperties {
   /** The class of hardware of the device, e.g. handheld, TV, auto. */
   val deviceType: DeviceType?
 
-  /**
-   * If true, the device is running on emulated / virtualized hardware; if false, it is running on
-   * native hardware.
-   */
+  /** If true, the device is running on emulated / virtualized hardware; if false, it is running on native hardware. */
   val isVirtual: Boolean?
 
   /**
-   * If true, the device is connected over the network via a proxy that mediates access; if false,
-   * the device is connected directly to the local machine.
+   * If true, the device is connected over the network via a proxy that mediates access; if false, the device is connected directly to the
+   * local machine.
    */
   val isRemote: Boolean?
 
@@ -116,30 +111,23 @@ interface DeviceProperties {
       )
     }
 
-  /**
-   * The pixel density (in dpi) of the device, adjusted to fit one of the standard buckets in
-   * [com.android.resources.Density].
-   */
+  /** The pixel density (in dpi) of the device, adjusted to fit one of the standard buckets in [com.android.resources.Density]. */
   val density: Int?
 
   /**
-   * A string ideally unique to the device instance (e.g. serial number or emulator console port),
-   * used for disambiguating this device from others with similar properties.
+   * A string ideally unique to the device instance (e.g. serial number or emulator console port), used for disambiguating this device from
+   * others with similar properties.
    */
   val disambiguator: String?
 
   /**
-   * The ID used by the WearPairingManager for this device (in the PairingDevice.deviceId field).
-   * This must be kept in sync with WearPairingManager's IDevice.getDeviceID extension function.
-   * This is a stopgap until WearPairingManager is ported to adblib / DeviceProvisioner, and should
-   * not be used except for interfacing with WearPairingManager.
+   * The ID used by the WearPairingManager for this device (in the PairingDevice.deviceId field). This must be kept in sync with
+   * WearPairingManager's IDevice.getDeviceID extension function. This is a stopgap until WearPairingManager is ported to adblib /
+   * DeviceProvisioner, and should not be used except for interfacing with WearPairingManager.
    */
   val wearPairingId: String?
 
-  /**
-   * ID of a phone paired to this device via the glasses pairing mechanism. (Not currently used for
-   * Wear; see [wearPairingId].)
-   */
+  /** ID of a phone paired to this device via the glasses pairing mechanism. (Not currently used for Wear; see [wearPairingId].) */
   val pairedPhoneId: DeviceId?
 
   /** ID of a glasses device paired to this device via the glasses pairing mechanism. */
@@ -162,8 +150,8 @@ interface DeviceProperties {
   val deviceInfoProto: DeviceInfo
 
   /**
-   * Produces a mutable Builder for this class. Implementations other than [BaseDeviceProperties]
-   * should refine the return type to the appropriate subtype of [DeviceProperties.Builder].
+   * Produces a mutable Builder for this class. Implementations other than [BaseDeviceProperties] should refine the return type to the
+   * appropriate subtype of [DeviceProperties.Builder].
    */
   fun toBuilder(): Builder
 
@@ -172,9 +160,7 @@ interface DeviceProperties {
     inline fun build(block: Builder.() -> Unit): DeviceProperties = Builder().apply(block).build()
 
     /** Builds a basic DeviceProperties instance for testing; some validation is skipped. */
-    @VisibleForTesting
-    inline fun buildForTest(block: Builder.() -> Unit): DeviceProperties =
-      Builder().apply(block).buildBaseForTest()
+    @VisibleForTesting inline fun buildForTest(block: Builder.() -> Unit): DeviceProperties = Builder().apply(block).buildBaseForTest()
   }
 
   open class Builder {
@@ -229,8 +215,7 @@ interface DeviceProperties {
         deviceInfoProto.mdnsConnectionType = it.mdnsConnectionType
         when (it.mdnsConnectionType) {
           DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_UNENCRYPTED,
-          DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS ->
-            connectionType = ConnectionType.WIFI
+          DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS -> connectionType = ConnectionType.WIFI
           else -> {}
         }
       }
@@ -243,8 +228,7 @@ interface DeviceProperties {
 
       // Try abilist first (implemented in L onwards); otherwise, fall back to abi and abi2.
       val abiStrings =
-        properties[RO_PRODUCT_CPU_ABILIST]?.split(",")
-          ?: listOfNotNull(properties[RO_PRODUCT_CPU_ABI], properties[RO_PRODUCT_CPU_ABI2])
+        properties[RO_PRODUCT_CPU_ABILIST]?.split(",") ?: listOfNotNull(properties[RO_PRODUCT_CPU_ABI], properties[RO_PRODUCT_CPU_ABI2])
       abiList = abiStrings.mapNotNull { Abi.getEnum(it) }
 
       androidRelease = properties[RO_BUILD_VERSION_RELEASE]
@@ -258,7 +242,8 @@ interface DeviceProperties {
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
           characteristics.contains("xr") -> DeviceType.XR_HEADSET
-          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
+          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains
+          // "xr".
           properties["init.svc.sxrd"] == "running" -> DeviceType.XR_HEADSET
           else -> DeviceType.HANDHELD
         }
@@ -268,22 +253,15 @@ interface DeviceProperties {
     }
 
     /**
-     * Fills in the DeviceInfo proto based on previously-assigned properties. If the device is
-     * online, the serial number and system properties may be used to fill in additional fields that
-     * are only used in logging.
+     * Fills in the DeviceInfo proto based on previously-assigned properties. If the device is online, the serial number and system
+     * properties may be used to fill in additional fields that are only used in logging.
      */
-    fun populateDeviceInfoProto(
-      pluginId: String,
-      serialNumber: String?,
-      properties: Map<String, String>,
-      connectionId: String,
-    ) {
+    fun populateDeviceInfoProto(pluginId: String, serialNumber: String?, properties: Map<String, String>, connectionId: String) {
       deviceInfoProto.anonymizedSerialNumber = Anonymizer.anonymize(serialNumber) ?: ""
       deviceInfoProto.buildTags = properties[RO_BUILD_TAGS] ?: ""
       deviceInfoProto.buildType = properties[RO_BUILD_TYPE] ?: ""
       deviceInfoProto.buildVersionRelease = androidRelease ?: ""
-      deviceInfoProto.cpuAbi =
-        CommonMetricsData.applicationBinaryInterfaceFromString(abiList.firstOrNull()?.toString())
+      deviceInfoProto.cpuAbi = CommonMetricsData.applicationBinaryInterfaceFromString(abiList.firstOrNull()?.toString())
       deviceInfoProto.manufacturer = manufacturer ?: ""
       deviceInfoProto.model = model ?: ""
       deviceInfoProto.deviceType =
@@ -295,9 +273,7 @@ interface DeviceProperties {
           else -> DeviceInfo.DeviceType.UNKNOWN_DEVICE_TYPE
         }
       deviceInfoProto.buildApiLevelFull = androidVersion?.apiStringWithExtension ?: ""
-      properties[RO_BUILD_CHARACTERISTICS]?.let {
-        deviceInfoProto.addAllCharacteristics(it.split(","))
-      }
+      properties[RO_BUILD_CHARACTERISTICS]?.let { deviceInfoProto.addAllCharacteristics(it.split(",")) }
       deviceInfoProto.deviceProvisionerId = pluginId
       deviceInfoProto.connectionId = connectionId
     }
@@ -310,9 +286,7 @@ interface DeviceProperties {
     }
 
     open fun build(): DeviceProperties {
-      check(deviceInfoProto.deviceProvisionerId.isNotEmpty()) {
-        "populateDeviceInfoProto was not invoked"
-      }
+      check(deviceInfoProto.deviceProvisionerId.isNotEmpty()) { "populateDeviceInfoProto was not invoked" }
       return buildBaseWithoutChecks()
     }
 
@@ -368,13 +342,12 @@ data class BaseDeviceProperties(
   override val deviceInfoProto: DeviceInfo,
 ) : DeviceProperties {
 
-  override fun toBuilder(): DeviceProperties.Builder =
-    DeviceProperties.Builder().apply { copyFrom(this@BaseDeviceProperties) }
+  override fun toBuilder(): DeviceProperties.Builder = DeviceProperties.Builder().apply { copyFrom(this@BaseDeviceProperties) }
 }
 
 /**
- * The category of hardware of a device. Only variations that require different releases of Android
- * are represented, not minor differences like phone / tablet / foldable.
+ * The category of hardware of a device. Only variations that require different releases of Android are represented, not minor differences
+ * like phone / tablet / foldable.
  */
 enum class DeviceType(val stringValue: String) {
   /** Handheld devices, e.g. phone, tablet, foldable. */
@@ -395,14 +368,7 @@ enum class ConnectionType {
   NETWORK,
 }
 
-data class DeviceIcons(
-  val handheld: Icon,
-  val wear: Icon,
-  val tv: Icon,
-  val automotive: Icon,
-  val headset: Icon,
-  val glasses: Icon,
-) {
+data class DeviceIcons(val handheld: Icon, val wear: Icon, val tv: Icon, val automotive: Icon, val headset: Icon, val glasses: Icon) {
   fun iconForDeviceType(type: DeviceType?) =
     when (type) {
       DeviceType.TV -> tv
@@ -421,21 +387,16 @@ data class Resolution(val width: Int, val height: Int) {
     private val REGEX = Regex("Physical size: (\\d+)x(\\d+)")
 
     private fun parseWmSizeOutput(output: String): Resolution? =
-      REGEX.matchEntire(output)?.let { result ->
-        Resolution(result.groupValues[1].toInt(), result.groupValues[2].toInt())
-      }
+      REGEX.matchEntire(output)?.let { result -> Resolution(result.groupValues[1].toInt(), result.groupValues[2].toInt()) }
 
     suspend fun readFromDevice(device: ConnectedDevice): Resolution? =
       runCatching {
           val shellOutput =
-            device.session.deviceServices
-              .shellAsLines(device.selector, "wm size", commandTimeout = Duration.ofSeconds(5))
-              .first()
+            device.session.deviceServices.shellAsLines(device.selector, "wm size", commandTimeout = Duration.ofSeconds(5)).first()
           when (shellOutput) {
             is ShellCommandOutputElement.StdoutLine -> parseWmSizeOutput(shellOutput.contents)
             else -> {
-              adbLogger(device.session)
-                .warn("Failed to read device resolution successfully: $shellOutput")
+              adbLogger(device.session).warn("Failed to read device resolution successfully: $shellOutput")
               null
             }
           }
@@ -443,11 +404,9 @@ data class Resolution(val width: Int, val height: Int) {
         .onFailure { e ->
           when (e) {
             is CancellationException -> throw e
-            is AdbFailResponseException ->
-              adbLogger(device.session).warn(e, "Failed to read device resolution")
+            is AdbFailResponseException -> adbLogger(device.session).warn(e, "Failed to read device resolution")
             is TimeoutException,
-            is InterruptedByTimeoutException ->
-              adbLogger(device.session).warn(e, "Timeout reading device resolution")
+            is InterruptedByTimeoutException -> adbLogger(device.session).warn(e, "Timeout reading device resolution")
             else -> adbLogger(device.session).error(e, "Reading device resolution")
           }
         }
@@ -455,21 +414,16 @@ data class Resolution(val width: Int, val height: Int) {
   }
 }
 
-internal class SerialNumberAndMdnsConnectionType(
-  val serialNumber: String,
-  val mdnsConnectionType: DeviceInfo.MdnsConnectionType,
-) {
+internal class SerialNumberAndMdnsConnectionType(val serialNumber: String, val mdnsConnectionType: DeviceInfo.MdnsConnectionType) {
   companion object {
     private const val ADB_MDNS_SERVICE_NAME = "adb"
     private const val ADB_MDNS_TLS_SERVICE_NAME = "adb-tls-connect"
 
-    private val MDNS_AUTO_CONNECT_REGEX =
-      Regex("adb-(.*)-.*\\._(${ADB_MDNS_SERVICE_NAME}|$ADB_MDNS_TLS_SERVICE_NAME)\\._tcp\\.?")
+    private val MDNS_AUTO_CONNECT_REGEX = Regex("adb-(.*)-.*\\._(${ADB_MDNS_SERVICE_NAME}|$ADB_MDNS_TLS_SERVICE_NAME)\\._tcp\\.?")
 
     /**
-     * Parses an ADB serial number, extracting the device serial number and mDNS connection type
-     * from it. Non-mDNS connections return the serial number unchanged with MDNS_NONE for
-     * mdnsConnectionType.
+     * Parses an ADB serial number, extracting the device serial number and mDNS connection type from it. Non-mDNS connections return the
+     * serial number unchanged with MDNS_NONE for mdnsConnectionType.
      */
     fun fromAdbSerialNumber(adbSerialNumber: String): SerialNumberAndMdnsConnectionType =
       MDNS_AUTO_CONNECT_REGEX.matchEntire(adbSerialNumber)?.let {
@@ -481,10 +435,6 @@ internal class SerialNumberAndMdnsConnectionType(
             else -> DeviceInfo.MdnsConnectionType.MDNS_NONE
           },
         )
-      }
-        ?: SerialNumberAndMdnsConnectionType(
-          adbSerialNumber,
-          DeviceInfo.MdnsConnectionType.MDNS_NONE,
-        )
+      } ?: SerialNumberAndMdnsConnectionType(adbSerialNumber, DeviceInfo.MdnsConnectionType.MDNS_NONE)
   }
 }

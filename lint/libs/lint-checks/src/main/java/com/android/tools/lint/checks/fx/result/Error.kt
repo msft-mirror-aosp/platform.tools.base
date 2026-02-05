@@ -22,10 +22,9 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 
 /**
- * Generic errors to be accumulated and reported at the end. We don't report on-the-fly like most
- * simple syntactic Lint checks, because (1) certain checks may not consider events such as
- * "reaching ⊤" a problem, and (2) during the fixpoint computation, later events may subsume earlier
- * ones, which would be redundant if reported on-the-fly.
+ * Generic errors to be accumulated and reported at the end. We don't report on-the-fly like most simple syntactic Lint checks, because (1)
+ * certain checks may not consider events such as "reaching ⊤" a problem, and (2) during the fixpoint computation, later events may subsume
+ * earlier ones, which would be redundant if reported on-the-fly.
  */
 sealed interface Error<out FX> {
   data class IntroducingTop<out FX>(val site: ErrorSite, val first: FX, val next: FX) : Error<FX> {
@@ -36,34 +35,20 @@ sealed interface Error<out FX> {
     override fun toString() = "(unsatisfiable: ${source.renderAbbrev() })"
   }
 
-  data class ExceedingAnnotation<out FX>(
-    val callerAnnotation: FX,
-    val calleeLowerBound: FX,
-    val site: ErrorSite,
-  ) : Error<FX> {
+  data class ExceedingAnnotation<out FX>(val callerAnnotation: FX, val calleeLowerBound: FX, val site: ErrorSite) : Error<FX> {
     override fun toString() = "(${site.renderAbbrev()}: $callerAnnotation ⋤ $calleeLowerBound)"
   }
 
-  data class FailingConstraint<out FX>(
-    val constraints: UnboundedSet<ConstraintFailure<FX>>,
-    val site: UExpression,
-  ) : Error<FX> {
+  data class FailingConstraint<out FX>(val constraints: UnboundedSet<ConstraintFailure<FX>>, val site: UExpression) : Error<FX> {
     override fun toString(): String {
       val c =
-        constraints?.joinToString(
-          separator = " ∧ ",
-          prefix = "(",
-          postfix = ")",
-          transform = { (l, r) -> "$l ⊑ $r" },
-        ) ?: "constraints"
+        constraints?.joinToString(separator = " ∧ ", prefix = "(", postfix = ")", transform = { (l, r) -> "$l ⊑ $r" }) ?: "constraints"
       return "($c fails at ${site.renderAbbrev()})"
     }
   }
 
-  data class ConflictingAnnotations<out FX>(
-    val self: EffectAnnotation.Explicit<FX>,
-    val bases: Collection<EffectAnnotation.Explicit<FX>>,
-  ) : Error<FX> {
+  data class ConflictingAnnotations<out FX>(val self: EffectAnnotation.Explicit<FX>, val bases: Collection<EffectAnnotation.Explicit<FX>>) :
+    Error<FX> {
     init {
       require(bases.isNotEmpty())
     }
@@ -83,11 +68,7 @@ sealed interface Error<out FX> {
 
 internal fun <FX> errorSetLattice() = possibilityLattice<Error<FX>>()
 
-data class ConstraintFailure<out FX>(
-  val invocation: Type.Sym<FX>,
-  val expectedUpperBound: FX,
-  val inferredLowerBound: FX,
-) {
+data class ConstraintFailure<out FX>(val invocation: Type.Sym<FX>, val expectedUpperBound: FX, val inferredLowerBound: FX) {
   override fun toString() = "$invocation : $inferredLowerBound ⋤ $expectedUpperBound"
 }
 

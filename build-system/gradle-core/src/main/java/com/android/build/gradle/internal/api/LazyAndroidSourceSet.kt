@@ -20,18 +20,16 @@ import com.android.build.gradle.api.AndroidSourceSet
 import org.gradle.api.NamedDomainObjectContainer
 
 class LazyAndroidSourceSet(
-    private val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet>,
-    private val sourceSetName: String
+  private val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet>,
+  private val sourceSetName: String,
 ) {
-    private val sourceSet = lazy {
-        sourceSetsContainer.maybeCreate(sourceSetName) as DefaultAndroidSourceSet
-    }
+  private val sourceSet = lazy { sourceSetsContainer.maybeCreate(sourceSetName) as DefaultAndroidSourceSet }
 
-    fun get(): DefaultAndroidSourceSet {
-        return sourceSet.value
-    }
+  fun get(): DefaultAndroidSourceSet {
+    return sourceSet.value
+  }
 
-    fun isInitialized(): Boolean {
-        return sourceSet.isInitialized()
-    }
+  fun isInitialized(): Boolean {
+    return sourceSet.isInitialized()
+  }
 }

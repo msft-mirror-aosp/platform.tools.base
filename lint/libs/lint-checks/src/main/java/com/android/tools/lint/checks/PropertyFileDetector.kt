@@ -63,13 +63,7 @@ class PropertyFileDetector : Detector() {
     }
   }
 
-  private fun checkLine(
-    context: Context,
-    contents: CharSequence,
-    offset: Int,
-    line: String,
-    valueStart: Int,
-  ) {
+  private fun checkLine(context: Context, contents: CharSequence, offset: Int, line: String, valueStart: Int) {
     val distributionPrefix = "distributionUrl=http\\"
     if (line.startsWith(distributionPrefix)) {
       val https = "https" + line.substring(distributionPrefix.length - 1)
@@ -82,10 +76,7 @@ class PropertyFileDetector : Detector() {
           .fix(fix().replace().text("http").with("https").build())
           .location(Location.create(context.file, contents, startOffset, endOffset))
       report(incident, contents, startOffset)
-    } else if (
-      line.startsWith("systemProp.http.proxyPassword=") ||
-        line.startsWith("systemProp.https.proxyPassword=")
-    ) {
+    } else if (line.startsWith("systemProp.http.proxyPassword=") || line.startsWith("systemProp.https.proxyPassword=")) {
       if (isGitIgnored(context.client, context.file)) {
         return
       }
@@ -94,10 +85,7 @@ class PropertyFileDetector : Detector() {
       val endOffset = line.length
       val incident =
         Incident(context, PROXY_PASSWORD)
-          .message(
-            "Storing passwords in clear text is risky; " +
-              "make sure this file is not shared or checked in via version control"
-          )
+          .message("Storing passwords in clear text is risky; " + "make sure this file is not shared or checked in via version control")
           .location(Location.create(context.file, contents, startOffset, endOffset))
       report(incident, contents, startOffset)
     } else if (line.indexOf('\\') != -1 || line.indexOf(':') != -1) {
@@ -132,19 +120,9 @@ class PropertyFileDetector : Detector() {
       val startOffset = contents.indexOf(versionString)
       val endOffset = startOffset + versionString.length
       val newerVersionString = newerVersion.toString()
-      val fix =
-        fix()
-          .name("Update lint to $newerVersionString")
-          .replace()
-          .all()
-          .with(newerVersionString)
-          .build()
+      val fix = fix().name("Update lint to $newerVersionString").replace().all().with(newerVersionString).build()
       val location = Location.create(context.file, contents, startOffset, endOffset)
-      val incident =
-        Incident(context, DEPENDENCY)
-          .location(location)
-          .message("Newer version of lint available: $newerVersion")
-          .fix(fix)
+      val incident = Incident(context, DEPENDENCY).location(location).message("Newer version of lint available: $newerVersion").fix(fix)
       report(incident, contents, startOffset)
     }
   }
@@ -165,13 +143,7 @@ class PropertyFileDetector : Detector() {
     return false
   }
 
-  private fun checkEscapes(
-    context: Context,
-    contents: CharSequence,
-    line: String,
-    offset: Int,
-    valueStart: Int,
-  ) {
+  private fun checkEscapes(context: Context, contents: CharSequence, line: String, offset: Int, valueStart: Int) {
     var escaped = false
     var hadNonPathEscape = false
     var errorStart = -1

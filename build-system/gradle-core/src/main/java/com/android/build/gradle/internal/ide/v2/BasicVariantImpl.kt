@@ -23,26 +23,24 @@ import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Variant
 import java.io.Serializable
 
-/**
- * Implementation of [Variant] for serialization via the Tooling API.
- */
+/** Implementation of [Variant] for serialization via the Tooling API. */
 data class BasicVariantImpl(
-    override val name: String,
-    override val mainArtifact: BasicArtifact,
-    override val deviceTestArtifacts: Map<String, BasicArtifact>,
-    override val hostTestArtifacts: Map<String, BasicArtifact>,
-    override val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>,
-    override val testFixturesArtifact: BasicArtifact?,
-    override val buildType: String?,
-    override val productFlavors: List<String>,
+  override val name: String,
+  override val mainArtifact: BasicArtifact,
+  override val deviceTestArtifacts: Map<String, BasicArtifact>,
+  override val hostTestArtifacts: Map<String, BasicArtifact>,
+  override val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>,
+  override val testFixturesArtifact: BasicArtifact?,
+  override val buildType: String?,
+  override val productFlavors: List<String>,
 ) : BasicVariant, Serializable {
-    override val androidTestArtifact: BasicArtifact?
-        get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
-    override val unitTestArtifact: BasicArtifact?
-        get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+  override val androidTestArtifact: BasicArtifact?
+    get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  override val unitTestArtifact: BasicArtifact?
+    get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

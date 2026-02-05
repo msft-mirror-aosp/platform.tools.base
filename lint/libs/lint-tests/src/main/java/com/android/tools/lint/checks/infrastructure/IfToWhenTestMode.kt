@@ -29,16 +29,11 @@ import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.getParentOfType
 
 /**
- * Test mode which converts if statements in Kotlin files to when statements. In the future we could
- * also try to convert Java if statements into switches if the comparisons are eligible (e.g.
- * constant expressions).
+ * Test mode which converts if statements in Kotlin files to when statements. In the future we could also try to convert Java if statements
+ * into switches if the comparisons are eligible (e.g. constant expressions).
  */
 class IfToWhenTestMode :
-  UastSourceTransformationTestMode(
-    description = "Converting if/else to when/switch",
-    "TestMode.IF_TO_WHEN",
-    "if_to_when",
-  ) {
+  UastSourceTransformationTestMode(description = "Converting if/else to when/switch", "TestMode.IF_TO_WHEN", "if_to_when") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -63,12 +58,7 @@ class IfToWhenTestMode :
     return file.targetRelativePath.endsWith(SdkConstants.DOT_KT)
   }
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
     }

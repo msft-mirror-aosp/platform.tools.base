@@ -21,14 +21,11 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class AnalyticsEnabledCodeTransparency @Inject constructor(
-    val delegate: CodeTransparency,
-    val stats: GradleBuildVariant.Builder
-): CodeTransparency {
+open class AnalyticsEnabledCodeTransparency @Inject constructor(val delegate: CodeTransparency, val stats: GradleBuildVariant.Builder) :
+  CodeTransparency {
 
-    override fun setSigningConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
-        delegate.setSigningConfig(signingConfig)
-    }
+  override fun setSigningConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
+    delegate.setSigningConfig(signingConfig)
+  }
 }

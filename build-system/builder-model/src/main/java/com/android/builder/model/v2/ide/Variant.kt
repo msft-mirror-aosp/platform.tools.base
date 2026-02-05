@@ -18,85 +18,58 @@ package com.android.builder.model.v2.ide
 import com.android.builder.model.v2.AndroidModel
 import java.io.File
 
-/**
- * A build Variant.
- */
-interface Variant: AndroidModel {
-    /**
-     * The name of the variant.
-     */
-    val name: String
+/** A build Variant. */
+interface Variant : AndroidModel {
+  /** The name of the variant. */
+  val name: String
 
-    /**
-     * The display name for the variant.
-     */
-    val displayName: String
+  /** The display name for the variant. */
+  val displayName: String
 
-    /**
-     * The main artifact for this variant.
-     */
-    val mainArtifact: AndroidArtifact
+  /** The main artifact for this variant. */
+  val mainArtifact: AndroidArtifact
 
-    /**
-     * The AndroidTest artifact for this variant, if applicable.
-     */
-    @Deprecated("Contained in deviceTestArtifacts")
-    val androidTestArtifact: AndroidArtifact?
+  /** The AndroidTest artifact for this variant, if applicable. */
+  @Deprecated("Contained in deviceTestArtifacts") val androidTestArtifact: AndroidArtifact?
 
-    /**
-     * The device test components for this variant, e.g., androidTest
-     */
-    val deviceTestArtifacts: Map<String,  AndroidArtifact>
+  /** The device test components for this variant, e.g., androidTest */
+  val deviceTestArtifacts: Map<String, AndroidArtifact>
 
-    /**
-     * The Unit Test artifact for this variant, if applicable.
-     */
-    @Deprecated("Contained in hostTestArtifacts")
-    val unitTestArtifact: JavaArtifact?
+  /** The Unit Test artifact for this variant, if applicable. */
+  @Deprecated("Contained in hostTestArtifacts") val unitTestArtifact: JavaArtifact?
 
-    /**
-     * The host test components for this variant, e.g., unitTest
-     */
-    val hostTestArtifacts: Map<String, JavaArtifact>
+  /** The host test components for this variant, e.g., unitTest */
+  val hostTestArtifacts: Map<String, JavaArtifact>
 
-    /**
-     * The test suites components for this variant. Test suites must have been declared in the DSL
-     * using the CommonExtension.testSuites facilities.
-     */
-    val testSuiteArtifacts: Map<String, TestSuiteArtifact>
+  /**
+   * The test suites components for this variant. Test suites must have been declared in the DSL using the CommonExtension.testSuites
+   * facilities.
+   */
+  val testSuiteArtifacts: Map<String, TestSuiteArtifact>
 
+  /** The TestFixtures artifact for this variant, if applicable. */
+  val testFixturesArtifact: AndroidArtifact?
 
-    /**
-     * The TestFixtures artifact for this variant, if applicable.
-     */
-    val testFixturesArtifact: AndroidArtifact?
+  /**
+   * For standalone test plugins: information about the tested project.
+   *
+   * For other plugin types, this is null
+   */
+  val testedTargetVariant: TestedTargetVariant?
 
-    /**
-     * For standalone test plugins: information about the tested project.
-     *
-     * For other plugin types, this is null
-     */
-    val testedTargetVariant: TestedTargetVariant?
+  /** True when "android.experimental.self-instrumenting" experimental flag is enabled. */
+  val runTestInSeparateProcess: Boolean
 
-    /**
-     *  True when "android.experimental.self-instrumenting" experimental flag is enabled.
-     */
-    val runTestInSeparateProcess: Boolean
+  /**
+   * Whether the variant is instant app compatible.
+   *
+   * Only application modules and dynamic feature modules will set this property.
+   */
+  val isInstantAppCompatible: Boolean
 
-    /**
-     * Whether the variant is instant app compatible.
-     *
-     * Only application modules and dynamic feature modules will set this property.
-     */
-    val isInstantAppCompatible: Boolean
+  /** Desugared methods supported by D8 and core library desugaring. */
+  val desugaredMethods: List<File>
 
-    /**
-     * Desugared methods supported by D8 and core library desugaring.
-     */
-    val desugaredMethods: List<File>
-
-    /**
-     * Experimental flags set on a variant.
-     */
-    val experimentalProperties: Map<String, String>
+  /** Experimental flags set on a variant. */
+  val experimentalProperties: Map<String, String>
 }

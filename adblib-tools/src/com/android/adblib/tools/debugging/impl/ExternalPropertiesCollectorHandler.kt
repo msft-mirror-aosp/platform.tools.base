@@ -22,28 +22,25 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.mergeWith
 
 /**
- * Collect changes from an [ExternalJdwpProcessPropertiesCollector], merging them into
- * the current value of the [localPropertiesStateFlow].
+ * Collect changes from an [ExternalJdwpProcessPropertiesCollector], merging them into the current value of the [localPropertiesStateFlow].
  */
 internal class ExternalPropertiesCollectorHandler(
-    private val externalCollector: ExternalJdwpProcessPropertiesCollector,
-    private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>
+  private val externalCollector: ExternalJdwpProcessPropertiesCollector,
+  private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>,
 ) {
-    private val session = externalCollector.process.device.session
-    private val logger = adbLogger(session)
+  private val session = externalCollector.process.device.session
+  private val logger = adbLogger(session)
 
-    suspend fun execute() {
-        // Collect properties from external collector and merge them into our local properties
-        // state flow.
-        externalCollector.trackProperties().collect { externalProperties ->
-            logger.debug { "Process ${externalProperties.pid} properties updated: $externalProperties" }
+  suspend fun execute() {
+    // Collect properties from external collector and merge them into our local properties
+    // state flow.
+    externalCollector.trackProperties().collect { externalProperties ->
+      logger.debug { "Process ${externalProperties.pid} properties updated: $externalProperties" }
 
-            localPropertiesStateFlow.update { localProperties ->
-                // merge external properties with local properties
-                localProperties.mergeWith(externalProperties).also {
-                    logger.debug { "Updating local JDWP properties: $it" }
-                }
-            }
-        }
+      localPropertiesStateFlow.update { localProperties ->
+        // merge external properties with local properties
+        localProperties.mergeWith(externalProperties).also { logger.debug { "Updating local JDWP properties: $it" } }
+      }
     }
+  }
 }

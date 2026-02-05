@@ -18,19 +18,15 @@ package com.android.build.api.instrumentation
 
 interface ClassContext {
 
-    /**
-     * Contains information about the class that will be instrumented.
-     */
-    val currentClassData: ClassData
+  /** Contains information about the class that will be instrumented. */
+  val currentClassData: ClassData
 
-    /**
-     * Loads the class data for the class with given [className].
-     *
-     * Returns null if a class named [className] couldn't be found in the runtime classpath of the
-     * class defined by the [currentClassData].
-     *
-     * @param className the fully qualified name of the class,
-     *                  (e.g. "com.android.build.api.instrumentation.ClassContext")
-     */
-    fun loadClassData(className: String): ClassData?
+  /**
+   * Loads the class data for the class with given [className].
+   *
+   * Returns null if a class named [className] couldn't be found in the runtime classpath of the class defined by the [currentClassData].
+   *
+   * @param className the fully qualified name of the class, (e.g. "com.android.build.api.instrumentation.ClassContext")
+   */
+  fun loadClassData(className: String): ClassData?
 }

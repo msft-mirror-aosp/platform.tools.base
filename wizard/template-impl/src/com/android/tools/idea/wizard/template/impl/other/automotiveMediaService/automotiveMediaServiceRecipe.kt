@@ -31,7 +31,7 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
   mediaBrowserServiceName: String,
   packageName: String,
   useCustomTheme: Boolean,
-  customThemeName: String
+  customThemeName: String,
 ) {
   val projectData = moduleData.projectTemplateData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -57,27 +57,32 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
     sharedPackageName = "$packageName.$sharedModule"
 
     save(
-      // TODO(b/419624430): This should be created through a gradle build model instead of creating from text,
-      // creating this way given that this is the only place to create a build.gradle for anther module.
-      source = buildGradle(
-        agpVersion = projectData.agpVersion,
-        packageName = sharedPackageName,
-        buildApi = apis.buildApi,
-        generateKotlin = projectData.language == Language.Kotlin,
-        minApi = apis.minApi,
-        targetApi = apis.targetApi,
-        useAndroidX = useAndroidX),
+      // TODO(b/419624430): This should be created through a gradle build model instead of
+      // creating from text,
+      // creating this way given that this is the only place to create a build.gradle for anther
+      // module.
+      source =
+        buildGradle(
+          agpVersion = projectData.agpVersion,
+          packageName = sharedPackageName,
+          buildApi = apis.buildApi,
+          generateKotlin = projectData.language == Language.Kotlin,
+          minApi = apis.minApi,
+          targetApi = apis.targetApi,
+          useAndroidX = useAndroidX,
+        ),
       to = projectData.rootDir.resolve(sharedModule).resolve("build.gradle"),
     )
     setJavaKotlinCompileOptions(projectData.language == Language.Kotlin, projectData.rootDir.resolve(sharedModule))
-    addDependency(mavenCoordinate = "com.android.support:support-media-compat:${appCompatVersion}.+",
-                  moduleDir = projectData.rootDir.resolve(sharedModule))
+    addDependency(
+      mavenCoordinate = "com.android.support:support-media-compat:${appCompatVersion}.+",
+      moduleDir = projectData.rootDir.resolve(sharedModule),
+    )
     // TODO: It may be better to not rely on the hard-coded module name
     addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("mobile"))
     addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("automotive"))
     addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("app"))
-  }
-  else {
+  } else {
     serviceManifestOut = moduleData.manifestDir
     serviceSrcOut = moduleData.srcDir
     serviceResOut = moduleData.resDir
@@ -85,18 +90,21 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
     addDependency("com.android.support:support-media-compat:${appCompatVersion}.+")
   }
   /* Create Media Service */
-  mergeXml(androidManifestXml(customThemeName, mediaBrowserServiceName, sharedPackageName, useCustomTheme),
-           serviceManifestOut.resolve("AndroidManifest.xml"))
+  mergeXml(
+    androidManifestXml(customThemeName, mediaBrowserServiceName, sharedPackageName, useCustomTheme),
+    serviceManifestOut.resolve("AndroidManifest.xml"),
+  )
 
   if (useCustomTheme) {
     mergeXml(themesXml(customThemeName), serviceResOut.resolve("values/themes.xml"))
   }
   mergeXml(automotiveAppDescXml(), serviceResOut.resolve("xml/automotive_app_desc.xml"))
 
-  val musicService = when (projectData.language) {
-    Language.Java -> musicServiceJava(mediaBrowserServiceName, sharedPackageName, useAndroidX)
-    Language.Kotlin -> musicServiceKt(mediaBrowserServiceName, sharedPackageName, useAndroidX)
-  }
+  val musicService =
+    when (projectData.language) {
+      Language.Java -> musicServiceJava(mediaBrowserServiceName, sharedPackageName, useAndroidX)
+      Language.Kotlin -> musicServiceKt(mediaBrowserServiceName, sharedPackageName, useAndroidX)
+    }
   save(musicService, serviceSrcOut.resolve("${mediaBrowserServiceName}.${ktOrJavaExt}"))
   open(serviceSrcOut.resolve("${mediaBrowserServiceName}.${ktOrJavaExt}"))
   if (useCustomTheme) {

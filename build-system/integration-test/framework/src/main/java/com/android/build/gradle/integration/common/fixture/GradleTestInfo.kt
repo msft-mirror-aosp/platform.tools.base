@@ -18,13 +18,10 @@ package com.android.build.gradle.integration.common.fixture
 import java.io.File
 import java.nio.file.Path
 
-/**
- * Information about the test project, used by the [GradleTaskExecutor]
- */
+/** Information about the test project, used by the [GradleTaskExecutor] */
 interface GradleTestInfo {
-    val androidSdkDir: File?
-    val androidNdkSxSRootSymlink: File?
-    val additionalMavenRepoDir: Path?
-    val profileDirectory: Path?
+  val androidSdkDir: File?
+  val androidNdkSxSRootSymlink: File?
+  val additionalMavenRepoDir: Path?
+  val profileDirectory: Path?
 }
-

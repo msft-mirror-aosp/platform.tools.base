@@ -15,16 +15,14 @@
  */
 package com.android.adblib
 
-/**
- * Result of the [AdbHostServices.pair] operation
- */
+/** Result of the [AdbHostServices.pair] operation */
 data class PairResult(
-    /** Whether the `pair` operation was successful */
-    val success: Boolean,
-    /** The raw output from the "host:pair" service invocation */
-    val rawText: String,
-    /** The [DeviceAddress] of the device, if pairing was successful */
-    val deviceAddress: DeviceAddress? = null,
-    /** The GUID of the service used for pairing, if pairing was successful */
-    val serviceGuid: String? = null
+  /** Whether the `pair` operation was successful */
+  val success: Boolean,
+  /** The raw output from the "host:pair" service invocation */
+  val rawText: String,
+  /** The [DeviceAddress] of the device, if pairing was successful */
+  val deviceAddress: DeviceAddress? = null,
+  /** The GUID of the service used for pairing, if pairing was successful */
+  val serviceGuid: String? = null,
 )

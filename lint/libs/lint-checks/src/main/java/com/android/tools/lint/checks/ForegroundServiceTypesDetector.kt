@@ -40,9 +40,8 @@ import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.w3c.dom.Element
 
 /**
- * Scan app's source code, looking for calls to Service.startForeground(), if targetSdkVersion >=
- * 34, the <service> element in the manifest file must have the foregroundServiceType attribute
- * specified.
+ * Scan app's source code, looking for calls to Service.startForeground(), if targetSdkVersion >= 34, the <service> element in the manifest
+ * file must have the foregroundServiceType attribute specified.
  */
 class ForegroundServiceTypesDetector : Detector(), XmlScanner, SourceCodeScanner {
   override fun getApplicableMethodNames() = listOf(START_FOREGROUND)
@@ -70,10 +69,7 @@ class ForegroundServiceTypesDetector : Detector(), XmlScanner, SourceCodeScanner
     val evaluator = context.evaluator
     // startForeground() needs to be a member of subclass of "android.app.Service"[CLASS_SERVICE]
     // or a member of "androidx.core.app.ServiceCompat"[CLASS_SERVICE_COMPAT].
-    if (
-      !evaluator.isMemberInSubClassOf(method, CLASS_SERVICE, false) &&
-        !evaluator.isMemberInClass(method, CLASS_SERVICE_COMPAT)
-    ) {
+    if (!evaluator.isMemberInSubClassOf(method, CLASS_SERVICE, false) && !evaluator.isMemberInClass(method, CLASS_SERVICE_COMPAT)) {
       return
     }
 

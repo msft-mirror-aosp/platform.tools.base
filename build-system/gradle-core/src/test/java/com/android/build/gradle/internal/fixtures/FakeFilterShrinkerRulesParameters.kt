@@ -22,13 +22,12 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 
-class FakeFilterShrinkerRulesParameters constructor(
-    @Internal val name:String? = "project_name",
-    @get:Input val codeShrinker: ShrinkerVersion
-): FilterShrinkerRulesTransform.Parameters {
-    override val projectName: Property<String>
-        get() = FakeGradleProperty(name)
+class FakeFilterShrinkerRulesParameters
+constructor(@Internal val name: String? = "project_name", @get:Input val codeShrinker: ShrinkerVersion) :
+  FilterShrinkerRulesTransform.Parameters {
+  override val projectName: Property<String>
+    get() = FakeGradleProperty(name)
 
-    override val shrinkerVersion: Property<ShrinkerVersion>
-        get() = FakeGradleProperty(codeShrinker)
+  override val shrinkerVersion: Property<ShrinkerVersion>
+    get() = FakeGradleProperty(codeShrinker)
 }

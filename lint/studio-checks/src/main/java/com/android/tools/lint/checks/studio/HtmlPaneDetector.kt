@@ -63,14 +63,9 @@ class HtmlPaneDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableConstructorTypes(): List<String>? =
-    listOf("javax.swing.JEditorPane", "javax.swing.JTextPane")
+  override fun getApplicableConstructorTypes(): List<String>? = listOf("javax.swing.JEditorPane", "javax.swing.JTextPane")
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val arguments = node.valueArguments
     if (arguments.size == 2) {
       val contentTypeParameter = arguments[1]
@@ -87,11 +82,7 @@ class HtmlPaneDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkContentTypeWithoutEditorKit(
-    context: JavaContext,
-    contentTypeParameter: UExpression,
-    locationElement: UElement,
-  ) {
+  private fun checkContentTypeWithoutEditorKit(context: JavaContext, contentTypeParameter: UExpression, locationElement: UElement) {
     val contentType = ConstantEvaluator.evaluate(context, contentTypeParameter)
     if (contentType == "text/html" && !setsEditorKit(contentTypeParameter)) {
       context.report(

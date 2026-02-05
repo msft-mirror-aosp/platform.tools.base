@@ -26,51 +26,41 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * Regression test for http://b/144249620. It checks that we are able to build successfully
- * if there aren't any Java sources and BuildConfig generation is disabled.
+ * Regression test for http://b/144249620. It checks that we are able to build successfully if there aren't any Java sources and BuildConfig
+ * generation is disabled.
  */
 class GenFolderKotlinOnlyApiTest {
-    @JvmField
-    @Rule
-    var project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @JvmField @Rule var project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library")).create()
 
-    @JvmField
-    @Rule
-    var tmp = TemporaryFolder()
+  @JvmField @Rule var tmp = TemporaryFolder()
 
-    @Before
-    fun setUp() {
-        project.file("gen_src").also {
-            val sourceFile = it.resolve("test/Generated.kt")
-            sourceFile.parentFile.mkdirs()
-            sourceFile.writeText(
-                """
-                package test
-                class Generated
-            """.trimIndent()
-            )
-        }
-        project.buildFile.appendText(
-            """
-            def emptyTask = tasks.create("emptyTask")
-            android.libraryVariants.all {
-              it.registerJavaGeneratingTask(emptyTask, new File("gen_src"))
-            }
-        """.trimIndent()
-        )
+  @Before
+  fun setUp() {
+    project.file("gen_src").also {
+      val sourceFile = it.resolve("test/Generated.kt")
+      sourceFile.parentFile.mkdirs()
+      sourceFile.writeText(
+        """
+        package test
+        class Generated
+        """
+          .trimIndent()
+      )
     }
+    project.buildFile.appendText(
+      """
+      def emptyTask = tasks.create("emptyTask")
+      android.libraryVariants.all {
+        it.registerJavaGeneratingTask(emptyTask, new File("gen_src"))
+      }
+      """
+        .trimIndent()
+    )
+  }
 
-    @Test
-    fun testBuildSucceeds() {
-        project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug")
-        project.assertAar(AarSelector.DEBUG) {
-            classes().containsExactly(
-                "com/example/helloworld/HelloWorld",
-                "test/Generated"
-            )
-        }
-    }
+  @Test
+  fun testBuildSucceeds() {
+    project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug")
+    project.assertAar(AarSelector.DEBUG) { classes().containsExactly("com/example/helloworld/HelloWorld", "test/Generated") }
+  }
 }

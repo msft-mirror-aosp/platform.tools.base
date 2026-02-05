@@ -44,25 +44,25 @@ class WhitespaceTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            @file:Suppress("ALL")
-            import android.util.List
-            /** {@link Test} and [test] */
-            fun test(i1: Int, i2: Int, s1: String, s2: String, a: Any, b1: Boolean, b2: Boolean) {
-                val x = i1 + i2 + s1.length + s2.length
-                var y = 0
-                y++
-                val z2 = !b2
-                val z = (b2 && !b1 && ++y != 5)
-                if (x > 1) {
-                    val y = a as? String
-                }
-                val t: Any = "test"
-                val t2: Any = ${'"'}""test""${'"'}
-                (t as? String)?.plus("other")?.get(0)?.dec()?.inc()
-                "foo".chars().allMatch { it.dec() > 0 }.toString()
-                val minusOne = -1
-            }
-        """
+      @file:Suppress("ALL")
+      import android.util.List
+      /** {@link Test} and [test] */
+      fun test(i1: Int, i2: Int, s1: String, s2: String, a: Any, b1: Boolean, b2: Boolean) {
+          val x = i1 + i2 + s1.length + s2.length
+          var y = 0
+          y++
+          val z2 = !b2
+          val z = (b2 && !b1 && ++y != 5)
+          if (x > 1) {
+              val y = a as? String
+          }
+          val t: Any = "test"
+          val t2: Any = ${'"'}""test""${'"'}
+          (t as? String)?.plus("other")?.get(0)?.dec()?.inc()
+          "foo".chars().allMatch { it.dec() > 0 }.toString()
+          val minusOne = -1
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -97,10 +97,10 @@ class WhitespaceTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            @file:Suppress("ALL")
-            annotation class VisibleForTesting
-            class TestClass(@get:[VisibleForTesting] @set:VisibleForTesting var p5: String)
-        """
+      @file:Suppress("ALL")
+      annotation class VisibleForTesting
+      class TestClass(@get:[VisibleForTesting] @set:VisibleForTesting var p5: String)
+      """
         .trimIndent()
         .trim()
 
@@ -120,16 +120,15 @@ class WhitespaceTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            @file:Suppress("ALL")
-            val test = "test" + ""${'"'}test""${'"'}
-        """
+      @file:Suppress("ALL")
+      val test = "test" + ""${'"'}test""${'"'}
+      """
         .trimIndent()
         .trim()
 
     @Suppress("MayBeConstant")
     @Language("kotlin")
-    val expected =
-      "" + " @file:Suppress(\"ALL\") \n" + " val   test   =   \"test\"   +   \"\"\"test\"\"\" "
+    val expected = "" + " @file:Suppress(\"ALL\") \n" + " val   test   =   \"test\"   +   \"\"\"test\"\"\" "
 
     val modified = addSpacesKotlin(kotlin)
     assertEquals(expected, modified)
@@ -140,18 +139,18 @@ class WhitespaceTestModeTest {
     @Language("java")
     val java =
       """
-            package test.pkg;
-            import android.util.List;
-            @SuppressWarnings("ALL")
-            public class Test {
-                void test(int i) {
-                    /** {@link Test} */
-                    String s="test"+'test';
-                    boolean x=i>5?!true:i%2==0;
-                    int minusOne = -1;
-                }
-            }
-        """
+      package test.pkg;
+      import android.util.List;
+      @SuppressWarnings("ALL")
+      public class Test {
+          void test(int i) {
+              /** {@link Test} */
+              String s="test"+'test';
+              boolean x=i>5?!true:i%2==0;
+              int minusOne = -1;
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -181,16 +180,16 @@ class WhitespaceTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            @file:Suppress("ALL")
-            fun test() = run {
-                label@ for (i in 0 until 10) {
-                    if (i < 5) {
-                        continue@label
-                    }
-                }
-                this@run
-            }
-        """
+      @file:Suppress("ALL")
+      fun test() = run {
+          label@ for (i in 0 until 10) {
+              if (i < 5) {
+                  continue@label
+              }
+          }
+          this@run
+      }
+      """
         .trimIndent()
         .trim()
 

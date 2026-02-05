@@ -22,66 +22,42 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class RenderScriptLinkerTest {
-    private data class AbiData (
-        val toolchain: String,
-        val linkerArgs: Array<String>
+  private data class AbiData(val toolchain: String, val linkerArgs: Array<String>)
+
+  private val expected32BitAbis =
+    mapOf(
+      "armeabi-v7a" to
+        AbiData("armv7-none-linux-gnueabi", arrayOf("-dynamic-linker", "/system/bin/linker", "-X", "-m", "armelf_linux_eabi")),
+      "mips" to AbiData("mipsel-unknown-linux", arrayOf("-EL")),
+      "x86" to AbiData("i686-unknown-linux", arrayOf("-m", "elf_i386")),
     )
 
-
-    private val expected32BitAbis = mapOf(
-        "armeabi-v7a" to AbiData(
-            "armv7-none-linux-gnueabi",
-            arrayOf(
-                "-dynamic-linker",
-                "/system/bin/linker",
-                "-X",
-                "-m",
-                "armelf_linux_eabi")
-        ),
-        "mips" to AbiData(
-            "mipsel-unknown-linux",
-            arrayOf("-EL")
-        ),
-        "x86" to AbiData(
-            "i686-unknown-linux",
-            arrayOf("-m", "elf_i386")
-        )
+  private val expected64BitAbis =
+    mapOf(
+      "arm64-v8a" to AbiData("aarch64-linux-android", arrayOf("-X", "--fix-cortex-a53-843419")),
+      "x86_64" to AbiData("x86_64-unknown-linux", arrayOf("-m", "elf_x86_64")),
     )
 
-    private val expected64BitAbis = mapOf(
-        "arm64-v8a" to AbiData(
-            "aarch64-linux-android",
-            arrayOf("-X", "--fix-cortex-a53-843419")
-        ),
+  @Test
+  fun testAbiNewLinkerArgs() {
+    val abis32NewLinker = RenderScriptProcessor.getAbis("32")
+    val abis64NewLinker = RenderScriptProcessor.getAbis("64")
 
-        "x86_64" to AbiData(
-            "x86_64-unknown-linux",
-            arrayOf("-m", "elf_x86_64")
-        )
-    )
+    assertThat(abis32NewLinker!!.map { it.device }).containsExactlyElementsIn(expected32BitAbis.keys)
+    assertThat(abis64NewLinker!!.map { it.device }).containsExactlyElementsIn(expected64BitAbis.keys)
 
-    @Test
-    fun testAbiNewLinkerArgs() {
-        val abis32NewLinker = RenderScriptProcessor.getAbis("32")
-        val abis64NewLinker = RenderScriptProcessor.getAbis("64")
-
-        assertThat(abis32NewLinker!!.map{ it.device })
-            .containsExactlyElementsIn(expected32BitAbis.keys)
-        assertThat(abis64NewLinker!!.map{ it.device })
-            .containsExactlyElementsIn(expected64BitAbis.keys)
-
-        for(abi in abis32NewLinker) {
-            assertThat(abi.toolchain).isEqualTo(expected32BitAbis.getValue(abi.device).toolchain)
-            assertThat(abi.linker).isEqualTo(BuildToolInfo.PathId.LLD)
-            assertThat(abi.getLinkerArgs().toList()).containsExactlyElementsIn(
-                arrayOf("-flavor", "ld") + expected32BitAbis.getValue(abi.device).linkerArgs)
-        }
-
-        for(abi in abis64NewLinker) {
-            assertThat(abi.toolchain).isEqualTo(expected64BitAbis.getValue(abi.device).toolchain)
-            assertThat(abi.linker).isEqualTo(BuildToolInfo.PathId.LLD)
-            assertThat(abi.getLinkerArgs().toList()).containsExactlyElementsIn(
-                arrayOf("-flavor", "ld") + expected64BitAbis.getValue(abi.device).linkerArgs)
-        }
+    for (abi in abis32NewLinker) {
+      assertThat(abi.toolchain).isEqualTo(expected32BitAbis.getValue(abi.device).toolchain)
+      assertThat(abi.linker).isEqualTo(BuildToolInfo.PathId.LLD)
+      assertThat(abi.getLinkerArgs().toList())
+        .containsExactlyElementsIn(arrayOf("-flavor", "ld") + expected32BitAbis.getValue(abi.device).linkerArgs)
     }
+
+    for (abi in abis64NewLinker) {
+      assertThat(abi.toolchain).isEqualTo(expected64BitAbis.getValue(abi.device).toolchain)
+      assertThat(abi.linker).isEqualTo(BuildToolInfo.PathId.LLD)
+      assertThat(abi.getLinkerArgs().toList())
+        .containsExactlyElementsIn(arrayOf("-flavor", "ld") + expected64BitAbis.getValue(abi.device).linkerArgs)
+    }
+  }
 }

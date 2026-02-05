@@ -29,14 +29,11 @@ import java.util.HashMap
 import java.util.Locale
 
 /**
- * "Multiplexing" reporter which allows output to be split up into a separate report for each
- * separate project. It also adds an overview index.
+ * "Multiplexing" reporter which allows output to be split up into a separate report for each separate project. It also adds an overview
+ * index.
  */
-class MultiProjectHtmlReporter(
-  client: LintCliClient,
-  private val dir: File,
-  private val flags: LintCliFlags,
-) : Reporter(client, File(dir, INDEX_NAME)) {
+class MultiProjectHtmlReporter(client: LintCliClient, private val dir: File, private val flags: LintCliFlags) :
+  Reporter(client, File(dir, INDEX_NAME)) {
   @Throws(IOException::class)
   override fun write(stats: LintStats, issues: List<Incident>, registry: IssueRegistry) {
     val projectToIncidents: MutableMap<Project, MutableList<Incident>> = HashMap()
@@ -120,12 +117,7 @@ class MultiProjectHtmlReporter(
     }
   }
 
-  class ProjectEntry(
-    val fileName: String,
-    val errorCount: Int,
-    val warningCount: Int,
-    val path: String,
-  ) : Comparable<ProjectEntry> {
+  class ProjectEntry(val fileName: String, val errorCount: Int, val warningCount: Int, val path: String) : Comparable<ProjectEntry> {
     override fun compareTo(other: ProjectEntry): Int {
       var delta = other.errorCount - errorCount
       if (delta != 0) {

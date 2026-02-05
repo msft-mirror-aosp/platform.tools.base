@@ -37,90 +37,86 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 
 class SigningConfigResolverTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
-    private val dslServices: DslServices by lazy { createDslServices() }
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  private val dslServices: DslServices by lazy { createDslServices() }
 
-    private fun extension(): ApplicationExtension {
-        val extension = mock<ApplicationExtension>()
+  private fun extension(): ApplicationExtension {
+    val extension = mock<ApplicationExtension>()
 
-        @Suppress("UNCHECKED_CAST")
-        val domainObject = mock<NamedDomainObjectContainer<ApkSigningConfig>>()
-        whenever(extension.signingConfigs)
-            .thenReturn(domainObject)
-        return extension
-    }
+    @Suppress("UNCHECKED_CAST") val domainObject = mock<NamedDomainObjectContainer<ApkSigningConfig>>()
+    whenever(extension.signingConfigs).thenReturn(domainObject)
+    return extension
+  }
 
-    private fun buildType(name: String) =
-        dslServices.newDecoratedInstance(BuildType::class.java, name, dslServices, ComponentTypeImpl.BASE_APK)
+  private fun buildType(name: String) =
+    dslServices.newDecoratedInstance(BuildType::class.java, name, dslServices, ComponentTypeImpl.BASE_APK)
 
-    private fun signingConfig(name: String) =
-        dslServices.newDecoratedInstance(SigningConfig::class.java, name, dslServices)
+  private fun signingConfig(name: String) = dslServices.newDecoratedInstance(SigningConfig::class.java, name, dslServices)
 
-    @Test
-    fun createWithDslSigningOnly() {
-        val buildType = buildType("Test")
-        val dslSigningConfig = signingConfig("Test")
-        buildType.setSigningConfig(dslSigningConfig)
-        val mergedMock = mock<MergedFlavor>()
+  @Test
+  fun createWithDslSigningOnly() {
+    val buildType = buildType("Test")
+    val dslSigningConfig = signingConfig("Test")
+    buildType.setSigningConfig(dslSigningConfig)
+    val mergedMock = mock<MergedFlavor>()
 
-        val resolver = SigningConfigResolver.create(buildType, mergedMock, null, extension(), dslServices)
+    val resolver = SigningConfigResolver.create(buildType, mergedMock, null, extension(), dslServices)
 
-        Truth.assertThat(resolver.dslSigningConfig).isEqualTo(dslSigningConfig)
-        Truth.assertThat(resolver.signingConfigOverride).isNull()
-        Truth.assertThat(resolver.debugSigningConfig).isNull()
-    }
+    Truth.assertThat(resolver.dslSigningConfig).isEqualTo(dslSigningConfig)
+    Truth.assertThat(resolver.signingConfigOverride).isNull()
+    Truth.assertThat(resolver.debugSigningConfig).isNull()
+  }
 
-    @Test
-    fun createWithOverrideOnly() {
-        val buildType = buildType("Test")
-        val override = signingConfig("Test")
-        val mergedMock = mock<MergedFlavor>()
+  @Test
+  fun createWithOverrideOnly() {
+    val buildType = buildType("Test")
+    val override = signingConfig("Test")
+    val mergedMock = mock<MergedFlavor>()
 
-        val resolver = SigningConfigResolver.create(buildType, mergedMock, override, extension(), dslServices)
+    val resolver = SigningConfigResolver.create(buildType, mergedMock, override, extension(), dslServices)
 
-        Truth.assertThat(resolver.dslSigningConfig).isNull()
-        Truth.assertThat(resolver.signingConfigOverride).isEqualTo(override)
-        Truth.assertThat(resolver.debugSigningConfig).isNull()
-    }
+    Truth.assertThat(resolver.dslSigningConfig).isNull()
+    Truth.assertThat(resolver.signingConfigOverride).isEqualTo(override)
+    Truth.assertThat(resolver.debugSigningConfig).isNull()
+  }
 
-    @Test
-    fun createWithDslAndOverride() {
-        val buildType = buildType("Test")
+  @Test
+  fun createWithDslAndOverride() {
+    val buildType = buildType("Test")
 
-        val dsl = signingConfig("Dsl")
-        dsl.enableV1Signing = true
-        dsl.enableV2Signing = true
-        dsl.enableV3Signing = true
-        dsl.enableV4Signing = true
-        buildType.setSigningConfig(dsl)
+    val dsl = signingConfig("Dsl")
+    dsl.enableV1Signing = true
+    dsl.enableV2Signing = true
+    dsl.enableV3Signing = true
+    dsl.enableV4Signing = true
+    buildType.setSigningConfig(dsl)
 
-        val override = signingConfig("Override")
+    val override = signingConfig("Override")
 
-        val mergedMock = mock<MergedFlavor>()
+    val mergedMock = mock<MergedFlavor>()
 
-        val resolver = SigningConfigResolver.create(buildType, mergedMock, override, extension(), dslServices)
+    val resolver = SigningConfigResolver.create(buildType, mergedMock, override, extension(), dslServices)
 
-        Truth.assertThat(resolver.dslSigningConfig).isEqualTo(dsl)
-        Truth.assertThat(resolver.signingConfigOverride).isEqualTo(override)
-        Truth.assertThat(resolver.signingConfigOverride!!.enableV1Signing).isEqualTo(true)
-        Truth.assertThat(resolver.signingConfigOverride!!.enableV2Signing).isEqualTo(true)
-        Truth.assertThat(resolver.signingConfigOverride!!.enableV3Signing).isEqualTo(true)
-        Truth.assertThat(resolver.signingConfigOverride!!.enableV4Signing).isEqualTo(true)
-        Truth.assertThat(resolver.debugSigningConfig).isNull()
-    }
+    Truth.assertThat(resolver.dslSigningConfig).isEqualTo(dsl)
+    Truth.assertThat(resolver.signingConfigOverride).isEqualTo(override)
+    Truth.assertThat(resolver.signingConfigOverride!!.enableV1Signing).isEqualTo(true)
+    Truth.assertThat(resolver.signingConfigOverride!!.enableV2Signing).isEqualTo(true)
+    Truth.assertThat(resolver.signingConfigOverride!!.enableV3Signing).isEqualTo(true)
+    Truth.assertThat(resolver.signingConfigOverride!!.enableV4Signing).isEqualTo(true)
+    Truth.assertThat(resolver.debugSigningConfig).isNull()
+  }
 
-    @Test
-    fun createWithDebugConfigFallback() {
-        val buildType = buildType("Test")
-        val debugConfig = signingConfig("debug")
-        val mergedMock = mock<MergedFlavor>()
-        val extension = extension()
-        whenever(extension.signingConfigs.findByName(any())).thenReturn(debugConfig)
-        val resolver = SigningConfigResolver.create(buildType, mergedMock, null, extension, dslServices)
+  @Test
+  fun createWithDebugConfigFallback() {
+    val buildType = buildType("Test")
+    val debugConfig = signingConfig("debug")
+    val mergedMock = mock<MergedFlavor>()
+    val extension = extension()
+    whenever(extension.signingConfigs.findByName(any())).thenReturn(debugConfig)
+    val resolver = SigningConfigResolver.create(buildType, mergedMock, null, extension, dslServices)
 
-        Truth.assertThat(resolver.dslSigningConfig).isNull()
-        Truth.assertThat(resolver.signingConfigOverride).isNull()
-        Truth.assertThat(resolver.debugSigningConfig).isEqualTo(debugConfig)
-    }
+    Truth.assertThat(resolver.dslSigningConfig).isNull()
+    Truth.assertThat(resolver.signingConfigOverride).isNull()
+    Truth.assertThat(resolver.debugSigningConfig).isEqualTo(debugConfig)
+  }
 }

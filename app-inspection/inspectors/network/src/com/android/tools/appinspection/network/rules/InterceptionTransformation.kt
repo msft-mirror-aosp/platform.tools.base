@@ -35,17 +35,13 @@ interface InterceptionTransformation {
 }
 
 /** A transformation class that changes the status code from response headers. */
-internal class StatusCodeReplacedTransformation(
-  private val statusCodeReplaced: StatusCodeReplaced
-) : InterceptionTransformation {
+internal class StatusCodeReplacedTransformation(private val statusCodeReplaced: StatusCodeReplaced) : InterceptionTransformation {
 
   override fun transform(response: NetworkResponse): NetworkResponse {
     val targetCodeProto = statusCodeReplaced.targetCode
     val replacingCode = statusCodeReplaced.newCode.toIntOrNull()
     if (replacingCode == null) {
-      Logger.debug(
-        "Ignoring interception rule because of an invalid newCode: ${statusCodeReplaced.newCode}"
-      )
+      Logger.debug("Ignoring interception rule because of an invalid newCode: ${statusCodeReplaced.newCode}")
       return response
     }
     return transformWithNullHeader(response, targetCodeProto, replacingCode)
@@ -116,19 +112,12 @@ class HeaderAddedTransformation(private val headerAdded: HeaderAdded) : Intercep
     val values = headers.getOrPut(headerAdded.name) { listOf() }.toMutableList()
     values.add(headerAdded.value)
     headers[headerAdded.name] = values
-    return response.copy(
-      responseHeaders = headers,
-      interception = response.interception.copy(headerAdded = true),
-    )
+    return response.copy(responseHeaders = headers, interception = response.interception.copy(headerAdded = true))
   }
 }
 
-/**
- * A transformation class that finds the all target name-value pairs and replaces them with a new
- * pair.
- */
-class HeaderReplacedTransformation(private val headerReplaced: HeaderReplaced) :
-  InterceptionTransformation {
+/** A transformation class that finds the all target name-value pairs and replaces them with a new pair. */
+class HeaderReplacedTransformation(private val headerReplaced: HeaderReplaced) : InterceptionTransformation {
 
   override fun transform(response: NetworkResponse): NetworkResponse {
     // Remove all matched header values.
@@ -145,9 +134,7 @@ class HeaderReplacedTransformation(private val headerReplaced: HeaderReplaced) :
             headerValues.filter { headerValue ->
               val matched = headerReplaced.targetValue.matches(headerValue)
               if (matched) {
-                newHeaders
-                  .computeIfAbsent(defaultKey ?: headerKey) { mutableSetOf() }
-                  .add(defaultValue ?: headerValue)
+                newHeaders.computeIfAbsent(defaultKey ?: headerKey) { mutableSetOf() }.add(defaultValue ?: headerValue)
               }
               !matched
             }
@@ -163,16 +150,12 @@ class HeaderReplacedTransformation(private val headerReplaced: HeaderReplaced) :
       valueSet.addAll(value)
       headers[key] = valueSet.toList()
     }
-    return response.copy(
-      responseHeaders = headers,
-      interception = response.interception.copy(headerReplaced = newHeaders.isNotEmpty()),
-    )
+    return response.copy(responseHeaders = headers, interception = response.interception.copy(headerReplaced = newHeaders.isNotEmpty()))
   }
 }
 
 /** A transformation class that replaces the response body. */
-class BodyReplacedTransformation(private val bodyReplaced: BodyReplaced) :
-  InterceptionTransformation {
+class BodyReplacedTransformation(private val bodyReplaced: BodyReplaced) : InterceptionTransformation {
 
   private val body: InputStream
     get() = bodyReplaced.body.toByteArray().inputStream()
@@ -182,10 +165,7 @@ class BodyReplacedTransformation(private val bodyReplaced: BodyReplaced) :
 
   override fun transform(response: NetworkResponse): NetworkResponse {
     return response.copy(
-      responseBody =
-        InterceptedResponseBody.SuccessfulResponseBody(
-          if (isContentCompressed(response)) gzipBody else body
-        ),
+      responseBody = InterceptedResponseBody.SuccessfulResponseBody(if (isContentCompressed(response)) gzipBody else body),
       interception = response.interception.copy(bodyReplaced = true),
     )
   }
@@ -194,8 +174,7 @@ class BodyReplacedTransformation(private val bodyReplaced: BodyReplaced) :
 private val TEXT_TYPES = setOf("csv", "html", "json", "xml")
 
 /** A transformation class that replaces the target text segments from response body. */
-class BodyModifiedTransformation(private val bodyModified: BodyModified) :
-  InterceptionTransformation {
+class BodyModifiedTransformation(private val bodyModified: BodyModified) : InterceptionTransformation {
 
   override fun transform(response: NetworkResponse): NetworkResponse {
     if (!isSupportedTextType(response)) {
@@ -211,9 +190,7 @@ class BodyModifiedTransformation(private val bodyModified: BodyModified) :
       val newBodyBytes = newBody.toByteArray()
       return response.copy(
         responseBody =
-          InterceptedResponseBody.SuccessfulResponseBody(
-            (if (isCompressed) newBodyBytes.gzip() else newBodyBytes).inputStream()
-          ),
+          InterceptedResponseBody.SuccessfulResponseBody((if (isCompressed) newBodyBytes.gzip() else newBodyBytes).inputStream()),
         interception = response.interception.copy(bodyModified = isBodyModified),
       )
     } catch (ignored: IOException) {

@@ -23,10 +23,8 @@ import androidx.sqlite.SQLiteStatement
  * Exposes things that are not available in the actual class:
  * * Calls an `invalidate` lambda when a mutating action might have occurred.
  */
-internal class SQLiteStatementWrapper(
-  private val delegate: SQLiteStatement,
-  private val onInvalidate: () -> Unit,
-) : SQLiteStatement by delegate {
+internal class SQLiteStatementWrapper(private val delegate: SQLiteStatement, private val onInvalidate: () -> Unit) :
+  SQLiteStatement by delegate {
   override fun step(): Boolean {
     val result = delegate.step()
     onInvalidate()

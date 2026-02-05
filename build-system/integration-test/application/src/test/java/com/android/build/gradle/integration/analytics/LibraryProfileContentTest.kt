@@ -27,40 +27,32 @@ import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Smoke test for the content of the profile collected from library projects.
- */
+/** Smoke test for the content of the profile collected from library projects. */
 class LibraryProfileContentTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withProfileOutput()
-        .from {
-            androidLibrary { }
+  @get:Rule val rule = GradleRule.configure().withProfileOutput().from { androidLibrary {} }
+
+  @Test
+  fun testProfileProtoContentMakesSense() {
+    val capturer = ProfileCapturer(rule.build)
+
+    val cleanBuild =
+      Iterables.getOnlyElement(
+        capturer.capture {
+          rule.build.executor
+            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .withArguments(listOf("--parallel", "--max-workers=1"))
+            .run("assembleDebug")
         }
+      )
 
-    @Test
-    fun testProfileProtoContentMakesSense() {
-        val capturer = ProfileCapturer(rule.build)
-
-        val cleanBuild = Iterables.getOnlyElement(
-            capturer.capture {
-                rule.build.executor
-                    .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                    .withArguments(listOf("--parallel", "--max-workers=1")).run("assembleDebug")
-            }
-        )
-
-        // Check that the generate library R file task records its worker spans.
-        val generateLibraryTask = cleanBuild.spanList.first {
-            it.hasTask() && it.task.type == GradleTaskExecutionType.GENERATE_LIBRARY_R_FILE.number
-        }
-        val generateLibraryTaskChildren =
-            cleanBuild.spanList.filter { it.parentId == generateLibraryTask.id }
-        assertThat(generateLibraryTaskChildren).hasSize(3)
-        val workerSpan =
-            generateLibraryTaskChildren.first { it.type == GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION }
-        assertWithMessage("Worker span is positive").that(workerSpan.durationInMs).isGreaterThan(0)
-        assertThat(cleanBuild.parallelTaskExecution).isTrue()
-    }
+    // Check that the generate library R file task records its worker spans.
+    val generateLibraryTask =
+      cleanBuild.spanList.first { it.hasTask() && it.task.type == GradleTaskExecutionType.GENERATE_LIBRARY_R_FILE.number }
+    val generateLibraryTaskChildren = cleanBuild.spanList.filter { it.parentId == generateLibraryTask.id }
+    assertThat(generateLibraryTaskChildren).hasSize(3)
+    val workerSpan = generateLibraryTaskChildren.first { it.type == GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION }
+    assertWithMessage("Worker span is positive").that(workerSpan.durationInMs).isGreaterThan(0)
+    assertThat(cleanBuild.parallelTaskExecution).isTrue()
+  }
 }

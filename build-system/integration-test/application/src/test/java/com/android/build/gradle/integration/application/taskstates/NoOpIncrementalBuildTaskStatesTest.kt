@@ -30,103 +30,102 @@ import org.junit.Test
 /**
  * Verifies tasks' states in a no-op incremental build: All tasks should be up-to-date (or skipped).
  *
- * (A no-op incremental build is a build that immediately follows a previous build without any
- * changes.)
+ * (A no-op incremental build is a build that immediately follows a previous build without any changes.)
  */
 class NoOpIncrementalBuildTaskStatesTest {
 
-    companion object {
+  companion object {
 
-        private val EXPECTED_TASK_STATES = mapOf(
-            // Sort alphabetically for readability
-            DID_WORK to emptySet(), // No tasks should run
-            UP_TO_DATE to setOf(
-                ":app:assembleDebug",
-                ":app:checkDebugAarMetadata",
-                ":app:generateDebugAssets",
-                ":app:preBuild",
-                ":app:preDebugBuild",
-                ":app:preDebugUnitTestBuild",
-                ":app:bundleDebugClassesToCompileJar",
-                ":app:bundleDebugClassesToRuntimeJar",
-                ":app:checkDebugDuplicateClasses",
-                ":app:createDebugApkListingFileRedirect",
-                ":app:compileDebugJavaWithJavac",
-                ":app:compileDebugNavigationResources",
-                ":app:compileDebugUnitTestJavaWithJavac",
-                ":app:compressDebugAssets",
-                ":app:createDebugCompatibleScreenManifests",
-                ":app:desugarDebugFileDependencies",
-                ":app:dexBuilderDebug",
-                ":app:extractDeepLinksDebug",
-                ":app:generateDebugResources",
-                ":app:generateDebugResValues",
-                ":app:generateDebugRFile",
-                ":app:javaPreCompileDebug",
-                ":app:javaPreCompileDebugUnitTest",
-                ":app:mapDebugSourceSetPaths",
-                ":app:mergeDebugAssets",
-                ":app:mergeDebugJavaResource",
-                ":app:mergeDebugJniLibFolders",
-                ":app:mergeDebugResources",
-                ":app:mergeDexDebug",
-                ":app:mergeExtDexDebug",
-                ":app:packageDebug",
-                ":app:packageDebugResources",
-                ":app:parseDebugLocalResources",
-                ":app:processDebugMainManifest",
-                ":app:processDebugManifest",
-                ":app:processDebugManifestForPackage",
-                ":app:processDebugNavigationResources",
-                ":app:processDebugResources",
-                ":app:testDebugUnitTest",
-                ":app:validateSigningDebug",
-                ":app:writeDebugAppMetadata",
-                ":app:writeDebugSigningConfigVersions"
-            ).plus(
-                if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
-                    setOf(":app:generateDebugManifestClass")
-                } else {
-                    emptySet()
-                }
-            ),
-            SKIPPED to setOf(
-                ":app:mergeDebugNativeDebugMetadata",
-                ":app:mergeDebugNativeLibs",
-                ":app:processDebugJavaRes",
-                ":app:processDebugUnitTestJavaRes",
-                ":app:stripDebugDebugSymbols",
+    private val EXPECTED_TASK_STATES =
+      mapOf(
+        // Sort alphabetically for readability
+        DID_WORK to emptySet(), // No tasks should run
+        UP_TO_DATE to
+          setOf(
+              ":app:assembleDebug",
+              ":app:checkDebugAarMetadata",
+              ":app:generateDebugAssets",
+              ":app:preBuild",
+              ":app:preDebugBuild",
+              ":app:preDebugUnitTestBuild",
+              ":app:bundleDebugClassesToCompileJar",
+              ":app:bundleDebugClassesToRuntimeJar",
+              ":app:checkDebugDuplicateClasses",
+              ":app:createDebugApkListingFileRedirect",
+              ":app:compileDebugJavaWithJavac",
+              ":app:compileDebugNavigationResources",
+              ":app:compileDebugUnitTestJavaWithJavac",
+              ":app:compressDebugAssets",
+              ":app:createDebugCompatibleScreenManifests",
+              ":app:desugarDebugFileDependencies",
+              ":app:dexBuilderDebug",
+              ":app:extractDeepLinksDebug",
+              ":app:generateDebugResources",
+              ":app:generateDebugResValues",
+              ":app:generateDebugRFile",
+              ":app:javaPreCompileDebug",
+              ":app:javaPreCompileDebugUnitTest",
+              ":app:mapDebugSourceSetPaths",
+              ":app:mergeDebugAssets",
+              ":app:mergeDebugJavaResource",
+              ":app:mergeDebugJniLibFolders",
+              ":app:mergeDebugResources",
+              ":app:mergeDexDebug",
+              ":app:mergeExtDexDebug",
+              ":app:packageDebug",
+              ":app:packageDebugResources",
+              ":app:parseDebugLocalResources",
+              ":app:processDebugMainManifest",
+              ":app:processDebugManifest",
+              ":app:processDebugManifestForPackage",
+              ":app:processDebugNavigationResources",
+              ":app:processDebugResources",
+              ":app:testDebugUnitTest",
+              ":app:validateSigningDebug",
+              ":app:writeDebugAppMetadata",
+              ":app:writeDebugSigningConfigVersions",
             )
-        )
-    }
+            .plus(
+              if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
+                setOf(":app:generateDebugManifestClass")
+              } else {
+                emptySet()
+              }
+            ),
+        SKIPPED to
+          setOf(
+            ":app:mergeDebugNativeDebugMetadata",
+            ":app:mergeDebugNativeLibs",
+            ":app:processDebugJavaRes",
+            ":app:processDebugUnitTestJavaRes",
+            ":app:stripDebugDebugSymbols",
+          ),
+      )
+  }
 
-    @get:Rule
-    var project = EmptyActivityProjectBuilder()
-        .also { it.withUnitTest = true }
-        .disableBuiltInKotlin()
-        .build()
+  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.disableBuiltInKotlin().build()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    buildFeatures { resValues = true }
-                }
-            """.trimIndent()
-        )
-    }
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          buildFeatures { resValues = true }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `check task states`() {
-        val result = project.executor()
-            .run {
-                val tasks = listOf("assembleDebug", "testDebugUnitTest")
-                run(tasks)
-                run(tasks)
-            }
-        TaskStateAssertionHelper(result)
-            .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
-    }
+  @Test
+  fun `check task states`() {
+    val result =
+      project.executor().run {
+        val tasks = listOf("assembleDebug", "testDebugUnitTest")
+        run(tasks)
+        run(tasks)
+      }
+    TaskStateAssertionHelper(result).assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
+  }
 }

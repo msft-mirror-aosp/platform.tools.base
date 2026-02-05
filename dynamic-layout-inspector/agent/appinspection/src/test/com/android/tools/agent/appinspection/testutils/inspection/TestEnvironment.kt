@@ -24,8 +24,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 
 /**
- * A simple implementation of the [InspectorEnvironment] class, which as a side effect spins up its
- * own inspector thread.
+ * A simple implementation of the [InspectorEnvironment] class, which as a side effect spins up its own inspector thread.
  *
  * You must call [shutdown] at the end of your test, to verify the primary thread is stopped.
  *
@@ -33,29 +32,36 @@ import java.util.concurrent.Executor
  */
 class TestInspectorEnvironment : InspectorEnvironment {
 
-    private val looperFuture = CompletableFuture<Looper>()
-    private val inspectorThread = Thread(
+  private val looperFuture = CompletableFuture<Looper>()
+  private val inspectorThread =
+    Thread(
         {
-            Looper.prepare()
-            looperFuture.complete(Looper.myLooper())
-            Looper.loop()
-        }, "Inspector-Primary"
-    ).also { it.start() }
+          Looper.prepare()
+          looperFuture.complete(Looper.myLooper())
+          Looper.loop()
+        },
+        "Inspector-Primary",
+      )
+      .also { it.start() }
 
-    private val executors = object : InspectorExecutors {
-        private val handler = Handler(looperFuture.get())
-        private val primaryExecutor = Executor { command -> handler.post(command) }
+  private val executors =
+    object : InspectorExecutors {
+      private val handler = Handler(looperFuture.get())
+      private val primaryExecutor = Executor { command -> handler.post(command) }
 
-        override fun handler() = handler
-        override fun primary() = primaryExecutor
-        override fun io() = throw NotImplementedError()
+      override fun handler() = handler
+
+      override fun primary() = primaryExecutor
+
+      override fun io() = throw NotImplementedError()
     }
 
-    override fun executors(): InspectorExecutors = executors
-    override fun artTooling() = throw NotImplementedError()
+  override fun executors(): InspectorExecutors = executors
 
-    fun shutdown() {
-        looperFuture.get().quitSafely()
-        inspectorThread.join()
-    }
+  override fun artTooling() = throw NotImplementedError()
+
+  fun shutdown() {
+    looperFuture.get().quitSafely()
+    inspectorThread.join()
+  }
 }

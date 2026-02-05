@@ -20,11 +20,11 @@ import java.util.concurrent.TimeUnit
 /** Provides a way to spin up an Adb Server */
 interface AdbServerStartup {
 
-    /**
-     * Starts an Adb Server
-     * @param port should use this port. The test implementation will use any available port.
-     *
-     * @return port on which the server is listening.
-     */
-    suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int
+  /**
+   * Starts an Adb Server
+   *
+   * @param port should use this port. The test implementation will use any available port.
+   * @return port on which the server is listening.
+   */
+  suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int
 }

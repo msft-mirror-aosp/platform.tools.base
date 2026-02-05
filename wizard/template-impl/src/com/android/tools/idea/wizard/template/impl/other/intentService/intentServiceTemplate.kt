@@ -55,19 +55,12 @@ val intentServiceTemplate
       help = "Generate static helper methods to start the service e.g. MyIntentService.startAction()"
     }
 
-    widgets(
-      TextFieldWidget(className),
-      CheckBoxWidget(includeHelper),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(className), CheckBoxWidget(includeHelper), LanguageWidget())
 
     thumb {
       // TODO(b/147126989)
       File("no_activity.png")
     }
 
-    recipe = { data: TemplateData ->
-      intentServiceRecipe(data as ModuleTemplateData, className.value, includeHelper.value)
-    }
-
+    recipe = { data: TemplateData -> intentServiceRecipe(data as ModuleTemplateData, className.value, includeHelper.value) }
   }

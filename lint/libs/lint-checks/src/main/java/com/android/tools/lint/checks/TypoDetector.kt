@@ -41,19 +41,16 @@ import org.w3c.dom.Node
  *
  * TODO:
  * * Add check of Java String literals too!
- * * Add support for **additional** languages. The typo detector is now multilingual and looks for
- *   typos-*locale*.txt files to use. However, we need to seed it with additional typo databases. I
- *   did some searching and came up with some alternatives. Here's the strategy I used: Used Google
- *   Translate to translate "Wikipedia Common Misspellings", and then I went to google.no, google.fr
- *   etc searching with that translation, and came up with what looks like wikipedia language local
- *   lists of typos. This is how I found the Norwegian one for example:
- *   http://no.wikipedia.org/wiki/Wikipedia:Liste_over_alminnelige_stavefeil/Maskinform
+ * * Add support for **additional** languages. The typo detector is now multilingual and looks for typos-*locale*.txt files to use. However,
+ *   we need to seed it with additional typo databases. I did some searching and came up with some alternatives. Here's the strategy I used:
+ *   Used Google Translate to translate "Wikipedia Common Misspellings", and then I went to google.no, google.fr etc searching with that
+ *   translation, and came up with what looks like wikipedia language local lists of typos. This is how I found the Norwegian one for
+ *   example: http://no.wikipedia.org/wiki/Wikipedia:Liste_over_alminnelige_stavefeil/Maskinform
  *
  *   Here are some additional possibilities not yet processed:
- * * French: http://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Liste_de_fautes_d'orthographe_courantes
- *   (couldn't find a machine-readable version there?)
- * * Swedish: http://sv.wikipedia.org/wiki/Wikipedia:Lista_%C3%B6ver_vanliga_spr%C3%A5kfel (couldn't
- *   find a machine-readable version there?)
+ * * French: http://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Liste_de_fautes_d'orthographe_courantes (couldn't find a machine-readable version
+ *   there?)
+ * * Swedish: http://sv.wikipedia.org/wiki/Wikipedia:Lista_%C3%B6ver_vanliga_spr%C3%A5kfel (couldn't find a machine-readable version there?)
  * * Consider also digesting files like http://sv.wikipedia.org/wiki/Wikipedia:AutoWikiBrowser/Typos
  *   http://en.wikipedia.org/wiki/Wikipedia:AutoWikiBrowser/User_manual
  */
@@ -68,10 +65,7 @@ class TypoDetector : ResourceXmlDetector() {
     return folderType == ResourceFolderType.VALUES
   }
 
-  /**
-   * Look up the locale and region from the given parent folder name and store it in [language] and
-   * [region]
-   */
+  /** Look up the locale and region from the given parent folder name and store it in [language] and [region] */
   private fun initLocale(context: XmlContext) {
     val locale = getLocale(context)
     if (locale?.hasLanguage() == true) {
@@ -185,13 +179,7 @@ class TypoDetector : ResourceXmlDetector() {
     }
   }
 
-  private fun checkForExclamation(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    index: Int,
-    begin: Int,
-  ) {
+  private fun checkForExclamation(context: XmlContext, node: Node, text: String, index: Int, begin: Int) {
     // Peek ahead: if we find punctuation or lower case letter don't flag it
     var problem = true
     var found1 = text[index] == '1'
@@ -217,21 +205,8 @@ class TypoDetector : ResourceXmlDetector() {
     if (problem && found1) {
       val actual = text.substring(begin, end)
       val intended = actual.replace('1', '!')
-      val fix =
-        fix()
-          .name("Replace with \"$intended\"")
-          .replace()
-          .text(actual)
-          .with(intended)
-          .range(context.getLocation(node))
-          .build()
-      context.report(
-        ISSUE,
-        node,
-        context.getLocation(node, begin, end),
-        "Did you mean \"$intended\" instead of \"$actual\"?",
-        fix,
-      )
+      val fix = fix().name("Replace with \"$intended\"").replace().text(actual).with(intended).range(context.getLocation(node)).build()
+      context.report(ISSUE, node, context.getLocation(node, begin, end), "Did you mean \"$intended\" instead of \"$actual\"?", fix)
     }
   }
 
@@ -331,16 +306,7 @@ class TypoDetector : ResourceXmlDetector() {
       if (replacements != null && isTranslatable(element)) {
         reportTypo(context, node, text, charStart, replacements)
       }
-      checkRepeatedWords(
-        context,
-        element,
-        node,
-        text,
-        lastWordBegin,
-        lastWordEnd,
-        charStart,
-        charEnd,
-      )
+      checkRepeatedWords(context, element, node, text, lastWordBegin, lastWordEnd, charStart, charEnd)
       lastWordBegin = charStart
       lastWordEnd = charEnd
       charStart = charEnd
@@ -348,13 +314,7 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   /** Report the typo found at the given offset and suggest the given replacements */
-  private fun reportTypo(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    begin: Int,
-    replacements: List<String>,
-  ) {
+  private fun reportTypo(context: XmlContext, node: Node, text: String, begin: Int, replacements: List<String>) {
     if (replacements.size < 2) {
       return
     }
@@ -380,9 +340,7 @@ class TypoDetector : ResourceXmlDetector() {
         replacement = replacement.usLocaleCapitalize()
       }
       sb.append(replacement)
-      fixBuilder.add(
-        fix().name("Replace with \"$replacement\"").replace().text(word).with(replacement).build()
-      )
+      fixBuilder.add(fix().name("Replace with \"$replacement\"").replace().text(word).with(replacement).build())
       sb.append('"')
       i++
     }
@@ -401,14 +359,7 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   /** Reports a repeated word */
-  private fun reportRepeatedWord(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    lastWordBegin: Int,
-    begin: Int,
-    end: Int,
-  ) {
+  private fun reportRepeatedWord(context: XmlContext, node: Node, text: String, lastWordBegin: Int, begin: Int, end: Int) {
     val word = text.substring(begin, end)
     if (isAllowed(word)) {
       return

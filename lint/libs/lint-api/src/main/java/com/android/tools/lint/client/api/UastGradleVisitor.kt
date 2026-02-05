@@ -55,11 +55,7 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
     )
   }
 
-  private fun handleBinaryExpression(
-    node: UBinaryExpression,
-    detectors: List<GradleScanner>,
-    context: GradleContext,
-  ) {
+  private fun handleBinaryExpression(node: UBinaryExpression, detectors: List<GradleScanner>, context: GradleContext) {
     if (node.isAssignment()) {
       val hierarchy = getPropertyHierarchy(node.leftOperand)
       val target = hierarchy.firstOrNull() ?: return
@@ -68,16 +64,7 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
       val parentParentName = hierarchyWithParents[2]
       val value = node.rightOperand.getSource()
       for (scanner in detectors) {
-        scanner.checkDslPropertyAssignment(
-          context,
-          target,
-          value,
-          parentName,
-          parentParentName,
-          node.leftOperand,
-          node.rightOperand,
-          node,
-        )
+        scanner.checkDslPropertyAssignment(context, target, value, parentName, parentParentName, node.leftOperand, node.rightOperand, node)
       }
     } else if (listOf("version", "apply").contains(node.operatorIdentifier?.name)) {
       // TODO(xof): the above condition is not really right, and this should actually work by
@@ -89,51 +76,31 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
       while (call is UBinaryExpression) {
         call = call.leftOperand
       }
-      if (
-        call is UCallExpression &&
-          getMethodName(call) == "id" &&
-          call.valueArgumentCount == 1 &&
-          getParent(node) == "plugins"
-      ) {
+      if (call is UCallExpression && getMethodName(call) == "id" && call.valueArgumentCount == 1 && getParent(node) == "plugins") {
         val idExpression = call.valueArguments[0]
         GradleContext.getStringLiteralValue(idExpression.getSource(), idExpression)?.let { id ->
           val value = node.rightOperand.getSource()
           for (scanner in detectors) {
-            scanner.checkDslPropertyAssignment(
-              context,
-              property,
-              value,
-              id,
-              "plugins",
-              node.operator,
-              node.rightOperand,
-              node,
-            )
+            scanner.checkDslPropertyAssignment(context, property, value, id, "plugins", node.operator, node.rightOperand, node)
           }
         }
       }
     }
   }
 
-  private fun handleMethodCall(
-    node: UCallExpression,
-    detectors: List<GradleScanner>,
-    context: GradleContext,
-  ) {
+  private fun handleMethodCall(node: UCallExpression, detectors: List<GradleScanner>, context: GradleContext) {
     val valueArguments = node.valueArguments
     val propertyName = getMethodName(node)
     if (propertyName == null) {
       return
     } else {
-      val parents =
-        getMethodCallHierarchy(node).drop(1) + getParentsN(node, 1) + getParentsN(node, 2)
+      val parents = getMethodCallHierarchy(node).drop(1) + getParentsN(node, 1) + getParentsN(node, 2)
       val parentName = parents.getOrNull(0)
       val parentParentName = parents.getOrNull(1)
       val unnamedArguments = mutableListOf<String>()
       val namedArguments = mutableMapOf<String, String>()
       for (arg in valueArguments) {
-        val name =
-          (arg.sourcePsi?.parent as? KtValueArgument)?.getArgumentName()?.asName?.identifier
+        val name = (arg.sourcePsi?.parent as? KtValueArgument)?.getArgumentName()?.asName?.identifier
         val src = arg.getSource()
         when (name) {
           null -> unnamedArguments.add(src)
@@ -141,21 +108,9 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
         }
       }
       for (scanner in detectors) {
-        scanner.checkMethodCall(
-          context,
-          propertyName,
-          parentName,
-          parentParentName,
-          namedArguments,
-          unnamedArguments,
-          node,
-        )
+        scanner.checkMethodCall(context, propertyName, parentName, parentParentName, namedArguments, unnamedArguments, node)
       }
-      if (
-        namedArguments.isEmpty() &&
-          valueArguments.size == 1 &&
-          valueArguments[0] !is ULambdaExpression
-      ) {
+      if (namedArguments.isEmpty() && valueArguments.size == 1 && valueArguments[0] !is ULambdaExpression) {
         // Some sort of DSL property?
         // Parent should be block, its parent lambda, its parent a call -
         // the name is the parent
@@ -201,14 +156,11 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
   /**
    * Returns the source string for this [UExpression].
    *
-   * This is used because [UExpression.asSourceString] doesn't do what it might sound like it does:
-   * return the actual source; instead, it runs something like a source printer on the UAST
-   * elements; this means for example that the whitespace will be standard instead of what is
-   * actually in the source code, and for some constructs, there's a big change (for example,
-   * properties will look like Java getters and setters). Instead, we can get the real source code
-   * from the [UElement.sourcePsi] property, and from there the true source code via
-   * [PsiElement.getText]. We only fall back to [UExpression.asSourceString] for elements missing a
-   * source element (e.g. virtual elements).
+   * This is used because [UExpression.asSourceString] doesn't do what it might sound like it does: return the actual source; instead, it
+   * runs something like a source printer on the UAST elements; this means for example that the whitespace will be standard instead of what
+   * is actually in the source code, and for some constructs, there's a big change (for example, properties will look like Java getters and
+   * setters). Instead, we can get the real source code from the [UElement.sourcePsi] property, and from there the true source code via
+   * [PsiElement.getText]. We only fall back to [UExpression.asSourceString] for elements missing a source element (e.g. virtual elements).
    */
   private fun UExpression.getSource(): String {
     val sourcePsi = sourcePsi

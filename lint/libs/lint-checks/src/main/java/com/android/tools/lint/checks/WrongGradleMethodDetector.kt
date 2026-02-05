@@ -120,20 +120,13 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
           getErrorMessage(
             simpleParentType,
             thisTypeString,
-            if (statement == DEPENDENCIES_BLOCK_NAME) ktCall.parentLambda()?.getContainerName()
-            else null,
+            if (statement == DEPENDENCIES_BLOCK_NAME) ktCall.parentLambda()?.getContainerName() else null,
             imports.firstOrNull(),
             inBuildType,
             inProductFlavor,
           )
 
-        context.report(
-          ISSUE,
-          ktCall,
-          context.getLocation(ktCall.getCallNameExpression()),
-          message,
-          fix,
-        )
+        context.report(ISSUE, ktCall, context.getLocation(ktCall.getCallNameExpression()), message, fix)
       }
     }
   }
@@ -191,10 +184,7 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
     // hardcodes some *known* cases that are wrong which we can check for
     // without resolve results.
     if (statement == FIREBASE_APP_DISTRIBUTION_NAME) {
-      if (
-        ktsCall != null &&
-          context.getContents()?.contains(FIREBASE_APP_DISTRIBUTION_PKG_PREFIX) == false
-      ) {
+      if (ktsCall != null && context.getContents()?.contains(FIREBASE_APP_DISTRIBUTION_PKG_PREFIX) == false) {
         // The firebase issue only applies to KTS, not Groovy
         reportFirebaseAppDistributionMistake(context, ktsCall)
       }
@@ -213,12 +203,7 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
           )
 
         if (ktsCall != null) {
-          context.report(
-            ISSUE,
-            ktsCall,
-            context.getLocation(ktsCall.getCallNameExpression()),
-            message,
-          )
+          context.report(ISSUE, ktsCall, context.getLocation(ktsCall.getCallNameExpression()), message)
         } else {
           context.report(ISSUE, cookie, context.getLocation(cookie, LocationType.NAME), message)
         }
@@ -234,18 +219,8 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
     reportFirebaseAppDistributionMistake(context, call as Any, location)
   }
 
-  private fun reportFirebaseAppDistributionMistake(
-    context: GradleContext,
-    cookie: Any,
-    location: Location,
-  ) {
-    context.report(
-      ISSUE,
-      cookie,
-      location,
-      FIREBASE_APP_DISTRIBUTION_MESSAGE,
-      fix = createFix(context, FIREBASE_APP_DISTRIBUTION_FQN),
-    )
+  private fun reportFirebaseAppDistributionMistake(context: GradleContext, cookie: Any, location: Location) {
+    context.report(ISSUE, cookie, location, FIREBASE_APP_DISTRIBUTION_MESSAGE, fix = createFix(context, FIREBASE_APP_DISTRIBUTION_FQN))
   }
 
   private fun getReceiverType(symbol: KaFunctionSymbol): KaType? {
@@ -280,12 +255,7 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
 
   private fun KaSession.findImports(symbol: KaFunctionSymbol): List<String>? {
     val methodName = symbol.name ?: return null
-    val typeSymbol =
-      (symbol.valueParameters.firstOrNull()?.returnType as? KaClassType)
-        ?.typeArguments
-        ?.firstOrNull()
-        ?.type
-        ?.symbol
+    val typeSymbol = (symbol.valueParameters.firstOrNull()?.returnType as? KaClassType)?.typeArguments?.firstOrNull()?.type?.symbol
     if (typeSymbol is KaClassSymbol) {
       // TODO: Isn't there a better way to get the package name??
       val fqn = typeSymbol.classId?.asSingleFqName()?.asString() ?: return null
@@ -315,13 +285,10 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
 
   companion object {
     private const val FIREBASE_APP_DISTRIBUTION_NAME = "firebaseAppDistribution"
-    private const val FIREBASE_APP_DISTRIBUTION_PKG_PREFIX =
-      "com.google.firebase.appdistribution.gradle."
-    private const val FIREBASE_APP_DISTRIBUTION_FQN =
-      "$FIREBASE_APP_DISTRIBUTION_PKG_PREFIX$FIREBASE_APP_DISTRIBUTION_NAME"
+    private const val FIREBASE_APP_DISTRIBUTION_PKG_PREFIX = "com.google.firebase.appdistribution.gradle."
+    private const val FIREBASE_APP_DISTRIBUTION_FQN = "$FIREBASE_APP_DISTRIBUTION_PKG_PREFIX$FIREBASE_APP_DISTRIBUTION_NAME"
     private const val FIREBASE_APP_DISTRIBUTION_MESSAGE =
-      "This does not resolve to the right method; you need to explicitly " +
-        "add `import $FIREBASE_APP_DISTRIBUTION_FQN` to this file!"
+      "This does not resolve to the right method; you need to explicitly " + "add `import $FIREBASE_APP_DISTRIBUTION_FQN` to this file!"
     private const val DEPENDENCIES_BLOCK_NAME = "dependencies"
 
     @JvmField

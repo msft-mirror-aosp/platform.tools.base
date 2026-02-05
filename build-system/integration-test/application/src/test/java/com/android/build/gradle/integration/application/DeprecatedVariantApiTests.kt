@@ -26,41 +26,36 @@ import org.junit.Rule
 import org.junit.Test
 
 class DeprecatedVariantApiTests {
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule
+  val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "android.buildFeatures.buildConfig = true\n"
-        )
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(project.buildFile, "android.buildFeatures.buildConfig = true\n")
+  }
+
+  @Test
+  fun `ensure buildConfig is generated when tasks are created eagerly`() {
+    project.buildFile.appendText(
+      """
+      android {
+          // force task configuration which will happen before the old variant API is called.
+          tasks.whenTaskAdded {
+              System.out.println(it.name)
+          }
+          applicationVariants.all {
+              resValue("string", "res_name", "SomeResValue")
+              buildConfigField("String", "CUSTOM_VERSION_NAME", "\"buildVersionName\"")
+          }
+      }
+      """
+        .trimIndent()
+    )
+
+    project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug")
+
+    project.assertApk(ApkSelector.DEBUG) {
+      classes().classDefinition("com/example/helloworld/BuildConfig").fields().contains("CUSTOM_VERSION_NAME")
     }
-
-    @Test
-    fun `ensure buildConfig is generated when tasks are created eagerly`() {
-        project.buildFile.appendText("""
-        android {
-            // force task configuration which will happen before the old variant API is called.
-            tasks.whenTaskAdded {
-                System.out.println(it.name)
-            }
-            applicationVariants.all {
-                resValue("string", "res_name", "SomeResValue")
-                buildConfigField("String", "CUSTOM_VERSION_NAME", "\"buildVersionName\"")
-            }
-        }""".trimIndent())
-
-        project.executor()
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run("assembleDebug")
-
-        project.assertApk(ApkSelector.DEBUG) {
-            classes().classDefinition("com/example/helloworld/BuildConfig")
-                .fields()
-                .contains("CUSTOM_VERSION_NAME")
-        }
-    }
+  }
 }

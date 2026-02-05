@@ -32,30 +32,27 @@ private const val PNG_EXTENSION = "png"
 /**
  * The different options available while compiling resources.
  *
- * @param generateSymbolsPathData Path where the R.txt file should be written to. If null, symbols
- *   will not be generated.
- * @param visibility The visibility of resources in the given file to process. If specified, then
- *   compilation of table files will fail if either the "public" or "public group" tags are
- *   encountered.
+ * @param generateSymbolsPathData Path where the R.txt file should be written to. If null, symbols will not be generated.
+ * @param visibility The visibility of resources in the given file to process. If specified, then compilation of table files will fail if
+ *   either the "public" or "public group" tags are encountered.
  * @param requirePngCrunching whether PNG file crunching is enabled
- * @param pseudolocalize Whether or not the pseudolocales en-XA and ar-XB are generated for default
- *   string resources.
- * @param partialRFile file to output symbols defined in the resource file (currently only
- *   supported for non-raw XML files (e.g. values or layouts) to match AAPT2's behaviour)
- * @param legacyMode Whether or not to error or warn on positional args not being specified in a
- *   translatable string with parameters.
+ * @param pseudolocalize Whether or not the pseudolocales en-XA and ar-XB are generated for default string resources.
+ * @param partialRFile file to output symbols defined in the resource file (currently only supported for non-raw XML files (e.g. values or
+ *   layouts) to match AAPT2's behaviour)
+ * @param legacyMode Whether or not to error or warn on positional args not being specified in a translatable string with parameters.
  * @param verbose Whether or not to show verbose logs.
  * @param sourcePath Specified source path to be written in the compiled resource.
  */
 data class ResourceCompilerOptions(
-  val generateSymbolsPathData: ResourcePathData?= null,
+  val generateSymbolsPathData: ResourcePathData? = null,
   val visibility: ResourceVisibility? = null,
   val requirePngCrunching: Boolean = false,
   val pseudolocalize: Boolean = false,
   val partialRFile: File? = null,
   val legacyMode: Boolean = false,
   val verbose: Boolean = false,
-  val sourcePath: String? = null)
+  val sourcePath: String? = null,
+)
 
 /**
  * Shows whether the ResourceCompiler can compile the given Resource File.
@@ -68,8 +65,7 @@ fun canCompileResourceInJvm(file: File, requirePngCrunching: Boolean): Boolean {
   if (file.isHidden) return true
 
   val pathData = extractPathData(file)
-  if (pathData.resourceDirectory == VALUES_DIRECTORY_PREFIX
-    && pathData.extension == XML_EXTENSION) {
+  if (pathData.resourceDirectory == VALUES_DIRECTORY_PREFIX && pathData.extension == XML_EXTENSION) {
     // file is a values table.
     return true
   } else {
@@ -90,14 +86,12 @@ fun canCompileResourceInJvm(file: File, requirePngCrunching: Boolean): Boolean {
  * Compiles the given resource file and puts the compiled process in the given output directory.
  *
  * @param file file to processed. How it is processed is determined by the resource compiler.
- * @param options the [ResourceCompilerOptions] that should be considered while compiling the
- *   resource.
+ * @param options the [ResourceCompilerOptions] that should be considered while compiling the resource.
  *
- * Values files are compiled by extracting the all the resources and their values into a Resource
- * Table to be used in Linking.
+ * Values files are compiled by extracting the all the resources and their values into a Resource Table to be used in Linking.
  *
- * Xml resource files are compiled by extracting all new (@+) ids and extracting all inlined
- * aapt:attr attributes. The resulting xmls and aapt:attr are flattened.
+ * Xml resource files are compiled by extracting all new (@+) ids and extracting all inlined aapt:attr attributes. The resulting xmls and
+ * aapt:attr are flattened.
  *
  * Png go through crunching (if not debug) and additional processing if the png is a patch-9 file.
  *
@@ -105,8 +99,7 @@ fun canCompileResourceInJvm(file: File, requirePngCrunching: Boolean): Boolean {
  *
  * See [canCompileResourceInJvm] to see what is supported.
  */
-fun compileResource(
-  file: File, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger) {
+fun compileResource(file: File, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger) {
 
   // Skip hidden files.
   if (file.isHidden) {
@@ -123,24 +116,22 @@ fun compileResource(
     compileFunction(pathData, outputDirectory, options, logger)
   } catch (e: Exception) {
     logger?.info("Failed to compile file", blameSource(pathData.source))
-      val message =
-          "Resource compilation failed (${e.message}. Cause: ${e.cause}). " +
-                  "Check logs for more details."
-      throw ResourceCompilationException(message, e)
+    val message = "Resource compilation failed (${e.message}. Cause: ${e.cause}). " + "Check logs for more details."
+    throw ResourceCompilationException(message, e)
   }
 }
 
-private fun getCompileMethod(pathData: ResourcePathData, logger: BlameLogger):
-    (ResourcePathData, File, ResourceCompilerOptions, BlameLogger) -> Unit {
-  if (pathData.resourceDirectory == VALUES_DIRECTORY_PREFIX &&
-      pathData.extension == XML_EXTENSION) {
+private fun getCompileMethod(
+  pathData: ResourcePathData,
+  logger: BlameLogger,
+): (ResourcePathData, File, ResourceCompilerOptions, BlameLogger) -> Unit {
+  if (pathData.resourceDirectory == VALUES_DIRECTORY_PREFIX && pathData.extension == XML_EXTENSION) {
     pathData.extension = RESOURCE_TABLE_EXTENSION
     return ::compileTable
   } else {
     val type = ResourceType.fromFolderName(pathData.resourceDirectory)
     if (type == null) {
-      val errorMsg = "Invalid resource type '${pathData.resourceDirectory}'" +
-        " for file ${pathData.file.absolutePath}"
+      val errorMsg = "Invalid resource type '${pathData.resourceDirectory}'" + " for file ${pathData.file.absolutePath}"
       logger?.warning(errorMsg)
       error(errorMsg)
     }
@@ -158,41 +149,35 @@ private fun getCompileMethod(pathData: ResourcePathData, logger: BlameLogger):
 /**
  * Compiles a xml values file into a flattened [ResourceTable] proto.
  *
- * After all resources are extracted from the given xml, if pseudolocalization is set,
- * pseudolocale strings are created for each default string resource in the xml. The result is
- * flattened to a file in the output directory.
+ * After all resources are extracted from the given xml, if pseudolocalization is set, pseudolocale strings are created for each default
+ * string resource in the xml. The result is flattened to a file in the output directory.
  *
  * @param pathData the file to be processed.
  * @param outputDirectory the directory to which the compiled file is to be placed.
  * @throws IllegalStateException A failure occurred in processing this resource.
  */
-private fun compileTable(
-    pathData: ResourcePathData,
-    outputDirectory: File,
-    options: ResourceCompilerOptions,
-    logger: BlameLogger) {
+private fun compileTable(pathData: ResourcePathData, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger) {
   val outputFile = File(outputDirectory, pathData.getIntermediateContainerFilename())
   logger?.info("Compiling XML table ${pathData.file.absolutePath} to $outputFile")
 
   val table = ResourceTable(logger = logger)
 
-  val extractorOptions = TableExtractorOptions(
-    translatable = !pathData.name.contains("donottranslate"),
-    errorOnPositionalArgs = !options.legacyMode,
-    visibility = options.visibility)
-  val tableExtractor =
-    TableExtractor(table, pathData.source, pathData.config, extractorOptions, logger)
+  val extractorOptions =
+    TableExtractorOptions(
+      translatable = !pathData.name.contains("donottranslate"),
+      errorOnPositionalArgs = !options.legacyMode,
+      visibility = options.visibility,
+    )
+  val tableExtractor = TableExtractor(table, pathData.source, pathData.config, extractorOptions, logger)
 
   pathData.file.inputStream().use {
-      try {
-          tableExtractor.extract(it)
-      } catch (e: Exception) {
-          // For merged values there's no need to re-write as we don't know which line failed. The
-          // actual error will be raised by the table extractor.
-          throw ResourceCompilationException(
-              "Failed to compile values resource file ${pathData.file}", e
-          )
-      }
+    try {
+      tableExtractor.extract(it)
+    } catch (e: Exception) {
+      // For merged values there's no need to re-write as we don't know which line failed. The
+      // actual error will be raised by the table extractor.
+      throw ResourceCompilationException("Failed to compile values resource file ${pathData.file}", e)
+    }
 
     // Adds the fake locales: en-XA and ar-XB for each default-defined string resource. This is used
     // for debugging apps with long text (en-XA) or rtl (ar-XB) language support.
@@ -218,20 +203,19 @@ private fun compileTable(
         pkg.groups.forEach { group ->
           // Macros do not define resources and therefore don't belong in the R.txt.
           if (group.type != AaptResourceType.MACRO) {
-              val javaType = if (group.type == AaptResourceType.STYLEABLE) "int[]" else "int"
-              group.entries.forEach { entry ->
-                  val visibility = getVisibility(entry.value.values, group.type)
-                  builder.appendln("${visibility.getName()} $javaType ${group.type.tagName} ${entry.key}")
-                  if (group.type == AaptResourceType.STYLEABLE) {
-                      // We also need to write down styleable children (entries)
-                      group.getStyleable(entry).entries.forEach {
-                          val childPackage =
-                                  if (!it.name.pck.isNullOrEmpty()) "_${it.name.pck}" else ""
-                          // styleables and their children are always public
-                          builder.appendln("public int styleable ${entry.key}${childPackage}_${it.name.entry}")
-                      }
-                  }
+            val javaType = if (group.type == AaptResourceType.STYLEABLE) "int[]" else "int"
+            group.entries.forEach { entry ->
+              val visibility = getVisibility(entry.value.values, group.type)
+              builder.appendln("${visibility.getName()} $javaType ${group.type.tagName} ${entry.key}")
+              if (group.type == AaptResourceType.STYLEABLE) {
+                // We also need to write down styleable children (entries)
+                group.getStyleable(entry).entries.forEach {
+                  val childPackage = if (!it.name.pck.isNullOrEmpty()) "_${it.name.pck}" else ""
+                  // styleables and their children are always public
+                  builder.appendln("public int styleable ${entry.key}${childPackage}_${it.name.entry}")
+                }
               }
+            }
           }
         }
       }
@@ -241,20 +225,19 @@ private fun compileTable(
 }
 
 private fun getVisibility(values: Collection<ResourceEntry>, type: AaptResourceType): ResourceVisibility {
-    // all declare styleables need to be marked as public so they're visible in the R classes
-    if (type == AaptResourceType.STYLEABLE) return ResourceVisibility.PUBLIC
-    var foundPublic = false
-    var foundPrivate = false
-    values.forEach {
-        // We only care about public and private since only these can clash
-        if (it.visibility.level == ResourceVisibility.PUBLIC) foundPublic = true
-        else if (it.visibility.level == ResourceVisibility.PRIVATE) foundPrivate = true
-    }
-    if (foundPublic && foundPrivate)
-        error("Resource cannot be both public and private: ${type.tagName} ${values.first().name}")
-    if (foundPublic) return ResourceVisibility.PUBLIC
-    if (foundPrivate) return ResourceVisibility.PRIVATE
-    return ResourceVisibility.PRIVATE_XML_ONLY // default
+  // all declare styleables need to be marked as public so they're visible in the R classes
+  if (type == AaptResourceType.STYLEABLE) return ResourceVisibility.PUBLIC
+  var foundPublic = false
+  var foundPrivate = false
+  values.forEach {
+    // We only care about public and private since only these can clash
+    if (it.visibility.level == ResourceVisibility.PUBLIC) foundPublic = true
+    else if (it.visibility.level == ResourceVisibility.PRIVATE) foundPrivate = true
+  }
+  if (foundPublic && foundPrivate) error("Resource cannot be both public and private: ${type.tagName} ${values.first().name}")
+  if (foundPublic) return ResourceVisibility.PUBLIC
+  if (foundPrivate) return ResourceVisibility.PRIVATE
+  return ResourceVisibility.PRIVATE_XML_ONLY // default
 }
 
 /**
@@ -263,20 +246,17 @@ private fun getVisibility(values: Collection<ResourceEntry>, type: AaptResourceT
  * @param pathData the file to flatten.
  * @param outputDirectory the directory to which the compiled file is to be placed.
  */
-private fun compileFile(
-    pathData: ResourcePathData,
-    outputDirectory: File,
-    options: ResourceCompilerOptions,
-    logger: BlameLogger?) {
+private fun compileFile(pathData: ResourcePathData, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger?) {
   val outputFile = File(outputDirectory, pathData.getIntermediateContainerFilename())
   logger?.info("Compiling file ${pathData.file.absolutePath} to $outputFile")
   pathData.file.inputStream().use {
-    val resourceFile = ResourceFile(
-      ResourceName("", resourceTypeFromTag(pathData.resourceDirectory)!!, pathData.name),
-      pathData.config,
-      pathData.source,
-      ResourceFile.Type.Unknown
-    )
+    val resourceFile =
+      ResourceFile(
+        ResourceName("", resourceTypeFromTag(pathData.resourceDirectory)!!, pathData.name),
+        pathData.config,
+        pathData.source,
+        ResourceFile.Type.Unknown,
+      )
 
     val container = Container(outputFile.outputStream(), 1)
     container.addFileEntry(it, resourceFile)
@@ -292,48 +272,33 @@ private fun compileFile(
  * Compiles the XML resource file (such as layouts, drawables, ect. to a flattened proto file.
  *
  * This process has two primary steps:
- *
  * 1. Extract all new ids from the xml into a symbol table. "@+id/myView" for example.
+ * 2. Find and extract all inline (aapt:attr) XML resources. This includes assigning the declared attribute on the (aapt:attr) to the
+ *    generated xml resource name.
  *
- * 2. Find and extract all inline (aapt:attr) XML resources. This includes assigning the declared
- * attribute on the (aapt:attr) to the generated xml resource name.
- *
- * After both these steps, the symbol table and both the extracted XMLs and modified original XML
- * are flattened to a single [Container] and written to the output directory.
+ * After both these steps, the symbol table and both the extracted XMLs and modified original XML are flattened to a single [Container] and
+ * written to the output directory.
  *
  * @param pathData the file to be processed.
  * @param outputDirectory the directory to which the compiled file is to be placed.
  * @throws IllegalStateException A failure occurred in processing this resource.
  */
-private fun compileXml(
-    pathData: ResourcePathData,
-    outputDirectory: File,
-    options: ResourceCompilerOptions,
-    logger: BlameLogger?) {
+private fun compileXml(pathData: ResourcePathData, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger?) {
   val outputFile = File(outputDirectory, pathData.getIntermediateContainerFilename())
   logger?.info("Compiling xml file ${pathData.file.absolutePath} to $outputFile")
 
-  val fileToProcess = ResourceFile(
-    ResourceName("", pathData.type!!, pathData.name),
-    pathData.config,
-    pathData.source,
-    ResourceFile.Type.ProtoXml
-  )
+  val fileToProcess =
+    ResourceFile(ResourceName("", pathData.type!!, pathData.name), pathData.config, pathData.source, ResourceFile.Type.ProtoXml)
 
   pathData.file.inputStream().use {
     val xmlProcessor = XmlProcessor(source = pathData.source, logger = logger)
-      try {
-          xmlProcessor.process(fileToProcess, it)
-      } catch (e: Exception) {
-          throw ResourceCompilationException(
-              "Failed to compile resource file: " +
-                      logger?.getOutputSource(blameSource(pathData.source)),
-              e
-          )
-      }
+    try {
+      xmlProcessor.process(fileToProcess, it)
+    } catch (e: Exception) {
+      throw ResourceCompilationException("Failed to compile resource file: " + logger?.getOutputSource(blameSource(pathData.source)), e)
+    }
 
-    val container =
-      Container(outputFile.outputStream(), xmlProcessor.xmlResources.size)
+    val container = Container(outputFile.outputStream(), xmlProcessor.xmlResources.size)
 
     for (resource in xmlProcessor.xmlResources) {
       container.addXmlEntry(resource)
@@ -342,9 +307,7 @@ private fun compileXml(
     if (options.partialRFile != null) {
       val builder = StringBuilder()
       builder.appendln("default int ${pathData.type.tagName} ${pathData.name}")
-      fileToProcess.exportedSymbols.forEach { id ->
-        builder.appendln("default int id ${id.name.entry}")
-      }
+      fileToProcess.exportedSymbols.forEach { id -> builder.appendln("default int id ${id.name.entry}") }
       FileUtils.writeToFile(options.partialRFile, builder.toString())
     }
   }
@@ -359,18 +322,13 @@ private fun compileXml(
  *
  * If we are not running in debug mode, the png will undergo additional crunching.
  *
- * Finally, the processed file is written to the output directory. It is possible that no
- * processing is done to the png file, and if so it will just be written exactly as if it were
- * a raw file.
+ * Finally, the processed file is written to the output directory. It is possible that no processing is done to the png file, and if so it
+ * will just be written exactly as if it were a raw file.
  *
  * @param pathData the file to process.
  * @param outputDirectory the directory in which the processed file will be placed.
  */
-private fun compilePng(
-    pathData: ResourcePathData,
-    outputDirectory: File,
-    options: ResourceCompilerOptions,
-    logger: BlameLogger?) {
+private fun compilePng(pathData: ResourcePathData, outputDirectory: File, options: ResourceCompilerOptions, logger: BlameLogger?) {
   logger?.info("Compiling image file ${pathData.file.absolutePath}")
   if (pathData.extension == PATCH_9_EXTENSION) {
     error("Patch 9 PNG processing is not supported with the JVM Android resource compiler.")

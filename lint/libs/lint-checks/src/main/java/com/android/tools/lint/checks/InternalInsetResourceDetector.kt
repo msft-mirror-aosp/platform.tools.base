@@ -28,10 +28,7 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 
-/**
- * Detector looking for usages of Resources.getIdentifier(insetName, "dimen", "android") for
- * platform-internal insetName resources.
- */
+/** Detector looking for usages of Resources.getIdentifier(insetName, "dimen", "android") for platform-internal insetName resources. */
 class InternalInsetResourceDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> {
     return listOf("getIdentifier")
@@ -44,8 +41,7 @@ class InternalInsetResourceDetector : Detector(), SourceCodeScanner {
     val args = node.valueArguments
     if (args.size != 3) return
 
-    fun getStringArgumentValue(argument: UExpression): String? =
-      ConstantEvaluator.evaluateString(context, argument, false)
+    fun getStringArgumentValue(argument: UExpression): String? = ConstantEvaluator.evaluateString(context, argument, false)
 
     val nameArg = getStringArgumentValue(args[0])
     val defTypeArg = getStringArgumentValue(args[1])
@@ -62,12 +58,7 @@ class InternalInsetResourceDetector : Detector(), SourceCodeScanner {
     }
 
     if (defTypeArg == "dimen" && defPackageArg == "android") {
-      context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "Using internal inset dimension resource `$nameArg` is not supported",
-      )
+      context.report(ISSUE, node, context.getLocation(node), "Using internal inset dimension resource `$nameArg` is not supported")
     }
   }
 
@@ -89,8 +80,7 @@ class InternalInsetResourceDetector : Detector(), SourceCodeScanner {
         priority = 6,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(InternalInsetResourceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(InternalInsetResourceDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
   }
 }

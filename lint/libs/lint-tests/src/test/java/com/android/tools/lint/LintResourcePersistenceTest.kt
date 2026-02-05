@@ -61,8 +61,7 @@ class LintResourcePersistenceTest {
         "-fastScrollOverlayPosition:enum:floating:0,atThumb:1,aboveThumb:2,;"
 
     val pathVariables = getPathVariables()
-    val deserialized =
-      LintResourcePersistence.deserialize(expected.trim(), pathVariables, null, null)
+    val deserialized = LintResourcePersistence.deserialize(expected.trim(), pathVariables, null, null)
     val serialized = deserialized.serialize(pathVariables, null, sort = true)
     assertEquals(expected, serialized.trim())
   }
@@ -95,11 +94,7 @@ class LintResourcePersistenceTest {
 
     // Test serialization too -- serialize and deserialize the repositories and
     // make sure they work the same
-    val serialized =
-      LintResourcePersistence.serialize(
-        folderRepository as LintResourceRepository,
-        client.pathVariables,
-      )
+    val serialized = LintResourcePersistence.serialize(folderRepository as LintResourceRepository, client.pathVariables)
     val deserialized = LintResourcePersistence.deserialize(serialized, getPathVariables())
 
     // If both methods returned empty string the above would equal, so also perform
@@ -117,42 +112,20 @@ class LintResourcePersistenceTest {
       val defaultOk = okItems.first { it.configuration.isDefault }
       assertEquals("OK", defaultOk.resourceValue?.value)
 
-      val smsItems =
-        resources.getResources(
-          ResourceNamespace.ANDROID,
-          ResourceType.STRING,
-          "sms_short_code_details",
-        )
+      val smsItems = resources.getResources(ResourceNamespace.ANDROID, ResourceType.STRING, "sms_short_code_details")
       val smsEn = smsItems.first() { it.configuration.isDefault }
       // Note -- this string can change in the platform; if it does, update the test
       // to match it.
       assertEquals("This may cause charges on your mobile account.", smsEn.resourceValue!!.value)
-      assertEquals(
-        "This <b>may cause charges</b> on your mobile account.",
-        smsEn.resourceValue!!.rawXmlValue,
-      )
+      assertEquals("This <b>may cause charges</b> on your mobile account.", smsEn.resourceValue!!.rawXmlValue)
       val smsNo = smsItems.first() { it.configuration.localeQualifier?.value == "nb" }
-      assertEquals(
-        "Dette kan føre til kostnader på mobilabonnementet ditt.",
-        smsNo.resourceValue!!.value,
-      )
-      assertEquals(
-        "\"Dette \"<b>\"kan føre til kostnader\"</b>\" på mobilabonnementet ditt.\"",
-        smsNo.resourceValue!!.rawXmlValue,
-      )
+      assertEquals("Dette kan føre til kostnader på mobilabonnementet ditt.", smsNo.resourceValue!!.value)
+      assertEquals("\"Dette \"<b>\"kan føre til kostnader\"</b>\" på mobilabonnementet ditt.\"", smsNo.resourceValue!!.rawXmlValue)
 
-      val mimeItems =
-        resources.getResources(
-          ResourceNamespace.ANDROID,
-          ResourceType.STRING,
-          "mime_type_document_ext",
-        )
+      val mimeItems = resources.getResources(ResourceNamespace.ANDROID, ResourceType.STRING, "mime_type_document_ext")
       val mimeEn = mimeItems.first() { it.configuration.isDefault }
       assertEquals("(PDF) document", mimeEn.resourceValue!!.value)
-      assertEquals(
-        "<xliff:g example=\"PDF\" id=\"extension\">%1\$s</xliff:g> document",
-        mimeEn.resourceValue!!.rawXmlValue,
-      )
+      assertEquals("<xliff:g example=\"PDF\" id=\"extension\">%1\$s</xliff:g> document", mimeEn.resourceValue!!.rawXmlValue)
     }
 
     // Make sure all the locales are present too; there's something like 86 translations of this

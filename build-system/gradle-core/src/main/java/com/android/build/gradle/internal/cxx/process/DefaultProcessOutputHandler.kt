@@ -26,57 +26,58 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 
 /**
- * This class is needed by the gradle process executor. It handles stdout and stderr from a process.
- * The handleOutput function is not used because the streams are evaluated interactively as the
- * process executes.
+ * This class is needed by the gradle process executor. It handles stdout and stderr from a process. The handleOutput function is not used
+ * because the streams are evaluated interactively as the process executes.
  */
 class DefaultProcessOutputHandler(
-    private val stderrFile: File,
-    private val stdoutFile: File,
-    private val logPrefix: String,
-    private val logStderr: Boolean,
-    private val logStdout: Boolean,
-    private val logFullStdout: Boolean,
+  private val stderrFile: File,
+  private val stdoutFile: File,
+  private val logPrefix: String,
+  private val logStderr: Boolean,
+  private val logStdout: Boolean,
+  private val logFullStdout: Boolean,
 ) : ProcessOutputHandler {
 
-    var stderr: FileOutputStream? = null
-    var stdout: FileOutputStream? = null
+  var stderr: FileOutputStream? = null
+  var stdout: FileOutputStream? = null
 
-    override fun createOutput(): ProcessOutput {
-        val singleStderr = FileOutputStream(stderrFile, true)
-        val singleStdout = FileOutputStream(stdoutFile, true)
-        val stderrReceivers = mutableListOf<OutputStream>(singleStderr)
-        val stdoutReceivers = mutableListOf<OutputStream>(singleStdout)
-        if (logStderr) {
-            stderrReceivers.add(ChunkBytesToLineOutputStream(logPrefix, LifecycleLineOutputStream()))
-        }
-        if (logStdout) {
-            if (logFullStdout) {
-                stdoutReceivers.add(ChunkBytesToLineOutputStream(logPrefix, LifecycleLineOutputStream()))
-            } else {
-                stdoutReceivers.add(ChunkBytesToLineOutputStream(logPrefix,
-                    NativeBuildOutputClassifier { message ->
-                        message.lines.forEach(::lifecycleln)
-                    }))
-            }
-        }
-        return DefaultProcessOutput(
-            singleStderr,
-            singleStdout,
-            MultiplexingOutputStream(stdoutReceivers), MultiplexingOutputStream(stderrReceivers))
+  override fun createOutput(): ProcessOutput {
+    val singleStderr = FileOutputStream(stderrFile, true)
+    val singleStdout = FileOutputStream(stdoutFile, true)
+    val stderrReceivers = mutableListOf<OutputStream>(singleStderr)
+    val stdoutReceivers = mutableListOf<OutputStream>(singleStdout)
+    if (logStderr) {
+      stderrReceivers.add(ChunkBytesToLineOutputStream(logPrefix, LifecycleLineOutputStream()))
     }
+    if (logStdout) {
+      if (logFullStdout) {
+        stdoutReceivers.add(ChunkBytesToLineOutputStream(logPrefix, LifecycleLineOutputStream()))
+      } else {
+        stdoutReceivers.add(
+          ChunkBytesToLineOutputStream(logPrefix, NativeBuildOutputClassifier { message -> message.lines.forEach(::lifecycleln) })
+        )
+      }
+    }
+    return DefaultProcessOutput(
+      singleStderr,
+      singleStdout,
+      MultiplexingOutputStream(stdoutReceivers),
+      MultiplexingOutputStream(stderrReceivers),
+    )
+  }
 
-    override fun handleOutput(processOutput: ProcessOutput) {
-        if (stdout != null) {
-            throw RuntimeException("Multiple calls")
-        }
-        val output = (processOutput as DefaultProcessOutput)
-        stderr = output.stderr
-        stdout = output.stdout
+  override fun handleOutput(processOutput: ProcessOutput) {
+    if (stdout != null) {
+      throw RuntimeException("Multiple calls")
     }
+    val output = (processOutput as DefaultProcessOutput)
+    stderr = output.stderr
+    stdout = output.stdout
+  }
 }
 
 class LifecycleLineOutputStream : LineOutputStream {
-    override fun consume(line: String) = lifecycleln(line)
-    override fun close() { }
+  override fun consume(line: String) = lifecycleln(line)
+
+  override fun close() {}
 }

@@ -20,15 +20,19 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DependencyFailureHandlerTest {
-    @Test
-    fun testDependencyNameExtraction() {
-        // Test invalid dependency names (e.g., following typos, including characters that do not
-        // normally appear in artifact names.
-        assertEquals("com.google.android.play/core:1.4.0:",
-            checkForData(message = "   > Could not find com.google.android.play/core:1.4.0:.\n"))
+  @Test
+  fun testDependencyNameExtraction() {
+    // Test invalid dependency names (e.g., following typos, including characters that do not
+    // normally appear in artifact names.
+    assertEquals(
+      "com.google.android.play/core:1.4.0:",
+      checkForData(message = "   > Could not find com.google.android.play/core:1.4.0:.\n"),
+    )
 
-        // Test valid, fully-qualified dependency name.
-        assertEquals("com.google.android.play.core:1.4.0:",
-            checkForData(message = "   > Could not find com.google.android.play.core:1.4.0:.\n"))
-    }
+    // Test valid, fully-qualified dependency name.
+    assertEquals(
+      "com.google.android.play.core:1.4.0:",
+      checkForData(message = "   > Could not find com.google.android.play.core:1.4.0:.\n"),
+    )
+  }
 }

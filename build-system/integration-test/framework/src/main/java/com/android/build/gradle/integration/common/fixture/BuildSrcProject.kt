@@ -18,20 +18,15 @@ package com.android.build.gradle.integration.common.fixture
 
 import java.io.File
 
-/**
- * Specialization of the [GradleProject] fpr buildSrc project.
- */
-class BuildSrcProject: GradleProject("buildSrc") {
+/** Specialization of the [GradleProject] fpr buildSrc project. */
+class BuildSrcProject : GradleProject("buildSrc") {
 
-    override fun containsFullBuildScript(): Boolean = false
+  override fun containsFullBuildScript(): Boolean = false
 
-    override fun write(projectDir: File, buildScriptContent: String?, projectRepoScript: String) {
-        super.write(projectDir, buildScriptContent, projectRepoScript)
-        val buildFileName =
-            if (sourceFiles.containsKey("build.gradle.kts")) "build.gradle.kts" else "build.gradle"
-        val buildFile = File(projectDir, buildFileName)
-        buildFile.appendText(
-            projectRepoScript
-        )
-    }
+  override fun write(projectDir: File, buildScriptContent: String?, projectRepoScript: String) {
+    super.write(projectDir, buildScriptContent, projectRepoScript)
+    val buildFileName = if (sourceFiles.containsKey("build.gradle.kts")) "build.gradle.kts" else "build.gradle"
+    val buildFile = File(projectDir, buildFileName)
+    buildFile.appendText(projectRepoScript)
+  }
 }

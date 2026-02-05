@@ -38,337 +38,350 @@ import org.junit.Test
 
 class SerializedSharedFlowTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun testOnSubscriptionAllowsMultipleEmits(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val flow = MutableSerializedSharedFlow<Int>().onSubscription {
-            emit(5)
-            emit(6)
-            emit(7)
-        }
+  @Test
+  fun testOnSubscriptionAllowsMultipleEmits(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val flow =
+      MutableSerializedSharedFlow<Int>().onSubscription {
+        emit(5)
+        emit(6)
+        emit(7)
+      }
 
-        // Act
-        val values = mutableListOf<Int>()
-        flow.takeWhile { value ->
-            values.add(value)
-            value != 7
-        }.collect()
+    // Act
+    val values = mutableListOf<Int>()
+    flow
+      .takeWhile { value ->
+        values.add(value)
+        value != 7
+      }
+      .collect()
 
-        // Assert
-        Assert.assertEquals(listOf(5, 6, 7), values)
-    }
+    // Assert
+    Assert.assertEquals(listOf(5, 6, 7), values)
+  }
 
-    @Test
-    fun testOnSubscriptionAllowsMultipleEmitsWithMutableValues() : Unit = runBlockingWithTimeout {
-        val flow = MutableSerializedSharedFlow<StringBuilder>().onSubscription {
-            val sb = StringBuilder()
+  @Test
+  fun testOnSubscriptionAllowsMultipleEmitsWithMutableValues(): Unit = runBlockingWithTimeout {
+    val flow =
+      MutableSerializedSharedFlow<StringBuilder>().onSubscription {
+        val sb = StringBuilder()
 
-            sb.clear().append("Foo")
-            emit(sb)
+        sb.clear().append("Foo")
+        emit(sb)
 
-            sb.clear().append("Bar")
-            emit(sb)
+        sb.clear().append("Bar")
+        emit(sb)
 
-            sb.clear()
-            emit(sb)
-        }
+        sb.clear()
+        emit(sb)
+      }
 
-        // Act
-        val values = mutableListOf<String>()
-        flow.takeWhile { sb ->
-            values.add(sb.toString())
-            sb.isNotEmpty()
-        }.collect()
+    // Act
+    val values = mutableListOf<String>()
+    flow
+      .takeWhile { sb ->
+        values.add(sb.toString())
+        sb.isNotEmpty()
+      }
+      .collect()
 
-        // Assert
-        Assert.assertEquals(listOf("Foo", "Bar", ""), values)
-    }
+    // Assert
+    Assert.assertEquals(listOf("Foo", "Bar", ""), values)
+  }
 
-    @Test
-    fun testOnSubscriptionAllowsNestedSubscriptions(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val flow = MutableSerializedSharedFlow<Int>().onSubscription {
-            emit(5)
-            emit(6)
-            emit(7)
-        }
-        val nestedFlow = flow.onSubscription {
-            emit(8)
-            emit(9)
-            emit(10)
-        }
-        val nestedFlow2 = flow.onSubscription {
-            emit(11)
-            emit(12)
-            emit(13)
-        }
+  @Test
+  fun testOnSubscriptionAllowsNestedSubscriptions(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val flow =
+      MutableSerializedSharedFlow<Int>().onSubscription {
+        emit(5)
+        emit(6)
+        emit(7)
+      }
+    val nestedFlow =
+      flow.onSubscription {
+        emit(8)
+        emit(9)
+        emit(10)
+      }
+    val nestedFlow2 =
+      flow.onSubscription {
+        emit(11)
+        emit(12)
+        emit(13)
+      }
 
-        // Act
-        val values = mutableListOf<Int>() // 5,6,7
-        flow.takeWhile { value ->
-            values.add(value)
-            value != 7
-        }.collect()
+    // Act
+    val values = mutableListOf<Int>() // 5,6,7
+    flow
+      .takeWhile { value ->
+        values.add(value)
+        value != 7
+      }
+      .collect()
 
-        val nestedFlowValues = mutableListOf<Int>() // 5,6,7,8,9,10
-        nestedFlow.takeWhile { value ->
-            nestedFlowValues.add(value)
-            value != 10
-        }.collect()
+    val nestedFlowValues = mutableListOf<Int>() // 5,6,7,8,9,10
+    nestedFlow
+      .takeWhile { value ->
+        nestedFlowValues.add(value)
+        value != 10
+      }
+      .collect()
 
-        val nestedFlow2Values = mutableListOf<Int>() // 5,6,7,11,12,13
-        nestedFlow2.takeWhile { value ->
-            nestedFlow2Values.add(value)
-            value != 13
-        }.collect()
+    val nestedFlow2Values = mutableListOf<Int>() // 5,6,7,11,12,13
+    nestedFlow2
+      .takeWhile { value ->
+        nestedFlow2Values.add(value)
+        value != 13
+      }
+      .collect()
 
-        // Assert
-        Assert.assertEquals(listOf(5, 6, 7), values)
-        Assert.assertEquals(listOf(5, 6, 7, 8, 9, 10), nestedFlowValues)
-        Assert.assertEquals(listOf(5, 6, 7, 11, 12, 13), nestedFlow2Values)
-    }
+    // Assert
+    Assert.assertEquals(listOf(5, 6, 7), values)
+    Assert.assertEquals(listOf(5, 6, 7, 8, 9, 10), nestedFlowValues)
+    Assert.assertEquals(listOf(5, 6, 7, 11, 12, 13), nestedFlow2Values)
+  }
 
-    @Test
-    fun testEmitWorksForOneCollector() = runBlockingWithTimeout {
-        // Prepare
-        val collectorCount = MutableStateFlow(0)
-        val flow = MutableSerializedSharedFlow<Int>().onSubscription {
-            collectorCount.update { it + 1 }
-        }
+  @Test
+  fun testEmitWorksForOneCollector() = runBlockingWithTimeout {
+    // Prepare
+    val collectorCount = MutableStateFlow(0)
+    val flow = MutableSerializedSharedFlow<Int>().onSubscription { collectorCount.update { it + 1 } }
 
-        // Act
-        val asyncValues = async(Dispatchers.Default) {
-            flow.take(2).toList()
-        }
-        val asyncEmit = async(Dispatchers.Default) {
-            // Wait until collector has started, then emit values
-            collectorCount.first { it == 1 }
-            flow.emit(5)
-            flow.emit(6)
-        }
-        val values = asyncValues.await()
-        asyncEmit.await()
-
-        // Assert
-        Assert.assertEquals(listOf(5, 6), values)
-    }
-
-    @Test
-    fun testEmitWorksForManyCollectors() = runBlockingWithTimeout {
-        // Prepare
-        val collectorCountState = MutableStateFlow(0)
-        val flow = MutableSerializedSharedFlow<Int>().onSubscription {
-            collectorCountState.update { it + 1 }
-        }
-        val collectorCount = 500
-
-        // Act
-        val asyncValues = (1..collectorCount).map {
-            async(Dispatchers.Default) {
-                flow.take(2).toList()
-            }
-        }
-        val asyncEmit = async(Dispatchers.Default) {
-            // Wait until all collectors have started, then emit values
-            collectorCountState.first { it == collectorCount }
-            flow.emit(5)
-            flow.emit(6)
-        }
-        val listOfValueList = asyncValues.awaitAll()
-        asyncEmit.await()
-
-        // Assert
-        Assert.assertEquals(collectorCount, listOfValueList.size)
-        listOfValueList.forEach { values ->
-            Assert.assertEquals(listOf(5, 6), values)
-        }
-    }
-
-    @Test
-    fun testFlowEmitIsNoOpIfNoActiveCollector() = runBlockingWithTimeout {
-        // Prepare
-        val flow = MutableSerializedSharedFlow<Int>()
-
-        // Act: emit complete right away since there are no collectors
+    // Act
+    val asyncValues = async(Dispatchers.Default) { flow.take(2).toList() }
+    val asyncEmit =
+      async(Dispatchers.Default) {
+        // Wait until collector has started, then emit values
+        collectorCount.first { it == 1 }
         flow.emit(5)
         flow.emit(6)
+      }
+    val values = asyncValues.await()
+    asyncEmit.await()
+
+    // Assert
+    Assert.assertEquals(listOf(5, 6), values)
+  }
+
+  @Test
+  fun testEmitWorksForManyCollectors() = runBlockingWithTimeout {
+    // Prepare
+    val collectorCountState = MutableStateFlow(0)
+    val flow = MutableSerializedSharedFlow<Int>().onSubscription { collectorCountState.update { it + 1 } }
+    val collectorCount = 500
+
+    // Act
+    val asyncValues = (1..collectorCount).map { async(Dispatchers.Default) { flow.take(2).toList() } }
+    val asyncEmit =
+      async(Dispatchers.Default) {
+        // Wait until all collectors have started, then emit values
+        collectorCountState.first { it == collectorCount }
+        flow.emit(5)
+        flow.emit(6)
+      }
+    val listOfValueList = asyncValues.awaitAll()
+    asyncEmit.await()
+
+    // Assert
+    Assert.assertEquals(collectorCount, listOfValueList.size)
+    listOfValueList.forEach { values -> Assert.assertEquals(listOf(5, 6), values) }
+  }
+
+  @Test
+  fun testFlowEmitIsNoOpIfNoActiveCollector() = runBlockingWithTimeout {
+    // Prepare
+    val flow = MutableSerializedSharedFlow<Int>()
+
+    // Act: emit complete right away since there are no collectors
+    flow.emit(5)
+    flow.emit(6)
+  }
+
+  @Test
+  fun testCloseCancelsActiveCollectors() = runBlockingWithTimeout {
+    // Prepare
+    val flow = MutableSerializedSharedFlow<Int>()
+    val jobs =
+      (1..10).map {
+        launch(Dispatchers.Default) {
+          flow.collect {
+            // Nothing to do
+          }
+        }
+      }
+
+    // Act: "close" should cancel all running jobs
+    flow.close()
+    jobs.joinAll()
+  }
+
+  @Test
+  fun testEmitWaitsForCollectorsToComplete() = runBlockingWithTimeout {
+    // Prepare
+    val collectorCountState = MutableStateFlow(0)
+    val flow = MutableSerializedSharedFlow<MixedIntWrapper>().onSubscription { collectorCountState.update { it + 1 } }
+    val emitCount = 500
+    val collectorCount = 50
+
+    // Act
+    val asyncEmit =
+      async(Dispatchers.Default) {
+        // Wait until all collectors have started
+        collectorCountState.first { it == collectorCount }
+
+        // We emit an object with an immutable "Int" field and a mutable one.
+        // If "flow.emit" calls were not serialized correctly, it is very likely
+        // one of the collector would receive non-matching values.
+        val mutableInt = MutableIntWrapper()
+        (1..emitCount).forEach { index ->
+          mutableInt.mutableValue = index
+
+          flow.emit(MixedIntWrapper(index, mutableInt))
+        }
+      }
+    val asyncCollects =
+      async(Dispatchers.Default) {
+        (1..collectorCount)
+          .map { async(Dispatchers.Default) { flow.take(emitCount).map { Pair(it.value, it.mutableInt.mutableValue) }.toList() } }
+          .toList()
+          .awaitAll()
+      }
+    awaitAll(asyncEmit, asyncCollects)
+
+    val listOfListOfCollectedPairs = asyncCollects.await()
+
+    // Assert
+    Assert.assertEquals(collectorCount, listOfListOfCollectedPairs.size)
+    listOfListOfCollectedPairs.forEach { listOfPairs ->
+      Assert.assertEquals(emitCount, listOfPairs.size)
+      listOfPairs.forEach {
+        Assert.assertEquals(
+          "A collector has received a mutable object too early or too late," + "and the mutable value did not match the immutable value",
+          it.first,
+          it.second,
+        )
+      }
     }
+  }
 
-    @Test
-    fun testCloseCancelsActiveCollectors() = runBlockingWithTimeout {
-        // Prepare
-        val flow = MutableSerializedSharedFlow<Int>()
-        val jobs = (1..10).map {
-            launch(Dispatchers.Default) {
-                flow.collect {
-                    // Nothing to do
-                }
-            }
+  @Test
+  fun testSendIsAtomic(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val flow =
+      MutableSerializedSharedFlowForTesting<ValueToken>(
+        onEmit = {
+          // Add a delay between "emit" and "emit(SKIP)" so that we can reliably
+          // interleave "emitterJob" and "concurrentEmitterJob"
+          delay(200)
         }
+      )
 
-        // Act: "close" should cancel all running jobs
-        flow.close()
-        jobs.joinAll()
+    // Act
+    // Note: The whole point of the test below is to interleave "emit" calls from
+    // two concurrent jobs, so that code emitting and collecting a shared flow
+    // concurrently can make assumptions about the serialization of calls (i.e.
+    // A call to "emit" with a given value is guaranteed to terminate if a "collector"
+    // receives the value emitted)
+    val firstEmittedValue = ValueToken("'first value'")
+    val secondEmittedValue = ValueToken("'second value'")
+    val firstEmittedValueReceived = CompletableDeferred<Unit>()
+    val firstValueEmitted = CompletableDeferred<Unit>()
+
+    // Ensures "second value" is emitted after "first value" *and* collected by the
+    // collector
+    val concurrentEmitterJob =
+      async(Dispatchers.Default) {
+        // Delay a little so that "emitterJob" starts first
+        delay(200)
+
+        // Emit a non-interesting value
+        flow.emit(secondEmittedValue)
+
+        Assert.assertTrue("Value should have been received by collector", secondEmittedValue.wasCollected)
+      }
+
+    // Ensures "first value" is emitted first *and* collected by the collector
+    val emitterJob =
+      async(Dispatchers.Default) {
+        // Delay a little bit to ensure "receiverJob" has started collecting
+        // the shared flow (reminder: "emit" calls do nothing if there is no
+        // active collected on a shared flow).
+        delay(100)
+        while (true) {
+          // Send the value the receiver wants until the receiver
+          // acknowledges it received it
+          flow.emit(firstEmittedValue)
+          Assert.assertTrue("Value should have been received by collector", firstEmittedValue.wasCollected)
+
+          // If the shared flow is working as intended, "expectedValueReceived.isCompleted"
+          // is guaranteed to be true if "receiverJob" observed the value (because the
+          // shared flow "emit" calls are supposed to terminate only when the receivers
+          // are done processing each value).
+          if (firstEmittedValueReceived.isCompleted) {
+            firstValueEmitted.complete(Unit)
+            break
+          }
+        }
+      }
+
+    // Collect the share flow: the collector should see "first value" then "second value"
+    // (in that order).
+    val receiverJob =
+      async(Dispatchers.Default) {
+        flow.first { value ->
+          value.wasCollected = true
+          when (value) {
+            firstEmittedValue -> {
+              // Tell sender we got the value and keep going
+              firstEmittedValueReceived.complete(Unit)
+              false
+            }
+            secondEmittedValue -> {
+              // Wait for sender `emit` call to terminate and complete the deferred.
+              // If the `emit` call was not atomic, the sender could be "stuck" in
+              // its `emit` call and this wait would never terminate.
+              firstValueEmitted.await()
+              true
+            }
+            else -> {
+              Assert.fail("Unexpected value '$value' received from shared flow")
+              false
+            }
+          }
+        }
+      }
+
+    // Assert
+    withTimeoutOrNull(5_000) {
+      // Note: Using "await" ensures all jobs terminate, but also any
+      // assertion failure/exception/cancellation is rethrown and reported as a test failure.
+      awaitAll(emitterJob, receiverJob, concurrentEmitterJob)
     }
+      ?: run {
+        val message =
+          listOf(
+              "All jobs did not terminate within a reasonable time, meaning ",
+              "there is probably a deadlock exercised by this test code.\n",
+              "  concurrentEmitterJob.isCompleted=${concurrentEmitterJob.isCompleted}\n",
+              "  receiverJob.isCompleted=${receiverJob.isCompleted}\n",
+              "  emitterJob.isCompleted=${emitterJob.isCompleted}\n",
+            )
+            .joinToString("")
+        Assert.fail(message)
+      }
+  }
 
-    @Test
-    fun testEmitWaitsForCollectorsToComplete() = runBlockingWithTimeout {
-        // Prepare
-        val collectorCountState = MutableStateFlow(0)
-        val flow = MutableSerializedSharedFlow<MixedIntWrapper>().onSubscription {
-            collectorCountState.update { it + 1 }
-        }
-        val emitCount = 500
-        val collectorCount = 50
+  class ValueToken(val text: String) {
+    var wasCollected: Boolean = false
 
-        // Act
-        val asyncEmit = async(Dispatchers.Default) {
-            // Wait until all collectors have started
-            collectorCountState.first { it == collectorCount }
-
-            // We emit an object with an immutable "Int" field and a mutable one.
-            // If "flow.emit" calls were not serialized correctly, it is very likely
-            // one of the collector would receive non-matching values.
-            val mutableInt = MutableIntWrapper()
-            (1..emitCount).forEach { index ->
-                mutableInt.mutableValue = index
-
-                flow.emit(MixedIntWrapper(index, mutableInt))
-            }
-        }
-        val asyncCollects = async(Dispatchers.Default) {
-            (1..collectorCount).map {
-                async(Dispatchers.Default) {
-                    flow.take(emitCount).map {
-                        Pair(it.value, it.mutableInt.mutableValue)
-                    }.toList()
-                }
-            }.toList().awaitAll()
-        }
-        awaitAll(asyncEmit, asyncCollects)
-
-        val listOfListOfCollectedPairs = asyncCollects.await()
-
-        // Assert
-        Assert.assertEquals(collectorCount, listOfListOfCollectedPairs.size)
-        listOfListOfCollectedPairs.forEach { listOfPairs ->
-            Assert.assertEquals(emitCount, listOfPairs.size)
-            listOfPairs.forEach {
-                Assert.assertEquals(
-                    "A collector has received a mutable object too early or too late," +
-                            "and the mutable value did not match the immutable value",
-                    it.first , it.second)
-            }
-        }
+    override fun toString(): String {
+      return "ValueToken(text=$text, wasCollected=$wasCollected)"
     }
+  }
 
-    @Test
-    fun testSendIsAtomic(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val flow = MutableSerializedSharedFlowForTesting<ValueToken>(onEmit = {
-            // Add a delay between "emit" and "emit(SKIP)" so that we can reliably
-            // interleave "emitterJob" and "concurrentEmitterJob"
-            delay(200)
-        })
+  private class MixedIntWrapper(val value: Int, val mutableInt: MutableIntWrapper)
 
-        // Act
-        // Note: The whole point of the test below is to interleave "emit" calls from
-        // two concurrent jobs, so that code emitting and collecting a shared flow
-        // concurrently can make assumptions about the serialization of calls (i.e.
-        // A call to "emit" with a given value is guaranteed to terminate if a "collector"
-        // receives the value emitted)
-        val firstEmittedValue = ValueToken("'first value'")
-        val secondEmittedValue = ValueToken("'second value'")
-        val firstEmittedValueReceived = CompletableDeferred<Unit>()
-        val firstValueEmitted = CompletableDeferred<Unit>()
-
-        // Ensures "second value" is emitted after "first value" *and* collected by the
-        // collector
-        val concurrentEmitterJob = async(Dispatchers.Default) {
-            // Delay a little so that "emitterJob" starts first
-            delay(200)
-
-            // Emit a non-interesting value
-            flow.emit(secondEmittedValue)
-
-            Assert.assertTrue("Value should have been received by collector", secondEmittedValue.wasCollected)
-        }
-
-        // Ensures "first value" is emitted first *and* collected by the collector
-        val emitterJob = async(Dispatchers.Default) {
-            // Delay a little bit to ensure "receiverJob" has started collecting
-            // the shared flow (reminder: "emit" calls do nothing if there is no
-            // active collected on a shared flow).
-            delay(100)
-            while (true) {
-                // Send the value the receiver wants until the receiver
-                // acknowledges it received it
-                flow.emit(firstEmittedValue)
-                Assert.assertTrue("Value should have been received by collector", firstEmittedValue.wasCollected)
-
-                // If the shared flow is working as intended, "expectedValueReceived.isCompleted"
-                // is guaranteed to be true if "receiverJob" observed the value (because the
-                // shared flow "emit" calls are supposed to terminate only when the receivers
-                // are done processing each value).
-                if (firstEmittedValueReceived.isCompleted) {
-                    firstValueEmitted.complete(Unit)
-                    break
-                }
-            }
-        }
-
-        // Collect the share flow: the collector should see "first value" then "second value"
-        // (in that order).
-        val receiverJob = async(Dispatchers.Default) {
-            flow.first { value ->
-                value.wasCollected = true
-                when (value) {
-                    firstEmittedValue -> {
-                        // Tell sender we got the value and keep going
-                        firstEmittedValueReceived.complete(Unit)
-                        false
-                    }
-                    secondEmittedValue -> {
-                        // Wait for sender `emit` call to terminate and complete the deferred.
-                        // If the `emit` call was not atomic, the sender could be "stuck" in
-                        // its `emit` call and this wait would never terminate.
-                        firstValueEmitted.await()
-                        true
-                    }
-                    else -> {
-                        Assert.fail("Unexpected value '$value' received from shared flow")
-                        false
-                    }
-                }
-            }
-        }
-
-        // Assert
-        withTimeoutOrNull(5_000) {
-            // Note: Using "await" ensures all jobs terminate, but also any
-            // assertion failure/exception/cancellation is rethrown and reported as a test failure.
-            awaitAll(emitterJob, receiverJob, concurrentEmitterJob)
-        } ?: run {
-            val message =  listOf(
-                "All jobs did not terminate within a reasonable time, meaning ",
-                "there is probably a deadlock exercised by this test code.\n",
-                "  concurrentEmitterJob.isCompleted=${concurrentEmitterJob.isCompleted}\n",
-                "  receiverJob.isCompleted=${receiverJob.isCompleted}\n",
-                "  emitterJob.isCompleted=${emitterJob.isCompleted}\n"
-            ).joinToString("")
-            Assert.fail(message)
-        }
-    }
-
-    class ValueToken(val text: String) {
-        var wasCollected: Boolean = false
-
-        override fun toString(): String {
-            return "ValueToken(text=$text, wasCollected=$wasCollected)"
-        }
-    }
-
-    private class MixedIntWrapper(val value: Int, val mutableInt: MutableIntWrapper)
-
-    private class MutableIntWrapper(var mutableValue: Int = 0)
+  private class MutableIntWrapper(var mutableValue: Int = 0)
 }

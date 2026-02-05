@@ -19,16 +19,13 @@ import com.android.tools.preview.AnnotatedMethod
 import com.android.tools.preview.AnnotationAttributesProvider
 
 /**
- * [AnnotatedMethod] for the method represented by its FQN and parameters each of which is
- * represented by the mapping between its @ParameterProvider annotation parameters names and values.
+ * [AnnotatedMethod] for the method represented by its FQN and parameters each of which is represented by the mapping between
+ * its @ParameterProvider annotation parameters names and values.
  */
-class DeserializedAnnotatedMethod(
-    methodFqn: String,
-    methodParams: List<Map<String, String>>,
-) : AnnotatedMethod<Unit> {
-    override val name: String = methodFqn.substringAfterLast(".")
-    override val qualifiedName: String = methodFqn
-    override val methodBody: Unit? = null
-    override val parameterAnnotations: List<Pair<String, AnnotationAttributesProvider>> =
-        methodParams.mapIndexed { i, param -> ("param$i" to DeserializedAnnotationAttributesProvider(param)) }
+class DeserializedAnnotatedMethod(methodFqn: String, methodParams: List<Map<String, String>>) : AnnotatedMethod<Unit> {
+  override val name: String = methodFqn.substringAfterLast(".")
+  override val qualifiedName: String = methodFqn
+  override val methodBody: Unit? = null
+  override val parameterAnnotations: List<Pair<String, AnnotationAttributesProvider>> =
+    methodParams.mapIndexed { i, param -> ("param$i" to DeserializedAnnotationAttributesProvider(param)) }
 }

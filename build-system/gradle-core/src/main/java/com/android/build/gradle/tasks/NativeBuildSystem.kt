@@ -16,11 +16,9 @@
 
 package com.android.build.gradle.tasks
 
-/**
- * Enumeration and descriptive metadata for the different external native build system types.
- */
+/** Enumeration and descriptive metadata for the different external native build system types. */
 enum class NativeBuildSystem {
-    CMAKE,
-    NINJA,
-    NDK_BUILD;
+  CMAKE,
+  NINJA,
+  NDK_BUILD,
 }

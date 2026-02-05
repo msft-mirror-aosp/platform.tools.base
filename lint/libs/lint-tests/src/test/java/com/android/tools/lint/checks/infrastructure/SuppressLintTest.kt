@@ -52,10 +52,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.w3c.dom.Attr
 
-/**
- * Checks that some lint checks cannot be suppressed with the normal suppression annotations or
- * mechanisms.
- */
+/** Checks that some lint checks cannot be suppressed with the normal suppression annotations or mechanisms. */
 class SuppressLintTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
@@ -791,10 +788,7 @@ class SuppressLintTest {
           *lintApiStubs,
           bytecode(
             "lint.jar",
-            source(
-              "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-              "test.pkg.MyIssueRegistry",
-            ),
+            source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
             0x70522285,
           ),
           bytecode(
@@ -999,14 +993,7 @@ class SuppressLintTest {
     // Finally, use the protected disable flag to disable the issue without
     // a warning
 
-    MainTest.checkDriver(
-      "No issues found.",
-      "",
-      LintCliFlags.ERRNO_SUCCESS,
-      arrayOf("--Xdisable", "_TestIssueId") + sharedArgs,
-      null,
-      null,
-    )
+    MainTest.checkDriver("No issues found.", "", LintCliFlags.ERRNO_SUCCESS, arrayOf("--Xdisable", "_TestIssueId") + sharedArgs, null, null)
   }
 
   // Sample detector which just flags calls to a method called "forbidden"
@@ -1022,10 +1009,7 @@ class SuppressLintTest {
       val message = "Some error message here"
 
       val location = context.getLocation(node)
-      if (
-        node.valueArguments.firstOrNull()?.evaluateString() ==
-          TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID.id
-      ) {
+      if (node.valueArguments.firstOrNull()?.evaluateString() == TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID.id) {
         context.report(TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID, node, location, message)
         return
       }
@@ -1072,8 +1056,7 @@ class SuppressLintTest {
           priority = 10,
           severity = Severity.WARNING,
           suppressAnnotations = listOf("foo.bar.MyOwnAnnotation"),
-          implementation =
-            Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
+          implementation = Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
         )
 
       @Suppress("SpellCheckingInspection")
@@ -1087,8 +1070,7 @@ class SuppressLintTest {
           priority = 10,
           severity = Severity.WARNING,
           suppressAnnotations = emptyList(),
-          implementation =
-            Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
+          implementation = Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
         )
 
       @Suppress("SpellCheckingInspection")
@@ -1102,8 +1084,7 @@ class SuppressLintTest {
           priority = 10,
           severity = Severity.WARNING,
           suppressAnnotations = listOf("_SecureIssue3"),
-          implementation =
-            Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
+          implementation = Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
         )
     }
   }
@@ -1111,8 +1092,7 @@ class SuppressLintTest {
   // Sample detector which just flags the property accessors named forbidden
   @SuppressWarnings("ALL")
   class MyPropertyDetector : Detector(), SourceCodeScanner, XmlScanner {
-    override fun getApplicableUastTypes() =
-      listOf(UImportStatement::class.java, UMethod::class.java, UField::class.java)
+    override fun getApplicableUastTypes() = listOf(UImportStatement::class.java, UMethod::class.java, UField::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler = Handler(context)
 

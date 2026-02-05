@@ -22,22 +22,18 @@ import org.gradle.api.Incubating
 /**
  * Registry for Managed Device types.
  *
- * @suppress Do not use from production code. All properties in this interface are exposed for
- * prototype.
+ * @suppress Do not use from production code. All properties in this interface are exposed for prototype.
  */
 @Incubating
 interface ManagedDeviceRegistry {
 
-    /**
-     * Registers a new managed device type.
-     *
-     * @param DeviceT The api interface for the Custom Managed Device in the DSL.
-     * @param dslInterface The DSL interface class for this managed device.
-     *
-     * @suppress Do not use from production code. This API is exposed for prototype.
-     */
-    @Incubating
-    fun <DeviceT: Device> registerDeviceType(
-        dslInterface : Class<DeviceT>,
-        setupBlock: (DeviceDslRegistration<DeviceT>).() -> Unit)
+  /**
+   * Registers a new managed device type.
+   *
+   * @param DeviceT The api interface for the Custom Managed Device in the DSL.
+   * @param dslInterface The DSL interface class for this managed device.
+   * @suppress Do not use from production code. This API is exposed for prototype.
+   */
+  @Incubating
+  fun <DeviceT : Device> registerDeviceType(dslInterface: Class<DeviceT>, setupBlock: (DeviceDslRegistration<DeviceT>).() -> Unit)
 }

@@ -19,20 +19,20 @@ package com.android.build.gradle.internal.core.dsl
 import com.android.build.gradle.api.JavaCompileOptions
 
 /**
- * Represents the dsl info for a component that is part of the kotlin multiplatform android plugin,
- * initialized from extension.
+ * Represents the dsl info for a component that is part of the kotlin multiplatform android plugin, initialized from extension.
  *
  * This class allows querying for the values set via the DSL model.
- **
+ * *
+ *
  * @see [com.android.build.gradle.internal.component.KmpComponentCreationConfig]
  */
-interface KmpComponentDslInfo: ComponentDslInfo {
-    val buildTypeMatchingFallbacks: List<String>
+interface KmpComponentDslInfo : ComponentDslInfo {
+  val buildTypeMatchingFallbacks: List<String>
 
-    override val javaCompileOptionsSetInDSL: JavaCompileOptions
-        get() {
-            throw IllegalAccessException("Not supported")
-        }
+  override val javaCompileOptionsSetInDSL: JavaCompileOptions
+    get() {
+      throw IllegalAccessException("Not supported")
+    }
 
-    val withJava: Boolean
+  val withJava: Boolean
 }

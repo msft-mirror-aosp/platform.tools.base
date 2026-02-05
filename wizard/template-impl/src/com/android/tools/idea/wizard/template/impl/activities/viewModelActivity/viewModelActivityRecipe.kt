@@ -42,7 +42,7 @@ fun RecipeExecutor.viewModelActivityRecipe(
   viewModelClass: String,
   isLauncher: Boolean,
   packageName: String,
-  fragmentPackage: String
+  fragmentPackage: String,
 ) {
   val (projectData, srcOut, resOut) = moduleData
   val apis = moduleData.apis
@@ -54,10 +54,7 @@ fun RecipeExecutor.viewModelActivityRecipe(
   addAllKotlinDependencies(moduleData)
 
   // TODO: Old templates doesn't set requireTheme as true, check if it's not needed
-  generateManifest(
-    moduleData, activityClass, packageName, isLauncher, false,
-    generateActivityTitle = false
-  )
+  generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false)
 
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
@@ -71,24 +68,27 @@ fun RecipeExecutor.viewModelActivityRecipe(
   mergeXml(fragmentXml(fragmentClass, fragmentPackage, useAndroidX), resOut.resolve("layout/${fragmentLayout}.xml"))
   open(resOut.resolve("layout/${fragmentLayout}.xml"))
 
-  val activity = when (projectData.language) {
-    Language.Java -> activityJava(activityClass, activityLayout, fragmentClass, fragmentPackage, packageName, superClassFqcn)
-    Language.Kotlin -> activityKt(activityClass, activityLayout, fragmentClass, fragmentPackage, packageName, superClassFqcn)
-  }
+  val activity =
+    when (projectData.language) {
+      Language.Java -> activityJava(activityClass, activityLayout, fragmentClass, fragmentPackage, packageName, superClassFqcn)
+      Language.Kotlin -> activityKt(activityClass, activityLayout, fragmentClass, fragmentPackage, packageName, superClassFqcn)
+    }
   save(activity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
 
   val fragmentPath = fragmentPackage.replace(".", "/")
-  val fragment = when (projectData.language) {
-    Language.Java -> fragmentJava(fragmentClass, fragmentLayout, fragmentPackage, packageName, useAndroidX, viewModelClass)
-    Language.Kotlin -> fragmentKt(fragmentClass, fragmentLayout, fragmentPackage, packageName, useAndroidX, viewModelClass)
-  }
+  val fragment =
+    when (projectData.language) {
+      Language.Java -> fragmentJava(fragmentClass, fragmentLayout, fragmentPackage, packageName, useAndroidX, viewModelClass)
+      Language.Kotlin -> fragmentKt(fragmentClass, fragmentLayout, fragmentPackage, packageName, useAndroidX, viewModelClass)
+    }
   save(fragment, srcOut.resolve("${fragmentPath}/${fragmentClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentPath}/${fragmentClass}.${ktOrJavaExt}"))
-  val viewModel = when (projectData.language) {
-    Language.Java -> viewModelJava(fragmentPackage, packageName, useAndroidX, viewModelClass)
-    Language.Kotlin -> viewModelKt(fragmentPackage, packageName, useAndroidX, viewModelClass)
-  }
+  val viewModel =
+    when (projectData.language) {
+      Language.Java -> viewModelJava(fragmentPackage, packageName, useAndroidX, viewModelClass)
+      Language.Kotlin -> viewModelKt(fragmentPackage, packageName, useAndroidX, viewModelClass)
+    }
   save(viewModel, srcOut.resolve("${fragmentPath}/${viewModelClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentPath}/${viewModelClass}.${ktOrJavaExt}"))

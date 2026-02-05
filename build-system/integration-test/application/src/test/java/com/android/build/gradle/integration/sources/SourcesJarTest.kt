@@ -16,278 +16,263 @@
 
 package com.android.build.gradle.integration.sources
 
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class SourcesJarTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldLibraryApp.create())
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
 
-    /** Regression test for http://b/214428179.*/
-    @Test
-    fun testAddingKotlinSourcesInJavaSources() {
-        project.getSubproject(":lib").also { libProject ->
-            libProject.buildFile.appendText(
+  /** Regression test for http://b/214428179. */
+  @Test
+  fun testAddingKotlinSourcesInJavaSources() {
+    project.getSubproject(":lib").also { libProject ->
+      libProject.buildFile.appendText(
         """
-            android {
-                publishing {
-                    singleVariant("release") {
-                        withSourcesJar()
-                        withJavadocJar()
-                    }
+        android {
+            publishing {
+                singleVariant("release") {
+                    withSourcesJar()
+                    withJavadocJar()
                 }
-            }
-
-            abstract class KotlinGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.kt")
-                    new FileWriter(outputFile).with {
-                    	write("Some Kotlin code\n")
-                    	flush()
-                    }
-                }
-            }
-
-            def writeKotlinTask = tasks.register("createKotlinSources", KotlinGenerator.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    // register it under java source code.
-                    variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, KotlinGenerator::getOutputDirectory)
-                })
-            }
-        """.trimIndent()
-            )
-
-            val result = libProject.executor().run("sourceReleaseJar")
-            val sourceJar = File(
-                libProject.buildDir,
-                "intermediates/source_jar/release/release-sources.jar"
-            )
-            ZipSubject.assertThat(sourceJar.toPath()) {
-                entries().contains("SomeSource.kt")
             }
         }
-    }
 
-    @Test
-    fun testAddingKotlinSourcesInKotlinSources() {
-        project.getSubproject(":lib").also { libProject ->
-            libProject.buildFile.appendText(
-                """
-            android {
-                publishing {
-                    singleVariant("release") {
-                        withSourcesJar()
-                        withJavadocJar()
-                    }
+        abstract class KotlinGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
+
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.kt")
+                new FileWriter(outputFile).with {
+                	write("Some Kotlin code\n")
+                	flush()
                 }
-            }
-
-            abstract class KotlinGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.kt")
-                    new FileWriter(outputFile).with {
-                    	write("Some Kotlin code\n")
-                    	flush()
-                    }
-                }
-            }
-
-            def writeKotlinTask = tasks.register("createKotlinSources", KotlinGenerator.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    // register it under java source code.
-                    variant.sources.kotlin.addGeneratedSourceDirectory(writeKotlinTask, KotlinGenerator::getOutputDirectory)
-                })
-            }
-        """.trimIndent()
-            )
-
-            val result = libProject.executor().run("sourceReleaseJar")
-            val sourceJar = File(
-                libProject.buildDir,
-                "intermediates/source_jar/release/release-sources.jar"
-            )
-            ZipSubject.assertThat(sourceJar.toPath()) {
-                entries().contains("SomeSource.kt")
             }
         }
+
+        def writeKotlinTask = tasks.register("createKotlinSources", KotlinGenerator.class)
+        androidComponents {
+            onVariants(selector().all(),  { variant ->
+                // register it under java source code.
+                variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, KotlinGenerator::getOutputDirectory)
+            })
+        }
+        """
+          .trimIndent()
+      )
+
+      val result = libProject.executor().run("sourceReleaseJar")
+      val sourceJar = File(libProject.buildDir, "intermediates/source_jar/release/release-sources.jar")
+      ZipSubject.assertThat(sourceJar.toPath()) { entries().contains("SomeSource.kt") }
     }
+  }
 
-    @Test
-    fun testAddingJavaSources() {
-        project.getSubproject(":lib").also { libProject ->
-            libProject.buildFile.appendText(
-                """
-            android {
-                publishing {
-                    singleVariant("release") {
-                        withSourcesJar()
-                        withJavadocJar()
-                    }
+  @Test
+  fun testAddingKotlinSourcesInKotlinSources() {
+    project.getSubproject(":lib").also { libProject ->
+      libProject.buildFile.appendText(
+        """
+        android {
+            publishing {
+                singleVariant("release") {
+                    withSourcesJar()
+                    withJavadocJar()
                 }
-            }
-
-            abstract class JavaGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.java")
-                    new FileWriter(outputFile).with {
-                    	write("Some Kotlin code\n")
-                    	flush()
-                    }
-                }
-            }
-
-            def writeKotlinTask = tasks.register("createJavaSources", JavaGenerator.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    // register it under java source code.
-                    variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, JavaGenerator::getOutputDirectory)
-                })
-            }
-        """.trimIndent()
-            )
-
-            val result = libProject.executor().run("sourceReleaseJar")
-            val sourceJar = File(
-                libProject.buildDir,
-                "intermediates/source_jar/release/release-sources.jar"
-            )
-            ZipSubject.assertThat(sourceJar.toPath()) {
-                entries().contains("SomeSource.java")
             }
         }
-    }
 
-    @Test
-    fun testAddingJavaAndResSourcesToModel() {
-        project.getSubproject(":lib").also { libProject ->
-            libProject.buildFile.appendText(
-                """
-            abstract class JavaGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
+        abstract class KotlinGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
 
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.java")
-                    new FileWriter(outputFile).with {
-                        write("Some Kotlin code\n")
-                        flush()
-                    }
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.kt")
+                new FileWriter(outputFile).with {
+                	write("Some Kotlin code\n")
+                	flush()
                 }
-            }
-
-            abstract class ResGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "foo.xml")
-                    new FileWriter(outputFile).with {
-                        write("<some xml/>\n")
-                        flush()
-                    }
-                }
-            }
-
-            def writeKotlinTask = tasks.register("createJavaSources", JavaGenerator.class)
-            def writeResTask = tasks.register("createResResources", ResGenerator.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    // register it under java source code.
-                    variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, JavaGenerator::getOutputDirectory)
-                    variant.sources.res.addGeneratedSourceDirectory(writeResTask,ResGenerator::getOutputDirectory)
-
-                })
-            }
-        """.trimIndent()
-            )
-
-            val modelContainer = libProject.modelV2().fetchModels().container
-
-            modelContainer.getProject(":lib").androidProject?.variants?.forEach { variant ->
-                var foundRes = false
-                variant.mainArtifact.generatedResourceFolders.forEach { file ->
-                    if (file.absolutePath.contains("createResResources")) {
-                        foundRes = true
-                    }
-                }
-                var foundJava = false
-                variant.mainArtifact.generatedSourceFolders.forEach { file ->
-                    if (file.absolutePath.contains("createJavaSources")) {
-                        foundJava = true
-                    }
-                }
-                Truth.assertThat(foundRes && foundJava).isTrue()
             }
         }
+
+        def writeKotlinTask = tasks.register("createKotlinSources", KotlinGenerator.class)
+        androidComponents {
+            onVariants(selector().all(),  { variant ->
+                // register it under java source code.
+                variant.sources.kotlin.addGeneratedSourceDirectory(writeKotlinTask, KotlinGenerator::getOutputDirectory)
+            })
+        }
+        """
+          .trimIndent()
+      )
+
+      val result = libProject.executor().run("sourceReleaseJar")
+      val sourceJar = File(libProject.buildDir, "intermediates/source_jar/release/release-sources.jar")
+      ZipSubject.assertThat(sourceJar.toPath()) { entries().contains("SomeSource.kt") }
     }
+  }
 
-    @Test
-    fun testAddingAssetsToModel() {
-        project.getSubproject(":lib").also { libProject ->
-            libProject.buildFile.appendText(
-                """
-            abstract class AssetGenerator extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    def outputFile = new File(getOutputDirectory().get().getAsFile(), "foo.txt")
-                    new FileWriter(outputFile).with {
-                        write("some text")
-                        flush()
-                    }
+  @Test
+  fun testAddingJavaSources() {
+    project.getSubproject(":lib").also { libProject ->
+      libProject.buildFile.appendText(
+        """
+        android {
+            publishing {
+                singleVariant("release") {
+                    withSourcesJar()
+                    withJavadocJar()
                 }
-            }
-
-            def writeAssetTask = tasks.register("createAssets", AssetGenerator.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    // register it under java source code.
-                    variant.sources.assets.addGeneratedSourceDirectory(writeAssetTask, AssetGenerator::getOutputDirectory)
-
-                })
-            }
-        """.trimIndent()
-            )
-
-            val modelContainer = libProject.modelV2().fetchModels().container
-
-            modelContainer.getProject(":lib").androidProject?.variants?.forEach { variant ->
-                var foundRes = false
-                variant.mainArtifact.generatedAssetsFolders.forEach { file ->
-                    if (file.absolutePath.contains("createAssets")) {
-                        foundRes = true
-                    }
-                }
-                Truth.assertThat(foundRes).isTrue()
             }
         }
+
+        abstract class JavaGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
+
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.java")
+                new FileWriter(outputFile).with {
+                	write("Some Kotlin code\n")
+                	flush()
+                }
+            }
+        }
+
+        def writeKotlinTask = tasks.register("createJavaSources", JavaGenerator.class)
+        androidComponents {
+            onVariants(selector().all(),  { variant ->
+                // register it under java source code.
+                variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, JavaGenerator::getOutputDirectory)
+            })
+        }
+        """
+          .trimIndent()
+      )
+
+      val result = libProject.executor().run("sourceReleaseJar")
+      val sourceJar = File(libProject.buildDir, "intermediates/source_jar/release/release-sources.jar")
+      ZipSubject.assertThat(sourceJar.toPath()) { entries().contains("SomeSource.java") }
     }
+  }
+
+  @Test
+  fun testAddingJavaAndResSourcesToModel() {
+    project.getSubproject(":lib").also { libProject ->
+      libProject.buildFile.appendText(
+        """
+        abstract class JavaGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
+
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "SomeSource.java")
+                new FileWriter(outputFile).with {
+                    write("Some Kotlin code\n")
+                    flush()
+                }
+            }
+        }
+
+        abstract class ResGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
+
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "foo.xml")
+                new FileWriter(outputFile).with {
+                    write("<some xml/>\n")
+                    flush()
+                }
+            }
+        }
+
+        def writeKotlinTask = tasks.register("createJavaSources", JavaGenerator.class)
+        def writeResTask = tasks.register("createResResources", ResGenerator.class)
+        androidComponents {
+            onVariants(selector().all(),  { variant ->
+                // register it under java source code.
+                variant.sources.java.addGeneratedSourceDirectory(writeKotlinTask, JavaGenerator::getOutputDirectory)
+                variant.sources.res.addGeneratedSourceDirectory(writeResTask,ResGenerator::getOutputDirectory)
+
+            })
+        }
+        """
+          .trimIndent()
+      )
+
+      val modelContainer = libProject.modelV2().fetchModels().container
+
+      modelContainer.getProject(":lib").androidProject?.variants?.forEach { variant ->
+        var foundRes = false
+        variant.mainArtifact.generatedResourceFolders.forEach { file ->
+          if (file.absolutePath.contains("createResResources")) {
+            foundRes = true
+          }
+        }
+        var foundJava = false
+        variant.mainArtifact.generatedSourceFolders.forEach { file ->
+          if (file.absolutePath.contains("createJavaSources")) {
+            foundJava = true
+          }
+        }
+        Truth.assertThat(foundRes && foundJava).isTrue()
+      }
+    }
+  }
+
+  @Test
+  fun testAddingAssetsToModel() {
+    project.getSubproject(":lib").also { libProject ->
+      libProject.buildFile.appendText(
+        """
+        abstract class AssetGenerator extends DefaultTask {
+            @OutputDirectory
+            abstract DirectoryProperty getOutputDirectory();
+
+            @TaskAction
+            void run() {
+                def outputFile = new File(getOutputDirectory().get().getAsFile(), "foo.txt")
+                new FileWriter(outputFile).with {
+                    write("some text")
+                    flush()
+                }
+            }
+        }
+
+        def writeAssetTask = tasks.register("createAssets", AssetGenerator.class)
+        androidComponents {
+            onVariants(selector().all(),  { variant ->
+                // register it under java source code.
+                variant.sources.assets.addGeneratedSourceDirectory(writeAssetTask, AssetGenerator::getOutputDirectory)
+
+            })
+        }
+        """
+          .trimIndent()
+      )
+
+      val modelContainer = libProject.modelV2().fetchModels().container
+
+      modelContainer.getProject(":lib").androidProject?.variants?.forEach { variant ->
+        var foundRes = false
+        variant.mainArtifact.generatedAssetsFolders.forEach { file ->
+          if (file.absolutePath.contains("createAssets")) {
+            foundRes = true
+          }
+        }
+        Truth.assertThat(foundRes).isTrue()
+      }
+    }
+  }
 }

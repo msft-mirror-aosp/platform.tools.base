@@ -30,8 +30,7 @@ import org.objectweb.asm.Opcodes.ASM9
 import org.objectweb.asm.tree.ClassNode
 
 /** A class, present either as a .class file on disk, or inside a .jar file. */
-class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes: ByteArray) :
-  Comparable<ClassEntry> {
+class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes: ByteArray) : Comparable<ClassEntry> {
   fun path(): String {
     return if (jarFile != null) {
       jarFile.path + ':' + file.path
@@ -76,16 +75,8 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
   }
 
   /** Visitor skimming classes and initializing a map of super classes */
-  private class SuperclassVisitor constructor(private val map: MutableMap<String, String>) :
-    ClassVisitor(ASM9) {
-    override fun visit(
-      version: Int,
-      access: Int,
-      name: String,
-      signature: String?,
-      superName: String?,
-      interfaces: Array<String>?,
-    ) {
+  private class SuperclassVisitor constructor(private val map: MutableMap<String, String>) : ClassVisitor(ASM9) {
+    override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<String>?) {
       // Record super class in the map (but don't waste space on java.lang.Object)
       if (superName != null && "java/lang/Object" != superName) {
         map[name] = superName
@@ -113,19 +104,14 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
     }
 
     /**
-     * Creates a list of class entries from the given class path and specific set of files within
-     * it.
+     * Creates a list of class entries from the given class path and specific set of files within it.
      *
      * @param client the client to report errors to and to use to read files
      * @param classFiles the specific set of class files to look for
      * @param classFolders the list of class folders to look in (to determine the package root)
      * @return the list of class entries, never null.
      */
-    fun fromClassFiles(
-      client: LintClient,
-      classFiles: List<File>,
-      classFolders: List<File>,
-    ): List<ClassEntry> {
+    fun fromClassFiles(client: LintClient, classFiles: List<File>, classFolders: List<File>): List<ClassEntry> {
       val entries: MutableList<ClassEntry> = ArrayList(classFiles.size)
       if (classFolders.isNotEmpty()) {
         for (file in classFiles) {
@@ -151,14 +137,8 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
       return entries
     }
 
-    /**
-     * Given a classpath, add all the class files found within the directories and inside jar files
-     */
-    private fun addEntries(
-      client: LintClient,
-      entries: MutableList<ClassEntry>,
-      classPath: List<File>,
-    ) {
+    /** Given a classpath, add all the class files found within the directories and inside jar files */
+    private fun addEntries(client: LintClient, entries: MutableList<ClassEntry>, classPath: List<File>) {
       for (classPathEntry in classPath) {
         val name = classPathEntry.name
         if (name.endsWith(DOT_JAR)) {
@@ -264,11 +244,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
      * @param classEntries the set of class entries to consult
      * @return a map from name to super class internal names
      */
-    fun createSuperClassMap(
-      client: LintClient,
-      libraryEntries: List<ClassEntry>,
-      classEntries: List<ClassEntry>,
-    ): Map<String, String> {
+    fun createSuperClassMap(client: LintClient, libraryEntries: List<ClassEntry>, classEntries: List<ClassEntry>): Map<String, String> {
       val size = libraryEntries.size + classEntries.size
       val map: MutableMap<String, String> = Maps.newHashMapWithExpectedSize(size)
       val visitor = SuperclassVisitor(map)
@@ -292,11 +268,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
     }
 
     /** Adds in all the super classes found for the given class entries into the given map */
-    private fun addSuperClasses(
-      client: LintClient,
-      visitor: SuperclassVisitor,
-      entries: List<ClassEntry>,
-    ) {
+    private fun addSuperClasses(client: LintClient, visitor: SuperclassVisitor, entries: List<ClassEntry>) {
       val flags = ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES
       for (entry in entries) {
         entry.visit(client, visitor, flags)
@@ -304,21 +276,12 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
     }
 
     /**
-     * Visits the given [bytes] array with the given [visitor] using the specified ASM [flags], and
-     * if there's a problem reports the problem to the given [client] referencing the given class
-     * file [file] (which could be a jar file, in which case the specific class file inside the jar
-     * file is given by [relative]). If the file is inside a `.jar` file, the path should be the
-     * relative file within the path (because it will specially be interpreted to see if it's a
-     * multi release jar file).
+     * Visits the given [bytes] array with the given [visitor] using the specified ASM [flags], and if there's a problem reports the problem
+     * to the given [client] referencing the given class file [file] (which could be a jar file, in which case the specific class file
+     * inside the jar file is given by [relative]). If the file is inside a `.jar` file, the path should be the relative file within the
+     * path (because it will specially be interpreted to see if it's a multi release jar file).
      */
-    fun visit(
-      client: LintClient,
-      file: File,
-      relative: String?,
-      bytes: ByteArray,
-      visitor: ClassVisitor,
-      flags: Int = 0,
-    ): ClassVisitor? {
+    fun visit(client: LintClient, file: File, relative: String?, bytes: ByteArray, visitor: ClassVisitor, flags: Int = 0): ClassVisitor? {
       return try {
         val reader = ClassReader(bytes)
         reader.accept(visitor, flags)
@@ -332,8 +295,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
           relative != null &&
             t is IllegalArgumentException &&
             message.startsWith("Unsupported class file") &&
-            (relative.startsWith("META-INF/versions/") ||
-              relative.startsWith("META-INF\\versions\\"))
+            (relative.startsWith("META-INF/versions/") || relative.startsWith("META-INF\\versions\\"))
         ) {
           return null
         }

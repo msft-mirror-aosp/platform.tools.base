@@ -17,81 +17,84 @@
 package com.android.build.api.apiTest.buildsrc
 
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.junit.Test
 
 class GetClasspathTest : BuildSrcScriptApiTest() {
 
-    @Test
-    fun compileClasspathTest() {
-        given {
-            tasksToInvoke.add("debugPrintCompileClasspath")
-            addBuildSrc {
-                addSource(
-                    "src/main/kotlin/PrintClasspathTask.kt",
-                    // language=kotlin
-                    """
-                    import org.gradle.api.DefaultTask
-                    import org.gradle.api.file.ConfigurableFileCollection
-                    import org.gradle.api.tasks.Classpath
-                    import org.gradle.api.tasks.TaskAction
+  @Test
+  fun compileClasspathTest() {
+    given {
+      tasksToInvoke.add("debugPrintCompileClasspath")
+      addBuildSrc {
+        addSource(
+          "src/main/kotlin/PrintClasspathTask.kt",
+          // language=kotlin
+          """
+          import org.gradle.api.DefaultTask
+          import org.gradle.api.file.ConfigurableFileCollection
+          import org.gradle.api.tasks.Classpath
+          import org.gradle.api.tasks.TaskAction
 
-                    abstract class PrintClasspathTask: DefaultTask() {
+          abstract class PrintClasspathTask: DefaultTask() {
 
-                        @get:Classpath
-                        abstract val classpath: ConfigurableFileCollection
+              @get:Classpath
+              abstract val classpath: ConfigurableFileCollection
 
-                        @TaskAction
-                        fun taskAction() {
-                            for (file in classpath.files) {
-                                System.out.println(file.absolutePath)
-                            }
-                        }
-                    }
-                    """.trimIndent())
-                addSource(
-                    "src/main/kotlin/ExamplePlugin.kt",
-                    // language=kotlin
-                    """
-                    import com.android.build.api.artifact.MultipleArtifact
-                    import com.android.build.api.dsl.ApplicationExtension
-                    import com.android.build.api.variant.AndroidComponentsExtension
-                    import org.gradle.api.Plugin
-                    import org.gradle.api.Project
+              @TaskAction
+              fun taskAction() {
+                  for (file in classpath.files) {
+                      System.out.println(file.absolutePath)
+                  }
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        addSource(
+          "src/main/kotlin/ExamplePlugin.kt",
+          // language=kotlin
+          """
+          import com.android.build.api.artifact.MultipleArtifact
+          import com.android.build.api.dsl.ApplicationExtension
+          import com.android.build.api.variant.AndroidComponentsExtension
+          import org.gradle.api.Plugin
+          import org.gradle.api.Project
 
-                    abstract class ExamplePlugin: Plugin<Project> {
+          abstract class ExamplePlugin: Plugin<Project> {
 
-                        override fun apply(project: Project) {
+              override fun apply(project: Project) {
 
-                            val androidComponents =
-                                project.extensions.getByType(AndroidComponentsExtension::class.java)
+                  val androidComponents =
+                      project.extensions.getByType(AndroidComponentsExtension::class.java)
 
-                            androidComponents.onVariants { variant ->
+                  androidComponents.onVariants { variant ->
 
-                                val taskProvider =
-                                    project.tasks.register(
-                                        variant.name + "PrintCompileClasspath",
-                                        PrintClasspathTask::class.java
-                                    ) {
-                                        it.classpath.from(variant.compileClasspath)
-                                    }
-                            }
-                        }
-                    }
-                    """.trimIndent()
-                )
-            }
-            addModule(":app") {
-                addCommonBuildFile(this)
-                testingElements.addManifest(this)
-                testingElements.addMainActivity(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("R.jar")
-            Truth.assertThat(output).contains("kotlin-classes${File.separatorChar}debug")
-        }
+                      val taskProvider =
+                          project.tasks.register(
+                              variant.name + "PrintCompileClasspath",
+                              PrintClasspathTask::class.java
+                          ) {
+                              it.classpath.from(variant.compileClasspath)
+                          }
+                  }
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":app") {
+        addCommonBuildFile(this)
+        testingElements.addManifest(this)
+        testingElements.addMainActivity(this)
+      }
     }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("R.jar")
+      Truth.assertThat(output).contains("kotlin-classes${File.separatorChar}debug")
+    }
+  }
 }

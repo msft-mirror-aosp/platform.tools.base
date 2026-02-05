@@ -85,11 +85,10 @@ const CoverageReportApp = {
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
-        currentHierarchy: 'source', // 'source' or 'tests'
         selectedModule: null,
         selectedTestSuite: null,
         selectedPackage: null,
-        filters: { module: 'all', variants: [], search: '' },
+        filters: { module: 'all', testSuite: 'Aggregated', variants: [], search: '' },
         sort: { by: 'name', order: 'asc' },
         searchableList: [],
     },
@@ -104,7 +103,6 @@ const CoverageReportApp = {
         this.populateFilters();
         this.bindEvents();
         this.setupSearchData();
-        this.updateViewToggles();
         this.render();
         this.closeDropdownOnClickOutside();
     },
@@ -113,10 +111,10 @@ const CoverageReportApp = {
         this.elements = {
             headerTitle: document.querySelector('.header-title'),
             headerDate: document.querySelector('.header-date'),
-            hierarchyFilterBtn: document.getElementById('hierarchy-filter-btn'),
-            hierarchyFilterText: document.getElementById('hierarchy-filter-text'),
-            hierarchyFilterDropdown: document.getElementById('hierarchy-filter-dropdown'),
-            hierarchyFilterList: document.getElementById('hierarchy-filter-list'),
+            testSuiteFilterBtn: document.getElementById('testsuite-filter-btn'),
+            testSuiteFilterText: document.getElementById('testsuite-filter-text'),
+            testSuiteFilterDropdown: document.getElementById('testsuite-filter-dropdown'),
+            testSuiteFilterList: document.getElementById('testsuite-filter-list'),
             moduleFilterBtn: document.getElementById('module-filter-btn'),
             moduleFilterText: document.getElementById('module-filter-text'),
             moduleFilterDropdown: document.getElementById('module-filter-dropdown'),
@@ -152,12 +150,14 @@ const CoverageReportApp = {
     },
 
     populateFilters() {
-        // Hierarchy
-        const hierarchyOptions = [
-            {name: 'Packages', value: 'source'},
-            {name: 'Test Suites', value: 'tests'},
+        // Test Suites
+        const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuites || []).map(ts => ts.name));
+        const uniqueTestSuites = [...new Set(allTestSuites)];
+        const testSuiteOptions = [
+            { name: 'Aggregated', value: 'Aggregated' },
+            ...uniqueTestSuites.map(tsName => ({ name: tsName, value: tsName }))
         ];
-        this.elements.hierarchyFilterList.innerHTML = hierarchyOptions.map(opt =>
+        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
             `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
         ).join('');
 
@@ -203,12 +203,11 @@ const CoverageReportApp = {
         this.elements.coverageData.addEventListener('click', this.handleRowClick.bind(this));
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
 
-        this.elements.hierarchyFilterBtn.addEventListener('click', () => this.elements.hierarchyFilterDropdown.classList.toggle('hidden'));
-        this.elements.moduleFilterBtn.addEventListener('click', () => this.elements.moduleFilterDropdown.classList.toggle('hidden'));
+        this.elements.testSuiteFilterBtn.addEventListener('click', () => this.elements.testSuiteFilterDropdown.classList.toggle('hidden'));        this.elements.moduleFilterBtn.addEventListener('click', () => this.elements.moduleFilterDropdown.classList.toggle('hidden'));
         this.elements.variantFilterBtn.addEventListener('click', () => this.elements.variantFilterDropdown.classList.toggle('hidden'));
         this.elements.viewModeBtn.addEventListener('click', () => this.elements.viewModeDropdown.classList.toggle('hidden'));
 
-        this.elements.hierarchyFilterList.addEventListener('click', this.handleHierarchyChange.bind(this));
+        this.elements.testSuiteFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'testSuite'));
         this.elements.moduleFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'module'));
         this.elements.variantFilterList.addEventListener('change', this.handleVariantSelection.bind(this));
         this.elements.viewModeList.addEventListener('click', this.handleViewModeChange.bind(this));
@@ -310,15 +309,25 @@ const CoverageReportApp = {
 
         const { value } = target.dataset;
         this.state.filters[filterType] = value;
-        this.elements[`${filterType}FilterText`].textContent = target.textContent;
-        this.elements[`${filterType}FilterDropdown`].classList.add('hidden');
+
+        const textElementKey = filterType === 'testSuite' ? 'testSuiteFilterText' : `${filterType}FilterText`;
+        this.elements[textElementKey].textContent = target.textContent;
+
+        const dropdownElementKey = filterType === 'testSuite' ? 'testSuiteFilterDropdown' : `${filterType}FilterDropdown`;
+        this.elements[dropdownElementKey].classList.add('hidden');
+
+        if (filterType === 'testSuite') {
+            this.resetSelection();
+            this.setupSearchData();
+        }
+
         this.render();
     },
 
     closeDropdownOnClickOutside() {
         document.addEventListener('click', (event) => {
-            if (!this.elements.hierarchyFilterBtn.contains(event.target) && !this.elements.hierarchyFilterDropdown.contains(event.target)) {
-                this.elements.hierarchyFilterDropdown.classList.add('hidden');
+            if (!this.elements.testSuiteFilterBtn.contains(event.target) && !this.elements.testSuiteFilterDropdown.contains(event.target)) {
+                this.elements.testSuiteFilterDropdown.classList.add('hidden');
             }
             if (!this.elements.moduleFilterBtn.contains(event.target) && !this.elements.moduleFilterDropdown.contains(event.target)) {
                 this.elements.moduleFilterDropdown.classList.add('hidden');
@@ -350,7 +359,6 @@ const CoverageReportApp = {
         this.elements.viewModeText.textContent = target.textContent;
         this.elements.viewModeDropdown.classList.add('hidden');
         this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
-        this.updateViewToggles();
         this.resetSelection();
         this.setupSearchData();
         this.render();
@@ -369,14 +377,9 @@ const CoverageReportApp = {
         const { name, type, moduleName, testSuiteName } = td.dataset;
         if (type === 'module') {
             this.state.selectedModule = name;
-            this.state.currentView = this.state.currentHierarchy === 'tests' ? 'testSuites' : 'packages';
-        } else if (type === 'testSuite') {
-            this.state.selectedModule = moduleName;
-            this.state.selectedTestSuite = name;
             this.state.currentView = 'packages';
         } else if (type === 'package') {
             this.state.selectedModule = moduleName;
-            if (testSuiteName) this.state.selectedTestSuite = testSuiteName;
             this.state.selectedPackage = name;
             this.state.currentView = 'classes';
         }
@@ -414,30 +417,27 @@ const CoverageReportApp = {
         this.state.selectedPackage = null;
     },
 
-    getPackages(module) {
-        if (this.state.currentHierarchy === 'source') {
-            return module.packages || [];
-        }
-        return (module.testSuites || []).flatMap(ts => ts.packages || []);
-    },
-
-    getAllClasses() {
-        return this.fullReport.modules.flatMap(m => this.getPackages(m).flatMap(p => p.classes || []));
-    },
-
     setupSearchData() {
+        const { testSuite } = this.state.filters;
         const allItems = this.fullReport.modules.flatMap(m => {
             const moduleItem = {...m, type: 'module'};
-            if (this.state.currentHierarchy === 'source') {
-                const packages = (m.packages || []).flatMap(p => [{...p, type:'package', moduleName: m.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, packageName: p.name}))]);
-                return [moduleItem, ...packages];
+            let packagesAndClasses;
+
+            if (testSuite === 'Aggregated') {
+                packagesAndClasses = (m.packages || []).flatMap(p =>
+                    [{...p, type:'package', moduleName: m.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, packageName: p.name}))]
+                );
+                return [moduleItem, ...packagesAndClasses];
             } else {
-                const testSuites = (m.testSuites || []).flatMap(ts => {
-                    const testSuiteItem = {...ts, type:'testSuite', moduleName: m.name};
-                    const packages = (ts.packages || []).flatMap(p => [{...p, type:'package', moduleName: m.name, testSuiteName: ts.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, testSuiteName: ts.name, packageName: p.name}))]);
-                    return [testSuiteItem, ...packages];
-                });
-                return [moduleItem, ...testSuites];
+                const testSuiteItems = (m.testSuites || [])
+                    .filter(ts => ts.name === testSuite)
+                    .flatMap(ts => {
+                        const packages = (ts.packages || []).flatMap(p =>
+                            [{...p, type:'package', moduleName: m.name, testSuiteName: ts.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, testSuiteName: ts.name, packageName: p.name}))]
+                        );
+                        return packages; // No need to add test suite as a searchable item anymore
+                    });
+                return [moduleItem, ...testSuiteItems];
             }
         });
 
@@ -447,7 +447,6 @@ const CoverageReportApp = {
              switch(this.state.currentView) {
                 case 'packages': this.state.searchableList = allItems.filter(i => i.type === 'package'); break;
                 case 'classes': this.state.searchableList = allItems.filter(i => i.type === 'class'); break;
-                case 'testSuites': this.state.searchableList = allItems.filter(i => i.type === 'testSuite'); break;
                 default: this.state.searchableList = allItems.filter(i => i.type === 'module'); break;
             }
         }
@@ -564,59 +563,64 @@ const CoverageReportApp = {
     getFilteredData() {
         const { viewMode, currentView, currentHierarchy, selectedModule, selectedTestSuite, selectedPackage, filters } = this.state;
         let data;
+        let modulesSource = this.fullReport.modules;
+
+        if (filters.module !== 'all') {
+            modulesSource = modulesSource.filter(m => m.name === filters.module);
+        }
 
         const allModules = this.fullReport.modules.map(m => ({ ...m, type: 'module' }));
 
         if (viewMode === 'tree') {
-            data = allModules;
-        } else {
-            const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuites || []).map(ts => ({ ...ts, type: 'testSuite', moduleName: m.name })));
-            const allPackages = this.fullReport.modules.flatMap(m =>
-                (currentHierarchy === 'source' ? m.packages || [] : (m.testSuites || []).flatMap(ts => ts.packages.map(p => ({...p, testSuiteName: ts.name}))))
-                .map(p => ({ ...p, type: 'package', moduleName: m.name }))
-            );
-            const allClasses = this.fullReport.modules.flatMap(m =>
-                (currentHierarchy === 'source' ? m.packages || [] : (m.testSuites || []).flatMap(ts => ts.packages.map(p => ({...p, testSuiteName: ts.name}))))
-                .flatMap(p =>
-                    (p.classes || []).map(c => ({
-                        ...c,
-                        type: 'class',
-                        packageName: p.name,
-                        moduleName: m.name,
-                        testSuiteName: p.testSuiteName
-                    }))
-                )
-            );
-
-            if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule && (currentHierarchy === 'source' || c.testSuiteName === selectedTestSuite));
-            else if (selectedTestSuite) data = allPackages.filter(p => p.testSuiteName === selectedTestSuite && p.moduleName === selectedModule);
-            else if (selectedModule) {
-                if (currentHierarchy === 'source') data = allPackages.filter(p => p.moduleName === selectedModule);
-                else data = allTestSuites.filter(ts => ts.moduleName === selectedModule);
+            if (filters.testSuite === 'Aggregated') {
+                data = modulesSource;
+            } else {
+                const suiteName = filters.testSuite;
+                data = modulesSource.map(m => {
+                    const relevantSuites = (m.testSuites || []).filter(ts => ts.name === suiteName);
+                    if (relevantSuites.length === 0) return null;
+                    const newPackages = relevantSuites.flatMap(ts => (ts.packages || []));
+                    return { ...m, packages: newPackages, testSuites: relevantSuites };
+                }).filter(Boolean);
             }
+        } else {
+            let allPackages, allClasses;
+            if (filters.testSuite === 'Aggregated') {
+                allPackages = modulesSource.flatMap(m =>
+                    (m.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name }))
+                );
+                allClasses = modulesSource.flatMap(m =>
+                    (m.packages || []).flatMap(p =>
+                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name }))
+                    )
+                );
+            } else {
+                const suiteName = filters.testSuite;
+                const modulesWithSuite = modulesSource.filter(m => (m.testSuites || []).some(ts => ts.name === suiteName));
+                allPackages = modulesWithSuite.flatMap(m =>
+                    (m.testSuites || []).filter(ts => ts.name === suiteName)
+                    .flatMap(ts => (ts.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name, testSuiteName: ts.name })))
+                );
+                allClasses = modulesWithSuite.flatMap(m =>
+                    (m.testSuites || []).filter(ts => ts.name === suiteName)
+                    .flatMap(ts => (ts.packages || []).flatMap(p =>
+                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name, testSuiteName: ts.name }))
+                    ))
+                );
+            }
+            const allModules = modulesSource.map(m => ({ ...m, type: 'module' }));
+            if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule);
+            else if (selectedModule) data = allPackages.filter(p => p.moduleName === selectedModule);
             else if (currentView === 'packages') data = allPackages;
             else if (currentView === 'classes') data = allClasses;
-            else if (currentView === 'testSuites') data = allTestSuites;
             else data = allModules;
-        }
-
-        if (filters.module !== 'all') {
-            const moduleName = filters.module;
-            if(viewMode === 'tree') {
-                data = data.filter(item => item.name === moduleName);
-            } else {
-                data = data.filter(item => item.moduleName === moduleName || (item.type === 'module' && item.name === moduleName));
-            }
         }
 
         if (filters.search) {
              if (viewMode === 'tree') {
                  data = this.filterTreeData(data, filters.search.toLowerCase());
              } else {
-                 const resultNames = new Set(this.state.searchableList
-                     .filter(item => item.name.toLowerCase().includes(filters.search))
-                     .map(r => r.name));
-                 data = data.filter(item => resultNames.has(item.name));
+                 data = data.filter(item => item.name.toLowerCase().includes(filters.search));
              }
         }
         return data;
@@ -628,20 +632,17 @@ const CoverageReportApp = {
         let moduleCount = 0;
 
         if(viewMode === 'tree'){
-            relevantClasses = dataToRender.flatMap(m => this.getPackages(m).flatMap(p => p.classes || []));
+            relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
             moduleCount = dataToRender.length;
         } else {
-             if (currentView === 'classes') {
+            if (currentView === 'classes') {
                 relevantClasses = dataToRender;
-                moduleCount = new Set(dataToRender.map(c => c.moduleName)).size || 1;
+                moduleCount = new Set(dataToRender.map(c => c.moduleName)).size;
             } else if (currentView === 'packages') {
                 relevantClasses = dataToRender.flatMap(p => p.classes || []);
-                moduleCount = new Set(dataToRender.map(p => p.moduleName)).size || 1;
-            } else if (currentView === 'testSuites') {
-                relevantClasses = dataToRender.flatMap(ts => (ts.packages || []).flatMap(p => p.classes || []));
-                 moduleCount = new Set(dataToRender.map(ts => ts.moduleName)).size || 1;
+                moduleCount = new Set(dataToRender.map(p => p.moduleName)).size;
             } else {
-                relevantClasses = dataToRender.flatMap(m => this.getPackages(m).flatMap(p => p.classes || []));
+                relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
                 moduleCount = dataToRender.length;
             }
         }
@@ -703,34 +704,26 @@ const CoverageReportApp = {
     },
 
     renderHeaders(data) {
-        const { viewMode, currentView, filters, sort, currentHierarchy } = this.state;
+        const { viewMode, currentView, filters, sort } = this.state;
         const topHeader = document.createElement('tr');
         topHeader.className = "border-b border-gray-200";
         const subHeader = document.createElement('tr');
         subHeader.className = "border-b border-gray-200";
 
-        let mainHeaderTitle = viewMode === 'tree' ? 'Module' : currentView.charAt(0).toUpperCase() + currentView.slice(1);
-        if(currentView === 'testSuites') mainHeaderTitle = "Test Suite";
-
-        let firstColClass = "py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30";
-
+        const mainHeaderTitle = viewMode === 'tree' ? 'Module' : currentView.charAt(0).toUpperCase() + currentView.slice(1);
+        const firstColClass = "py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30";
         const sortIndicator = (key) => sort.by === key ? (sort.order === 'asc' ? '▲' : '▼') : '';
         topHeader.innerHTML = `<th class="${firstColClass}" data-sort-by="name">${mainHeaderTitle} ${sortIndicator('name')}</th>`;
         subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
 
-        if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes' || currentView === 'testSuites')) {
-            let contextTitle = '';
-            if (currentView === 'packages') {
-                contextTitle = currentHierarchy === 'tests' ? 'Test Suite' : 'Module';
-            } else if (currentView === 'classes') {
-                contextTitle = 'Package';
-            } else if (currentView === 'testSuites') {
-                contextTitle = 'Module';
-            }
+        if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes')) {
+            const contextTitle = (currentView === 'packages')
+                ? (filters.testSuite !== 'Aggregated' ? 'Test Suite' : 'Module')
+                : 'Package';
             topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
             subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">${contextTitle}</th>`;
 
-            if (currentView === 'classes' && currentHierarchy === 'tests') {
+            if (currentView === 'classes' && filters.testSuite !== 'Aggregated') {
                 topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
                 subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Test Suite</th>`;
             }
@@ -755,14 +748,12 @@ const CoverageReportApp = {
         this.elements.tableHeaders.appendChild(topHeader);
         this.elements.tableHeaders.appendChild(subHeader);
     },
-
     renderTreeRows(modules) {
         const isSearching = !!this.state.filters.search;
 
         const renderRow = (item, level, type, parentId = '', context = {}) => {
             const hasChildren = type !== 'class' && (
                 (item.packages && item.packages.length > 0) ||
-                (item.testSuites && item.testSuites.length > 0) ||
                 (item.classes && item.classes.length > 0)
             );
 
@@ -791,24 +782,16 @@ const CoverageReportApp = {
 
         let html = modules.map(module => {
             let moduleContext = { moduleName: module.name };
-            let childrenHtml = '';
-            if (this.state.currentHierarchy === 'source') {
-                childrenHtml = (module.packages || []).map(pkg => {
-                    let packageContext = { ...moduleContext, packageName: pkg.name };
-                    return renderRow(pkg, 1, 'package', module.name, moduleContext) +
-                            (pkg.classes || []).map(cls => renderRow(cls, 2, 'class', pkg.name, packageContext)).join('');
-                }).join('');
-            } else {
-                childrenHtml = (module.testSuites || []).map(ts => {
-                    let testSuiteContext = { ...moduleContext, testSuiteName: ts.name };
-                    return renderRow(ts, 1, 'testSuite', module.name, moduleContext) +
-                            (ts.packages || []).map(pkg => {
-                                let packageContext = { ...testSuiteContext, packageName: pkg.name };
-                                return renderRow(pkg, 2, 'package', ts.name, testSuiteContext) +
-                                        (pkg.classes || []).map(cls => renderRow(cls, 3, 'class', pkg.name, packageContext)).join('');
-                            }).join('');
-                }).join('');
-            }
+            let childrenHtml = (module.packages || []).map(pkg => {
+                let testSuiteNameForCtx = '';
+                if (this.state.filters.testSuite !== 'Aggregated' && module.testSuites && module.testSuites.length > 0) {
+                     testSuiteNameForCtx = module.testSuites[0].name;
+                }
+                let packageContext = { ...moduleContext, packageName: pkg.name, testSuiteName: testSuiteNameForCtx };
+                return renderRow(pkg, 1, 'package', module.name, packageContext) +
+                    (pkg.classes || []).map(cls => renderRow(cls, 2, 'class', pkg.name, packageContext)).join('');
+            }).join('');
+
             return renderRow(module, 0, 'module', '', moduleContext) + childrenHtml;
         }).join('');
         this.elements.coverageData.innerHTML = html;
@@ -829,18 +812,19 @@ const CoverageReportApp = {
             `}).join('');
 
             let nameCell;
-             switch (this.state.currentView) {
+            switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</td><td class="py-3 px-6">${this.state.currentHierarchy === 'tests' ? item.testSuiteName : item.moduleName}</td>`;
+                    const contextCellContent = this.state.filters.testSuite === 'Aggregated'
+                        ? item.moduleName
+                        : item.testSuiteName;
+
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${contextCellContent}</td>`;
                     break;
                 case 'classes':
                     nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
-                    if (this.state.currentHierarchy === 'tests') {
+                    if (this.state.filters.testSuite !== 'Aggregated') {
                         nameCell += `<td class="py-3 px-6">${item.testSuiteName || ''}</td>`;
                     }
-                    break;
-                case 'testSuites':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
                     break;
                 default:
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;

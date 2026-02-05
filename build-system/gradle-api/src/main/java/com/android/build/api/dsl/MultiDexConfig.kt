@@ -20,10 +20,7 @@ import org.gradle.api.Incubating
 
 @Incubating
 interface MultiDexConfig {
-    @get:Incubating
-    @set:Incubating
-    var enable: Boolean
+  @get:Incubating @set:Incubating var enable: Boolean
 
-    @get:Incubating
-    val mainDexKeepRules: ConfigurableFiles
+  @get:Incubating val mainDexKeepRules: ConfigurableFiles
 }

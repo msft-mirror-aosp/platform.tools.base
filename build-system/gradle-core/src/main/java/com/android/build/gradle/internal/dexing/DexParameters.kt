@@ -23,32 +23,33 @@ import java.io.Serializable
 
 /** Parameters required for dexing (with D8). */
 class DexParameters(
-    val minSdkVersion: Int,
-    val debuggable: Boolean,
-    val withDesugaring: Boolean,
-    val desugarBootclasspath: List<File>,
-    val desugarClasspath: List<File>,
-    val coreLibDesugarConfig: String?,
-    val enableApiModeling: Boolean,
-    val errorFormatMode: SyncOptions.ErrorFormatMode,
+  val minSdkVersion: Int,
+  val debuggable: Boolean,
+  val withDesugaring: Boolean,
+  val desugarBootclasspath: List<File>,
+  val desugarClasspath: List<File>,
+  val coreLibDesugarConfig: String?,
+  val enableApiModeling: Boolean,
+  val errorFormatMode: SyncOptions.ErrorFormatMode,
 ) {
 
-    fun toDexParametersForWorkers(
-            dexPerClass: Boolean,
-            bootClasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
-            classpath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
-    ): DexParametersForWorkers {
-        return DexParametersForWorkers(
-            minSdkVersion = minSdkVersion,
-            debuggable = debuggable,
-            dexPerClass = dexPerClass,
-            withDesugaring = withDesugaring,
-            desugarBootclasspath = bootClasspath,
-            desugarClasspath = classpath,
-            coreLibDesugarConfig = coreLibDesugarConfig,
-            enableApiModeling = enableApiModeling,
-            errorFormatMode = errorFormatMode)
-    }
+  fun toDexParametersForWorkers(
+    dexPerClass: Boolean,
+    bootClasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
+    classpath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
+  ): DexParametersForWorkers {
+    return DexParametersForWorkers(
+      minSdkVersion = minSdkVersion,
+      debuggable = debuggable,
+      dexPerClass = dexPerClass,
+      withDesugaring = withDesugaring,
+      desugarBootclasspath = bootClasspath,
+      desugarClasspath = classpath,
+      coreLibDesugarConfig = coreLibDesugarConfig,
+      enableApiModeling = enableApiModeling,
+      errorFormatMode = errorFormatMode,
+    )
+  }
 }
 
 /**
@@ -57,18 +58,18 @@ class DexParameters(
  * This class is serializable as it is passed to Gradle workers.
  */
 class DexParametersForWorkers(
-    val minSdkVersion: Int,
-    val debuggable: Boolean,
-    val dexPerClass: Boolean,
-    val withDesugaring: Boolean,
-    val desugarBootclasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
-    val desugarClasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
-    val coreLibDesugarConfig: String?,
-    val enableApiModeling: Boolean,
-    val errorFormatMode: SyncOptions.ErrorFormatMode
+  val minSdkVersion: Int,
+  val debuggable: Boolean,
+  val dexPerClass: Boolean,
+  val withDesugaring: Boolean,
+  val desugarBootclasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
+  val desugarClasspath: DexArchiveBuilderTaskDelegate.ClasspathServiceKey,
+  val coreLibDesugarConfig: String?,
+  val enableApiModeling: Boolean,
+  val errorFormatMode: SyncOptions.ErrorFormatMode,
 ) : Serializable {
 
-    companion object {
-        private const val serialVersionUID: Long = 1L
-    }
+  companion object {
+    private const val serialVersionUID: Long = 1L
+  }
 }

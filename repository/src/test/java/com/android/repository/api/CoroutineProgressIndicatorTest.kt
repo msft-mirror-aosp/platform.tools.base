@@ -31,8 +31,7 @@ class CoroutineProgressIndicatorTest {
   @Test
   fun isCanceled() {
     val coroutineScope = CoroutineScope(EmptyCoroutineContext)
-    val progress =
-      CoroutineProgressIndicator(coroutineScope.coroutineContext, NullProgressIndicator)
+    val progress = CoroutineProgressIndicator(coroutineScope.coroutineContext, NullProgressIndicator)
 
     val result = coroutineScope.async { sleepCancellable(progress) }
 
@@ -47,8 +46,7 @@ class CoroutineProgressIndicatorTest {
   @Test
   fun cancel() {
     val coroutineScope = CoroutineScope(EmptyCoroutineContext)
-    val progress =
-      CoroutineProgressIndicator(coroutineScope.coroutineContext, NullProgressIndicator)
+    val progress = CoroutineProgressIndicator(coroutineScope.coroutineContext, NullProgressIndicator)
 
     progress.cancel()
 

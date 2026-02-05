@@ -23,20 +23,15 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-open class ComponentInfo<
-        ComponentBuilderT : ComponentBuilder,
-        ComponentT : ComponentCreationConfig>(
-    val variantBuilder: ComponentBuilderT,
-    val variant: ComponentT,
-    val stats: GradleBuildVariant.Builder?
+open class ComponentInfo<ComponentBuilderT : ComponentBuilder, ComponentT : ComponentCreationConfig>(
+  val variantBuilder: ComponentBuilderT,
+  val variant: ComponentT,
+  val stats: GradleBuildVariant.Builder?,
 )
 
-class VariantComponentInfo<
-        VariantBuilderT : VariantBuilder,
-        VariantDslInfoT: VariantDslInfo,
-        VariantT : VariantCreationConfig> (
-    variantBuilder: VariantBuilderT,
-    variant: VariantT,
-    stats: GradleBuildVariant.Builder?,
-    val variantDslInfo: VariantDslInfoT
+class VariantComponentInfo<VariantBuilderT : VariantBuilder, VariantDslInfoT : VariantDslInfo, VariantT : VariantCreationConfig>(
+  variantBuilder: VariantBuilderT,
+  variant: VariantT,
+  stats: GradleBuildVariant.Builder?,
+  val variantDslInfo: VariantDslInfoT,
 ) : ComponentInfo<VariantBuilderT, VariantT>(variantBuilder, variant, stats)

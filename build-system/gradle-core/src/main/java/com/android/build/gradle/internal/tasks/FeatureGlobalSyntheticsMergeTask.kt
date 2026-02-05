@@ -32,77 +32,61 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 
 /**
- * Different from [GlobalSyntheticsMergeTask], this task is to combine all intermediate global
- * synthetics into a single internal artifact and publish it from dynamic feature module to the
- * base module.
+ * Different from [GlobalSyntheticsMergeTask], this task is to combine all intermediate global synthetics into a single internal artifact
+ * and publish it from dynamic feature module to the base module.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING, secondaryTaskCategories = [TaskCategory.MERGING])
 abstract class FeatureGlobalSyntheticsMergeTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val globalSyntheticsInputs: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val globalSyntheticsInputs: ConfigurableFileCollection
 
-    @get:OutputDirectory
-    abstract val mergedGlobalSynthetics: DirectoryProperty
+  @get:OutputDirectory abstract val mergedGlobalSynthetics: DirectoryProperty
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(
-            FeatureGlobalSyntheticsMergeWorkAction::class.java
-        ) {
-            it.initializeFromBaseTask(this)
-            it.globalSyntheticsInputs.from(globalSyntheticsInputs)
-            it.outputDir.set(mergedGlobalSynthetics)
-        }
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(FeatureGlobalSyntheticsMergeWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.globalSyntheticsInputs.from(globalSyntheticsInputs)
+      it.outputDir.set(mergedGlobalSynthetics)
+    }
+  }
+
+  class CreationAction(
+    creationConfig: ApkCreationConfig,
+    private val dexingUsingArtifactTransform: Boolean,
+    private val separateFileDependenciesTask: Boolean,
+  ) : VariantTaskCreationAction<FeatureGlobalSyntheticsMergeTask, ApkCreationConfig>(creationConfig) {
+
+    override val name = computeTaskName("featureGlobalSynthetics", "Merge")
+    override val type = FeatureGlobalSyntheticsMergeTask::class.java
+
+    override fun configure(task: FeatureGlobalSyntheticsMergeTask) {
+      super.configure(task)
+
+      task.globalSyntheticsInputs.from(
+        getGlobalSyntheticsInput(creationConfig, DexMergingAction.MERGE_ALL, dexingUsingArtifactTransform, separateFileDependenciesTask)
+      )
     }
 
-    class CreationAction(
-        creationConfig: ApkCreationConfig,
-        private val dexingUsingArtifactTransform: Boolean,
-        private val separateFileDependenciesTask: Boolean
-    ) : VariantTaskCreationAction<FeatureGlobalSyntheticsMergeTask, ApkCreationConfig>(creationConfig) {
-
-        override val name = computeTaskName("featureGlobalSynthetics", "Merge")
-        override val type = FeatureGlobalSyntheticsMergeTask::class.java
-
-        override fun configure(task: FeatureGlobalSyntheticsMergeTask) {
-            super.configure(task)
-
-            task.globalSyntheticsInputs.from(
-                getGlobalSyntheticsInput(
-                    creationConfig,
-                    DexMergingAction.MERGE_ALL,
-                    dexingUsingArtifactTransform,
-                    separateFileDependenciesTask
-                )
-            )
-        }
-
-        override fun handleProvider(taskProvider: TaskProvider<FeatureGlobalSyntheticsMergeTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts
-                .setInitialProvider(
-                    taskProvider, FeatureGlobalSyntheticsMergeTask::mergedGlobalSynthetics)
-                .withName("mergedRawGlobalSynthetics")
-                .on(InternalArtifactType.GLOBAL_SYNTHETICS_MERGED)
-        }
+    override fun handleProvider(taskProvider: TaskProvider<FeatureGlobalSyntheticsMergeTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FeatureGlobalSyntheticsMergeTask::mergedGlobalSynthetics)
+        .withName("mergedRawGlobalSynthetics")
+        .on(InternalArtifactType.GLOBAL_SYNTHETICS_MERGED)
     }
+  }
 }
 
-abstract class FeatureGlobalSyntheticsMergeWorkAction
-    : ProfileAwareWorkAction<FeatureGlobalSyntheticsMergeWorkAction.Params> ()
-{
-    abstract class Params: Parameters() {
-        abstract val globalSyntheticsInputs: ConfigurableFileCollection
-        abstract val outputDir: DirectoryProperty
-    }
+abstract class FeatureGlobalSyntheticsMergeWorkAction : ProfileAwareWorkAction<FeatureGlobalSyntheticsMergeWorkAction.Params>() {
+  abstract class Params : Parameters() {
+    abstract val globalSyntheticsInputs: ConfigurableFileCollection
+    abstract val outputDir: DirectoryProperty
+  }
 
-    override fun run() {
-        val inputFiles = parameters.globalSyntheticsInputs.asFileTree.files
-        val outputFolder = parameters.outputDir.get().asFile
-        inputFiles.sorted().forEachIndexed { index, file ->
-            file.copyTo(outputFolder.resolve("$index"))
-        }
-    }
+  override fun run() {
+    val inputFiles = parameters.globalSyntheticsInputs.asFileTree.files
+    val outputFolder = parameters.outputDir.get().asFile
+    inputFiles.sorted().forEachIndexed { index, file -> file.copyTo(outputFolder.resolve("$index")) }
+  }
 }

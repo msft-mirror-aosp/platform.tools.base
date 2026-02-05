@@ -854,6 +854,7 @@ com.android.tools.utp:android-test-plugin-host-apk-installer
   dependencies:
     com.android.tools:common (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)

@@ -19,23 +19,25 @@ package com.android.build.gradle.internal.instrumentation
 import com.android.build.api.instrumentation.ClassData
 
 data class ClassDataImpl(
-    override val className: String,
-    override val classAnnotations: List<String>,
-    override val interfaces: List<String>,
-    override val superClasses: List<String>
+  override val className: String,
+  override val classAnnotations: List<String>,
+  override val interfaces: List<String>,
+  override val superClasses: List<String>,
 ) : ClassData
 
 class ClassDataLazyImpl(
-    override val className: String,
-    private val classAnnotationsSupplier: () -> List<String>,
-    private val interfacesSupplier: () -> List<String>,
-    private val superClassesSupplier: () -> List<String>,
+  override val className: String,
+  private val classAnnotationsSupplier: () -> List<String>,
+  private val interfacesSupplier: () -> List<String>,
+  private val superClassesSupplier: () -> List<String>,
 ) : ClassData {
 
-    override val classAnnotations: List<String>
-        get() = classAnnotationsSupplier.invoke()
-    override val interfaces: List<String>
-        get() = interfacesSupplier.invoke()
-    override val superClasses: List<String>
-        get() = superClassesSupplier.invoke()
+  override val classAnnotations: List<String>
+    get() = classAnnotationsSupplier.invoke()
+
+  override val interfaces: List<String>
+    get() = interfacesSupplier.invoke()
+
+  override val superClasses: List<String>
+    get() = superClassesSupplier.invoke()
 }

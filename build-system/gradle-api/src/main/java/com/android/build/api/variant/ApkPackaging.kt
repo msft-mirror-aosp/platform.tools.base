@@ -23,8 +23,8 @@ package com.android.build.api.variant
  */
 interface ApkPackaging : Packaging {
 
-    /** PackagingOptions for dex files. Initialized from the corresponding DSL. */
-    val dex: DexPackagingOptions
+  /** PackagingOptions for dex files. Initialized from the corresponding DSL. */
+  val dex: DexPackagingOptions
 
-    override val jniLibs: JniLibsApkPackaging
+  override val jniLibs: JniLibsApkPackaging
 }

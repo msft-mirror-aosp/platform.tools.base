@@ -25,17 +25,20 @@ import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-open class ApplicationAndroidComponentsExtensionImpl @Inject constructor(
-        dslServices: DslServices,
-        sdkComponents: SdkComponents,
-        managedDeviceRegistry: ManagedDeviceRegistry,
-        variantApiOperations: VariantApiOperationsRegistrar<ApplicationExtension, ApplicationVariantBuilder, ApplicationVariant>,
-        applicationExtension: ApplicationExtension
-): ApplicationAndroidComponentsExtension,
-        AndroidComponentsExtensionImpl<ApplicationExtension, ApplicationVariantBuilder, ApplicationVariant>(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperations,
-            applicationExtension
-        )
+open class ApplicationAndroidComponentsExtensionImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  sdkComponents: SdkComponents,
+  managedDeviceRegistry: ManagedDeviceRegistry,
+  variantApiOperations: VariantApiOperationsRegistrar<ApplicationExtension, ApplicationVariantBuilder, ApplicationVariant>,
+  applicationExtension: ApplicationExtension,
+) :
+  ApplicationAndroidComponentsExtension,
+  AndroidComponentsExtensionImpl<ApplicationExtension, ApplicationVariantBuilder, ApplicationVariant>(
+    dslServices,
+    sdkComponents,
+    managedDeviceRegistry,
+    variantApiOperations,
+    applicationExtension,
+  )

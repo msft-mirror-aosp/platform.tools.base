@@ -29,58 +29,35 @@ import java.nio.file.Path
  * Support for Android Test in the [GradleRule] fixture
  */
 
-/**
- * Implementation of [AndroidProjectDefinition] for [ApplicationExtension]
- */
-internal class AndroidTestDefinitionImpl(
-    path: String,
-    createMinimumProject: Boolean
-): AndroidProjectDefinitionImpl<TestExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_TEST)
+/** Implementation of [AndroidProjectDefinition] for [ApplicationExtension] */
+internal class AndroidTestDefinitionImpl(path: String, createMinimumProject: Boolean) : AndroidProjectDefinitionImpl<TestExtension>(path) {
+  init {
+    applyPlugin(PluginType.ANDROID_TEST)
+  }
+
+  override val android: TestExtension =
+    DslProxy.createProxy(TestExtension::class.java, dslRecorder).also {
+      if (createMinimumProject) {
+        initDefaultValues(it)
+      }
     }
-
-    override val android: TestExtension =
-        DslProxy.createProxy(
-            TestExtension::class.java,
-            dslRecorder,
-        ).also {
-            if (createMinimumProject) {
-                initDefaultValues(it)
-            }
-        }
 }
 
-/**
- * Specialized interface for android test [AndroidProject] to use in the test
- */
-interface AndroidTestProject: AndroidProject<AndroidProjectDefinition<TestExtension>>, GeneratesApk
+/** Specialized interface for android test [AndroidProject] to use in the test */
+interface AndroidTestProject : AndroidProject<AndroidProjectDefinition<TestExtension>>, GeneratesApk
 
-/**
- * Implementation of [AndroidProject]
- */
-internal class AndroidTestImpl(
-    location: Path,
-    projectDefinition: AndroidProjectDefinition<TestExtension>,
-    namespace: String,
-) : AndroidProjectImpl<AndroidProjectDefinition<TestExtension>>(
-    location,
-    projectDefinition,
-    namespace,
-), AndroidTestProject, GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
+/** Implementation of [AndroidProject] */
+internal class AndroidTestImpl(location: Path, projectDefinition: AndroidProjectDefinition<TestExtension>, namespace: String) :
+  AndroidProjectImpl<AndroidProjectDefinition<TestExtension>>(location, projectDefinition, namespace),
+  AndroidTestProject,
+  GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidTestProject =
-        ReversibleAndroidTestProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidTestProject =
+    ReversibleAndroidTestProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AndroidTestProject]
- */
-internal class ReversibleAndroidTestProject(
-    parentProject: AndroidTestProject,
-    fileChangeController: FileChangeController
-) : ReversibleAndroidProject<AndroidTestProject, AndroidProjectDefinition<TestExtension>>(
-    parentProject,
-    fileChangeController
-), AndroidTestProject, GeneratesApk by GeneratesApkFromParentDelegate(parentProject)
-
+/** Reversible version of [AndroidTestProject] */
+internal class ReversibleAndroidTestProject(parentProject: AndroidTestProject, fileChangeController: FileChangeController) :
+  ReversibleAndroidProject<AndroidTestProject, AndroidProjectDefinition<TestExtension>>(parentProject, fileChangeController),
+  AndroidTestProject,
+  GeneratesApk by GeneratesApkFromParentDelegate(parentProject)

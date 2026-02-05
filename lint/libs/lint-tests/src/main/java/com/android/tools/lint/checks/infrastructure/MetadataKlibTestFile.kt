@@ -28,12 +28,7 @@ import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.metadata.KotlinMetadataCompiler
 import org.junit.Assert
 
-class MetadataKlibTestFile(
-  to: String,
-  val files: Array<out TestFile>,
-  val checksum: Long?,
-  val encoding: String?,
-) : TestFile() {
+class MetadataKlibTestFile(to: String, val files: Array<out TestFile>, val checksum: Long?, val encoding: String?) : TestFile() {
 
   init {
     to(to)
@@ -64,10 +59,8 @@ class MetadataKlibTestFile(
     val outStream = ByteArrayOutputStream()
     val compilerClass = KotlinMetadataCompiler::class.java
     val compiler = compilerClass.newInstance()
-    val execMethod =
-      compilerClass.getMethod("exec", PrintStream::class.java, Array<String>::class.java)
-    val invocationResult =
-      execMethod.invoke(compiler, PrintStream(outStream), args.toTypedArray()) as Enum<*>
+    val execMethod = compilerClass.getMethod("exec", PrintStream::class.java, Array<String>::class.java)
+    val invocationResult = execMethod.invoke(compiler, PrintStream(outStream), args.toTypedArray()) as Enum<*>
     Assert.assertEquals(String(outStream.toByteArray()), ExitCode.OK.name, invocationResult.name)
 
     tmpSrc.deleteRecursively()
@@ -89,8 +82,7 @@ class MetadataKlibTestFile(
     createZipFile(files, klib)
     val bytes = klib.readBytes()
     val checksum = computeCheckSum(targetPath, listOf(bytes))
-    return checksum to
-      toBase64gzipKotlin(bytes, indent = 4, indentStart = true, includeQuotes = false)
+    return checksum to toBase64gzipKotlin(bytes, indent = 4, indentStart = true, includeQuotes = false)
   }
 
   private fun collectFiles(into: MutableSet<File>, root: File) {

@@ -57,8 +57,7 @@ import org.jetbrains.uast.resolveToUElementOfType
  */
 class UElementAsPsiDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(UElementAsPsiDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(UElementAsPsiDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -135,19 +134,13 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitBinaryExpression(node: UBinaryExpression) {
         if (node.operator != UastBinaryOperator.ASSIGN) return
-        if (
-          getDimIfUElementType(node.rightOperand.getExpressionType()) ==
-            getDimIfPsiElementType(node.leftOperand.getExpressionType())
-        ) {
+        if (getDimIfUElementType(node.rightOperand.getExpressionType()) == getDimIfPsiElementType(node.leftOperand.getExpressionType())) {
           reportUsage(node.rightOperand)
         }
       }
 
       override fun visitBinaryExpressionWithType(node: UBinaryExpressionWithType) {
-        if (
-          getDimIfUElementType(node.operand.getExpressionType()) ==
-            getDimIfPsiElementType(node.typeReference?.type)
-        ) {
+        if (getDimIfUElementType(node.operand.getExpressionType()) == getDimIfPsiElementType(node.typeReference?.type)) {
           reportUsage(node.operand)
         }
       }
@@ -164,8 +157,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         if (containingClass.qualifiedName in ALLOWED_REDEFINITION) return
         val superMethods = psiMethod.findSuperMethods()
         if (
-          (isPsiElementClass(containingClass) ||
-            superMethods.any { isPsiElementClass(it.containingClass) }) &&
+          (isPsiElementClass(containingClass) || superMethods.any { isPsiElementClass(it.containingClass) }) &&
             superMethods.none { it.containingClass?.qualifiedName in ALLOWED_REDEFINITION }
         ) {
           reportUsage(node)
@@ -173,9 +165,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         }
         val uMethod = node.resolveToUElementOfType<UMethod>() ?: return
         val receiverType = uMethod.getReceiverType() ?: return
-        if (
-          !isAssignable(uElementType, receiverType) && isAssignable(psiElementType, receiverType)
-        ) {
+        if (!isAssignable(uElementType, receiverType) && isAssignable(psiElementType, receiverType)) {
           reportUsage(node.receiver)
         }
       }
@@ -188,20 +178,14 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
       private fun checkArguments(node: UCallExpression) {
         for (valueArgument in node.valueArguments) {
           val param = node.getParameterForArgument(valueArgument)
-          if (
-            getDimIfPsiElementType(param?.type) ==
-              getDimIfUElementType(valueArgument.getExpressionType())
-          ) {
+          if (getDimIfPsiElementType(param?.type) == getDimIfUElementType(valueArgument.getExpressionType())) {
             reportUsage(valueArgument)
           }
         }
       }
 
       override fun visitVariable(node: UVariable) {
-        if (
-          getDimIfUElementType(node.uastInitializer?.getExpressionType()) ==
-            getDimIfPsiElementType(node.typeReference?.type)
-        ) {
+        if (getDimIfUElementType(node.uastInitializer?.getExpressionType()) == getDimIfPsiElementType(node.typeReference?.type)) {
           reportUsage(node.uastInitializer)
         }
       }
@@ -213,10 +197,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
             is ULambdaExpression -> jt.getExpressionType()
             else -> return
           }
-        if (
-          getDimIfUElementType(node.returnExpression?.getExpressionType()) ==
-            getDimIfPsiElementType(expected)
-        ) {
+        if (getDimIfUElementType(node.returnExpression?.getExpressionType()) == getDimIfPsiElementType(expected)) {
           reportUsage(node.returnExpression)
         }
       }
@@ -227,11 +208,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
           return NOT_PSI_ELEMENT
         }
-        return if (
-          !isNullType(type) &&
-            isAssignable(psiElementType, componentType) &&
-            getDimIfUElementType(componentType) == NOT_UELEMENT
-        )
+        return if (!isNullType(type) && isAssignable(psiElementType, componentType) && getDimIfUElementType(componentType) == NOT_UELEMENT)
           dim
         else NOT_PSI_ELEMENT
       }
@@ -242,16 +219,13 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
           return NOT_UELEMENT
         }
-        return if (!isNullType(type) && isAssignable(uElementType, componentType)) dim
-        else NOT_UELEMENT
+        return if (!isNullType(type) && isAssignable(uElementType, componentType)) dim else NOT_UELEMENT
       }
 
       private fun isPsiElementClass(cls: PsiClass?): Boolean {
         if (cls == null) return false
         val qualifiedName = cls.qualifiedName ?: return false
-        return getDimIfPsiElementType(
-          PsiType.getTypeByName(qualifiedName, cls.project, cls.resolveScope)
-        ) != NOT_PSI_ELEMENT
+        return getDimIfPsiElementType(PsiType.getTypeByName(qualifiedName, cls.project, cls.resolveScope)) != NOT_PSI_ELEMENT
       }
 
       private fun reportUsage(node: UElement?) {

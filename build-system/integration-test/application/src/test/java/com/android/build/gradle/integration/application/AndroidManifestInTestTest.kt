@@ -21,31 +21,22 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import org.junit.Rule
 import org.junit.Test
 
-/** Assemble tests for androidManifestInTest.  */
+/** Assemble tests for androidManifestInTest. */
 class AndroidManifestInTestTest {
-    @Rule
-    @JvmField
-    var project = GradleTestProject.builder().fromTestProject("androidManifestInTest").create()
+  @Rule @JvmField var project = GradleTestProject.builder().fromTestProject("androidManifestInTest").create()
 
-    @Test
-    fun testUserProvidedTestAndroidManifest() {
-        project.execute("assembleDebugAndroidTest")
+  @Test
+  fun testUserProvidedTestAndroidManifest() {
+    project.execute("assembleDebugAndroidTest")
 
-        project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            manifestAsNodes().node("manifest").apply {
-                node("permission-group")
-                    .containsAttributeAndValue(
-                        "http://schemas.android.com/apk/res/android:name",
-                        "\"foo.permission-group.COST_MONEY\"")
+    project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+      manifestAsNodes().node("manifest").apply {
+        node("permission-group")
+          .containsAttributeAndValue("http://schemas.android.com/apk/res/android:name", "\"foo.permission-group.COST_MONEY\"")
 
-                node("application")
-                    .containsAttributeAndValue(
-                        "http://schemas.android.com/apk/res/android:debuggable",
-                        "true"
-                    )
-                node("instrumentation")
-                    .containsNode("meta-data")
-            }
-        }
+        node("application").containsAttributeAndValue("http://schemas.android.com/apk/res/android:debuggable", "true")
+        node("instrumentation").containsNode("meta-data")
+      }
     }
+  }
 }

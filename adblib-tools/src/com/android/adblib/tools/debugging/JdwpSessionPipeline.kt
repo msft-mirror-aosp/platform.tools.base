@@ -22,9 +22,7 @@ import com.android.adblib.tools.debugging.utils.SynchronizedSendChannel
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * A component that acts as a pipeline for the JDWP session between an Android device and
- * a Java debugger.
- *
+ * A component that acts as a pipeline for the JDWP session between an Android device and a Java debugger.
  * * "sending" means sending [JdwpPacketView] to the "debugger" side
  * * "receiving" means receiving [JdwpPacketView] from the "debugger" side
  *
@@ -32,32 +30,24 @@ import kotlinx.coroutines.CoroutineScope
  */
 interface JdwpSessionPipeline {
 
-    /**
-     * The [CoroutineScope] that is active as long as the underlying JDWP session.
-     */
-    val scope: CoroutineScope
+  /** The [CoroutineScope] that is active as long as the underlying JDWP session. */
+  val scope: CoroutineScope
 
-    /**
-     * The [SynchronizedSendChannel] used to send [JdwpPacketView] to the "debugger" side of
-     * this pipeline.
-     */
-    val sendChannel: SynchronizedSendChannel<JdwpPacketView>
+  /** The [SynchronizedSendChannel] used to send [JdwpPacketView] to the "debugger" side of this pipeline. */
+  val sendChannel: SynchronizedSendChannel<JdwpPacketView>
 
-    /**
-     * The [SynchronizedReceiveChannel] of [JdwpPacketView] coming from the "debugger" of
-     * this pipeline.
-     */
-    val receiveChannel: SynchronizedReceiveChannel<JdwpPacketView>
+  /** The [SynchronizedReceiveChannel] of [JdwpPacketView] coming from the "debugger" of this pipeline. */
+  val receiveChannel: SynchronizedReceiveChannel<JdwpPacketView>
 }
 
 suspend inline fun JdwpSessionPipeline.sendPacket(packet: JdwpPacketView) {
-    sendChannel.sendPacket(packet)
+  sendChannel.sendPacket(packet)
 }
 
 suspend inline fun SynchronizedSendChannel<JdwpPacketView>.sendPacket(packet: JdwpPacketView) {
-    if (packet.isThreadSafeAndImmutable) {
-        sendNoWait(packet)
-    } else {
-        send(packet)
-    }
+  if (packet.isThreadSafeAndImmutable) {
+    sendNoWait(packet)
+  } else {
+    send(packet)
+  }
 }

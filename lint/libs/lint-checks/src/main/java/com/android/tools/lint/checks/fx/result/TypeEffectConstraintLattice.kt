@@ -28,17 +28,11 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 
-/**
- * Given a [Lattice] on the concrete effect, mutually recursively define [Lattice]s on [Type],
- * [Effect], and [Constraint]
- */
+/** Given a [Lattice] on the concrete effect, mutually recursively define [Lattice]s on [Type], [Effect], and [Constraint] */
 class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
   val symbolicEffectLattice =
     object : Lattice<UnboundedSet<Type.Sym<FX>>> by possibilityLattice() {
-      override fun joinOf(
-        first: UnboundedSet<Type.Sym<FX>>,
-        second: UnboundedSet<Type.Sym<FX>>,
-      ): UnboundedSet<Type.Sym<FX>> =
+      override fun joinOf(first: UnboundedSet<Type.Sym<FX>>, second: UnboundedSet<Type.Sym<FX>>): UnboundedSet<Type.Sym<FX>> =
         when {
           first == null -> null
           second == null -> null
@@ -70,10 +64,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       override fun widen(prev: UnboundedSet<Type.Sym<FX>>, now: UnboundedSet<Type.Sym<FX>>) =
         when {
           prev != null && now != null ->
-            (typeLattice as TypeLattice)
-              .summarize(prev, now)
-              .filterIsInstance<Type.Sym<FX>>()
-              .toPersistentSet()
+            (typeLattice as TypeLattice).summarize(prev, now).filterIsInstance<Type.Sym<FX>>().toPersistentSet()
           else -> joinOf(prev, now)
         }
     }
@@ -93,8 +84,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
 
   val typeLattice: Lattice<Type<FX>> = TypeLattice(effectLattice)
 
-  private class TypeLattice<FX>(private val effectLattice: Lattice<Effect<FX>>) :
-    Lattice<Type<FX>> {
+  private class TypeLattice<FX>(private val effectLattice: Lattice<Effect<FX>>) : Lattice<Type<FX>> {
     override val bottom = Type.None
     override val top = Type.WildCard
 
@@ -126,8 +116,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
           val baseCases = first.baseCases intersect second.baseCases
           val inductiveCases = first.inductiveCases intersect second.inductiveCases
           when {
-            baseCases.isNotEmpty() && inductiveCases.isNotEmpty() ->
-              Type.Sym.Fix(baseCases, inductiveCases)
+            baseCases.isNotEmpty() && inductiveCases.isNotEmpty() -> Type.Sym.Fix(baseCases, inductiveCases)
             baseCases.isNotEmpty() -> Type.Union(baseCases)
             else -> bottom
           }
@@ -148,9 +137,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
           first.params == second.params -> {
           val (bodyType1, bodyFx1) = first.body
           val (bodyType2, bodyFx2) = second.body
-          first.copy(
-            body = Result(joinOf(bodyType1, bodyType2), effectLattice.joinOf(bodyFx1, bodyFx2))
-          )
+          first.copy(body = Result(joinOf(bodyType1, bodyType2), effectLattice.joinOf(bodyFx1, bodyFx2)))
         }
         else -> Type.Union(persistentSetOf(first, second))
       }
@@ -170,9 +157,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         second is Type.Sym.Fix ->
           when (first) {
             is Type.Union -> second.baseCases.containsAll(first.cases)
-            is Type.Sym.Fix ->
-              second.baseCases.containsAll(first.baseCases) &&
-                second.inductiveCases.containsAll(first.inductiveCases)
+            is Type.Sym.Fix -> second.baseCases.containsAll(first.baseCases) && second.inductiveCases.containsAll(first.inductiveCases)
             else -> first in second.baseCases
           }
         else -> false
@@ -194,21 +179,14 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         casesJoined.size == 1 -> casesJoined.first()
         // In simple cases where `now` contains all of `prev`, but the extra symbols in `now`
         // don't "grow" from any in `prev`, we return `now` without widening
-        casesNow.all {
-          it !is Type.Sym.Fix && !it.hasFreeRec() && (it in casesPrev || !it.containsAny(casesPrev))
-        } && casesNow.containsAll(casesPrev) -> now
+        casesNow.all { it !is Type.Sym.Fix && !it.hasFreeRec() && (it in casesPrev || !it.containsAny(casesPrev)) } &&
+          casesNow.containsAll(casesPrev) -> now
         else -> Type.Union(summarize(casesPrev, casesNow))
       }
     }
 
-    /**
-     * Given how a set of symbol progresses from one to the next, attempt to summarize it as a least
-     * fix point of some generation rules
-     */
-    fun summarize(
-      prev: PersistentSet<Type<FX>>,
-      now: PersistentSet<Type<FX>>,
-    ): PersistentSet<Type<FX>> {
+    /** Given how a set of symbol progresses from one to the next, attempt to summarize it as a least fix point of some generation rules */
+    fun summarize(prev: PersistentSet<Type<FX>>, now: PersistentSet<Type<FX>>): PersistentSet<Type<FX>> {
       // Temporal information simply erased for now
       val cases = now.fold(prev.fold(persistentSetOf(), ::flatMerge), ::flatMerge)
       val fixed =
@@ -237,8 +215,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
     private fun flatMerge(types: PersistentSet<Type<FX>>, type: Type<FX>): PersistentSet<Type<FX>> =
       when (type) {
         is Type.Sym.Fix -> type.cases.fold(types, ::flatMerge)
-        is Type.Sym.Invoke ->
-          type.args.fold(flatMergeFix(types + type, type.receiver), ::flatMergeFix)
+        is Type.Sym.Invoke -> type.args.fold(flatMergeFix(types + type, type.receiver), ::flatMergeFix)
         is Type.Sym.Param,
         is Type.Sym.This,
         is Type.Sym.Rec -> types + type
@@ -251,10 +228,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         Type.WildCard -> types + type
       }
 
-    private fun flatMergeFix(
-      types: PersistentSet<Type<FX>>,
-      type: Type<FX>,
-    ): PersistentSet<Type<FX>> =
+    private fun flatMergeFix(types: PersistentSet<Type<FX>>, type: Type<FX>): PersistentSet<Type<FX>> =
       when (type) {
         is Type.Sym.Fix -> type.cases.fold(types, ::flatMerge)
         is Type.Union -> type.cases.fold(types, ::flatMergeFix)
@@ -281,8 +255,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
           val recv = substBy<Type.Sym<FX>>({ productiveSubstSym(it) })(t.receiver)
           val args = t.args.map(substBy({ productiveSubst(it) }))
           when {
-            recv !== t.receiver || args.indices.any { args[it] !== t.args[it] } ->
-              t.copy(receiver = recv, args = args)
+            recv !== t.receiver || args.indices.any { args[it] !== t.args[it] } -> t.copy(receiver = recv, args = args)
             else -> t
           }
         }
@@ -313,10 +286,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
                 value = substBy<Type<FX>>({ productiveSubst(it) })(body.value),
                 effect =
                   body.effect.copy(
-                    invocations =
-                      body.effect.invocations?.map { invk ->
-                        substBy<Type.Sym<FX>>({ productiveSubstSym(it) })(invk)
-                      }
+                    invocations = body.effect.invocations?.map { invk -> substBy<Type.Sym<FX>>({ productiveSubstSym(it) })(invk) }
                   ),
               )
           )
@@ -326,17 +296,14 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         is Type.WildCard -> t
       }
 
-    private inline fun <T> PersistentSet<Type<FX>>.substBy(crossinline rec: (T) -> T): (T) -> T =
-      { target ->
-        when {
-          target is Type.Union<*> ->
-            target.cases.joinedOver {
-              (if ((it as Type<FX>) in this) (Type.Sym.Rec as T) else rec(it as T)) as Type<FX>
-            } as T
-          (target as Type<FX>) in this -> (Type.Sym.Rec as T)
-          else -> rec(target)
-        }
+    private inline fun <T> PersistentSet<Type<FX>>.substBy(crossinline rec: (T) -> T): (T) -> T = { target ->
+      when {
+        target is Type.Union<*> ->
+          target.cases.joinedOver { (if ((it as Type<FX>) in this) (Type.Sym.Rec as T) else rec(it as T)) as Type<FX> } as T
+        (target as Type<FX>) in this -> (Type.Sym.Rec as T)
+        else -> rec(target)
       }
+    }
 
     /** Checks [this] "grows" from any symbol in [base] */
     private fun Type<FX>.containsAny(base: PersistentSet<Type<FX>>): Boolean =
@@ -361,9 +328,7 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       consolidate(
         disassemble = { t: Type.Lambda<FX> -> (t.params to t.intf) to t.body },
         reassemble = { (params, intf), body -> Type.Lambda(params, body, intf) },
-        merge = { (body0, fx0), (body1, fx1) ->
-          Result(widen(body0, body1), effectLattice.widen(fx0, fx1))
-        },
+        merge = { (body0, fx0), (body1, fx1) -> Result(widen(body0, body1), effectLattice.widen(fx0, fx1)) },
       )
 
     /** Consolidate the set of [X] by potentially merging elements of subtype [Y] */
@@ -401,8 +366,8 @@ fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
     is Type.Sym.Invoke -> {
       val m = t.method
       /**
-       * Along a symbolic invocation chain with repeated method, guess the base case(s), then defer
-       * to [Lattice.widen] to find an over-approximating inductive description of this invocation.
+       * Along a symbolic invocation chain with repeated method, guess the base case(s), then defer to [Lattice.widen] to find an
+       * over-approximating inductive description of this invocation.
        */
       fun bases(t: Type<FX>): PersistentSet<Type<FX>> =
         when (t) {
@@ -434,11 +399,7 @@ fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
           }
           is Type.Union -> Type.Union(t.cases.map(::generalize))
           is Type.Application -> t.copy(args = t.args.map(::generalize))
-          is Type.Sym.Invoke ->
-            t.copy(
-              receiver = generalize(t.receiver) as? Type.Sym ?: t.receiver,
-              args = t.args.map(::generalize),
-            )
+          is Type.Sym.Invoke -> t.copy(receiver = generalize(t.receiver) as? Type.Sym ?: t.receiver, args = t.args.map(::generalize))
           is Type.Sym.Fix -> {
             val (base, ind) = t
             val base1 = base.map(::generalize)
@@ -450,11 +411,7 @@ fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
       val summarizedBody = generalize(t.body.value)
       when {
         copies.isEmpty() -> t
-        else ->
-          Type.Sym.Fix(
-            persistentSetOf(),
-            persistentSetOf(t.copy(body = t.body.copy(value = summarizedBody))),
-          )
+        else -> Type.Sym.Fix(persistentSetOf(), persistentSetOf(t.copy(body = t.body.copy(value = summarizedBody))))
       }
     }
     is Type.Union -> widen(Type.None, t.cases.joinedOver(::widen))

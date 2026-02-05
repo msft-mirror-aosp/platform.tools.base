@@ -30,61 +30,56 @@ import java.util.Date
 
 class ProductionChannelProviderFactory : ChannelProviderFactory {
 
-    override fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel {
-        return { targetEndpoint, accessTokenPath ->
-            NettyChannelBuilder.forTarget(targetEndpoint).intercept(
-                Proxy.CallCredentialsInterceptor(
-                    MoreCallCredentials.from(createCredentials(accessTokenPath))
-                )
-            ).build()
-        }
+  override fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel {
+    return { targetEndpoint, accessTokenPath ->
+      NettyChannelBuilder.forTarget(targetEndpoint)
+        .intercept(Proxy.CallCredentialsInterceptor(MoreCallCredentials.from(createCredentials(accessTokenPath))))
+        .build()
     }
+  }
 
-    private fun createCredentials(accessTokenPath: String): GoogleCredentials {
-        try {
-            val impersonated =
-                ImpersonatedCredentials.newBuilder()
-                    .setSourceCredentials(createSourceCredentials(accessTokenPath))
-                    .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
-                    .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
-                    .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
-                    .build()
-            impersonated.refresh()
-            return impersonated
-        } catch (e: Exception) {
-            val errorMessage = if (accessTokenPath.isNotBlank()) {
-                "Failed to obtain credentials for establishing connection with backend. " +
-                        "Please check your network connection and ensure you are logged in to Gemini in Android Studio."
-            } else {
-                "Failed to obtain Application Default Credentials (ADC). " +
-                        "Please check your network connection and ensure ADC is configured correctly. You can configure ADC by running 'gcloud auth application-default login' " +
-                        "or by setting the GOOGLE_APPLICATION_CREDENTIALS environment variable."
-            }
-            throw JourneyExecutionException(
-                errorMessage,
-                cause = e,
-                reason = JourneyFailureReason.AUTHENTICATION_FAILED);
-        }
-    }
-
-    private fun createSourceCredentials(accessTokenPath: String): GoogleCredentials {
-        return if (accessTokenPath.isNotBlank() && File(accessTokenPath).exists()) {
-            val token =
-                File(accessTokenPath).reader()
-                    .use { fileReader ->
-                        GsonFactory().fromReader<TokenResponse>(
-                            fileReader,
-                            TokenResponse::class.java
-                        )
-                    }
-            val userCreds = GoogleCredentials.create(AccessToken.newBuilder().apply {
-                tokenValue = token.accessToken
-                scopes = listOf(RoboConfigConstants.AUTH_SCOPE)
-                expirationTime = Date.from(Instant.now().plusSeconds(token.expiresInSeconds))
-            }.build())
-            userCreds
+  private fun createCredentials(accessTokenPath: String): GoogleCredentials {
+    try {
+      val impersonated =
+        ImpersonatedCredentials.newBuilder()
+          .setSourceCredentials(createSourceCredentials(accessTokenPath))
+          .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
+          .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
+          .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
+          .build()
+      impersonated.refresh()
+      return impersonated
+    } catch (e: Exception) {
+      val errorMessage =
+        if (accessTokenPath.isNotBlank()) {
+          "Failed to obtain credentials for establishing connection with backend. " +
+            "Please check your network connection and ensure you are logged in to Gemini in Android Studio."
         } else {
-            GoogleCredentials.getApplicationDefault()
+          "Failed to obtain Application Default Credentials (ADC). " +
+            "Please check your network connection and ensure ADC is configured correctly. You can configure ADC by running 'gcloud auth application-default login' " +
+            "or by setting the GOOGLE_APPLICATION_CREDENTIALS environment variable."
         }
+      throw JourneyExecutionException(errorMessage, cause = e, reason = JourneyFailureReason.AUTHENTICATION_FAILED)
     }
+  }
+
+  private fun createSourceCredentials(accessTokenPath: String): GoogleCredentials {
+    return if (accessTokenPath.isNotBlank() && File(accessTokenPath).exists()) {
+      val token =
+        File(accessTokenPath).reader().use { fileReader -> GsonFactory().fromReader<TokenResponse>(fileReader, TokenResponse::class.java) }
+      val userCreds =
+        GoogleCredentials.create(
+          AccessToken.newBuilder()
+            .apply {
+              tokenValue = token.accessToken
+              scopes = listOf(RoboConfigConstants.AUTH_SCOPE)
+              expirationTime = Date.from(Instant.now().plusSeconds(token.expiresInSeconds))
+            }
+            .build()
+        )
+      userCreds
+    } else {
+      GoogleCredentials.getApplicationDefault()
+    }
+  }
 }

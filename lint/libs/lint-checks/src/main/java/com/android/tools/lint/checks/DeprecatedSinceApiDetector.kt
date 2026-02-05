@@ -44,8 +44,7 @@ import org.jetbrains.uast.evaluateString
 /** Flags calls to library APIs deprecated as of a particular API level. */
 class DeprecatedSinceApiDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(DeprecatedSinceApiDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(DeprecatedSinceApiDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Calling a deprecated API */
     @JvmField
@@ -87,8 +86,7 @@ class DeprecatedSinceApiDetector : Detector(), SourceCodeScanner {
     annotationInfo: AnnotationInfo,
     usageInfo: AnnotationUsageInfo,
   ) {
-    val apiLevel =
-      annotationInfo.annotation.findAttributeValue(ATTR_API)?.evaluate() as? Int ?: return
+    val apiLevel = annotationInfo.annotation.findAttributeValue(ATTR_API)?.evaluate() as? Int ?: return
     val details = annotationInfo.annotation.findAttributeValue(ATTR_MESSAGE)?.evaluateString()
     val elementType =
       when (annotationInfo.annotated) {
@@ -101,9 +99,6 @@ class DeprecatedSinceApiDetector : Detector(), SourceCodeScanner {
       "This $elementType is deprecated as of API level $apiLevel${
         if (details.isNullOrBlank()) "" else "; ${details.capitalize(Locale.US)}"
         }"
-    context.report(
-      Incident(ISSUE, message, context.getLocation(element), element, null),
-      minSdkAtLeast(apiLevel),
-    )
+    context.report(Incident(ISSUE, message, context.getLocation(element), element, null), minSdkAtLeast(apiLevel))
   }
 }

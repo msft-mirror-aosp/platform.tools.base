@@ -20,72 +20,66 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Regression test for b/220190972 to check that lint baseline files are relocatable.
- */
+/** Regression test for b/220190972 to check that lint baseline files are relocatable. */
 class LintRelocatableBaselineTest {
 
-    private val app =
-        MinimalSubProject.app()
-            .appendToBuild(
-                """
+  private val app =
+    MinimalSubProject.app()
+      .appendToBuild(
+        """
 
-                    android {
-                        lint {
-                            abortOnError = false
-                            checkDependencies = true
-                            absolutePaths = true
-                            baseline = file('lint-baseline.xml')
-                        }
-                    }
-                """.trimIndent()
-            )
+        android {
+            lint {
+                abortOnError = false
+                checkDependencies = true
+                absolutePaths = true
+                baseline = file('lint-baseline.xml')
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-    private val lib =
-        MinimalSubProject.lib()
-            .appendToBuild(
-                """
+  private val lib =
+    MinimalSubProject.lib()
+      .appendToBuild(
+        """
 
-                    android {
-                        lint {
-                            absolutePaths = true
-                        }
-                    }
-                """.trimIndent()
-            )
-            .withFile(
-                "src/main/res/values/strings.xml",
-                """
-                    <resources>
-                        <string name="unused">I am unused!</string>
-                    </resources>
-                """.trimIndent()
-            )
+        android {
+            lint {
+                absolutePaths = true
+            }
+        }
+        """
+          .trimIndent()
+      )
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """
+        <resources>
+            <string name="unused">I am unused!</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            ).create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .create()
 
-    @Test
-    fun testLintBaselineRelocatable() {
-        // Set user.home system property to project directory. Lint should use a relative path
-        // instead of the $HOME path variable in the line baseline file.
-        project.executor()
-            .withArgument("-Duser.home=${project.projectDir.absolutePath}")
-            .run(":app:updateLintBaseline")
-        val lintBaselineFile = File(project.getSubproject("app").projectDir, "lint-baseline.xml")
-        assertThat(lintBaselineFile).doesNotContain("HOME")
-        assertThat(lintBaselineFile).contains("../lib/src/main/res/values/strings.xml")
-    }
+  @Test
+  fun testLintBaselineRelocatable() {
+    // Set user.home system property to project directory. Lint should use a relative path
+    // instead of the $HOME path variable in the line baseline file.
+    project.executor().withArgument("-Duser.home=${project.projectDir.absolutePath}").run(":app:updateLintBaseline")
+    val lintBaselineFile = File(project.getSubproject("app").projectDir, "lint-baseline.xml")
+    assertThat(lintBaselineFile).doesNotContain("HOME")
+    assertThat(lintBaselineFile).contains("../lib/src/main/res/values/strings.xml")
+  }
 }

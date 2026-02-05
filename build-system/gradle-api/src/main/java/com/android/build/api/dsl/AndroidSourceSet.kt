@@ -21,143 +21,143 @@ import org.gradle.api.Incubating
 import org.gradle.api.Named
 
 /**
- * An AndroidSourceSet represents a logical group of Java, aidl and RenderScript sources
- * as well as Android and non-Android (Java-style) resources.
+ * An AndroidSourceSet represents a logical group of Java, aidl and RenderScript sources as well as Android and non-Android (Java-style)
+ * resources.
  */
 interface AndroidSourceSet : Named {
 
-    /** Returns the name of this source set. */
-    override fun getName(): String
+  /** Returns the name of this source set. */
+  override fun getName(): String
 
-    /** The Java source for this source-set */
-    val java: AndroidSourceDirectorySet
-    /** The Java source for this source-set */
-    fun java(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Java source for this source-set */
+  val java: AndroidSourceDirectorySet
 
-    /** The Kotlin source for this source-set */
-    val kotlin: AndroidSourceDirectorySet
-    /** The Kotlin source for this source-set */
-    fun kotlin(action: Action<AndroidSourceDirectorySet>)
+  /** The Java source for this source-set */
+  fun java(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /** The Java-style resources for this source-set */
-    val resources: AndroidSourceDirectorySet
-    /** The Java-style resources for this source-set */
-    fun resources(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Kotlin source for this source-set */
+  val kotlin: AndroidSourceDirectorySet
 
-    /** The Android Manifest file for this source-set. */
-    val manifest: AndroidSourceFile
-    /** The Android Manifest file for this source-set. */
-    fun manifest(action: AndroidSourceFile.() -> Unit)
+  /** The Kotlin source for this source-set */
+  fun kotlin(action: Action<AndroidSourceDirectorySet>)
 
-    /** The Android Resources directory for this source-set. */
-    val res: AndroidSourceDirectorySet
-    /** The Android Resources directory for this source-set. */
-    fun res(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Java-style resources for this source-set */
+  val resources: AndroidSourceDirectorySet
 
-    /** The Android Assets directory for this source set.*/
-    val assets: AndroidSourceDirectorySet
-    /** The Android Assets directory for this source set.*/
-    fun assets(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Java-style resources for this source-set */
+  fun resources(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /** The Android AIDL source directory for this source set. */
-    val aidl: AndroidSourceDirectorySet
-    /** The Android AIDL source directory for this source set. */
-    fun aidl(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android Manifest file for this source-set. */
+  val manifest: AndroidSourceFile
 
-    /** The Android RenderScript source directory for this source set. */
-    val renderscript: AndroidSourceDirectorySet
-    /** The Android RenderScript source directory for this source set. */
-    fun renderscript(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android Manifest file for this source-set. */
+  fun manifest(action: AndroidSourceFile.() -> Unit)
 
-    /** The Android Baseline Profiles source directory for this source set. */
-    @get:Incubating
-    val baselineProfiles: AndroidSourceDirectorySet
-    /** The Android Baseline Profiles source directory for this source set. */
-    @Incubating
-    fun baselineProfiles(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android Resources directory for this source-set. */
+  val res: AndroidSourceDirectorySet
 
-    /** The KeepRules R8 source directory for this source set. */
-    @get:Incubating
-    val keepRules: AndroidSourceDirectorySet
-    /** The KeepRules R8 source directory for this source set. */
-    @Incubating
-    fun keepRules(action: AndroidSourceDirectorySet.() -> Unit)
-    
-    /**
-     * The Android JNI source directory for this source set.
-     * @deprecated This is unused and will be removed in AGP 9.0
-     */
-    @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
-    @get:Incubating
-    val jni: AndroidSourceDirectorySet
-    /**
-     * The Android JNI source directory for this source set.
-     * @deprecated This is unused and will be removed in AGP 9.0
-     */
-    @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
-    @Incubating
-    fun jni(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android Resources directory for this source-set. */
+  fun res(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /** The Android JNI libs directory for this source-set */
-    val jniLibs: AndroidSourceDirectorySet
-    /** The Android JNI libs directory for this source-set */
-    fun jniLibs(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android Assets directory for this source set. */
+  val assets: AndroidSourceDirectorySet
 
-    /** The Android shaders directory for this source set. */
-    val shaders: AndroidSourceDirectorySet
+  /** The Android Assets directory for this source set. */
+  fun assets(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /** The Android shaders directory for this source set. */
-    fun shaders(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android AIDL source directory for this source set. */
+  val aidl: AndroidSourceDirectorySet
 
-    /** The machine learning models directory for this source set. */
-    val mlModels: AndroidSourceDirectorySet
+  /** The Android AIDL source directory for this source set. */
+  fun aidl(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /** The machine learning models directory for this source set. */
-    fun mlModels(action: AndroidSourceDirectorySet.() -> Unit)
+  /** The Android RenderScript source directory for this source set. */
+  val renderscript: AndroidSourceDirectorySet
 
-    /** Returns the name of the api configuration for this source set.  */
-    val apiConfigurationName: String
+  /** The Android RenderScript source directory for this source set. */
+  fun renderscript(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /**
-     * Returns the name of the compileOnly configuration for this source set.
-     */
-    val compileOnlyConfigurationName: String
+  /** The Android Baseline Profiles source directory for this source set. */
+  @get:Incubating val baselineProfiles: AndroidSourceDirectorySet
 
-    /**
-     * Returns the name of the compileOnlyApi configuration for this source set.
-     */
-    val compileOnlyApiConfigurationName: String
+  /** The Android Baseline Profiles source directory for this source set. */
+  @Incubating fun baselineProfiles(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /**
-     * Returns the name of the implementation configuration for this source set.
-     */
-    val implementationConfigurationName: String
+  /** The KeepRules R8 source directory for this source set. */
+  @get:Incubating val keepRules: AndroidSourceDirectorySet
 
-    /**
-     * Returns the name of the implementation configuration for this source set.
-     */
-    val runtimeOnlyConfigurationName: String
+  /** The KeepRules R8 source directory for this source set. */
+  @Incubating fun keepRules(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /**
-     * Returns the name of the annotation processing tool classpath for this source set.
-     */
-    val annotationProcessorConfigurationName: String
+  /**
+   * The Android JNI source directory for this source set.
+   *
+   * @deprecated This is unused and will be removed in AGP 9.0
+   */
+  @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
+  @get:Incubating
+  val jni: AndroidSourceDirectorySet
 
-    /**
-     * Returns the name of the kapt annotation processing tool classpath for this source set.
-     *
-     * This configuration is only created when built-in KAPT support is enabled.
-     */
-    val kaptConfigurationName: String
+  /**
+   * The Android JNI source directory for this source set.
+   *
+   * @deprecated This is unused and will be removed in AGP 9.0
+   */
+  @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
+  @Incubating
+  fun jni(action: AndroidSourceDirectorySet.() -> Unit)
 
-    /**
-     * Sets the root of the source sets to a given path.
-     *
-     * All entries of the source-set are located under this root directory.
-     *
-     * This method has a return value for legacy reasons.
-     *
-     * @param path the root directory path to use.
-     */
-    fun setRoot(path: String): Any
+  /** The Android JNI libs directory for this source-set */
+  val jniLibs: AndroidSourceDirectorySet
+
+  /** The Android JNI libs directory for this source-set */
+  fun jniLibs(action: AndroidSourceDirectorySet.() -> Unit)
+
+  /** The Android shaders directory for this source set. */
+  val shaders: AndroidSourceDirectorySet
+
+  /** The Android shaders directory for this source set. */
+  fun shaders(action: AndroidSourceDirectorySet.() -> Unit)
+
+  /** The machine learning models directory for this source set. */
+  val mlModels: AndroidSourceDirectorySet
+
+  /** The machine learning models directory for this source set. */
+  fun mlModels(action: AndroidSourceDirectorySet.() -> Unit)
+
+  /** Returns the name of the api configuration for this source set. */
+  val apiConfigurationName: String
+
+  /** Returns the name of the compileOnly configuration for this source set. */
+  val compileOnlyConfigurationName: String
+
+  /** Returns the name of the compileOnlyApi configuration for this source set. */
+  val compileOnlyApiConfigurationName: String
+
+  /** Returns the name of the implementation configuration for this source set. */
+  val implementationConfigurationName: String
+
+  /** Returns the name of the implementation configuration for this source set. */
+  val runtimeOnlyConfigurationName: String
+
+  /** Returns the name of the annotation processing tool classpath for this source set. */
+  val annotationProcessorConfigurationName: String
+
+  /**
+   * Returns the name of the kapt annotation processing tool classpath for this source set.
+   *
+   * This configuration is only created when built-in KAPT support is enabled.
+   */
+  val kaptConfigurationName: String
+
+  /**
+   * Sets the root of the source sets to a given path.
+   *
+   * All entries of the source-set are located under this root directory.
+   *
+   * This method has a return value for legacy reasons.
+   *
+   * @param path the root directory path to use.
+   */
+  fun setRoot(path: String): Any
 }

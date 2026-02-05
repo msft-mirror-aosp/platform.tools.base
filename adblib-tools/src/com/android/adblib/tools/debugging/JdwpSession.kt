@@ -23,109 +23,86 @@ import com.android.adblib.selector
 import com.android.adblib.tools.debugging.impl.JdwpSessionImpl
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.utils.closeOnException
-import kotlinx.coroutines.CoroutineScope
 import java.io.EOFException
 import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Abstraction over a JDWP session with a device.
  *
- * Note: The session [close] method must be called to terminate the JDWP session.
- * Closing a session only closes the underlying communication channel, without having
- * any effect on the process VM, i.e. the process VM is not terminated.
+ * Note: The session [close] method must be called to terminate the JDWP session. Closing a session only closes the underlying communication
+ * channel, without having any effect on the process VM, i.e. the process VM is not terminated.
  *
  * @see [AdbDeviceServices.jdwp]
  */
 interface JdwpSession : AutoShutdown {
-    /**
-     * The [ConnectedDevice] this [JdwpSession] is connected to.
-     */
-    val device: ConnectedDevice
+  /** The [ConnectedDevice] this [JdwpSession] is connected to. */
+  val device: ConnectedDevice
+
+  /** The [CoroutineScope] corresponding to this [JdwpSession] instance, i.e. the scope is cancelled when the [JdwpSession] is closed. */
+  val scope: CoroutineScope
+
+  /**
+   * Waits for the JDWP handshake to be sent and acknowledged
+   *
+   * Note: On some versions of Art/Android, this may never complete if there is another active JDWP connection open for the same process.
+   */
+  suspend fun waitForHandshake()
+
+  /**
+   * Sends a [JdwpPacketView] to the process VM.
+   *
+   * @throws [IOException] if an I/O error occurs
+   * @throws [Exception] if any other error occurs
+   */
+  suspend fun sendPacket(packet: JdwpPacketView)
+
+  /**
+   * Waits for (and returns) the next [JdwpPacketView] from the process VM.
+   *
+   * @throws [EOFException] if there are no more packets from the process VM, i.e. the JDWP session has terminated.
+   * @throws [IOException] if an I/O error occurs
+   * @throws [Exception] if any other error occurs
+   */
+  suspend fun receivePacket(): JdwpPacketView
+
+  /**
+   * Returns a unique [JDWP packet ID][JdwpPacketView.id] to use for sending a [JdwpPacketView], typically a
+   * [command packet][JdwpPacketView.isCommand], in this session. Each call returns a new unique value.
+   *
+   * Note: This method is thread-safe.
+   *
+   * @throws UnsupportedOperationException if this session is not intended for sending arbitrary [JdwpPacketView].
+   */
+  fun nextPacketId(): Int
+
+  companion object {
 
     /**
-     * The [CoroutineScope] corresponding to this [JdwpSession] instance, i.e. the scope
-     * is cancelled when the [JdwpSession] is closed.
-     */
-    val scope: CoroutineScope
-
-    /**
-     * Waits for the JDWP handshake to be sent and acknowledged
+     * Returns a [JdwpSession] that opens a `JDWP` session for the given process [pid] on the given [device].
      *
-     * Note: On some versions of Art/Android, this may never complete if there is another
-     * active JDWP connection open for the same process.
-     */
-    suspend fun waitForHandshake()
-
-    /**
-     * Sends a [JdwpPacketView] to the process VM.
+     * [nextPacketIdBase] represents the initial value returned by [JdwpSession.nextPacketId]. If the value is `null`, the returned
+     * [JdwpSession] is not intended to be used for sending custom [JdwpPacketView], and [JdwpSession.nextPacketId] throws an
+     * [UnsupportedOperationException] when called.
      *
-     * @throws [IOException] if an I/O error occurs
-     * @throws [Exception] if any other error occurs
+     * @see [AdbDeviceServices.jdwp]
      */
-    suspend fun sendPacket(packet: JdwpPacketView)
-
-    /**
-     * Waits for (and returns) the next [JdwpPacketView] from the process VM.
-     *
-     * @throws [EOFException] if there are no more packets from the process VM,
-     *   i.e. the JDWP session has terminated.
-     * @throws [IOException] if an I/O error occurs
-     * @throws [Exception] if any other error occurs
-     */
-    suspend fun receivePacket(): JdwpPacketView
-
-    /**
-     * Returns a unique [JDWP packet ID][JdwpPacketView.id] to use for sending
-     * a [JdwpPacketView], typically a [command packet][JdwpPacketView.isCommand],
-     * in this session. Each call returns a new unique value.
-     *
-     * Note: This method is thread-safe.
-     *
-     * @throws UnsupportedOperationException if this session is not intended for sending
-     * arbitrary [JdwpPacketView].
-     */
-    fun nextPacketId(): Int
-
-    companion object {
-
-        /**
-         * Returns a [JdwpSession] that opens a `JDWP` session for the given process [pid]
-         * on the given [device].
-         *
-         * [nextPacketIdBase] represents the initial value returned by [JdwpSession.nextPacketId].
-         * If the value is `null`, the returned [JdwpSession] is not intended to be used for
-         * sending custom [JdwpPacketView], and [JdwpSession.nextPacketId] throws an
-         * [UnsupportedOperationException] when called.
-         *
-         * @see [AdbDeviceServices.jdwp]
-         */
-        suspend fun openJdwpSession(
-            device: ConnectedDevice,
-            pid: Int,
-            nextPacketIdBase: Int?
-        ): JdwpSession {
-            val channel = device.session.deviceServices.jdwp(device.selector, pid)
-            channel.closeOnException {
-                return JdwpSessionImpl(device, channel, pid, "device", nextPacketIdBase)
-            }
-        }
-
-        /**
-         * Returns a [JdwpSession] that wraps an existing socket [channel] and allows
-         * exchanging `JDWP` packets.
-         *
-         * [nextPacketIdBase] represents the initial value returned by [JdwpSession.nextPacketId].
-         * If the value is `null`, the returned [JdwpSession] is not intended to be used for
-         * sending custom [JdwpPacketView], and [JdwpSession.nextPacketId] throws an
-         * [UnsupportedOperationException] when called.
-         */
-        fun wrapSocketChannel(
-            device: ConnectedDevice,
-            channel: AdbChannel,
-            pid: Int,
-            nextPacketIdBase: Int?
-        ): JdwpSession {
-            return JdwpSessionImpl(device, channel, pid, "debugger", nextPacketIdBase)
-        }
+    suspend fun openJdwpSession(device: ConnectedDevice, pid: Int, nextPacketIdBase: Int?): JdwpSession {
+      val channel = device.session.deviceServices.jdwp(device.selector, pid)
+      channel.closeOnException {
+        return JdwpSessionImpl(device, channel, pid, "device", nextPacketIdBase)
+      }
     }
+
+    /**
+     * Returns a [JdwpSession] that wraps an existing socket [channel] and allows exchanging `JDWP` packets.
+     *
+     * [nextPacketIdBase] represents the initial value returned by [JdwpSession.nextPacketId]. If the value is `null`, the returned
+     * [JdwpSession] is not intended to be used for sending custom [JdwpPacketView], and [JdwpSession.nextPacketId] throws an
+     * [UnsupportedOperationException] when called.
+     */
+    fun wrapSocketChannel(device: ConnectedDevice, channel: AdbChannel, pid: Int, nextPacketIdBase: Int?): JdwpSession {
+      return JdwpSessionImpl(device, channel, pid, "debugger", nextPacketIdBase)
+    }
+  }
 }

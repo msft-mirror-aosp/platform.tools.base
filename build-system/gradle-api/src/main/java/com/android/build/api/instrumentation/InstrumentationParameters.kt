@@ -16,20 +16,20 @@
 
 package com.android.build.api.instrumentation
 
-import org.gradle.api.model.ObjectFactory
 import java.io.Serializable
+import org.gradle.api.model.ObjectFactory
 
 /**
  * Parameters for a registered [AsmClassVisitorFactory].
  *
- * Build authors should extend this interface with any additional inputs needed for their ASM
- * visitor, or use [InstrumentationParameters.None] if no parameters are needed.
+ * Build authors should extend this interface with any additional inputs needed for their ASM visitor, or use
+ * [InstrumentationParameters.None] if no parameters are needed.
  *
- * The parameters will be instantiated using [ObjectFactory.newInstance], configured using the
- * given config when registering the visitor, and injected to the factory on instantiation.
+ * The parameters will be instantiated using [ObjectFactory.newInstance], configured using the given config when registering the visitor,
+ * and injected to the factory on instantiation.
  *
- * The parameters will be used as Gradle inputs. Make sure to declare the inputs by annotating them
- * using Gradle's input annotations so that it's compatible with Gradle's up-to-date checks.
+ * The parameters will be used as Gradle inputs. Make sure to declare the inputs by annotating them using Gradle's input annotations so that
+ * it's compatible with Gradle's up-to-date checks.
  *
  * Example:
  * ```
@@ -53,7 +53,6 @@ import java.io.Serializable
  *  }
  * ```
  */
-interface InstrumentationParameters : Serializable
-{
-    class None : InstrumentationParameters
+interface InstrumentationParameters : Serializable {
+  class None : InstrumentationParameters
 }

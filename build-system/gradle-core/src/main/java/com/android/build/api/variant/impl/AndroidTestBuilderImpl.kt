@@ -19,42 +19,43 @@ package com.android.build.api.variant.impl
 import com.android.build.api.variant.PropertyAccessNotAllowedException
 
 @Suppress("DEPRECATION")
-class AndroidTestBuilderImpl(
-    private val deviceTestBuilder: DeviceTestBuilderImpl,
-): com.android.build.api.variant.AndroidTestBuilder {
+class AndroidTestBuilderImpl(private val deviceTestBuilder: DeviceTestBuilderImpl) : com.android.build.api.variant.AndroidTestBuilder {
 
-    @Deprecated("replaced with DeviceTestBuilder.enable")
-    override var enable: Boolean
-        get() = deviceTestBuilder.enable
-        set(value) {
-            deviceTestBuilder.enable = value
-        }
+  @Deprecated("replaced with DeviceTestBuilder.enable")
+  override var enable: Boolean
+    get() = deviceTestBuilder.enable
+    set(value) {
+      deviceTestBuilder.enable = value
+    }
 
-    @Deprecated("replaced with DeviceTestBuilder.setEnableMultiDex")
-    override var enableMultiDex: Boolean?
-        get() = throw PropertyAccessNotAllowedException("enableMultiDex", "AndroidTestBuilder")
-        set(value) {
-            deviceTestBuilder.enableMultiDex = value
-        }
+  @Deprecated("replaced with DeviceTestBuilder.setEnableMultiDex")
+  override var enableMultiDex: Boolean?
+    get() = throw PropertyAccessNotAllowedException("enableMultiDex", "AndroidTestBuilder")
+    set(value) {
+      deviceTestBuilder.enableMultiDex = value
+    }
 
-    override var enableCodeCoverage: Boolean
-        get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "AndroidTestBuilder")
-        set(value) {
-            deviceTestBuilder.enableCodeCoverage = value
-        }
-    override var targetSdk: Int?
-        get() = deviceTestBuilder.targetSdk
-        set(value) {
-            deviceTestBuilder.targetSdk = value
-        }
-    override var targetSdkPreview: String?
-        get() = deviceTestBuilder.targetSdkPreview
-        set(value) {
-            deviceTestBuilder.targetSdkPreview = value
-        }
-    override var debuggable: Boolean
-        get() = deviceTestBuilder.debuggable
-        set(value) {
-            deviceTestBuilder.debuggable = value
-        }
+  override var enableCodeCoverage: Boolean
+    get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "AndroidTestBuilder")
+    set(value) {
+      deviceTestBuilder.enableCodeCoverage = value
+    }
+
+  override var targetSdk: Int?
+    get() = deviceTestBuilder.targetSdk
+    set(value) {
+      deviceTestBuilder.targetSdk = value
+    }
+
+  override var targetSdkPreview: String?
+    get() = deviceTestBuilder.targetSdkPreview
+    set(value) {
+      deviceTestBuilder.targetSdkPreview = value
+    }
+
+  override var debuggable: Boolean
+    get() = deviceTestBuilder.debuggable
+    set(value) {
+      deviceTestBuilder.debuggable = value
+    }
 }

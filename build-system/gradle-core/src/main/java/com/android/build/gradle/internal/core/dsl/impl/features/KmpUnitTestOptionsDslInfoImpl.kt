@@ -25,23 +25,26 @@ import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.builder.core.DefaultApiVersion
 import org.gradle.api.tasks.testing.Test
 
-internal class KmpUnitTestOptionsDslInfoImpl(
-    private val extension: KotlinMultiplatformAndroidLibraryExtensionImpl,
-): UnitTestOptionsDslInfo {
+internal class KmpUnitTestOptionsDslInfoImpl(private val extension: KotlinMultiplatformAndroidLibraryExtensionImpl) :
+  UnitTestOptionsDslInfo {
 
-    private val testOnJvmConfig
-        get() = extension.androidTestOnJvmOptions ?: throw RuntimeException(
-            "Android host tests are not enabled. (use `kotlin.${KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME}.withHostTest {}` to enable)"
+  private val testOnJvmConfig
+    get() =
+      extension.androidTestOnJvmOptions
+        ?: throw RuntimeException(
+          "Android host tests are not enabled. (use `kotlin.${KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME}.withHostTest {}` to enable)"
         )
 
-    override val isReturnDefaultValues: Boolean
-        get() = testOnJvmConfig.isReturnDefaultValues
+  override val isReturnDefaultValues: Boolean
+    get() = testOnJvmConfig.isReturnDefaultValues
 
-    override val targetSdkVersion: AndroidVersion?
-        get() = testOnJvmConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) } ?: compileSdk
-    override fun applyConfiguration(task: Test) { }
+  override val targetSdkVersion: AndroidVersion?
+    get() = testOnJvmConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) } ?: compileSdk
 
-    private val compileSdk: AndroidVersion?
-        get() = extension.compileSdk?.let(::AndroidVersionImpl)
-            ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
+  override fun applyConfiguration(task: Test) {}
+
+  private val compileSdk: AndroidVersion?
+    get() =
+      extension.compileSdk?.let(::AndroidVersionImpl)
+        ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
 }

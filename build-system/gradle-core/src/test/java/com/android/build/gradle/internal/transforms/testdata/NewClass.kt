@@ -16,13 +16,11 @@
 
 package com.android.build.gradle.internal.transforms.testdata
 
-class NewClass  {
-    @YetAnotherClass
-    val s = someValue
-    lateinit var a: Animal
-    companion object {
-        val t = emptyArray<Array<Array<Toy>>>()
-    }
+class NewClass {
+  @YetAnotherClass val s = someValue
+  lateinit var a: Animal
 
-
+  companion object {
+    val t = emptyArray<Array<Array<Toy>>>()
+  }
 }

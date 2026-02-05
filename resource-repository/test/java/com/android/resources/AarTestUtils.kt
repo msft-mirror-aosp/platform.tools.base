@@ -35,10 +35,7 @@ const val TEST_DATA_DIR = "tools/base/resource-repository/test/resources/aar"
 
 @JvmOverloads
 fun getTestAarRepositoryFromExplodedAar(libraryDirName: String = "my_aar_lib"): AarSourceResourceRepository {
-  return AarSourceResourceRepository.create(
-      resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res"),
-      AAR_LIBRARY_NAME
-  )
+  return AarSourceResourceRepository.create(resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res"), AAR_LIBRARY_NAME)
 }
 
 @JvmOverloads
@@ -61,13 +58,16 @@ fun createAar(tempDir: Path, libraryDirName: String = "my_aar_lib"): Path {
 private fun createAar(sourceDirectory: Path, tempDir: Path): Path {
   val aarFile = tempDir.resolve(sourceDirectory.fileName.toString() + DOT_AAR)
   ZipOutputStream(Files.newOutputStream(aarFile)).use { zip ->
-    Files.walkFileTree(sourceDirectory, object : SimpleFileVisitor<Path>() {
-      override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-        val relativePath = sourceDirectory.relativize(file).toString().replace('\\', '/')
-        createZipEntry(relativePath, Files.readAllBytes(file), zip)
-        return FileVisitResult.CONTINUE
-      }
-    })
+    Files.walkFileTree(
+      sourceDirectory,
+      object : SimpleFileVisitor<Path>() {
+        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+          val relativePath = sourceDirectory.relativize(file).toString().replace('\\', '/')
+          createZipEntry(relativePath, Files.readAllBytes(file), zip)
+          return FileVisitResult.CONTINUE
+        }
+      },
+    )
   }
   return aarFile
 }
@@ -81,10 +81,5 @@ private fun createZipEntry(name: String, content: ByteArray, zip: ZipOutputStrea
 
 fun getTestAarRepositoryWithResourceFolders(libraryDirName: String, vararg resources: String): AarSourceResourceRepository {
   val root = resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res").toPathString()
-  return AarSourceResourceRepository.create(
-    root,
-    resources.map { resource -> root.resolve(resource) },
-    AAR_LIBRARY_NAME,
-    null
-  )
+  return AarSourceResourceRepository.create(root, resources.map { resource -> root.resolve(resource) }, AAR_LIBRARY_NAME, null)
 }

@@ -61,13 +61,11 @@ import org.w3c.dom.Document
 /**
  * Ensures that the comparator for the given comparable [list], the comparison is transitive.
  *
- * (Note: This is inefficient (n^3) so is only meant for tests to do some basic validation of
- * comparison operators. As an example, the ApiClassTest takes 100 randomly chosen elements from the
- * large list and checks those, with a different seed each time.)
+ * (Note: This is inefficient (n^3) so is only meant for tests to do some basic validation of comparison operators. As an example, the
+ * ApiClassTest takes 100 randomly chosen elements from the large list and checks those, with a different seed each time.)
  *
- * TODO: See
- *   https://r8-review.googlesource.com/c/r8/+/60142/1/src/main/java/com/android/tools/r8/utils/ListUtils.java#225
- *   for an O(n^2) implementation
+ * TODO: See https://r8-review.googlesource.com/c/r8/+/60142/1/src/main/java/com/android/tools/r8/utils/ListUtils.java#225 for an O(n^2)
+ *   implementation
  */
 fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
   // TODO: Consider caching the comparisons of all the pairs in the list
@@ -98,9 +96,7 @@ fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
           }
         } else if (a == b) {
           if (c != 0) {
-            fail(
-              "\nEquality not transitive: Not true that x == y and y == z, then x = y for x = $x, y = $y, z = $z\n"
-            )
+            fail("\nEquality not transitive: Not true that x == y and y == z, then x = y for x = $x, y = $y, z = $z\n")
           }
         } else if (a != 0) {
           if (c != a) {
@@ -113,9 +109,7 @@ fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
           }
         } else if (b != 0) {
           if (c != b) {
-            fail(
-              "\nEither\n  x == y && y < z => x < z\nor\n  x == y && y > z => x > z\nis not true for x = $x, y = $y, z = $z"
-            )
+            fail("\nEither\n  x == y && y < z => x < z\nor\n  x == y && y > z => x > z\nis not true for x = $x, y = $y, z = $z")
             if (!(x == y && y < z && x < z)) {
               fail("Not true that when x == y and y < z, then x < z for x = $x, y = $y, z = $z\n")
             } else {
@@ -141,12 +135,8 @@ fun <T> checkTransitiveComparator(list: List<T>, comparator: Comparator<T>) {
   checkTransitiveComparator(list.map { Wrapper(it) })
 }
 
-private class JavaTestContext(
-  driver: LintDriver,
-  project: Project,
-  private val javaSource: String,
-  file: File,
-) : JavaContext(driver, project, null, file) {
+private class JavaTestContext(driver: LintDriver, project: Project, private val javaSource: String, file: File) :
+  JavaContext(driver, project, null, file) {
 
   override fun getContents(): String {
     return javaSource
@@ -269,19 +259,8 @@ fun parseFirst(
   sdkHome: File? = null,
   vararg testFiles: TestFile = emptyArray(),
 ): Pair<JavaContext, Disposable> {
-  val (contexts, disposable) =
-    parse(
-      javaLanguageLevel,
-      kotlinLanguageLevel,
-      library,
-      sdkHome,
-      android,
-      temporaryFolder,
-      *testFiles,
-    )
-  val first =
-    contexts.firstOrNull { it.file.path.portablePath().endsWith(testFiles[0].targetRelativePath) }
-      ?: contexts.first()
+  val (contexts, disposable) = parse(javaLanguageLevel, kotlinLanguageLevel, library, sdkHome, android, temporaryFolder, *testFiles)
+  val first = contexts.firstOrNull { it.file.path.portablePath().endsWith(testFiles[0].targetRelativePath) } ?: contexts.first()
   return Pair(first, disposable)
 }
 
@@ -309,17 +288,7 @@ fun parse(
   sourceOverride: Map<File, String> = emptyMap(),
   extraLibs: List<File> = emptyList(),
 ): Pair<List<JavaContext>, Disposable> {
-  val project =
-    createTestProjectForFiles(
-      dir,
-      sourceOverride,
-      extraLibs,
-      library,
-      android,
-      javaLanguageLevel,
-      kotlinLanguageLevel,
-      sdkHome,
-    )
+  val project = createTestProjectForFiles(dir, sourceOverride, extraLibs, library, android, javaLanguageLevel, kotlinLanguageLevel, sdkHome)
   val client = project.client as LintCliClient
   val request = LintRequest(client, sourceOverride.keys.toList())
   val driver = LintDriver(TestIssueRegistry(), client, request)
@@ -332,8 +301,7 @@ fun parse(
       .walk()
       .mapNotNull { file ->
         if (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_JAVA)) {
-          val context: JavaContext =
-            JavaTestContext(driver, project, sourceOverride[file] ?: file.readText(), file)
+          val context: JavaContext = JavaTestContext(driver, project, sourceOverride[file] ?: file.readText(), file)
           context.uastParser = uastParser
           context
         } else {
@@ -353,11 +321,7 @@ fun parse(
   return Pair(contexts, disposable)
 }
 
-fun List<TestFile>.use(
-  temporaryFolder: TemporaryFolder? = null,
-  sdkHome: File? = null,
-  block: (JavaContext) -> Unit,
-) {
+fun List<TestFile>.use(temporaryFolder: TemporaryFolder? = null, sdkHome: File? = null, block: (JavaContext) -> Unit) {
   var dir: Path? = null
   val folder =
     temporaryFolder
@@ -365,8 +329,7 @@ fun List<TestFile>.use(
         dir = Files.createTempDirectory("lint-test")
         TemporaryFolder(dir?.toFile()).apply { create() }
       }
-  val (context, disposable) =
-    parseFirst(null, null, false, sdkHome != null, folder, sdkHome, *this.toTypedArray())
+  val (context, disposable) = parseFirst(null, null, false, sdkHome != null, folder, sdkHome, *this.toTypedArray())
   try {
     block(context)
   } finally {
@@ -376,12 +339,10 @@ fun List<TestFile>.use(
 }
 
 /**
- * Converts a String produced on Windows (possibly containing CRLF line separators, containing paths
- * using Windows file and path separators and so on) to the corresponding Unix style string. Unless
- * [indiscriminate] is set to true, this method will attempt to be smart in a few cases such that it
- * understands from context whether a semicolon (for example) is likely to be used in an XML snippet
- * as an entity terminator instead of a path separator, whether a \\ is likely to be used in a path
- * as opposed to a string escape, and so on.
+ * Converts a String produced on Windows (possibly containing CRLF line separators, containing paths using Windows file and path separators
+ * and so on) to the corresponding Unix style string. Unless [indiscriminate] is set to true, this method will attempt to be smart in a few
+ * cases such that it understands from context whether a semicolon (for example) is likely to be used in an XML snippet as an entity
+ * terminator instead of a path separator, whether a \\ is likely to be used in a path as opposed to a string escape, and so on.
  */
 @JvmOverloads
 fun String.dos2unix(indiscriminate: Boolean = false): String {
@@ -420,9 +381,9 @@ fun String.portablePath(): String {
 }
 
 /**
- * Given the location of a semicolon in a String, guess whether the semicolon represents a path
- * separator, as in "src\main\java;src\main\kotlin", as opposed to something else such as "this is
- * &quot;some text&quot;" or semicolon usage in an error message text.
+ * Given the location of a semicolon in a String, guess whether the semicolon represents a path separator, as in
+ * "src\main\java;src\main\kotlin", as opposed to something else such as "this is &quot;some text&quot;" or semicolon usage in an error
+ * message text.
  */
 private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
   if (index == 0) {
@@ -450,9 +411,7 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
     val c = s[j]
     if (c == '&') {
       return false
-    } else if (
-      !c.isLetterOrDigit() && c != '#'
-    ) { // entities can look like &quot; or &xA; or &#9029;
+    } else if (!c.isLetterOrDigit() && c != '#') { // entities can look like &quot; or &xA; or &#9029;
       break
     }
   }
@@ -461,18 +420,16 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
 }
 
 /**
- * Runs lint on a tree of sources. This will recursively look for Java and Kotlin files
- * (configurable via the [accept] parameter, and optionally filtered out via the [ignore] parameter
- * which omits dot directories and paths mentioning "test" by default), batch them into groups of at
- * most [bucketSize] files, and then run lint on those files (where the lint task which configures
- * the issues to analyze etc is constructed via the [lintFactory] lambda parameter), and finally
- * asserts that the output is as [expected].
+ * Runs lint on a tree of sources. This will recursively look for Java and Kotlin files (configurable via the [accept] parameter, and
+ * optionally filtered out via the [ignore] parameter which omits dot directories and paths mentioning "test" by default), batch them into
+ * groups of at most [bucketSize] files, and then run lint on those files (where the lint task which configures the issues to analyze etc is
+ * constructed via the [lintFactory] lambda parameter), and finally asserts that the output is as [expected].
  *
- * This is used to search larger project trees for false positives, where you don't have some easy
- * other way to run your lint check on those project trees.
+ * This is used to search larger project trees for false positives, where you don't have some easy other way to run your lint check on those
+ * project trees.
  *
- * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to
- * see what it finds, from `MyDetectorTest` I can use
+ * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to see what it finds, from `MyDetectorTest` I
+ * can use
  *
  * ```
  * runOnSources(
@@ -481,8 +438,7 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
  * )
  * ```
  *
- * (Consider passing `verbose = true` too to get progress printed along the way if it's a large
- * source tree.)
+ * (Consider passing `verbose = true` too to get progress printed along the way if it's a large source tree.)
  */
 @Suppress("LintDocExample")
 fun runOnSources(
@@ -491,10 +447,7 @@ fun runOnSources(
   expected: String = "",
   accept: (File) -> Boolean = {
     it.isFile &&
-      (it.path.endsWith(DOT_KT) ||
-        it.path.endsWith(DOT_JAVA) &&
-          !it.path.endsWith("module-info.java") &&
-          !it.endsWith("package-info.java"))
+      (it.path.endsWith(DOT_KT) || it.path.endsWith(DOT_JAVA) && !it.path.endsWith("module-info.java") && !it.endsWith("package-info.java"))
   },
   ignore: (File) -> Boolean = {
     val path = it.path.portablePath()
@@ -512,8 +465,7 @@ fun runOnSources(
   }
   val seen = HashSet<String>()
   val root = dir.canonicalFile
-  val sourceFiles =
-    root.walkTopDown().filter { !ignore(it) && accept(it) }.sortedBy { it.path }.toList()
+  val sourceFiles = root.walkTopDown().filter { !ignore(it) && accept(it) }.sortedBy { it.path }.toList()
   val sb = StringBuilder()
   val fixSb = StringBuilder()
   val buckets = sourceFiles.size / bucketSize
@@ -549,8 +501,7 @@ fun runOnSources(
               }
 
           if (srcPath.endsWith(DOT_KT)) kotlin(srcPath, source)
-          else if (srcPath.endsWith(DOT_JAVA)) java(srcPath, source)
-          else if (srcPath.endsWith(DOT_XML)) xml(srcPath, source) else null
+          else if (srcPath.endsWith(DOT_JAVA)) java(srcPath, source) else if (srcPath.endsWith(DOT_XML)) xml(srcPath, source) else null
         } else {
           null
         }
@@ -624,9 +575,7 @@ fun runOnSources(
 
     if (applyFixes != null && result != null) {
       result.applyFixes(applyFixes) { project, file, bytes ->
-        val realFile =
-          if (project != null) File(file.path.removePrefix(project.dir.path).removePrefix("/src"))
-          else file
+        val realFile = if (project != null) File(file.path.removePrefix(project.dir.path).removePrefix("/src")) else file
         if (bytes == null) {
           realFile.delete()
         } else {

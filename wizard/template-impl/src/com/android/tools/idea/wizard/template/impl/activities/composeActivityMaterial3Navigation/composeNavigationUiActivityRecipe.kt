@@ -65,22 +65,12 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   // this themes.xml exists just for settings the status bar color.
   // Thus, themeName follows the non-Compose project convention.
   // (E.g. Theme.MyApplication) as opposed to the themeName variable below (E.g. MyApplicationTheme)
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"
   val appComposableName = "${moduleData.themesData.appName}App"
   save(
-    mainActivityKt(
-      activityClass,
-      defaultPreview,
-      greeting,
-      packageName,
-      themeName,
-      appComposableName,
-    ),
+    mainActivityKt(activityClass, defaultPreview, greeting, packageName, themeName, appComposableName),
     srcOut.resolve("${activityClass}.kt"),
   )
   val uiThemeFolder = "ui/theme"

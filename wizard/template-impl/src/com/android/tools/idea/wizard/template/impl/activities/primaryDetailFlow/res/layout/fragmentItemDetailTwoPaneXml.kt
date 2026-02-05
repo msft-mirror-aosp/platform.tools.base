@@ -18,13 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-
-fun fragmentItemDetailTwoPaneXml(
-  detailName: String,
-  detailNameLayout: String,
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun fragmentItemDetailTwoPaneXml(detailName: String, detailNameLayout: String, packageName: String, useAndroidX: Boolean) =
+  """
 <!-- Adding the same root's ID for view binding as other layout configurations -->
 <${getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

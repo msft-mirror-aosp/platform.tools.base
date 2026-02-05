@@ -23,27 +23,15 @@ import com.android.build.api.annotations.ReplacedByIncubating
  *
  * This is implemented by select subtypes of [VariantBuilder].
  */
-@ReplacedByIncubating(
-    message = "Replaced by the new interface HasDeviceTestsBuilder",
-    bugId = 357083708
-)
+@ReplacedByIncubating(message = "Replaced by the new interface HasDeviceTestsBuilder", bugId = 357083708)
 interface HasAndroidTestBuilder {
 
-    /**
-     * Set to `true` if the variant's has any android tests, false otherwise.
-     * Value is [Boolean#True] by default.
-     */
-    var androidTestEnabled: Boolean
+  /** Set to `true` if the variant's has any android tests, false otherwise. Value is [Boolean#True] by default. */
+  var androidTestEnabled: Boolean
 
-    /**
-     * Set to `true` if the variant's has any android tests, false otherwise.
-     * Value is [Boolean#True] by default.
-     */
-    var enableAndroidTest: Boolean
+  /** Set to `true` if the variant's has any android tests, false otherwise. Value is [Boolean#True] by default. */
+  var enableAndroidTest: Boolean
 
-    /**
-     * Variant's [AndroidTestBuilder] configuration to turn on or off android tests and set
-     * other android test related settings.
-     */
-    val androidTest: AndroidTestBuilder
+  /** Variant's [AndroidTestBuilder] configuration to turn on or off android tests and set other android test related settings. */
+  val androidTest: AndroidTestBuilder
 }

@@ -28,43 +28,33 @@ import org.junit.Test
 
 class UtpManagedDeviceSetupTest {
 
-    @get:Rule
-    val customAndroidSdkRule = CustomAndroidSdkRule()
+  @get:Rule val customAndroidSdkRule = CustomAndroidSdkRule()
 
-    @get:Rule
-    val project1 = GradleRule.configure()
-        .withCustomSdkDir(customAndroidSdkRule)
-        .from(folderName = "project1") { simpleGMDProject() }
+  @get:Rule
+  val project1 = GradleRule.configure().withCustomSdkDir(customAndroidSdkRule).from(folderName = "project1") { simpleGMDProject() }
 
-    @get:Rule
-    val project2 = GradleRule.configure()
-        .withCustomSdkDir(customAndroidSdkRule)
-        .from(folderName = "project2") { simpleGMDProject() }
+  @get:Rule
+  val project2 = GradleRule.configure().withCustomSdkDir(customAndroidSdkRule).from(folderName = "project2") { simpleGMDProject() }
 
-    private val executors: List<GradleTaskExecutor> by lazy {
-        listOf(
-            project1.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
-            project2.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
-        )
-    }
+  private val executors: List<GradleTaskExecutor> by lazy {
+    listOf(
+      project1.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
+      project2.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
+    )
+  }
 
-    @Test
-    fun setupSingleDevice() {
-        executors[0].run(":app:cleanManagedDevices")
-        executors[0].run(":app:device1Setup")
-    }
+  @Test
+  fun setupSingleDevice() {
+    executors[0].run(":app:cleanManagedDevices")
+    executors[0].run(":app:device1Setup")
+  }
 
-    @Test
-    fun setupTwoIdenticalManagedDeviceInParallel() {
-        assertThat(executors).hasSize(2)
-        assertThat(project1.getMainBuildDirectory().toString())
-            .isNotEqualTo(project2.getMainBuildDirectory().toString())
+  @Test
+  fun setupTwoIdenticalManagedDeviceInParallel() {
+    assertThat(executors).hasSize(2)
+    assertThat(project1.getMainBuildDirectory().toString()).isNotEqualTo(project2.getMainBuildDirectory().toString())
 
-        executors.parallelStream().forEach {
-            it.run(":app:cleanManagedDevices")
-        }
-        executors.parallelStream().forEach {
-            it.run(":app:device1Setup")
-        }
-    }
+    executors.parallelStream().forEach { it.run(":app:cleanManagedDevices") }
+    executors.parallelStream().forEach { it.run(":app:device1Setup") }
+  }
 }

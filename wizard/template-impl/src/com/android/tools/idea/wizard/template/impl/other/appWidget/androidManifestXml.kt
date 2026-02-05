@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.appWidget
 
 import com.android.tools.idea.wizard.template.renderIf
 
-fun androidManifestXml(
-  className: String,
-  configurable: Boolean,
-  layoutName: String,
-  packageName: String
-) = """
+fun androidManifestXml(className: String, configurable: Boolean, layoutName: String, packageName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>

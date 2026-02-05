@@ -19,245 +19,235 @@ package com.android.build.gradle.integration.api
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.google.common.truth.Truth
-import junit.framework.TestCase.fail
+import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class ListenToApiTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun singleRegularFileListener() {
-        project.buildFile.appendText(
-            """
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.file.DirectoryProperty
-                import org.gradle.api.tasks.InputFile
-                import org.gradle.api.tasks.TaskAction
-                import com.android.build.api.artifact.SingleArtifact
-                import com.android.build.api.variant.BuiltArtifactsLoader
-                import com.android.build.api.variant.BuiltArtifacts
-                import org.gradle.api.provider.Property
-                import org.gradle.api.tasks.Internal
+  @Test
+  fun singleRegularFileListener() {
+    project.buildFile.appendText(
+      """
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.file.DirectoryProperty
+      import org.gradle.api.tasks.InputFile
+      import org.gradle.api.tasks.TaskAction
+      import com.android.build.api.artifact.SingleArtifact
+      import com.android.build.api.variant.BuiltArtifactsLoader
+      import com.android.build.api.variant.BuiltArtifacts
+      import org.gradle.api.provider.Property
+      import org.gradle.api.tasks.Internal
 
-                abstract class VerifyManifestTask extends DefaultTask {
+      abstract class VerifyManifestTask extends DefaultTask {
 
-                    @InputFile
-                    abstract RegularFileProperty getManifestFile()
+          @InputFile
+          abstract RegularFileProperty getManifestFile()
 
-                    @TaskAction
-                    void taskAction() {
-                        println("Got a manifest at ${'$'}{getManifestFile().get().getAsFile()}")
-                    }
-                }
+          @TaskAction
+          void taskAction() {
+              println("Got a manifest at ${'$'}{getManifestFile().get().getAsFile()}")
+          }
+      }
 
-                androidComponents.onVariants(androidComponents.selector().all(), { variant ->
-                    TaskProvider taskProvider = project.tasks.register(
-                         variant.getName() + "VerifyManifest",
-                         VerifyManifestTask.class
-                    )
-                    variant.artifacts
-                        .use(taskProvider)
-                        .wiredWith(VerifyManifestTask::getManifestFile)
-                        .toListenTo(SingleArtifact.MERGED_MANIFEST.INSTANCE)
-                })
-            """.trimIndent()
-        )
+      androidComponents.onVariants(androidComponents.selector().all(), { variant ->
+          TaskProvider taskProvider = project.tasks.register(
+               variant.getName() + "VerifyManifest",
+               VerifyManifestTask.class
+          )
+          variant.artifacts
+              .use(taskProvider)
+              .wiredWith(VerifyManifestTask::getManifestFile)
+              .toListenTo(SingleArtifact.MERGED_MANIFEST.INSTANCE)
+      })
+      """
+        .trimIndent()
+    )
 
-        val result = project.execute("processDebugMainManifest")
-        Truth.assertThat(result.didWorkTasks.contains(":debugVerifyManifest")).isTrue()
-        Truth.assertThat(result.stdout.findAll(
-            "Got a manifest at"
-        ).count()).isEqualTo(1)
-    }
+    val result = project.execute("processDebugMainManifest")
+    Truth.assertThat(result.didWorkTasks.contains(":debugVerifyManifest")).isTrue()
+    Truth.assertThat(result.stdout.findAll("Got a manifest at").count()).isEqualTo(1)
+  }
 
-    @Test
-    fun warningMessageTest() {
-        project.buildFile.appendText(
-            """
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.tasks.InputFiles
-                import org.gradle.api.tasks.TaskAction
-                import com.android.build.api.artifact.MultipleArtifact
-                import com.android.build.api.variant.BuiltArtifactsLoader
-                import com.android.build.api.variant.BuiltArtifacts
-                import org.gradle.api.provider.ListProperty
-                import org.gradle.api.file.RegularFile
-                import org.gradle.api.tasks.Internal
+  @Test
+  fun warningMessageTest() {
+    project.buildFile.appendText(
+      """
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.tasks.InputFiles
+      import org.gradle.api.tasks.TaskAction
+      import com.android.build.api.artifact.MultipleArtifact
+      import com.android.build.api.variant.BuiltArtifactsLoader
+      import com.android.build.api.variant.BuiltArtifacts
+      import org.gradle.api.provider.ListProperty
+      import org.gradle.api.file.RegularFile
+      import org.gradle.api.tasks.Internal
 
-                abstract class VerifyProguardFilesTask extends DefaultTask {
+      abstract class VerifyProguardFilesTask extends DefaultTask {
 
-                    @InputFiles
-                    abstract ListProperty<RegularFile> getProguardFiles()
+          @InputFiles
+          abstract ListProperty<RegularFile> getProguardFiles()
 
-                    @TaskAction
-                    void taskAction() {
-                        getProguardFiles.get().forEach {
-                            println("Got a File at ${'$'}{it.outputFile}")
-                        }
-                    }
-                }
+          @TaskAction
+          void taskAction() {
+              getProguardFiles.get().forEach {
+                  println("Got a File at ${'$'}{it.outputFile}")
+              }
+          }
+      }
 
-                androidComponents.onVariants(androidComponents.selector().withBuildType("release"), { variant ->
-                    TaskProvider taskProvider = project.tasks.register(
-                         variant.getName() + "VerifyProguardFiles",
-                         VerifyProguardFilesTask.class
-                    )
-                    variant.artifacts
-                        .use(taskProvider)
-                        .wiredWithMultiple(VerifyProguardFilesTask::getProguardFiles)
-                        .toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD.INSTANCE)
-                })
-            """.trimIndent()
-        )
+      androidComponents.onVariants(androidComponents.selector().withBuildType("release"), { variant ->
+          TaskProvider taskProvider = project.tasks.register(
+               variant.getName() + "VerifyProguardFiles",
+               VerifyProguardFilesTask.class
+          )
+          variant.artifacts
+              .use(taskProvider)
+              .wiredWithMultiple(VerifyProguardFilesTask::getProguardFiles)
+              .toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD.INSTANCE)
+      })
+      """
+        .trimIndent()
+    )
 
-        val result = project.execute("assembleRelease")
-        Truth.assertThat(result.stdout.findAll(
-            "releaseVerifyProguardFiles was registered to listen to the production of the MULTIDEX_KEEP_PROGUARD"
-        ).count()).isEqualTo(1)
-    }
+    val result = project.execute("assembleRelease")
+    Truth.assertThat(
+        result.stdout.findAll("releaseVerifyProguardFiles was registered to listen to the production of the MULTIDEX_KEEP_PROGUARD").count()
+      )
+      .isEqualTo(1)
+  }
 
-    @Test
-    fun multipleFilesListener() {
-        // crete a simple rule file.
-        Files.write(
-            project.buildFile.toPath().resolveSibling("rules"),
-            "-keep class **HelloWorld".toByteArray()
-        )
-        project.buildFile.appendText(
-            """
-                android {
-                    defaultConfig {
-                        multiDexKeepProguard = file('default-rules')
-                    }
-                    buildTypes {
-                        release {
-                            minifyEnabled true
-                            multiDexKeepProguard = file('rules')
-                        }
-                    }
-                }
+  @Test
+  fun multipleFilesListener() {
+    // crete a simple rule file.
+    Files.write(project.buildFile.toPath().resolveSibling("rules"), "-keep class **HelloWorld".toByteArray())
+    project.buildFile.appendText(
+      """
+      android {
+          defaultConfig {
+              multiDexKeepProguard = file('default-rules')
+          }
+          buildTypes {
+              release {
+                  minifyEnabled true
+                  multiDexKeepProguard = file('rules')
+              }
+          }
+      }
 
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.tasks.InputFiles
-                import org.gradle.api.tasks.TaskAction
-                import com.android.build.api.artifact.MultipleArtifact
-                import com.android.build.api.variant.BuiltArtifactsLoader
-                import com.android.build.api.variant.BuiltArtifacts
-                import org.gradle.api.provider.ListProperty
-                import org.gradle.api.file.RegularFile
-                import org.gradle.api.tasks.Internal
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.tasks.InputFiles
+      import org.gradle.api.tasks.TaskAction
+      import com.android.build.api.artifact.MultipleArtifact
+      import com.android.build.api.variant.BuiltArtifactsLoader
+      import com.android.build.api.variant.BuiltArtifacts
+      import org.gradle.api.provider.ListProperty
+      import org.gradle.api.file.RegularFile
+      import org.gradle.api.tasks.Internal
 
-                abstract class VerifyProguardFilesTask extends DefaultTask {
+      abstract class VerifyProguardFilesTask extends DefaultTask {
 
-                    @InputFiles
-                    abstract ListProperty<RegularFile> getProguardFiles()
+          @InputFiles
+          abstract ListProperty<RegularFile> getProguardFiles()
 
-                    @TaskAction
-                    void taskAction() {
-                        getProguardFiles().get().forEach {
-                            println("Got a File at ${'$'}{it.getAsFile()}")
-                        }
-                    }
-                }
+          @TaskAction
+          void taskAction() {
+              getProguardFiles().get().forEach {
+                  println("Got a File at ${'$'}{it.getAsFile()}")
+              }
+          }
+      }
 
-                androidComponents.onVariants(androidComponents.selector().all(), { variant ->
-                    TaskProvider taskProvider = project.tasks.register(
-                         variant.getName() + "VerifyProguardFiles",
-                         VerifyProguardFilesTask.class
-                    )
-                    variant.artifacts
-                        .use(taskProvider)
-                        .wiredWithMultiple(VerifyProguardFilesTask::getProguardFiles)
-                        .toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD.INSTANCE)
-                })
-            """.trimIndent()
-        )
+      androidComponents.onVariants(androidComponents.selector().all(), { variant ->
+          TaskProvider taskProvider = project.tasks.register(
+               variant.getName() + "VerifyProguardFiles",
+               VerifyProguardFilesTask.class
+          )
+          variant.artifacts
+              .use(taskProvider)
+              .wiredWithMultiple(VerifyProguardFilesTask::getProguardFiles)
+              .toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD.INSTANCE)
+      })
+      """
+        .trimIndent()
+    )
 
-        val result = project.execute(":releaseVerifyProguardFiles")
-        Truth.assertThat(result.didWorkTasks.contains(":releaseVerifyProguardFiles")).isTrue()
-        Truth.assertThat(result.stdout.findAll(
-            "Got a File at"
-        ).count()).isEqualTo(1)
+    val result = project.execute(":releaseVerifyProguardFiles")
+    Truth.assertThat(result.didWorkTasks.contains(":releaseVerifyProguardFiles")).isTrue()
+    Truth.assertThat(result.stdout.findAll("Got a File at").count()).isEqualTo(1)
 
-        val result2 = project.execute(":debugVerifyProguardFiles")
-        Truth.assertThat(result2.didWorkTasks.contains(":debugVerifyProguardFiles")).isTrue()
-        Truth.assertThat(result2.stdout.findAll(
-            "default-rules"
-        ).count()).isEqualTo(1)
-    }
+    val result2 = project.execute(":debugVerifyProguardFiles")
+    Truth.assertThat(result2.didWorkTasks.contains(":debugVerifyProguardFiles")).isTrue()
+    Truth.assertThat(result2.stdout.findAll("default-rules").count()).isEqualTo(1)
+  }
 
-    @Test
-    fun multipleDirectoryListener() {
-        project.buildFile.appendText(
-            """
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.file.DirectoryProperty
-                import org.gradle.api.tasks.InputFiles
-                import org.gradle.api.tasks.TaskAction
-                import com.android.build.api.artifact.SingleArtifact
-                import com.android.build.api.variant.BuiltArtifactsLoader
-                import com.android.build.api.variant.BuiltArtifacts
-                import org.gradle.api.provider.Property
-                import org.gradle.api.tasks.Internal
+  @Test
+  fun multipleDirectoryListener() {
+    project.buildFile.appendText(
+      """
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.file.DirectoryProperty
+      import org.gradle.api.tasks.InputFiles
+      import org.gradle.api.tasks.TaskAction
+      import com.android.build.api.artifact.SingleArtifact
+      import com.android.build.api.variant.BuiltArtifactsLoader
+      import com.android.build.api.variant.BuiltArtifacts
+      import org.gradle.api.provider.Property
+      import org.gradle.api.tasks.Internal
 
-                abstract class VerifyApksTask extends DefaultTask {
+      abstract class VerifyApksTask extends DefaultTask {
 
-                    @InputFiles
-                    abstract DirectoryProperty getApkFolder()
+          @InputFiles
+          abstract DirectoryProperty getApkFolder()
 
-                    @Internal
-                    abstract Property<BuiltArtifactsLoader> getBuiltArtifactsLoader()
+          @Internal
+          abstract Property<BuiltArtifactsLoader> getBuiltArtifactsLoader()
 
-                    @TaskAction
-                    void taskAction() {
+          @TaskAction
+          void taskAction() {
 
-                        BuiltArtifacts artifacts = getBuiltArtifactsLoader().get().load(getApkFolder().get())
-                        if (artifacts == null) {
-                            throw new RuntimeException("Cannot load APKs")
-                        }
-                        artifacts.elements.forEach {
-                            println("Got an APK at ${'$'}{it.outputFile}")
-                        }
-                    }
-                }
+              BuiltArtifacts artifacts = getBuiltArtifactsLoader().get().load(getApkFolder().get())
+              if (artifacts == null) {
+                  throw new RuntimeException("Cannot load APKs")
+              }
+              artifacts.elements.forEach {
+                  println("Got an APK at ${'$'}{it.outputFile}")
+              }
+          }
+      }
 
-                androidComponents.onVariants(androidComponents.selector().all(), { variant ->
-                    TaskProvider taskProvider = project.tasks.register(
-                         variant.getName() + "VerifyApks",
-                         VerifyApksTask.class
-                    ) {
-                        it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
-                    }
-                    variant.artifacts
-                        .use(taskProvider)
-                        .wiredWith(VerifyApksTask::getApkFolder)
-                        .toListenTo(SingleArtifact.APK.INSTANCE)
+      androidComponents.onVariants(androidComponents.selector().all(), { variant ->
+          TaskProvider taskProvider = project.tasks.register(
+               variant.getName() + "VerifyApks",
+               VerifyApksTask.class
+          ) {
+              it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+          }
+          variant.artifacts
+              .use(taskProvider)
+              .wiredWith(VerifyApksTask::getApkFolder)
+              .toListenTo(SingleArtifact.APK.INSTANCE)
 
-                    TaskProvider secondTaskProvider = project.tasks.register(
-                         variant.getName() + "VerifyAgainApks",
-                         VerifyApksTask.class
-                    ) {
-                        it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
-                    }
-                    variant.artifacts
-                        .use(secondTaskProvider)
-                        .wiredWith(VerifyApksTask::getApkFolder)
-                        .toListenTo(SingleArtifact.APK.INSTANCE)
-                })
-            """.trimIndent()
-        )
+          TaskProvider secondTaskProvider = project.tasks.register(
+               variant.getName() + "VerifyAgainApks",
+               VerifyApksTask.class
+          ) {
+              it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+          }
+          variant.artifacts
+              .use(secondTaskProvider)
+              .wiredWith(VerifyApksTask::getApkFolder)
+              .toListenTo(SingleArtifact.APK.INSTANCE)
+      })
+      """
+        .trimIndent()
+    )
 
-        val result = project.execute("assembleDebug")
-        Truth.assertThat(result.didWorkTasks.contains(":debugVerifyApks")).isTrue()
-        Truth.assertThat(result.didWorkTasks.contains(":debugVerifyAgainApks")).isTrue()
-        Truth.assertThat(result.stdout.findAll(
-            "Got an APK at"
-        ).count()).isEqualTo(2)
-    }
+    val result = project.execute("assembleDebug")
+    Truth.assertThat(result.didWorkTasks.contains(":debugVerifyApks")).isTrue()
+    Truth.assertThat(result.didWorkTasks.contains(":debugVerifyAgainApks")).isTrue()
+    Truth.assertThat(result.stdout.findAll("Got an APK at").count()).isEqualTo(2)
+  }
 }

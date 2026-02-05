@@ -34,19 +34,16 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
- * Specialized visitor for running detectors on resources: typically XML documents, but also binary
- * resources.
+ * Specialized visitor for running detectors on resources: typically XML documents, but also binary resources.
  *
  * It operates in two phases:
- * 1. First, it computes a set of maps where it generates a map from each significant element name,
- *    and each significant attribute name, to a list of detectors to consult for that element or
- *    attribute name. The set of element names or attribute names (or both) that a detector is
- *    interested in is provided by the detectors themselves.
- * 2. Second, it iterates over the document a single time. For each element and attribute it looks
- *    up the list of interested detectors, and runs them.
+ * 1. First, it computes a set of maps where it generates a map from each significant element name, and each significant attribute name, to
+ *    a list of detectors to consult for that element or attribute name. The set of element names or attribute names (or both) that a
+ *    detector is interested in is provided by the detectors themselves.
+ * 2. Second, it iterates over the document a single time. For each element and attribute it looks up the list of interested detectors, and
+ *    runs them.
  *
- * It also notifies all the detectors before and after the document is processed such that they can
- * do pre- and post-processing.
+ * It also notifies all the detectors before and after the document is processed such that they can do pre- and post-processing.
  */
 internal class ResourceVisitor(
   driver: LintDriver,
@@ -71,17 +68,13 @@ internal class ResourceVisitor(
       if (attributes === XmlScannerConstants.ALL) {
         allAttributeDetectors.add(detector)
       } else {
-        attributes?.forEach { attribute ->
-          attributeToCheck.getOrPut(attribute) { ArrayList() }.add(detector)
-        }
+        attributes?.forEach { attribute -> attributeToCheck.getOrPut(attribute) { ArrayList() }.add(detector) }
       }
       val elements = detector.getApplicableElements()
       if (elements === XmlScannerConstants.ALL) {
         allElementDetectors.add(detector)
       } else {
-        elements?.forEach { element ->
-          elementToCheck.getOrPut(element) { ArrayList() }.add(detector)
-        }
+        elements?.forEach { element -> elementToCheck.getOrPut(element) { ArrayList() }.add(detector) }
       }
 
       if (detector is SourceCodeScanner) {
@@ -192,11 +185,7 @@ internal class ResourceVisitor(
             className = resolveManifestName(element, context.project)
           }
 
-          if (
-            localName != ATTR_TEXT &&
-              localName != ATTR_HINT &&
-              localName != ATTR_CONTENT_DESCRIPTION
-          ) {
+          if (localName != ATTR_TEXT && localName != ATTR_HINT && localName != ATTR_CONTENT_DESCRIPTION) {
             // Check and visit likely class reference only if local name is
             // not "text", "hint", nor "contentDescription".
             if (className.isLikelyClassName()) {

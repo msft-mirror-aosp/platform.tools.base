@@ -24,54 +24,58 @@ import com.google.testing.platform.proto.api.config.DeviceProto
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
 import java.io.File
 
-/**
- * An implementation of [Device] using DDMLIB [IDevice].
- */
+/** An implementation of [Device] using DDMLIB [IDevice]. */
 class DdmlibAndroidDevice(val ddmlibDevice: IDevice) : Device, IDevice by ddmlibDevice {
-    override val id: DeviceProto.DeviceId = DeviceProto.DeviceId.getDefaultInstance()
-    override val port: Int? = null
-    override val properties: AndroidDeviceProperties by lazy {
-        val devicePropertyMap = mutableMapOf<String, String>()
-        ddmlibDevice.executeShellCommand("printenv", object: MultiLineReceiver() {
-            override fun isCancelled(): Boolean = false
-            override fun processNewLines(lines: Array<out String>) {
-                lines.forEach { line ->
-                    val (key, value) = line.split("=", limit=2) + listOf("", "")
-                    devicePropertyMap[key] = value
-                }
-            }
-        })
-        ddmlibDevice.executeShellCommand("getprop", object: MultiLineReceiver() {
-            val regex = """\[(.+)\]: \[(.+)\]""".toRegex()
-            override fun isCancelled(): Boolean = false
-            override fun processNewLines(lines: Array<out String>) {
-                lines.forEach { line ->
-                    val matches = regex.find(line)?:return@forEach
-                    val (key, value) = matches.destructured
-                    devicePropertyMap[key] = value
-                }
-            }
-        })
-        AndroidDeviceProperties(
-            devicePropertyMap,
-            avdName = ddmlibDevice.avdData.get()?.name,
-        )
-    }
+  override val id: DeviceProto.DeviceId = DeviceProto.DeviceId.getDefaultInstance()
+  override val port: Int? = null
+  override val properties: AndroidDeviceProperties by lazy {
+    val devicePropertyMap = mutableMapOf<String, String>()
+    ddmlibDevice.executeShellCommand(
+      "printenv",
+      object : MultiLineReceiver() {
+        override fun isCancelled(): Boolean = false
 
-    override val serial: String
-        get() = ddmlibDevice.serialNumber
-
-    override val type: Device.DeviceType?
-        get() = if (ddmlibDevice.isEmulator) {
-            Device.DeviceType.VIRTUAL
-        } else {
-            Device.DeviceType.PHYSICAL
+        override fun processNewLines(lines: Array<out String>) {
+          lines.forEach { line ->
+            val (key, value) = line.split("=", limit = 2) + listOf("", "")
+            devicePropertyMap[key] = value
+          }
         }
+      },
+    )
+    ddmlibDevice.executeShellCommand(
+      "getprop",
+      object : MultiLineReceiver() {
+        val regex = """\[(.+)\]: \[(.+)\]""".toRegex()
 
-    // Due to Kotlin delegation related bug https://youtrack.jetbrains.com/issue/KT-18324 , we have
-    // to override this method in order for the mock object in Mockito to function properly
-    @Throws(InstallException::class)
-    override fun installPackages(
-            apks: List<File?>, reinstall: Boolean, installOptions: List<String?>)
-    = ddmlibDevice.installPackages(apks, reinstall, installOptions)
+        override fun isCancelled(): Boolean = false
+
+        override fun processNewLines(lines: Array<out String>) {
+          lines.forEach { line ->
+            val matches = regex.find(line) ?: return@forEach
+            val (key, value) = matches.destructured
+            devicePropertyMap[key] = value
+          }
+        }
+      },
+    )
+    AndroidDeviceProperties(devicePropertyMap, avdName = ddmlibDevice.avdData.get()?.name)
+  }
+
+  override val serial: String
+    get() = ddmlibDevice.serialNumber
+
+  override val type: Device.DeviceType?
+    get() =
+      if (ddmlibDevice.isEmulator) {
+        Device.DeviceType.VIRTUAL
+      } else {
+        Device.DeviceType.PHYSICAL
+      }
+
+  // Due to Kotlin delegation related bug https://youtrack.jetbrains.com/issue/KT-18324 , we have
+  // to override this method in order for the mock object in Mockito to function properly
+  @Throws(InstallException::class)
+  override fun installPackages(apks: List<File?>, reinstall: Boolean, installOptions: List<String?>) =
+    ddmlibDevice.installPackages(apks, reinstall, installOptions)
 }

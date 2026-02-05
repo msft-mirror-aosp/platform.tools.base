@@ -17,82 +17,68 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
-import com.android.testutils.MavenRepoGenerator
 import java.nio.file.Path
 
 @GradleDefinitionDsl
 interface DependencyBuilder {
-    fun requireCapability(capability: String)
+  fun requireCapability(capability: String)
 }
 
 @GradleDefinitionDsl
-interface DependenciesBuilder: DependencyConfigurations {
+interface DependenciesBuilder : DependencyConfigurations {
 
-    /**
-     * Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope
-     */
-    fun localJar(name: String, action: JarBuilder.() -> Unit) : LocalJarDependency
+  /** Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope */
+  fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency
 
-    /**
-     *  Creates a [LocalFiles] to be passed to the [implementation] or any other scope.
-     */
-    fun files(path: Path): LocalFiles
+  /** Creates a [LocalFiles] to be passed to the [implementation] or any other scope. */
+  fun files(path: Path): LocalFiles
 
-    /**
-     * Creates a [ProjectDependencyBuilder] to be passed to [implementation] or any other scope
-     *
-     * @param path the project path
-     * @param testFixtures whether the dependency is on the test fixtures of the project.
-     */
-    fun project(
-        path: String,
-        testFixtures: Boolean = false,
-        configuration: String? = null): ProjectDependencyBuilder
+  /**
+   * Creates a [ProjectDependencyBuilder] to be passed to [implementation] or any other scope
+   *
+   * @param path the project path
+   * @param testFixtures whether the dependency is on the test fixtures of the project.
+   */
+  fun project(path: String, testFixtures: Boolean = false, configuration: String? = null): ProjectDependencyBuilder
 
-    fun platform(
-        path: Any
-    ): PlatformDependency
+  fun platform(path: Any): PlatformDependency
 
-    /**
-     * Creates a [ExternalDependencyBuilder] to be passed to [implementation] or any other scope
-     *
-     * @param coordinate the external library coordinate
-     * @param testFixtures whether the dependency is on the test fixtures of the library.
-     */
-    fun externalLibrary(coordinate: String, testFixtures: Boolean = false): ExternalDependencyBuilder
+  /**
+   * Creates a [ExternalDependencyBuilder] to be passed to [implementation] or any other scope
+   *
+   * @param coordinate the external library coordinate
+   * @param testFixtures whether the dependency is on the test fixtures of the library.
+   */
+  fun externalLibrary(coordinate: String, testFixtures: Boolean = false): ExternalDependencyBuilder
 
-    /**
-     * Configures dependency constraints of the project
-     */
-    fun constraints(action: ConstraintsBuilder.() -> Unit)
-    val constraints: ConstraintsBuilder
+  /** Configures dependency constraints of the project */
+  fun constraints(action: ConstraintsBuilder.() -> Unit)
+
+  val constraints: ConstraintsBuilder
 }
 
 interface LocalJarDependency {
-    val name: String
-    val content: ByteArray
+  val name: String
+  val content: ByteArray
 }
 
 interface LocalFiles {
-    val path: Path
+  val path: Path
 }
 
 interface ProjectDependencyBuilder {
-    val path: String
-    val testFixtures: Boolean
+  val path: String
+  val testFixtures: Boolean
 
-    /**
-     * the configuration that is targeted on the publishing project. This is legacy
-     * for the case that pre-dates variant-aware publishing.
-     */
-    val configuration: String?
+  /** the configuration that is targeted on the publishing project. This is legacy for the case that pre-dates variant-aware publishing. */
+  val configuration: String?
 }
 
 interface PlatformDependency {
-    val path: Any
+  val path: Any
 }
 
 interface ExternalDependencyBuilder {
-    val coordinate: String
-    val testFixtures: Boolean
+  val coordinate: String
+  val testFixtures: Boolean
 }

@@ -36,87 +36,74 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 
 class PartialInProcessResourceProcessorTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun compileWithJvm() {
-        val from = temporaryFolder.newFolder().resolve("res/values/strings.xml")
-        from.parentFile.mkdirs()
-        from.writeText("""<resources><string name="my_string">my string</string></resources>""")
-        val to = temporaryFolder.newFolder()
+  @Test
+  fun compileWithJvm() {
+    val from = temporaryFolder.newFolder().resolve("res/values/strings.xml")
+    from.parentFile.mkdirs()
+    from.writeText("""<resources><string name="my_string">my string</string></resources>""")
+    val to = temporaryFolder.newFolder()
 
-        val aapt2: Aapt2 = mock()
-        val processor =
-            PartialInProcessResourceProcessor(
-                aapt2
-            )
-        val logger = NoErrorsOrWarningsLogger()
-        processor.compile(
-            CompileResourceRequest(
-                inputFile = from,
-                outputDirectory = to,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
-            ), logger
-        )
+    val aapt2: Aapt2 = mock()
+    val processor = PartialInProcessResourceProcessor(aapt2)
+    val logger = NoErrorsOrWarningsLogger()
+    processor.compile(
+      CompileResourceRequest(
+        inputFile = from,
+        outputDirectory = to,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test"),
+      ),
+      logger,
+    )
 
-        verifyNoMoreInteractions(aapt2)
-        assertThat(to.resolve(
-            Aapt2RenamingConventions.compilationRename(
-                from
-            )        )).exists()
-    }
+    verifyNoMoreInteractions(aapt2)
+    assertThat(to.resolve(Aapt2RenamingConventions.compilationRename(from))).exists()
+  }
 
-    @Test
-    fun compileWithAapt2() {
-        val from = temporaryFolder.newFolder().resolve("res/drawables/crunch_me.png")
-        val to = temporaryFolder.newFolder()
-        val aapt2: Aapt2 = mock()
-        val processor =
-            PartialInProcessResourceProcessor(
-                aapt2
-            )
-        val logger = NoErrorsOrWarningsLogger()
-        val request = CompileResourceRequest(
-            inputFile = from,
-            outputDirectory = to,
-            isPngCrunching = true,
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
-        )
-        processor.compile(request, logger)
-        verify(aapt2).compile(eq(request), eq(logger))
-    }
+  @Test
+  fun compileWithAapt2() {
+    val from = temporaryFolder.newFolder().resolve("res/drawables/crunch_me.png")
+    val to = temporaryFolder.newFolder()
+    val aapt2: Aapt2 = mock()
+    val processor = PartialInProcessResourceProcessor(aapt2)
+    val logger = NoErrorsOrWarningsLogger()
+    val request =
+      CompileResourceRequest(
+        inputFile = from,
+        outputDirectory = to,
+        isPngCrunching = true,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test"),
+      )
+    processor.compile(request, logger)
+    verify(aapt2).compile(eq(request), eq(logger))
+  }
 
+  @Test
+  fun link() {
+    val aapt2: Aapt2 = mock()
+    val processor = PartialInProcessResourceProcessor(aapt2)
+    val logger = NoErrorsOrWarningsLogger()
+    val request =
+      AaptPackageConfig(
+        androidJarPath = "",
+        manifestFile = temporaryFolder.newFile("AndroidManifest.xml"),
+        resourceOutputApk = temporaryFolder.newFolder().resolve("res.ap_"),
+        options = AaptOptions(),
+        componentType = ComponentTypeImpl.BASE_APK,
+      )
+    processor.link(request, logger)
+    verify(aapt2).link(eq(request), eq(logger))
+  }
 
-    @Test
-    fun link() {
-        val aapt2: Aapt2 = mock()
-        val processor =
-            PartialInProcessResourceProcessor(
-                aapt2
-            )
-        val logger = NoErrorsOrWarningsLogger()
-        val request = AaptPackageConfig(
-            androidJarPath = "",
-            manifestFile = temporaryFolder.newFile("AndroidManifest.xml"),
-            resourceOutputApk = temporaryFolder.newFolder().resolve("res.ap_"),
-            options = AaptOptions(),
-            componentType = ComponentTypeImpl.BASE_APK
-        )
-        processor.link(request, logger)
-        verify(aapt2).link(eq(request), eq(logger))
-    }
-
-    @Test
-    fun convert() {
-        val aapt2: Aapt2 = mock()
-        val processor =
-            PartialInProcessResourceProcessor(
-                aapt2
-            )
-        val logger = NoErrorsOrWarningsLogger()
-        val request = AaptConvertConfig(inputFile = temporaryFolder.newFile("in.ap_"), outputFile = temporaryFolder.newFolder().resolve("out.ap_"))
-        processor.convert(request, logger)
-        verify(aapt2).convert(eq(request), eq(logger))
-    }
+  @Test
+  fun convert() {
+    val aapt2: Aapt2 = mock()
+    val processor = PartialInProcessResourceProcessor(aapt2)
+    val logger = NoErrorsOrWarningsLogger()
+    val request =
+      AaptConvertConfig(inputFile = temporaryFolder.newFile("in.ap_"), outputFile = temporaryFolder.newFolder().resolve("out.ap_"))
+    processor.convert(request, logger)
+    verify(aapt2).convert(eq(request), eq(logger))
+  }
 }

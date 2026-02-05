@@ -142,11 +142,10 @@ protected constructor(
    * Write the given warnings into the report
    *
    * @param stats the vital statistics for the lint report
-   * @param incidents the incidents to be reported @throws IOException if an error occurs @param
-   *   registry the issue registry for all issues used during analysis
+   * @param incidents the incidents to be reported @throws IOException if an error occurs @param registry the issue registry for all issues
+   *   used during analysis
    */
-  @Throws(IOException::class)
-  abstract fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry)
+  @Throws(IOException::class) abstract fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry)
 
   /**
    * Writes a project overview table
@@ -233,13 +232,7 @@ protected constructor(
      * @param writer the writer to write into
      * @param close whether the writer should be closed when done
      */
-    fun createTextReporter(
-      client: LintCliClient,
-      flags: LintCliFlags,
-      file: File?,
-      writer: Writer,
-      close: Boolean,
-    ): TextReporter {
+    fun createTextReporter(client: LintCliClient, flags: LintCliFlags, file: File?, writer: Writer, close: Boolean): TextReporter {
       return TextReporter(client, flags, file, writer, close)
     }
 
@@ -253,11 +246,7 @@ protected constructor(
      */
     @JvmStatic
     @Throws(IOException::class)
-    fun createXmlReporter(
-      client: LintCliClient,
-      output: File,
-      reportType: XmlFileType = XmlFileType.REPORT,
-    ): XmlReporter {
+    fun createXmlReporter(client: LintCliClient, output: File, reportType: XmlFileType = XmlFileType.REPORT): XmlReporter {
       return XmlReporter(client, output, reportType)
     }
 
@@ -522,8 +511,8 @@ protected constructor(
 }
 
 /**
- * Returns the path to display for a given incident. This is like [LintClient.getDisplayPath], but
- * also takes into account the [LintCliFlags.fullPath] property to use absolute paths if requested.
+ * Returns the path to display for a given incident. This is like [LintClient.getDisplayPath], but also takes into account the
+ * [LintCliFlags.fullPath] property to use absolute paths if requested.
  */
 fun Incident.getPath(client: LintCliClient, file: File = this.file): String {
   return if (project != null) {
@@ -534,16 +523,16 @@ fun Incident.getPath(client: LintCliClient, file: File = this.file): String {
 }
 
 /**
- * Produces the source line containing this error, as well as a second line showing the error range
- * using ~ characters. Suitable for text output.
+ * Produces the source line containing this error, as well as a second line showing the error range using ~ characters. Suitable for text
+ * output.
  */
 fun Incident.getErrorLines(textProvider: (File) -> CharSequence?): String? {
   return location.getErrorLines(textProvider)
 }
 
 /**
- * Produces the source line containing this error, as well as a second line showing the error range
- * using ~ characters. Suitable for text output.
+ * Produces the source line containing this error, as well as a second line showing the error range using ~ characters. Suitable for text
+ * output.
  */
 fun Location.getErrorLines(textProvider: (File) -> CharSequence?): String? {
   val location = this
@@ -638,15 +627,8 @@ private fun CharSequence.getLineOfOffset(offset: Int): String {
   return this.subSequence(offset, if (end != -1) end else this.length).toString()
 }
 
-/**
- * Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line
- * number.
- */
-private fun CharSequence.getLineNumber(
-  offset: Int,
-  startOffset: Int = 0,
-  startLineNumber: Int = 1,
-): Int {
+/** Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line number. */
+private fun CharSequence.getLineNumber(offset: Int, startOffset: Int = 0, startLineNumber: Int = 1): Int {
   var lineNumber = startLineNumber
   for (i in startOffset until min(offset, length)) {
     if (this[i] == '\n') {

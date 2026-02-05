@@ -37,8 +37,7 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
 
   companion object {
 
-    private val IMPLEMENTATION =
-      Implementation(MonochromeLauncherIconDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MonochromeLauncherIconDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -77,16 +76,10 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
         if (XmlUtils.getFirstSubTagByName(element, "monochrome") != null) return
         val currentIconName = context.file.name.removeSuffix(DOT_XML)
 
-        val applicationTag =
-          context.project.manifestDom?.documentElement?.subtag(TAG_APPLICATION) ?: return
-        val foundIconName =
-          applicationTag
-            .getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ICON)
-            .substringAfterLast('/')
+        val applicationTag = context.project.manifestDom?.documentElement?.subtag(TAG_APPLICATION) ?: return
+        val foundIconName = applicationTag.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ICON).substringAfterLast('/')
         val foundRoundIconName =
-          applicationTag
-            .getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ROUND_ICON)
-            .substringAfterLast('/')
+          applicationTag.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ROUND_ICON).substringAfterLast('/')
 
         if (currentIconName == foundIconName || currentIconName == foundRoundIconName) {
           val iconDescription = if (currentIconName == foundIconName) "icon" else "roundIcon"

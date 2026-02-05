@@ -23,182 +23,179 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class KotlinMultiplatformAndroidPluginBasicTest {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Test
-    fun testKgpOnClasspathButNotApplied() {
-        TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                id("org.jetbrains.kotlin.multiplatform")
-            """.trimIndent(), "")
+  @Test
+  fun testKgpOnClasspathButNotApplied() {
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      id("org.jetbrains.kotlin.multiplatform")
+      """
+        .trimIndent(),
+      "",
+    )
 
-        val result = executor().expectFailure().run(":kmpFirstLib:assembleAndroidMain")
-        // In case of missing KGP the build script will not compile
-        result.assertErrorContains(
-            "Script compilation errors:"
-        )
+    val result = executor().expectFailure().run(":kmpFirstLib:assembleAndroidMain")
+    // In case of missing KGP the build script will not compile
+    result.assertErrorContains("Script compilation errors:")
+  }
+
+  @Test
+  fun testJavaCompilationWithSources9AndAbove() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              withJava()
+              compilerOptions {
+                  jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assembleAndroidMain")
+  }
+
+  @Test
+  fun `accessing predefined compilations should succeed`() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              afterEvaluate {
+                  compilations {
+                      val main by getting {
+                      }
+                      val hostTest by getting {
+                      }
+                      val deviceTest by getting {
+                      }
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:androidPrebuild")
+  }
+
+  @Test
+  fun kmpWithAndroidTestOnly() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              withDeviceTest {}
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpSecondLib:androidPrebuild")
+  }
+
+  @Test
+  fun instrumentedTestAndroidManifestNotRequired() {
+    val manifest =
+      FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "src", "androidDeviceTest", "AndroidManifest.xml").toPath()
+
+    val deleted = Files.deleteIfExists(manifest)
+    Truth.assertThat(deleted).isTrue()
+    val result = executor().run(":kmpFirstLib:packageAndroidDeviceTest")
+
+    ScannerSubject.assertThat(result.stderr).doesNotContain("Manifest file does not exist")
+  }
+
+  @Test
+  fun androidDeviceTestManifestTargetSdk() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              withDeviceTestBuilder {
+                  sourceSetTreeName = "test"
+              }.configure {
+                  targetSdk { version = release(31) }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
+
+    project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      manifest().contains("android:targetSdkVersion=31")
     }
+  }
 
-    @Test
-    fun testJavaCompilationWithSources9AndAbove() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        withJava()
-                        compilerOptions {
-                            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun androidDeviceTestDefaultTargetSdkToCompileSdk() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              withDeviceTestBuilder {
+                  sourceSetTreeName = "test"
+              }
+          }
+      }
+      androidComponents {
+          finalizeDsl { extension ->
+              extension.compileSdk = 36
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
 
-        executor().run(":kmpFirstLib:assembleAndroidMain")
+    project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      manifest().contains("android:targetSdkVersion=36")
     }
+  }
 
-    @Test
-    fun `accessing predefined compilations should succeed`() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        afterEvaluate {
-                            compilations {
-                                val main by getting {
-                                }
-                                val hostTest by getting {
-                                }
-                                val deviceTest by getting {
-                                }
-                            }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testComponentNamesForEachAndroidCompilation() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      tasks.register("printAndroidComponents") {
+          doLast {
+              val compilations = kotlin.androidLibrary.compilations
+              compilations.forEach {
+                  println(it.componentName)
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        executor().run(":kmpFirstLib:androidPrebuild")
-    }
+    val result = executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF).run(":kmpFirstLib:printAndroidComponents")
 
-    @Test
-    fun kmpWithAndroidTestOnly() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        withDeviceTest {}
-                    }
-                }
-            """.trimIndent()
-        )
+    ScannerSubject.assertThat(result.stdout).contains("androidMain")
+    ScannerSubject.assertThat(result.stdout).contains("androidHostTest")
+    ScannerSubject.assertThat(result.stdout).contains("androidDeviceTest")
+  }
 
-        executor().run(":kmpSecondLib:androidPrebuild")
-    }
-
-    @Test
-    fun instrumentedTestAndroidManifestNotRequired() {
-        val manifest = FileUtils.join(
-            project.getSubproject("kmpFirstLib").projectDir,
-            "src",
-            "androidDeviceTest",
-            "AndroidManifest.xml"
-        ).toPath()
-
-        val deleted = Files.deleteIfExists(manifest)
-        Truth.assertThat(deleted).isTrue()
-        val result = executor().run(":kmpFirstLib:packageAndroidDeviceTest")
-
-        ScannerSubject.assertThat(result.stderr).doesNotContain(
-            "Manifest file does not exist"
-        )
-    }
-
-    @Test
-    fun androidDeviceTestManifestTargetSdk() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        withDeviceTestBuilder {
-                            sourceSetTreeName = "test"
-                        }.configure {
-                            targetSdk { version = release(31) }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
-
-        project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
-            manifest().contains("android:targetSdkVersion=31")
-        }
-    }
-
-    @Test
-    fun androidDeviceTestDefaultTargetSdkToCompileSdk() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        withDeviceTestBuilder {
-                            sourceSetTreeName = "test"
-                        }
-                    }
-                }
-                androidComponents {
-                    finalizeDsl { extension ->
-                        extension.compileSdk = 36
-                    }
-                }
-            """.trimIndent()
-        )
-        executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
-
-        project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
-            manifest().contains("android:targetSdkVersion=36")
-        }
-    }
-
-    @Test
-    fun testComponentNamesForEachAndroidCompilation() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                tasks.register("printAndroidComponents") {
-                    doLast {
-                        val compilations = kotlin.androidLibrary.compilations
-                        compilations.forEach {
-                            println(it.componentName)
-                        }
-                    }
-                }
-            """.trimIndent())
-
-        val result = executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
-            .run(":kmpFirstLib:printAndroidComponents")
-
-        ScannerSubject.assertThat(result.stdout).contains("androidMain")
-        ScannerSubject.assertThat(result.stdout).contains("androidHostTest")
-        ScannerSubject.assertThat(result.stdout).contains("androidDeviceTest")
-    }
-
-    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

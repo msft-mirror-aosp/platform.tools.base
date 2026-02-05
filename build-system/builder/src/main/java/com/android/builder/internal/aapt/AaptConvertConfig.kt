@@ -19,8 +19,4 @@ package com.android.builder.internal.aapt
 import java.io.File
 
 /** Configuration for an `aapt2 convert` operation. */
-data class AaptConvertConfig(
-    val inputFile: File,
-    val outputFile: File,
-    val convertToProtos: Boolean = false
-)
+data class AaptConvertConfig(val inputFile: File, val outputFile: File, val convertToProtos: Boolean = false)

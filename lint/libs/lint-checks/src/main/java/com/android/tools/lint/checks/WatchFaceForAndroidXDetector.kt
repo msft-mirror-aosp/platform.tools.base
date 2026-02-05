@@ -32,8 +32,7 @@ import org.w3c.dom.Element
 
 class WatchFaceForAndroidXDetector : Detector(), XmlScanner {
   companion object Issues {
-    const val WATCH_FACE_META_DATA_NAME =
-      "com.google.android.wearable.watchface.wearableConfigurationAction"
+    const val WATCH_FACE_META_DATA_NAME = "com.google.android.wearable.watchface.wearableConfigurationAction"
 
     const val WATCH_FACE_EDITOR_ACTION = "androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR"
 
@@ -52,8 +51,7 @@ class WatchFaceForAndroidXDetector : Detector(), XmlScanner {
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(WatchFaceForAndroidXDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(WatchFaceForAndroidXDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
       )
   }
@@ -65,16 +63,13 @@ class WatchFaceForAndroidXDetector : Detector(), XmlScanner {
       metaData.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_META_DATA_NAME &&
         metaData.getAttributeNS(ANDROID_URI, ATTR_VALUE) != WATCH_FACE_EDITOR_ACTION
     ) {
-      context.project.buildVariant
-        ?.mainArtifact
-        ?.findCompileDependency("androidx.wear.watchface:watchface") ?: return
+      context.project.buildVariant?.mainArtifact?.findCompileDependency("androidx.wear.watchface:watchface") ?: return
       val fix = fix().set().attribute("value").value(WATCH_FACE_EDITOR_ACTION).android().build()
       context.report(
         Incident(
           ISSUE,
           metaData,
-          metaData.getAttributeNodeNS(ANDROID_URI, "value")?.let { context.getValueLocation(it) }
-            ?: context.getLocation(metaData),
+          metaData.getAttributeNodeNS(ANDROID_URI, "value")?.let { context.getValueLocation(it) } ?: context.getLocation(metaData),
           "Watch face configuration action must be set to WATCH_FACE_EDITOR for an AndroidX watch face",
           fix,
         )

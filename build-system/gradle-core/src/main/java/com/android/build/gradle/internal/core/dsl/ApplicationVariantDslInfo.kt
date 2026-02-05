@@ -20,8 +20,8 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
 import org.gradle.api.provider.Provider
 
 /**
- * Represents the dsl info for an application variant, initialized from the DSL object model
- * (extension, default config, build type, flavors)
+ * Represents the dsl info for an application variant, initialized from the DSL object model (extension, default config, build type,
+ * flavors)
  *
  * This class allows querying for the values set via the DSL model.
  *
@@ -29,41 +29,36 @@ import org.gradle.api.provider.Provider
  *
  * @see [com.android.build.gradle.internal.component.ApplicationCreationConfig]
  */
-interface ApplicationVariantDslInfo:
-    VariantDslInfo,
-    ApkProducingComponentDslInfo,
-    PublishableComponentDslInfo,
-    TestedVariantDslInfo,
-    MultiVariantComponentDslInfo {
+interface ApplicationVariantDslInfo :
+  VariantDslInfo, ApkProducingComponentDslInfo, PublishableComponentDslInfo, TestedVariantDslInfo, MultiVariantComponentDslInfo {
 
-    /**
-     * Returns the version name for this variant. This could be specified by the product flavors,
-     * or, if not, it could be coming from the manifest. A suffix may be specified by the build
-     * type.
-     *
-     * @return the version name or "" if none defined
-     */
-    val versionName: Provider<String>
+  /**
+   * Returns the version name for this variant. This could be specified by the product flavors, or, if not, it could be coming from the
+   * manifest. A suffix may be specified by the build type.
+   *
+   * @return the version name or "" if none defined
+   */
+  val versionName: Provider<String>
 
-    /**
-     * Returns the version code for this variant. This could be specified by the product flavors,
-     * or, if not, it could be coming from the manifest.
-     *
-     * @return the version code or -1 if there was none defined.
-     */
-    val versionCode: Provider<Int>
+  /**
+   * Returns the version code for this variant. This could be specified by the product flavors, or, if not, it could be coming from the
+   * manifest.
+   *
+   * @return the version code or -1 if there was none defined.
+   */
+  val versionCode: Provider<Int>
 
-    val isWearAppUnbundled: Boolean?
+  val isWearAppUnbundled: Boolean?
 
-    val isProfileable: Boolean
+  val isProfileable: Boolean
 
-    val generateLocaleConfig: Boolean
+  val generateLocaleConfig: Boolean
 
-    val localeFilters: Set<String>
+  val localeFilters: Set<String>
 
-    val includeVcsInfo: Boolean?
+  val includeVcsInfo: Boolean?
 
-    override val androidResourcesDsl: AndroidResourcesDslInfo
+  override val androidResourcesDsl: AndroidResourcesDslInfo
 
-    val compileSdk: Int?
+  val compileSdk: Int?
 }

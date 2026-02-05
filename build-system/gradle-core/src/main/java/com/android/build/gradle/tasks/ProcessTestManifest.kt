@@ -46,6 +46,8 @@ import com.android.utils.ILogger
 import com.google.common.base.Charsets
 import com.google.common.base.Preconditions
 import com.google.common.io.Files
+import java.io.File
+import java.io.IOException
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
@@ -63,571 +65,488 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
-import java.io.IOException
 
 /**
  * A task that processes the manifest for test modules and tests in androidTest.
  *
- * For both test modules and tests in androidTest process is the same, except for how the tested
- * application id is extracted.
+ * For both test modules and tests in androidTest process is the same, except for how the tested application id is extracted.
  *
- * Tests in androidTest get that info from the [ComponentCreationConfig.getApplicationId] on
- * the [TestComponentCreationConfig.getTestedConfig()] object,
- * while the test modules get the info from the published intermediate manifest with type
- * [AndroidArtifacts.TYPE_METADATA] of the tested app.
+ * Tests in androidTest get that info from the [ComponentCreationConfig.getApplicationId] on the
+ * [TestComponentCreationConfig.getTestedConfig()] object, while the test modules get the info from the published intermediate manifest with
+ * type [AndroidArtifacts.TYPE_METADATA] of the tested app.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
 abstract class ProcessTestManifest : ManifestProcessorTask() {
 
-    @get:OutputDirectory
-    abstract val packagedManifestOutputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val packagedManifestOutputDirectory: DirectoryProperty
 
-    @get:Internal
-    abstract val tmpDir: DirectoryProperty
+  @get:Internal abstract val tmpDir: DirectoryProperty
 
-    private var manifests: ArtifactCollection? = null
+  private var manifests: ArtifactCollection? = null
 
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:InputFiles
-    var navigationJsons: FileCollection? = null
-        private set
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:InputFiles
+  var navigationJsons: FileCollection? = null
+    private set
 
-    // Ignore namespaced flag
-    @get:Optional
-    @get:Input
-    abstract val namespacedAndroidResources: Property<Boolean>
+  // Ignore namespaced flag
+  @get:Optional @get:Input abstract val namespacedAndroidResources: Property<Boolean>
 
-    @get:Input
-    abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
+  @get:Input abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
 
-    override fun doTaskAction() {
-        val manifestOutputFolder = packagedManifestOutputDirectory.get().asFile
-        FileUtils.mkdirs(manifestOutputFolder)
-        val manifestOutputFile = File(manifestOutputFolder, SdkConstants.ANDROID_MANIFEST_XML)
-        val navJsons = navigationJsons?.files?.filter { it.exists() } ?: setOf()
+  override fun doTaskAction() {
+    val manifestOutputFolder = packagedManifestOutputDirectory.get().asFile
+    FileUtils.mkdirs(manifestOutputFolder)
+    val manifestOutputFile = File(manifestOutputFolder, SdkConstants.ANDROID_MANIFEST_XML)
+    val navJsons = navigationJsons?.files?.filter { it.exists() } ?: setOf()
 
-        mergeManifestsForTestVariant(
-            testApplicationId.get(),
-            namespace.get(),
-            minSdkVersion.get(),
-            targetSdkVersion.orNull,
-            compileSdk.orNull,
-            testedApplicationId.get(),
-            instrumentationRunner.orNull,
-            handleProfiling.orNull,
-            functionalTest.orNull,
-            testLabel.orNull?.let { it.ifEmpty { null } },
-            if (testManifestFile.get().asFile.isFile) testManifestFile.get().asFile else null,
-            testedAppManifestFile.orNull?.asFile,
-            computeProviders(),
-            placeholdersValues.get(),
-            navJsons,
-            extractNativeLibs.orNull,
-            debuggable.get(),
-            manifestOutputFile,
-            tmpDir.get().asFile
+    mergeManifestsForTestVariant(
+      testApplicationId.get(),
+      namespace.get(),
+      minSdkVersion.get(),
+      targetSdkVersion.orNull,
+      compileSdk.orNull,
+      testedApplicationId.get(),
+      instrumentationRunner.orNull,
+      handleProfiling.orNull,
+      functionalTest.orNull,
+      testLabel.orNull?.let { it.ifEmpty { null } },
+      if (testManifestFile.get().asFile.isFile) testManifestFile.get().asFile else null,
+      manifestOverlayFilePaths.get(),
+      mainManifestFile.orNull,
+      mainManifestOverlayFilePaths.get(),
+      testedAppManifestFile.orNull?.asFile,
+      computeProviders(),
+      placeholdersValues.get(),
+      navJsons,
+      extractNativeLibs.orNull,
+      debuggable.get(),
+      manifestOutputFile,
+      tmpDir.get().asFile,
+    )
+    BuiltArtifactsImpl(
+        BuiltArtifacts.METADATA_FILE_VERSION,
+        PACKAGED_MANIFESTS,
+        testApplicationId.get(),
+        variantName,
+        listOf(BuiltArtifactImpl.make(manifestOutputFile.absolutePath)),
+      )
+      .saveToDirectory(packagedManifestOutputDirectory.get().asFile)
+  }
+
+  /**
+   * Creates the manifest for a test variant
+   *
+   * @param testApplicationId the application id of the test application
+   * @param namespace the namespace of the test application
+   * @param minSdkVersion the minSdkVersion of the test application
+   * @param targetSdkVersion the targetSdkVersion of the test application
+   * @param compileSdk the compile SDK API level of the test application
+   * @param testedApplicationId the application id of the tested application
+   * @param instrumentationRunner the name of the instrumentation runner
+   * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
+   * @param functionalTest whether or not the Instrumentation class should run as a functional test
+   * @param testLabel the label for the tests
+   * @param testManifestFile optionally user provided AndroidManifest.xml for testing application
+   * @param manifestProviders the manifest providers
+   * @param manifestPlaceholders used placeholders in the manifest
+   * @param navigationJsons the list of navigation JSON files
+   * @param extractNativeLibs the value to assign to the injected android:extractNativeLibs attribute. The attribute will not be injected if
+   *   null. Even if not null, the attribute will not be modified if it's already present in the test's source manifest.
+   * @param debuggable whether the variant is debuggable
+   * @param outManifest the output location for the merged manifest
+   * @param tmpDir temporary dir used for processing
+   */
+  private fun mergeManifestsForTestVariant(
+    testApplicationId: String,
+    namespace: String,
+    minSdkVersion: String,
+    targetSdkVersion: String?,
+    compileSdk: Int?,
+    testedApplicationId: String,
+    instrumentationRunner: String?,
+    handleProfiling: Boolean?,
+    functionalTest: Boolean?,
+    testLabel: String?,
+    testManifestFile: File?,
+    testManifestOverlays: List<File>,
+    appMainManifestFile: File?,
+    appManifestOverlays: List<File>,
+    testedAppManifestFile: File?,
+    manifestProviders: List<ManifestProvider?>,
+    manifestPlaceholders: Map<String?, Any?>,
+    navigationJsons: Collection<File>,
+    extractNativeLibs: Boolean?,
+    debuggable: Boolean,
+    outManifest: File,
+    tmpDir: File,
+  ) {
+    Preconditions.checkNotNull(testApplicationId, "testApplicationId cannot be null.")
+    Preconditions.checkNotNull(testedApplicationId, "testedApplicationId cannot be null.")
+    Preconditions.checkNotNull(manifestProviders, "manifestProviders cannot be null.")
+    Preconditions.checkNotNull(outManifest, "outManifestLocation cannot be null.")
+    val logger: ILogger = LoggerWrapper(logger)
+    // These temp files are only need in the middle of processing manifests; delete
+    // them when they're done. We're not relying on File#deleteOnExit for this
+    // since in the Gradle daemon for example that would leave the files around much
+    // longer than we want.
+    var tempFile1: File? = null
+    var tempFile2: File? = null
+    try {
+      val targetSdkVersionOrNull = targetSdkVersion?.takeIf { targetSdkVersion != "-1" }
+      FileUtils.mkdirs(tmpDir)
+      var generatedTestManifest: File = File.createTempFile("tempFile1ProcessTestManifest", ".xml", tmpDir).also { tempFile1 = it }
+      // we are generating the manifest and if there is an existing one,
+      // it will be merged with the generated one
+      logger.verbose("Generating in %1\$s", generatedTestManifest.absolutePath)
+      if (handleProfiling != null) {
+        Preconditions.checkNotNull(functionalTest, "functionalTest cannot be null.")
+        generateInstrumentedTestManifest(
+          testApplicationId,
+          minSdkVersion,
+          targetSdkVersionOrNull,
+          testedApplicationId,
+          requireNotNull(instrumentationRunner),
+          handleProfiling,
+          functionalTest!!,
+          generatedTestManifest,
         )
-        BuiltArtifactsImpl(
-            BuiltArtifacts.METADATA_FILE_VERSION,
-            PACKAGED_MANIFESTS,
-            testApplicationId.get(),
-            variantName,
-            listOf(
-                BuiltArtifactImpl.make(
-                    manifestOutputFile.absolutePath
+      } else {
+        generateUnitTestManifest(
+          testApplicationId,
+          minSdkVersion,
+          targetSdkVersionOrNull,
+          generatedTestManifest,
+          testApplicationId,
+          instrumentationRunner,
+        )
+      }
+
+      // COMBINE ALL SOURCE MANIFESTS IN CORRECT PRIORITY ORDER
+      // Priority (high to low):
+      // 1. Test Overlays
+      // 2. Test Main
+      // 3. App Overlays
+      // 4. App Main
+      val allSources = mutableListOf<File>()
+      allSources.addAll(testManifestOverlays.filter { it.isFile })
+      if (testManifestFile != null && testManifestFile.exists()) {
+        allSources.add(testManifestFile)
+      }
+      allSources.addAll(appManifestOverlays.filter { it.isFile })
+      if (appMainManifestFile != null && appMainManifestFile.exists()) {
+        allSources.add(appMainManifestFile)
+      }
+
+      // Pair of main manifest (possibly null or nonexistent) and overlays (possibly empty)
+      // ManifestMerger2 treats the FIRST in overlays as HIGHEST priority.
+      // So if allSources is [O1, O2, Base], then O1 > O2 > Base.
+      val mainManifestAndOverlays: Pair<File?, List<File>> =
+        if (allSources.isEmpty()) {
+          Pair(null, emptyList())
+        } else {
+          Pair(allSources.last(), allSources.dropLast(1))
+        }
+
+      val mainManifestFileToUse = mainManifestAndOverlays.first
+      if (mainManifestFileToUse != null || testedAppManifestFile != null) {
+        val baseFile = mainManifestFileToUse ?: generatedTestManifest
+        val intermediateInvoker =
+          ManifestMerger2.newMerger(baseFile, logger, ManifestMerger2.MergeType.APPLICATION)
+            .setPlaceHolderValues(manifestPlaceholders)
+            .addFlavorAndBuildTypeManifests(*mainManifestAndOverlays.second.toTypedArray())
+            .apply {
+              if (mainManifestFileToUse != null) {
+                addLibraryManifest(generatedTestManifest)
+              }
+              if (appMainManifestFile == null && testedAppManifestFile != null) {
+                addLibraryManifest(testedAppManifestFile)
+              }
+            }
+            .addAllowedNonUniqueNamespace(namespace)
+            .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
+            .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
+            .apply {
+              if (instrumentationRunner != null) {
+                setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
+              }
+            }
+            .setNamespace(namespace)
+            .withFeatures(
+              *listOfNotNull(
+                  ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
+                  ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
+                  ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
+                    disallowSdkVersionsInUsesSdkInManifest.get()
+                  },
+                  ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING,
                 )
+                .toTypedArray()
             )
-        ).saveToDirectory(packagedManifestOutputDirectory.get().asFile)
+
+        instrumentationRunner?.let {
+          intermediateInvoker.setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER, it)
+          intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.NAME, it)
+        }
+        functionalTest?.let { intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.FUNCTIONAL_TEST, it.toString()) }
+        handleProfiling?.let { intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.HANDLE_PROFILING, it.toString()) }
+        if (testLabel != null) {
+          intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.LABEL, testLabel)
+        }
+        targetSdkVersionOrNull?.let { intermediateInvoker.setOverride(ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, it) }
+        tempFile2 = File.createTempFile("tempFile2ProcessTestManifest", ".xml", tmpDir)
+        handleMergingResult(intermediateInvoker.merge(), tempFile2, logger)
+        generatedTestManifest = tempFile2
+      }
+      val finalInvoker =
+        ManifestMerger2.newMerger(generatedTestManifest, logger, ManifestMerger2.MergeType.APPLICATION)
+          .withFeatures(
+            *listOfNotNull(
+                // Don't check the minSdk library because this is already handled by the
+                // processMainManifest task. If we check it again here, it causes the
+                // false-positive error because the generatedTestManifest input doesn't
+                // have an overrideLibrary tag, b/436878535.
+                ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
+                ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
+                // TODO: b/457683746, remove <uses-sdk> or version related attributes from
+                // it.
+                ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
+              )
+              .toTypedArray()
+          )
+          .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
+          .addManifestProviders(manifestProviders)
+          .setPlaceHolderValues(manifestPlaceholders)
+          .addNavigationJsons(navigationJsons)
+          .setNamespace(namespace)
+      extractNativeLibs?.let {
+        // android:extractNativeLibs unrecognized if using compile SDK < 23.
+        if (compileSdk == null || compileSdk >= 23) {
+          finalInvoker.setOverride(ManifestSystemProperty.Application.EXTRACT_NATIVE_LIBS, it.toString())
+        }
+      }
+      if (debuggable) {
+        finalInvoker.withFeatures(ManifestMerger2.Invoker.Feature.DEBUGGABLE)
+      }
+      handleMergingResult(finalInvoker.merge(), outManifest, logger)
+    } catch (e: IOException) {
+      throw RuntimeException("Unable to create the temporary file", e)
+    } catch (e: MergeFailureException) {
+      throw RuntimeException("Manifest merging exception", e)
+    } finally {
+      try {
+        if (tempFile1 != null) {
+          FileUtils.delete(tempFile1!!)
+        }
+        if (tempFile2 != null) {
+          FileUtils.delete(tempFile2)
+        }
+      } catch (e: IOException) {
+        // just log this, so we do not mask the initial exception if there is any
+        logger.error(e, "Unable to clean up the temporary files.")
+      }
+    }
+  }
+
+  @Throws(IOException::class)
+  private fun handleMergingResult(mergingReport: MergingReport, outFile: File, logger: ILogger) {
+    outputMergeBlameContents(mergingReport, mergeBlameFile.get().asFile)
+    if (mergingReport.result == MergingReport.Result.ERROR) {
+      mergingReport.log(logger)
+      throw RuntimeException(mergingReport.reportString)
+    }
+    if (mergingReport.result == MergingReport.Result.WARNING) {
+      mergingReport.log(logger)
     }
 
-    /**
-     * Creates the manifest for a test variant
-     *
-     * @param testApplicationId the application id of the test application
-     * @param namespace the namespace of the test application
-     * @param minSdkVersion the minSdkVersion of the test application
-     * @param targetSdkVersion the targetSdkVersion of the test application
-     * @param compileSdk the compile SDK API level of the test application
-     * @param testedApplicationId the application id of the tested application
-     * @param instrumentationRunner the name of the instrumentation runner
-     * @param handleProfiling whether or not the Instrumentation object will turn profiling on and
-     * off
-     * @param functionalTest whether or not the Instrumentation class should run as a functional
-     * test
-     * @param testLabel the label for the tests
-     * @param testManifestFile optionally user provided AndroidManifest.xml for testing application
-     * @param manifestProviders the manifest providers
-     * @param manifestPlaceholders used placeholders in the manifest
-     * @param navigationJsons the list of navigation JSON files
-     * @param extractNativeLibs the value to assign to the injected android:extractNativeLibs
-     * attribute. The attribute will not be injected if null. Even if not null, the attribute will
-     * not be modified if it's already present in the test's source manifest.
-     * @param debuggable whether the variant is debuggable
-     * @param outManifest the output location for the merged manifest
-     * @param tmpDir temporary dir used for processing
-     */
-    private fun mergeManifestsForTestVariant(
-        testApplicationId: String,
-        namespace: String,
-        minSdkVersion: String,
-        targetSdkVersion: String?,
-        compileSdk: Int?,
-        testedApplicationId: String,
-        instrumentationRunner: String?,
-        handleProfiling: Boolean?,
-        functionalTest: Boolean?,
-        testLabel: String?,
-        testManifestFile: File?,
-        testedAppManifestFile: File?,
-        manifestProviders: List<ManifestProvider?>,
-        manifestPlaceholders: Map<String?, Any?>,
-        navigationJsons: Collection<File>,
-        extractNativeLibs: Boolean?,
-        debuggable: Boolean,
-        outManifest: File,
-        tmpDir: File
+    try {
+      val annotatedDocument = mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME)
+      logger.verbose(annotatedDocument ?: "No blaming records from manifest merger")
+    } catch (e: Exception) {
+      logger.error(e, "cannot print resulting xml")
+    }
+    val finalMergedDocument =
+      mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED) ?: throw RuntimeException("No result from manifest merger")
+    try {
+      Files.asCharSink(outFile, Charsets.UTF_8).write(finalMergedDocument)
+    } catch (e: IOException) {
+      logger.error(e, "Cannot write resulting xml")
+      throw RuntimeException(e)
+    }
+    logger.verbose("Merged manifest saved to $outFile")
+  }
+
+  @get:PathSensitive(PathSensitivity.NONE)
+  @get:InputFiles // Use InputFiles rather than InputFile to allow the file not to exist
+  abstract val testManifestFile: RegularFileProperty
+
+  @get:PathSensitive(PathSensitivity.NONE) @get:InputFile @get:Optional abstract val testedAppManifestFile: RegularFileProperty
+
+  @get:Input abstract val testApplicationId: Property<String>
+
+  @get:Input abstract val testedApplicationId: Property<String>
+
+  @get:Input abstract val namespace: Property<String>
+
+  @get:Input abstract val minSdkVersion: Property<String>
+
+  @get:Input @get:Optional abstract val targetSdkVersion: Property<String>
+
+  @get:Input @get:Optional abstract val instrumentationRunner: Property<String>
+
+  @get:Input @get:Optional abstract val handleProfiling: Property<Boolean>
+
+  @get:Input @get:Optional abstract val functionalTest: Property<Boolean>
+
+  @get:Optional @get:Input abstract val testLabel: Property<String>
+
+  @get:Input abstract val placeholdersValues: MapProperty<String, String>
+
+  @get:Optional @get:Input abstract val extractNativeLibs: Property<Boolean>
+
+  @get:Input abstract val debuggable: Property<Boolean>
+
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:InputFiles // Note: The files may not exist
+  abstract val manifestOverlayFilePaths: ListProperty<File>
+
+  @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional @get:InputFile abstract val mainManifestFile: Property<File>
+
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:InputFiles // Note: The files may not exist
+  abstract val mainManifestOverlayFilePaths: ListProperty<File>
+
+  @get:Input @get:Optional abstract val compileSdk: Property<Int>
+
+  /**
+   * Compute the final list of providers based on the manifest file collection.
+   *
+   * @return the list of providers.
+   */
+  private fun computeProviders(): List<ManifestProvider?> {
+    return manifests!!.artifacts.map { ManifestProviderImpl(it.file, getArtifactName(it)) }
+  }
+
+  @InputFiles
+  @PathSensitive(PathSensitivity.RELATIVE)
+  fun getManifests(): FileCollection {
+    return manifests!!.artifactFiles
+  }
+
+  class CreationAction(creationConfig: ProcessTestManifestCreationConfig) :
+    VariantTaskCreationAction<ProcessTestManifest, ProcessTestManifestCreationConfig>(creationConfig) {
+    override val name
+      get() = computeTaskName("process", "Manifest")
+
+    override val type
+      get() = ProcessTestManifest::class.java
+
+    override fun preConfigure(taskName: String) {
+      super.preConfigure(taskName)
+      creationConfig.artifacts.republish(PACKAGED_MANIFESTS, InternalArtifactType.MANIFEST_METADATA)
+    }
+
+    override fun handleProvider(taskProvider: TaskProvider<ProcessTestManifest>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.processManifestTask = taskProvider
+      creationConfig.artifacts.setInitialProvider(taskProvider, ProcessTestManifest::packagedManifestOutputDirectory).on(PACKAGED_MANIFESTS)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ProcessTestManifest::mergeBlameFile)
+        .withName("manifest-merger-blame-" + creationConfig.baseName + "-report.txt")
+        .on(InternalArtifactType.MANIFEST_MERGE_BLAME_FILE)
+    }
+
+    override fun configure(task: ProcessTestManifest) {
+      super.configure(task)
+
+      creationConfig.testedApkVariantArtifacts?.setTaskInputToFinalProduct(SingleArtifact.MERGED_MANIFEST, task.testedAppManifestFile)
+
+      task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
+      task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
+      task.namespace.setDisallowChanges(creationConfig.namespace)
+
+      task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
+
+      task.testManifestFile.set(creationConfig.manifestFile)
+      task.testManifestFile.disallowChanges()
+      task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.manifestOverlayFiles)
+      creationConfig.mainManifestFile?.let { task.mainManifestFile.set(it) }
+      task.mainManifestFile.disallowChanges()
+      creationConfig.mainManifestOverlayFiles?.let { task.mainManifestOverlayFilePaths.setDisallowChanges(it) }
+      task.tmpDir.setDisallowChanges(creationConfig.paths.intermediatesDir("tmp", "manifest", creationConfig.dirName))
+      task.minSdkVersion.setDisallowChanges(creationConfig.minSdk)
+      task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion)
+
+      task.handleProfiling.setDisallowChanges(creationConfig.handleProfiling)
+      task.functionalTest.setDisallowChanges(creationConfig.functionalTest)
+      task.testLabel.setDisallowChanges(creationConfig.testLabel)
+
+      task.manifests = creationConfig.manifests
+      task.placeholdersValues.setDisallowChanges(creationConfig.placeholderValues)
+      task.navigationJsons = task.project.files(creationConfig.navigationJsons)
+
+      task.extractNativeLibs.setDisallowChanges(creationConfig.useLegacyPackaging)
+      task.debuggable.setDisallowChanges(creationConfig.debuggable)
+      task.compileSdk.setDisallowChanges(creationConfig.compileSdk)
+      task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
+        creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
+      )
+    }
+  }
+
+  companion object {
+    private fun generateInstrumentedTestManifest(
+      testApplicationId: String,
+      minSdkVersion: String?,
+      targetSdkVersion: String?,
+      testedApplicationId: String,
+      instrumentationRunner: String,
+      handleProfiling: Boolean,
+      functionalTest: Boolean,
+      outManifestLocation: File,
     ) {
-        Preconditions.checkNotNull(
-            testApplicationId,
-            "testApplicationId cannot be null."
+      val generator =
+        InstrumentedTestManifestGenerator(
+          outManifestLocation,
+          testApplicationId,
+          minSdkVersion,
+          targetSdkVersion,
+          testedApplicationId,
+          instrumentationRunner,
+          handleProfiling,
+          functionalTest,
         )
-        Preconditions.checkNotNull(
-            testedApplicationId,
-            "testedApplicationId cannot be null."
-        )
-        Preconditions.checkNotNull(
-            manifestProviders,
-            "manifestProviders cannot be null."
-        )
-        Preconditions.checkNotNull(
-            outManifest,
-            "outManifestLocation cannot be null."
-        )
-        val logger: ILogger =
-            LoggerWrapper(logger)
-        // These temp files are only need in the middle of processing manifests; delete
-        // them when they're done. We're not relying on File#deleteOnExit for this
-        // since in the Gradle daemon for example that would leave the files around much
-        // longer than we want.
-        var tempFile1: File? = null
-        var tempFile2: File? = null
-        try {
-            val targetSdkVersionOrNull = targetSdkVersion?.takeIf { targetSdkVersion != "-1" }
-            FileUtils.mkdirs(tmpDir)
-            var generatedTestManifest: File =
-                File.createTempFile("tempFile1ProcessTestManifest", ".xml", tmpDir)
-                    .also { tempFile1 = it }
-            // we are generating the manifest and if there is an existing one,
-            // it will be merged with the generated one
-            logger.verbose("Generating in %1\$s", generatedTestManifest.absolutePath)
-            if (handleProfiling != null) {
-                Preconditions.checkNotNull(
-                    functionalTest,
-                    "functionalTest cannot be null."
-                )
-                generateInstrumentedTestManifest(
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersionOrNull,
-                    testedApplicationId,
-                    requireNotNull(instrumentationRunner),
-                    handleProfiling,
-                    functionalTest!!,
-                    generatedTestManifest
-                )
-            } else {
-                generateUnitTestManifest(
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersionOrNull,
-                    generatedTestManifest,
-                    testApplicationId,
-                    instrumentationRunner)
-            }
-
-            // There can be three types of input that combine into making the main manifest and
-            // its overlays :
-            // 1. the `testManifestFile` which is the main source file (possibly nonexistent)
-            // 2. the overlays coming from the build-type/product flavor specific source folders.
-            // 3. generated manifest files added through the variant API as a Variant specific source
-            // (1), (2) and (3) can all be null/empty or nonexistent in the file system.
-            // In case (1) does not exist, we still need to do the merging if (2) or (3) exists and
-            // in that case, we consider that the first overlay becomes the main Manifest (variant one),
-            // and we remove it from the list of overlays.
-            val overlays: List<File> = manifestOverlayFilePaths.get().filter(File::isFile)
-            // Pair of main manifest (possibly null or nonexistent) and overlays (possibly empty)
-            val mainManifestAndOverlays: Pair<File?, List<File>> =
-                if (testManifestFile == null || !testManifestFile.exists()) {
-                    Pair(overlays.firstOrNull(), if (overlays.isNotEmpty()) overlays.drop(1) else emptyList())
-                }  else {
-                    Pair(testManifestFile, overlays)
-                }
-
-            val mainManifestFile = mainManifestAndOverlays.first
-            if (mainManifestFile != null && mainManifestFile.exists()) {
-                val intermediateInvoker = ManifestMerger2.newMerger(
-                    mainManifestFile,
-                    logger,
-                    ManifestMerger2.MergeType.APPLICATION
-                )
-                    .setPlaceHolderValues(manifestPlaceholders)
-                    .addFlavorAndBuildTypeManifests(
-                        *mainManifestAndOverlays.second.toTypedArray())
-                    .apply {
-                        if (testedAppManifestFile != null) {
-                            addLibraryManifest(testedAppManifestFile)
-                        }
-                    }
-                    .addLibraryManifest(generatedTestManifest)
-                    .addAllowedNonUniqueNamespace(namespace)
-                    .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
-                    .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
-                    .apply {
-                        if (instrumentationRunner != null) {
-                            setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
-                        }
-                    }
-                    .setNamespace(namespace)
-                    .withFeatures(
-                        *listOfNotNull(
-                            ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
-                            ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
-                            ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
-                                disallowSdkVersionsInUsesSdkInManifest.get()
-                            },
-                            ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING,
-                        ).toTypedArray()
-                    )
-
-                instrumentationRunner?.let {
-                    intermediateInvoker.setPlaceHolderValue(
-                        PlaceholderHandler.INSTRUMENTATION_RUNNER,
-                        it)
-                    intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.NAME, it)
-                }
-                functionalTest?.let {
-                    intermediateInvoker.setOverride(
-                        ManifestSystemProperty.Instrumentation.FUNCTIONAL_TEST, it.toString()
-                    )
-                }
-                handleProfiling?.let {
-                    intermediateInvoker.setOverride(
-                        ManifestSystemProperty.Instrumentation.HANDLE_PROFILING, it.toString()
-                    )
-                }
-                if (testLabel != null) {
-                    intermediateInvoker.setOverride(ManifestSystemProperty.Instrumentation.LABEL, testLabel)
-                }
-                targetSdkVersionOrNull?.let {
-                    intermediateInvoker.setOverride(
-                        ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, it
-                    )
-                }
-                tempFile2 = File.createTempFile("tempFile2ProcessTestManifest", ".xml", tmpDir)
-                handleMergingResult(intermediateInvoker.merge(), tempFile2, logger)
-                generatedTestManifest = tempFile2
-            }
-            val finalInvoker = ManifestMerger2.newMerger(
-                generatedTestManifest,
-                logger,
-                ManifestMerger2.MergeType.APPLICATION
-            )
-                .withFeatures(
-                    *listOfNotNull(
-                        // Don't check the minSdk library because this is already handled by the
-                        // processMainManifest task. If we check it again here, it causes the
-                        // false-positive error because the generatedTestManifest input doesn't
-                        // have an overrideLibrary tag, b/436878535.
-                        ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
-
-                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
-                        // TODO: b/457683746, remove <uses-sdk> or version related attributes from it.
-                        ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING
-                    ).toTypedArray()
-                )
-                .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
-                .addManifestProviders(manifestProviders)
-                .setPlaceHolderValues(manifestPlaceholders)
-                .addNavigationJsons(navigationJsons)
-                .setNamespace(namespace)
-            extractNativeLibs?.let {
-                // android:extractNativeLibs unrecognized if using compile SDK < 23.
-                if (compileSdk == null || compileSdk >= 23) {
-                    finalInvoker.setOverride(
-                        ManifestSystemProperty.Application.EXTRACT_NATIVE_LIBS,
-                        it.toString()
-                    )
-                }
-            }
-            if (debuggable) {
-                finalInvoker.withFeatures(ManifestMerger2.Invoker.Feature.DEBUGGABLE)
-            }
-            handleMergingResult(finalInvoker.merge(), outManifest, logger)
-        } catch (e: IOException) {
-            throw RuntimeException("Unable to create the temporary file", e)
-        } catch (e: MergeFailureException) {
-            throw RuntimeException("Manifest merging exception", e)
-        } finally {
-            try {
-                if (tempFile1 != null) {
-                    FileUtils.delete(tempFile1!!)
-                }
-                if (tempFile2 != null) {
-                    FileUtils.delete(tempFile2)
-                }
-            } catch (e: IOException) {
-                // just log this, so we do not mask the initial exception if there is any
-                logger.error(e, "Unable to clean up the temporary files.")
-            }
-        }
+      try {
+        generator.generate()
+      } catch (e: IOException) {
+        throw RuntimeException(e)
+      }
     }
 
-    @Throws(IOException::class)
-    private fun handleMergingResult(
-        mergingReport: MergingReport, outFile: File, logger: ILogger
+    private fun generateUnitTestManifest(
+      testApplicationId: String,
+      minSdkVersion: String?,
+      targetSdkVersion: String?,
+      outManifestLocation: File,
+      testedApplicationId: String,
+      instrumentedRunner: String?,
     ) {
-        outputMergeBlameContents(
-            mergingReport,
-            mergeBlameFile.get().asFile
+      val generator =
+        UnitTestManifestGenerator(
+          outManifestLocation,
+          testApplicationId,
+          minSdkVersion,
+          targetSdkVersion,
+          testedApplicationId,
+          instrumentedRunner,
         )
-        if (mergingReport.result == MergingReport.Result.ERROR) {
-            mergingReport.log(logger)
-            throw RuntimeException(mergingReport.reportString)
-        }
-        if (mergingReport.result == MergingReport.Result.WARNING) {
-            mergingReport.log(logger)
-        }
-
-        try {
-            val annotatedDocument =
-                mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME)
-            logger.verbose(annotatedDocument
-                ?: "No blaming records from manifest merger")
-        } catch (e: Exception) {
-            logger.error(e, "cannot print resulting xml")
-        }
-        val finalMergedDocument =
-            mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED)
-                ?: throw RuntimeException("No result from manifest merger")
-        try {
-            Files.asCharSink(outFile, Charsets.UTF_8).write(finalMergedDocument)
-        } catch (e: IOException) {
-            logger.error(e, "Cannot write resulting xml")
-            throw RuntimeException(e)
-        }
-        logger.verbose("Merged manifest saved to $outFile")
+      try {
+        generator.generate()
+      } catch (e: IOException) {
+        throw RuntimeException(e)
+      }
     }
-
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:InputFiles // Use InputFiles rather than InputFile to allow the file not to exist
-    abstract val testManifestFile: RegularFileProperty
-
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:InputFile
-    @get:Optional
-    abstract val testedAppManifestFile: RegularFileProperty
-
-    @get:Input
-    abstract val testApplicationId: Property<String>
-
-    @get:Input
-    abstract val testedApplicationId: Property<String>
-
-    @get:Input
-    abstract val namespace: Property<String>
-
-    @get:Input
-    abstract val minSdkVersion: Property<String>
-
-    @get:Input
-    @get:Optional
-    abstract val targetSdkVersion: Property<String>
-
-    @get:Input
-    @get:Optional
-    abstract val instrumentationRunner: Property<String>
-
-    @get:Input
-    @get:Optional
-    abstract val handleProfiling: Property<Boolean>
-
-    @get:Input
-    @get:Optional
-    abstract val functionalTest: Property<Boolean>
-
-    @get:Optional
-    @get:Input
-    abstract val testLabel: Property<String>
-
-    @get:Input
-    abstract val placeholdersValues: MapProperty<String, String>
-
-    @get:Optional
-    @get:Input
-    abstract val extractNativeLibs: Property<Boolean>
-
-    @get:Input
-    abstract val debuggable: Property<Boolean>
-
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:InputFiles // Note: The files may not exist
-    abstract val manifestOverlayFilePaths: ListProperty<File>
-
-    @get:Input
-    @get:Optional
-    abstract val compileSdk: Property<Int>
-
-    /**
-     * Compute the final list of providers based on the manifest file collection.
-     * @return the list of providers.
-     */
-    private fun computeProviders(): List<ManifestProvider?> {
-        return manifests!!.artifacts.map { ManifestProviderImpl(it.file, getArtifactName(it)) }
-    }
-
-    @InputFiles
-    @PathSensitive(PathSensitivity.RELATIVE)
-    fun getManifests(): FileCollection {
-        return manifests!!.artifactFiles
-    }
-
-    class CreationAction(
-        creationConfig: ProcessTestManifestCreationConfig
-    ) : VariantTaskCreationAction<ProcessTestManifest, ProcessTestManifestCreationConfig>(creationConfig) {
-        override val name
-            get() = computeTaskName("process", "Manifest")
-        override val type
-            get() = ProcessTestManifest::class.java
-        override fun preConfigure(taskName: String) {
-            super.preConfigure(taskName)
-            creationConfig
-                .artifacts
-                .republish(
-                    PACKAGED_MANIFESTS,
-                    InternalArtifactType.MANIFEST_METADATA
-                )
-        }
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ProcessTestManifest>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.processManifestTask = taskProvider
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessTestManifest::packagedManifestOutputDirectory
-            ).on(PACKAGED_MANIFESTS)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessTestManifest::mergeBlameFile
-            ).withName("manifest-merger-blame-" + creationConfig.baseName + "-report.txt")
-                .on(InternalArtifactType.MANIFEST_MERGE_BLAME_FILE)
-        }
-
-        override fun configure(
-            task: ProcessTestManifest
-        ) {
-            super.configure(task)
-
-            creationConfig
-                .testedApkVariantArtifacts
-                ?.setTaskInputToFinalProduct(
-                    SingleArtifact.MERGED_MANIFEST,
-                    task.testedAppManifestFile
-                )
-
-            task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
-            task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
-            task.namespace.setDisallowChanges(creationConfig.namespace)
-
-            task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
-
-            task.testManifestFile.set(creationConfig.manifestFile)
-            task.testManifestFile.disallowChanges()
-            task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.manifestOverlayFiles)
-            task.tmpDir.setDisallowChanges(
-                creationConfig.paths.intermediatesDir(
-                    "tmp",
-                    "manifest",
-                    creationConfig.dirName
-                )
-            )
-            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk)
-            task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion)
-
-            task.handleProfiling.setDisallowChanges(creationConfig.handleProfiling)
-            task.functionalTest.setDisallowChanges(creationConfig.functionalTest)
-            task.testLabel.setDisallowChanges(creationConfig.testLabel)
-
-            task.manifests = creationConfig.manifests
-            task.placeholdersValues.setDisallowChanges(creationConfig.placeholderValues)
-            task.navigationJsons = task.project.files(
-                creationConfig.navigationJsons
-            )
-
-            task.extractNativeLibs.setDisallowChanges(creationConfig.useLegacyPackaging)
-            task.debuggable.setDisallowChanges(creationConfig.debuggable)
-            task.compileSdk.setDisallowChanges(creationConfig.compileSdk)
-            task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
-                creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
-            )
-        }
-    }
-
-    companion object {
-        private fun generateInstrumentedTestManifest(
-            testApplicationId: String,
-            minSdkVersion: String?,
-            targetSdkVersion: String?,
-            testedApplicationId: String,
-            instrumentationRunner: String,
-            handleProfiling: Boolean,
-            functionalTest: Boolean,
-            outManifestLocation: File
-        ) {
-            val generator =
-                InstrumentedTestManifestGenerator(
-                    outManifestLocation,
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersion,
-                    testedApplicationId,
-                    instrumentationRunner,
-                    handleProfiling,
-                    functionalTest
-                )
-            try {
-                generator.generate()
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
-        }
-
-        private fun generateUnitTestManifest(
-            testApplicationId: String,
-            minSdkVersion: String?,
-            targetSdkVersion: String?,
-            outManifestLocation: File,
-            testedApplicationId: String,
-            instrumentedRunner: String?,
-        ) {
-            val generator =
-                UnitTestManifestGenerator(
-                    outManifestLocation,
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersion,
-                    testedApplicationId,
-                    instrumentedRunner,
-                )
-            try {
-                generator.generate()
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
-        }
-    }
+  }
 }

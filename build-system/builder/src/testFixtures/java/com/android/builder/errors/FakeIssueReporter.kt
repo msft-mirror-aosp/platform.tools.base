@@ -16,31 +16,25 @@
 
 package com.android.builder.errors
 
-/**
- * Implementation of [IssueReporter] that simply records the errors and warnings.
- */
-class FakeIssueReporter(
-    private val throwOnError : Boolean = false
-) : IssueReporter() {
+/** Implementation of [IssueReporter] that simply records the errors and warnings. */
+class FakeIssueReporter(private val throwOnError: Boolean = false) : IssueReporter() {
 
-    val messages = mutableListOf<String>()
-    val errors = mutableListOf<String>()
-    val warnings = mutableListOf<String>()
-    private val issueTypes = mutableSetOf<Type>()
+  val messages = mutableListOf<String>()
+  val errors = mutableListOf<String>()
+  val warnings = mutableListOf<String>()
+  private val issueTypes = mutableSetOf<Type>()
 
-    override fun reportIssue(type: Type,
-            severity: Severity,
-            exception: EvalIssueException) {
-        issueTypes.add(type)
-        messages.add(exception.message)
-        when(severity) {
-            Severity.ERROR -> errors.add(exception.message)
-            Severity.WARNING -> warnings.add(exception.message)
-        }
-        if (severity == Severity.ERROR && throwOnError) {
-            throw exception
-        }
+  override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
+    issueTypes.add(type)
+    messages.add(exception.message)
+    when (severity) {
+      Severity.ERROR -> errors.add(exception.message)
+      Severity.WARNING -> warnings.add(exception.message)
     }
+    if (severity == Severity.ERROR && throwOnError) {
+      throw exception
+    }
+  }
 
-    override fun hasIssue(type: Type): Boolean = issueTypes.contains(type)
+  override fun hasIssue(type: Type): Boolean = issueTypes.contains(type)
 }

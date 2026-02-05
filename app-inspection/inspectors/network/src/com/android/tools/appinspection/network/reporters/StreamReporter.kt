@@ -26,8 +26,8 @@ import java.nio.charset.Charset
 import studio.network.inspection.NetworkInspectorProtocol
 
 /**
- * A class that reports on [java.io.InputStream] and [java.io.OutputStream]. It records the payload
- * that is sent/received in a temporary buffer before reporting it to Studio.
+ * A class that reports on [java.io.InputStream] and [java.io.OutputStream]. It records the payload that is sent/received in a temporary
+ * buffer before reporting it to Studio.
  */
 internal abstract class StreamReporter
 @VisibleForTesting
@@ -86,9 +86,7 @@ constructor(
     }
   }
 
-  protected fun sendHttpConnectionEvent(
-    builder: NetworkInspectorProtocol.HttpConnectionEvent.Builder
-  ) {
+  protected fun sendHttpConnectionEvent(builder: NetworkInspectorProtocol.HttpConnectionEvent.Builder) {
     connection.sendHttpConnectionEvent(builder.setConnectionId(connectionId))
   }
 
@@ -109,21 +107,15 @@ constructor(
     override fun onClosed(data: ByteString) {
       sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setResponsePayload(
-            NetworkInspectorProtocol.HttpConnectionEvent.Payload.newBuilder().setPayload(data)
-          )
+          .setResponsePayload(NetworkInspectorProtocol.HttpConnectionEvent.Payload.newBuilder().setPayload(data))
       )
       sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setHttpResponseCompleted(
-            NetworkInspectorProtocol.HttpConnectionEvent.ResponseCompleted.getDefaultInstance()
-          )
+          .setHttpResponseCompleted(NetworkInspectorProtocol.HttpConnectionEvent.ResponseCompleted.getDefaultInstance())
       )
       sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setHttpClosed(
-            NetworkInspectorProtocol.HttpConnectionEvent.Closed.newBuilder().setCompleted(true)
-          )
+          .setHttpClosed(NetworkInspectorProtocol.HttpConnectionEvent.Closed.newBuilder().setCompleted(true))
       )
     }
   }
@@ -139,32 +131,24 @@ constructor(
     override fun onClosed(data: ByteString) {
       sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setRequestPayload(
-            NetworkInspectorProtocol.HttpConnectionEvent.Payload.newBuilder().setPayload(data)
-          )
+          .setRequestPayload(NetworkInspectorProtocol.HttpConnectionEvent.Payload.newBuilder().setPayload(data))
       )
       sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setHttpRequestCompleted(
-            NetworkInspectorProtocol.HttpConnectionEvent.RequestCompleted.getDefaultInstance()
-          )
+          .setHttpRequestCompleted(NetworkInspectorProtocol.HttpConnectionEvent.RequestCompleted.getDefaultInstance())
       )
     }
   }
 
   private class BufferHelperImpl : BufferHelper {
 
-    override fun write(buffer: Output, bytes: ByteArray, offset: Int, len: Int) =
-      buffer.write(bytes, offset, len)
+    override fun write(buffer: Output, bytes: ByteArray, offset: Int, len: Int) = buffer.write(bytes, offset, len)
 
     override fun toByteString(buffer: Output): ByteString = buffer.toByteString()
   }
 
   companion object {
-    /**
-     * The initial capacity of the buffer that stores payload data. It is automatically expanded
-     * when capacity is reached.
-     */
+    /** The initial capacity of the buffer that stores payload data. It is automatically expanded when capacity is reached. */
     private const val INITIAL_BUFFER_SIZE = 1024
 
     const val MAX_BUFFER_SIZE = 10 * 1024 * 1024

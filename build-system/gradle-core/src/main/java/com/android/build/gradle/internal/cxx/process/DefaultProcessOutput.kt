@@ -21,22 +21,24 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 
 /**
- * This class is needed by the gradle process executor. It provides stdout and stderr OutputStreams
- * that the will be used to capture output from a spawned process.
+ * This class is needed by the gradle process executor. It provides stdout and stderr OutputStreams that the will be used to capture output
+ * from a spawned process.
  */
 class DefaultProcessOutput(
-    val stderr : FileOutputStream,
-    val stdout : FileOutputStream,
-    private val outputStream : OutputStream,
-    private val errorStream : OutputStream) : ProcessOutput {
+  val stderr: FileOutputStream,
+  val stdout: FileOutputStream,
+  private val outputStream: OutputStream,
+  private val errorStream: OutputStream,
+) : ProcessOutput {
 
-    override fun getStandardOutput() = outputStream
-    override fun getErrorOutput() = errorStream
+  override fun getStandardOutput() = outputStream
 
-    override fun close() {
-        outputStream.flush()
-        errorStream.flush()
-        outputStream.close()
-        errorStream.close()
-    }
+  override fun getErrorOutput() = errorStream
+
+  override fun close() {
+    outputStream.flush()
+    errorStream.flush()
+    outputStream.close()
+    errorStream.close()
+  }
 }

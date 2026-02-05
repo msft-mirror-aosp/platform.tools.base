@@ -40,8 +40,7 @@ import org.jetbrains.uast.UMethod
 /** Flags misleading nullability annotations. */
 class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(KotlinNullnessAnnotationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(KotlinNullnessAnnotationDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Incorrect nullability annotation */
     @JvmField
@@ -102,15 +101,11 @@ class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
     // What is the nullness implied by the Kotlin type? This will return "Nullable" if it's
     // nullable (as in `Any?`) and NotNull if it's not (as in `Any`).
     val actualTypeAnnotation = findKotlinTypeAnnotation(annotated, annotationInfo) ?: return
-    val annotationName =
-      annotationInfo.qualifiedName.substringAfterLast('.', annotationInfo.qualifiedName)
+    val annotationName = annotationInfo.qualifiedName.substringAfterLast('.', annotationInfo.qualifiedName)
     val declaredNullable = annotationName.endsWith("Nullable")
     val isNullable = actualTypeAnnotation == "Nullable"
     val annotationContradictsKotlinType = declaredNullable != isNullable
-    if (
-      !annotationContradictsKotlinType &&
-        annotationInfo.qualifiedName.startsWith("javax.annotation")
-    ) {
+    if (!annotationContradictsKotlinType && annotationInfo.qualifiedName.startsWith("javax.annotation")) {
       // Don't flag redundant annotations in javax since they have runtime retention and
       // theoretically could
       // be placed there for some sort of introspection
@@ -149,8 +144,7 @@ class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
 
     val location = context.getLocation(element)
     val fixLocation = locationWithNextSpace(location, context, element)
-    val fix =
-      fix().replace().name("Delete `@$annotationName`").all().with("").range(fixLocation).build()
+    val fix = fix().replace().name("Delete `@$annotationName`").all().with("").range(fixLocation).build()
 
     val incident =
       Incident(ISSUE, element, location, message, fix).apply {
@@ -177,10 +171,7 @@ class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
     return typeReference?.text?.trim()
   }
 
-  private fun findKotlinTypeAnnotation(
-    annotated: UAnnotated,
-    annotationInfo: AnnotationInfo,
-  ): String? {
+  private fun findKotlinTypeAnnotation(annotated: UAnnotated, annotationInfo: AnnotationInfo): String? {
     //noinspection ExternalAnnotations
     val directAnnotations = annotated.uAnnotations
 
@@ -194,18 +185,14 @@ class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
       directAnnotations
         .filter { it !== annotationInfo.annotation }
         .mapNotNull { it.qualifiedName }
-        .firstOrNull { qualifiedName ->
-          qualifiedName == IDEA_NOTNULL || qualifiedName == IDEA_NULLABLE
-        }
+        .firstOrNull { qualifiedName -> qualifiedName == IDEA_NOTNULL || qualifiedName == IDEA_NULLABLE }
         ?: run {
           if (annotated is UMethod) { // specifically, KotlinUMethod
             // Workaround: KotlinUMethod seems to omit nullness annotations!
             @Suppress("UElementAsPsi", "ExternalAnnotations")
             annotated.annotations
               .mapNotNull { it.qualifiedName }
-              .firstOrNull { qualifiedName ->
-                qualifiedName == IDEA_NOTNULL || qualifiedName == IDEA_NULLABLE
-              }
+              .firstOrNull { qualifiedName -> qualifiedName == IDEA_NOTNULL || qualifiedName == IDEA_NULLABLE }
           } else {
             null
           }
@@ -214,15 +201,10 @@ class KotlinNullnessAnnotationDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a location, returns a location which also consumes the next character if it's whitespace
-   * (but not a newline character). This is used such that if we delete the annotation in "@Nullable
-   * type"", we end up with "type", not " type".
+   * Given a location, returns a location which also consumes the next character if it's whitespace (but not a newline character). This is
+   * used such that if we delete the annotation in "@Nullable type"", we end up with "type", not " type".
    */
-  private fun locationWithNextSpace(
-    location: Location,
-    context: JavaContext,
-    element: UElement,
-  ): Location {
+  private fun locationWithNextSpace(location: Location, context: JavaContext, element: UElement): Location {
     var fixLocation = location
 
     // Include whitespace next to annotation

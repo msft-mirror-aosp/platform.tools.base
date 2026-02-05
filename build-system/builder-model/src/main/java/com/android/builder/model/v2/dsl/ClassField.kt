@@ -22,10 +22,10 @@ import com.android.builder.model.v2.AndroidModel
  *
  * @since 4.2
  */
-interface ClassField: AndroidModel {
-    val type: String
-    val name: String
-    val value: String
-    val documentation: String
-    val annotations: Set<String>
+interface ClassField : AndroidModel {
+  val type: String
+  val name: String
+  val value: String
+  val documentation: String
+  val annotations: Set<String>
 }

@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("Skins")
+
 package com.android.sdklib.internal.avd
 
 import com.android.sdklib.devices.Device
@@ -25,17 +26,14 @@ sealed class Skin {
   abstract val name: String
 }
 
-/**
- * A skin that consists only of screen dimensions. (Sometimes referred to as a "magic" skin within
- * the emulator.)
- */
+/** A skin that consists only of screen dimensions. (Sometimes referred to as a "magic" skin within the emulator.) */
 data class GenericSkin(val x: Int, val y: Int) : Skin() {
   override val name = "${x}x${y}"
 }
 
 /**
- * A skin described by a set of files within the directory specified by [path]. Should contain a
- * "layout" file and image files referenced by the layout.
+ * A skin described by a set of files within the directory specified by [path]. Should contain a "layout" file and image files referenced by
+ * the layout.
  *
  * If the path is relative, it is interpreted relative to the SDK directory.
  */
@@ -63,7 +61,4 @@ fun skinFromConfig(config: Map<String, String>): Skin? {
   return null
 }
 
-fun Device.defaultGenericSkin(): Skin? =
-    getScreenSize(defaultState.orientation)?.let {
-        GenericSkin(it.width, it.height)
-    }
+fun Device.defaultGenericSkin(): Skin? = getScreenSize(defaultState.orientation)?.let { GenericSkin(it.width, it.height) }

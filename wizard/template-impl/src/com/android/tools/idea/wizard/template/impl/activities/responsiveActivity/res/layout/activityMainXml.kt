@@ -15,9 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.responsiveActivity.res.layout
 
-fun activityMainXml(
-  appBarMainName: String
-) = """
+fun activityMainXml(appBarMainName: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 Wrap the DrawerLayout with FrameLayout to use the same View type for the same view ID

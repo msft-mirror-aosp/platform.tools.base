@@ -23,10 +23,9 @@ import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 
 /**
- * Lint checks meant for analyzing the Android platform sources itself. These checks shouldn't be
- * part of the default Android lint distribution, but they're included here to make them easily
- * available from a number of different contexts (AOSP platform builds, google3, ASfP IDE) without
- * having to have separate jar artifacts.
+ * Lint checks meant for analyzing the Android platform sources itself. These checks shouldn't be part of the default Android lint
+ * distribution, but they're included here to make them easily available from a number of different contexts (AOSP platform builds, google3,
+ * ASfP IDE) without having to have separate jar artifacts.
  */
 class AospIssueRegistry : IssueRegistry() {
   override val issues: List<Issue> = listOf(FlaggedApiDetector.ISSUE, BlockingDetector.ISSUE)

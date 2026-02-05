@@ -19,32 +19,26 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.ClosedChannelException
 
 /**
- * A [AdbOutputChannel] that requires calling [AutoShutdown.shutdown] to prevent data loss,
- * typically to allow flushing any pending writes to the underlying resource. Specifically,
- * calling [close] on an [AdbBufferedOutputChannel] does **not** guarantee buffered data
- * is written to the underlying resource.
+ * A [AdbOutputChannel] that requires calling [AutoShutdown.shutdown] to prevent data loss, typically to allow flushing any pending writes
+ * to the underlying resource. Specifically, calling [close] on an [AdbBufferedOutputChannel] does **not** guarantee buffered data is
+ * written to the underlying resource.
  */
 interface AdbBufferedOutputChannel : AdbOutputChannel, AutoShutdown {
 
-    /**
-     * Writes all currently buffered data to the underlying resource
-     *
-     * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
-     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
-     * suspended__
-     * * Throws [java.io.IOException] if an I/O occurs writing to the underlying resource
-     */
-    suspend fun flush()
+  /**
+   * Writes all currently buffered data to the underlying resource
+   * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
+   * * Throws [AsynchronousCloseException] if [close] is called __while this function is suspended__
+   * * Throws [java.io.IOException] if an I/O occurs writing to the underlying resource
+   */
+  suspend fun flush()
 
-    /**
-     * Writes all currently buffered data to the underlying resource (like [flush]), but also
-     * indicate that no more [write] calls are allowed, i.e. subsequent calls to [write], [flush]
-     * or [shutdown] will throw [java.nio.channels.ClosedChannelException].
-     *
-     * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
-     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
-     * suspended__
-     * * Throws [java.io.IOException] if an I/O occurs writing to the underlying resource
-     */
-    override suspend fun shutdown()
+  /**
+   * Writes all currently buffered data to the underlying resource (like [flush]), but also indicate that no more [write] calls are allowed,
+   * i.e. subsequent calls to [write], [flush] or [shutdown] will throw [java.nio.channels.ClosedChannelException].
+   * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
+   * * Throws [AsynchronousCloseException] if [close] is called __while this function is suspended__
+   * * Throws [java.io.IOException] if an I/O occurs writing to the underlying resource
+   */
+  override suspend fun shutdown()
 }

@@ -19,41 +19,34 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.DependencySelection
 import com.android.build.api.dsl.ProductFlavorDimensionSpec
 import com.android.build.gradle.internal.services.DslServices
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
-import javax.inject.Inject
 
-abstract class DependencySelectionImpl@Inject constructor(
-    internal val dslServices: DslServices,
-    internal val objectFactory: ObjectFactory
-): DependencySelection {
+abstract class DependencySelectionImpl
+@Inject
+constructor(internal val dslServices: DslServices, internal val objectFactory: ObjectFactory) : DependencySelection {
 
-    val productFlavorsMap: MapProperty<String, List<String>> = objectFactory.mapProperty(
-        String::class.java,
-        List::class.java as Class<List<String>>
-    )
+  val productFlavorsMap: MapProperty<String, List<String>> =
+    objectFactory.mapProperty(String::class.java, List::class.java as Class<List<String>>)
 
-    override val selectBuildTypeFrom: ListProperty<String> = objectFactory.listProperty(String::class.java).also {
-        it.value(listOf("release"))
-        it.finalizeValueOnRead()
+  override val selectBuildTypeFrom: ListProperty<String> =
+    objectFactory.listProperty(String::class.java).also {
+      it.value(listOf("release"))
+      it.finalizeValueOnRead()
     }
 
-    override fun productFlavorDimension(
-        dimension: String,
-        action: Action<ProductFlavorDimensionSpec>
-    ) {
-        val spec =  ProductFlavorDimensionSpecImpl(objectFactory)
-        action.execute(spec)
-        productFlavorsMap.put(dimension, spec.selectFrom)
-    }
+  override fun productFlavorDimension(dimension: String, action: Action<ProductFlavorDimensionSpec>) {
+    val spec = ProductFlavorDimensionSpecImpl(objectFactory)
+    action.execute(spec)
+    productFlavorsMap.put(dimension, spec.selectFrom)
+  }
 
-    fun getDimensions(): Map<String, List<String>> = productFlavorsMap.get().toMap()
+  fun getDimensions(): Map<String, List<String>> = productFlavorsMap.get().toMap()
 }
 
-class ProductFlavorDimensionSpecImpl(
-    objectFactory: ObjectFactory
-) : ProductFlavorDimensionSpec {
-    override val selectFrom: ListProperty<String> = objectFactory.listProperty(String::class.java)
+class ProductFlavorDimensionSpecImpl(objectFactory: ObjectFactory) : ProductFlavorDimensionSpec {
+  override val selectFrom: ListProperty<String> = objectFactory.listProperty(String::class.java)
 }

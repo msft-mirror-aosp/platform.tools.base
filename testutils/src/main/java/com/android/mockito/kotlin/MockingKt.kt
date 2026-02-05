@@ -29,11 +29,9 @@ import org.mockito.stubbing.OngoingStubbing
  * Mocks static method invocations within **the current thread only**.
  */
 inline fun <reified T> mockStatic(mockSettings: MockSettings = withSettings()): MockedStatic<T> =
-    Mockito.mockStatic(T::class.java, mockSettings)
+  Mockito.mockStatic(T::class.java, mockSettings)
 
-/**
- * Convenience wrapper around [InvocationOnMock.getArgument] that allows the type to be inferred.
- */
+/** Convenience wrapper around [InvocationOnMock.getArgument] that allows the type to be inferred. */
 inline fun <reified T> InvocationOnMock.getTypedArgument(i: Int): T = getArgument(i, T::class.java)
 
 /**
@@ -41,6 +39,4 @@ inline fun <reified T> InvocationOnMock.getTypedArgument(i: Int): T = getArgumen
  *
  * @See MockedStatic.when
  */
-fun <T> MockedStatic<*>.whenever(verification: Verification): OngoingStubbing<T> =
-    `when`(verification)
-
+fun <T> MockedStatic<*>.whenever(verification: Verification): OngoingStubbing<T> = `when`(verification)

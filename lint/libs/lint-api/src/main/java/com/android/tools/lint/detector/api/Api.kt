@@ -19,9 +19,8 @@ package com.android.tools.lint.detector.api
 import com.android.tools.lint.client.api.IssueRegistry
 
 /**
- * The current API version for Lint's API. Custom checks should return this value from
- * [IssueRegistry.api]. Note that this is a constant, so the compiler should inline the value, not
- * read the current value from the hosting lint environment when the custom lint checks are loaded
+ * The current API version for Lint's API. Custom checks should return this value from [IssueRegistry.api]. Note that this is a constant, so
+ * the compiler should inline the value, not read the current value from the hosting lint environment when the custom lint checks are loaded
  * into lint.
  */
 const val CURRENT_API = 16

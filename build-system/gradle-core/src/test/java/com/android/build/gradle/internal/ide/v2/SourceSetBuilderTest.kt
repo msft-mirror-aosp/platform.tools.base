@@ -18,12 +18,7 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.AndroidProjectTypes
 import com.android.build.api.component.impl.TestFixturesImpl
-import com.android.build.api.dsl.ApplicationBuildFeatures
-import com.android.build.api.dsl.ApplicationBuildType
-import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.ApplicationInstallation
-import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -65,296 +60,256 @@ import org.mockito.kotlin.whenever
 
 class SourceSetBuilderTest {
 
-    private val project: Project = ProjectFactory.project
-    private val projectServices: ProjectServices = createProjectServices(
-        issueReporter = SyncIssueReporterImpl(
-            SyncOptions.EvaluationMode.IDE,
-            SyncOptions.ErrorFormatMode.HUMAN_READABLE,
-            FakeLogger(),
-            FakeAndroidProblemsReporter()
+  private val project: Project = ProjectFactory.project
+  private val projectServices: ProjectServices =
+    createProjectServices(
+      issueReporter =
+        SyncIssueReporterImpl(
+          SyncOptions.EvaluationMode.IDE,
+          SyncOptions.ErrorFormatMode.HUMAN_READABLE,
+          FakeLogger(),
+          FakeAndroidProblemsReporter(),
         )
     )
-    private val testComponentList: MutableList<TestComponentCreationConfig> = mutableListOf()
-    private val variantsList: MutableList<VariantCreationConfig> = mutableListOf()
+  private val testComponentList: MutableList<TestComponentCreationConfig> = mutableListOf()
+  private val variantsList: MutableList<VariantCreationConfig> = mutableListOf()
 
-    private val dslServices = createDslServices(
-        projectServices = projectServices,
-        sdkComponents = FakeGradleProvider(mock<SdkComponentsBuildService>())
+  private val dslServices =
+    createDslServices(projectServices = projectServices, sdkComponents = FakeGradleProvider(mock<SdkComponentsBuildService>()))
+
+  @Before
+  fun setUp() {
+    testComponentList.clear()
+    variantsList.clear()
+  }
+
+  @Test
+  fun testDefaultContainerBuilderInternalData() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
+    val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
+
+    Truth.assertThat(defaultContainerBuilder.defaultSourceSet).isEqualTo(variantModel.inputs.defaultConfigData.sourceSet)
+    Truth.assertThat(defaultContainerBuilder.variantData).isEqualTo(variantModel.inputs.defaultConfigData)
+  }
+
+  @Test
+  fun testBuildTypeContainerBuilderInternalData() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
+    val debug = variantModel.inputs.buildTypes.getValue("debug")
+    Truth.assertThat(debug).isNotNull()
+    val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
+
+    Truth.assertThat(buildTypeContainerBuilder.defaultSourceSet).isEqualTo(debug.sourceSet)
+    Truth.assertThat(buildTypeContainerBuilder.variantData).isEqualTo(debug)
+  }
+
+  @Test
+  fun testFlavorContainerBuilderInternalData() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
+
+    val flavor = variantModel.inputs.productFlavors.getValue("flavor")
+    Truth.assertThat(flavor).isNotNull()
+    val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
+
+    Truth.assertThat(flavorContainerBuilder.defaultSourceSet).isEqualTo(flavor.sourceSet)
+    Truth.assertThat(flavorContainerBuilder.variantData).isEqualTo(flavor)
+  }
+
+  @Test
+  fun testShouldTakeOnDefault() {
+    val buildType = "debug"
+    testComponentList.addAll(
+      listOf(createAndroidTestComponent(buildType), createUnitTestComponent(buildType), createScreenshotTestComponent(buildType))
     )
+    variantsList.add(createFixturesVariant(buildType))
 
-    @Before
-    fun setUp() {
-        testComponentList.clear()
-        variantsList.clear()
-    }
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
+    val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
 
-    @Test
-    fun testDefaultContainerBuilderInternalData() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
-        val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
+  }
 
-        Truth.assertThat(defaultContainerBuilder.defaultSourceSet).isEqualTo(variantModel.inputs.defaultConfigData.sourceSet)
-        Truth.assertThat(defaultContainerBuilder.variantData).isEqualTo(variantModel.inputs.defaultConfigData)
-    }
+  @Test
+  fun testShouldTakeOnDefaultNegative() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
+    val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
 
-    @Test
-    fun testBuildTypeContainerBuilderInternalData() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
-        val debug = variantModel.inputs.buildTypes.getValue("debug")
-        Truth.assertThat(debug).isNotNull()
-        val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
+    Truth.assertThat(defaultContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
+    Truth.assertThat(defaultContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
+  }
 
-        Truth.assertThat(buildTypeContainerBuilder.defaultSourceSet).isEqualTo(debug.sourceSet)
-        Truth.assertThat(buildTypeContainerBuilder.variantData).isEqualTo(debug)
-    }
+  @Test
+  fun testShouldTakeOnBuildType() {
+    val buildType = "debug"
+    testComponentList.addAll(
+      listOf(createAndroidTestComponent(buildType), createUnitTestComponent(buildType), createScreenshotTestComponent(buildType))
+    )
+    variantsList.add(createFixturesVariant(buildType))
 
-    @Test
-    fun testFlavorContainerBuilderInternalData() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
 
-        val flavor = variantModel.inputs.productFlavors.getValue("flavor")
-        Truth.assertThat(flavor).isNotNull()
-        val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
+    val debug = variantModel.inputs.buildTypes.getValue("debug")
+    Truth.assertThat(debug).isNotNull()
+    val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
+  }
 
-        Truth.assertThat(flavorContainerBuilder.defaultSourceSet).isEqualTo(flavor.sourceSet)
-        Truth.assertThat(flavorContainerBuilder.variantData).isEqualTo(flavor)
-    }
+  @Test
+  fun testShouldTakeOnBuildTypeNegative() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
 
-    @Test
-    fun testShouldTakeOnDefault() {
-        val buildType = "debug"
-        testComponentList.addAll(
-            listOf(
-                createAndroidTestComponent(buildType),
-                createUnitTestComponent(buildType),
-                createScreenshotTestComponent(buildType)
-            )
-        )
-        variantsList.add(createFixturesVariant(buildType))
+    val debug = variantModel.inputs.buildTypes.getValue("debug")
+    Truth.assertThat(debug).isNotNull()
+    val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
+    Truth.assertThat(buildTypeContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
+  }
 
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
-        val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
+  @Test
+  fun testShouldTakeOnFlavors() {
+    val buildType = "debug"
+    val flavors = listOf("one" to "flavor")
+    testComponentList.addAll(
+      listOf(
+        createAndroidTestComponent(buildType, flavors),
+        createUnitTestComponent(buildType, flavors),
+        createScreenshotTestComponent(buildType, flavors),
+      )
+    )
+    variantsList.add(createFixturesVariant(buildType, flavors))
 
-        Truth.assertThat(defaultContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
-    }
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
 
-    @Test
-    fun testShouldTakeOnDefaultNegative() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
-        val defaultContainerBuilder = builder.DefaultSourceSetContainerBuilder()
+    val flavor = variantModel.inputs.productFlavors.getValue("flavor")
+    Truth.assertThat(flavor).isNotNull()
+    val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
+    Truth.assertThat(flavorContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
+  }
 
-        Truth.assertThat(defaultContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
-        Truth.assertThat(defaultContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
-    }
+  @Test
+  fun testShouldTakeOnFlavorsNegative() {
+    val variantModel = createVariantModel()
+    val builder = createApplicationModelBuilder(variantModel)
 
-    @Test
-    fun testShouldTakeOnBuildType() {
-        val buildType = "debug"
-        testComponentList.addAll(
-            listOf(
-                createAndroidTestComponent(buildType),
-                createUnitTestComponent(buildType),
-                createScreenshotTestComponent(buildType)
-            )
-        )
-        variantsList.add(createFixturesVariant(buildType))
+    val flavor = variantModel.inputs.productFlavors.getValue("flavor")
+    Truth.assertThat(flavor).isNotNull()
+    val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
+    Truth.assertThat(flavorContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
+    Truth.assertThat(flavorContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
+  }
 
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
+  private fun createAndroidTestComponent(buildType: String, flavors: List<Pair<String, String>> = listOf()): DeviceTestCreationConfig {
+    val testComponentConfig = mock<DeviceTestCreationConfig>()
+    whenever(testComponentConfig.buildType).thenReturn(buildType)
+    whenever(testComponentConfig.productFlavors).thenReturn(flavors)
+    return testComponentConfig
+  }
 
-        val debug = variantModel.inputs.buildTypes.getValue("debug")
-        Truth.assertThat(debug).isNotNull()
-        val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
-    }
+  private fun createUnitTestComponent(buildType: String, flavors: List<Pair<String, String>> = listOf()): TestComponentCreationConfig {
+    val testComponentConfig = mock<TestComponentCreationConfig>()
+    whenever(testComponentConfig.componentType).thenReturn(ComponentTypeImpl.UNIT_TEST)
+    whenever(testComponentConfig.buildType).thenReturn(buildType)
+    whenever(testComponentConfig.productFlavors).thenReturn(flavors)
+    return testComponentConfig
+  }
 
-    @Test
-    fun testShouldTakeOnBuildTypeNegative() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
+  private fun createScreenshotTestComponent(
+    buildType: String,
+    flavors: List<Pair<String, String>> = listOf(),
+  ): TestComponentCreationConfig {
+    val testComponentConfig = mock<TestComponentCreationConfig>()
+    whenever(testComponentConfig.componentType).thenReturn(ComponentTypeImpl.SCREENSHOT_TEST)
+    whenever(testComponentConfig.buildType).thenReturn(buildType)
+    whenever(testComponentConfig.productFlavors).thenReturn(flavors)
+    return testComponentConfig
+  }
 
-        val debug = variantModel.inputs.buildTypes.getValue("debug")
-        Truth.assertThat(debug).isNotNull()
-        val buildTypeContainerBuilder = builder.BuildTypeSourceSetBuilder(debug)
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
-        Truth.assertThat(buildTypeContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
-    }
+  private fun createFixturesVariant(buildType: String, flavors: List<Pair<String, String>> = listOf()): VariantCreationConfig {
+    val variant = mock<ApplicationVariantImpl>()
+    val testFixtures = mock<TestFixturesImpl>()
+    whenever(variant.testFixtures).thenReturn(testFixtures)
+    whenever(testFixtures.buildType).thenReturn(buildType)
+    whenever(testFixtures.productFlavors).thenReturn(flavors)
+    return variant
+  }
 
-    @Test
-    fun testShouldTakeOnFlavors() {
-        val buildType = "debug"
-        val flavors = listOf("one" to "flavor")
-        testComponentList.addAll(
-            listOf(
-                createAndroidTestComponent(buildType, flavors),
-                createUnitTestComponent(buildType, flavors),
-                createScreenshotTestComponent(buildType, flavors)
-            )
-        )
-        variantsList.add(createFixturesVariant(buildType, flavors))
+  private fun createApplicationModelBuilder(variantModel: VariantModel): ModelBuilder<ApplicationExtension> {
+    // for now create an app extension
 
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
+    AndroidLocationsBuildService.RegistrationAction(project).execute()
 
-        val flavor = variantModel.inputs.productFlavors.getValue("flavor")
-        Truth.assertThat(flavor).isNotNull()
-        val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
-        Truth.assertThat(flavorContainerBuilder.shouldTakeAndroidTestSourceSet()).isTrue()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeUnitSourceSet()).isTrue()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeFixtureSourceSet()).isTrue()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeScreenshotSourceSet()).isTrue()
-    }
+    val variantInputModel =
+      LegacyVariantInputManager(
+        dslServices,
+        ComponentTypeImpl.BASE_APK,
+        SourceSetManager(ProjectFactory.project, false, dslServices, DelayedActionsExecutor()),
+      )
 
-    @Test
-    fun testShouldTakeOnFlavorsNegative() {
-        val variantModel = createVariantModel()
-        val builder =
-            createApplicationModelBuilder(variantModel)
+    val extension = dslServices.newDecoratedInstance(ApplicationExtensionImpl::class.java, dslServices, variantInputModel)
 
-        val flavor = variantModel.inputs.productFlavors.getValue("flavor")
-        Truth.assertThat(flavor).isNotNull()
-        val flavorContainerBuilder = builder.FlavorSourceSetContainerBuilder(flavor)
-        Truth.assertThat(flavorContainerBuilder.shouldTakeAndroidTestSourceSet()).isFalse()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeUnitSourceSet()).isFalse()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeFixtureSourceSet()).isFalse()
-        Truth.assertThat(flavorContainerBuilder.shouldTakeScreenshotSourceSet()).isFalse()
-    }
+    val androidProblemReporterProvider = AndroidProblemReporterProvider.RegistrationAction(project, false).execute()
 
-    private fun createAndroidTestComponent(
-        buildType: String,
-        flavors: List<Pair<String, String>> = listOf()
-    ): DeviceTestCreationConfig {
-        val testComponentConfig = mock<DeviceTestCreationConfig>()
-        whenever(testComponentConfig.buildType).thenReturn(buildType)
-        whenever(testComponentConfig.productFlavors).thenReturn(flavors)
-        return testComponentConfig
-    }
+    // make sure the global issue reporter is registered
+    SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
+        project,
+        SyncOptions.EvaluationMode.IDE,
+        SyncOptions.ErrorFormatMode.MACHINE_PARSABLE,
+        androidProblemReporterProvider,
+      )
+      .execute()
 
-    private fun createUnitTestComponent(
-        buildType: String,
-        flavors: List<Pair<String, String>> = listOf()
-    ): TestComponentCreationConfig {
-        val testComponentConfig = mock<TestComponentCreationConfig>()
-        whenever(testComponentConfig.componentType).thenReturn(ComponentTypeImpl.UNIT_TEST)
-        whenever(testComponentConfig.buildType).thenReturn(buildType)
-        whenever(testComponentConfig.productFlavors).thenReturn(flavors)
-        return testComponentConfig
-    }
+    return ModelBuilder(project, variantModel, extension)
+  }
 
-    private fun createScreenshotTestComponent(
-        buildType: String,
-        flavors: List<Pair<String, String>> = listOf()
-    ): TestComponentCreationConfig {
-        val testComponentConfig = mock<TestComponentCreationConfig>()
-        whenever(testComponentConfig.componentType).thenReturn(ComponentTypeImpl.SCREENSHOT_TEST)
-        whenever(testComponentConfig.buildType).thenReturn(buildType)
-        whenever(testComponentConfig.productFlavors).thenReturn(flavors)
-        return testComponentConfig
-    }
+  private fun createVariantModel(): VariantModel {
+    val globalConfig = mock<GlobalTaskCreationConfigImpl>()
+    whenever(globalConfig.services).thenReturn(dslServices)
+    val projectServices = mock<ProjectServices>()
+    val projectOptions = mock<ProjectOptions>()
+    val pluginManager = mock<PluginManager>()
 
-    private fun createFixturesVariant(
-        buildType: String,
-        flavors: List<Pair<String, String>> = listOf()
-    ): VariantCreationConfig {
-        val variant = mock<ApplicationVariantImpl>()
-        val testFixtures = mock<TestFixturesImpl>()
-        whenever(variant.testFixtures).thenReturn(testFixtures)
-        whenever(testFixtures.buildType).thenReturn(buildType)
-        whenever(testFixtures.productFlavors).thenReturn(flavors)
-        return variant
-    }
+    whenever(projectServices.plugins).thenReturn(pluginManager)
+    whenever(projectServices.projectOptions).thenReturn(projectOptions)
+    whenever(pluginManager.hasPlugin(any())).thenReturn(false)
+    whenever(projectOptions.get(any<BooleanOption>())).thenReturn(false)
 
-    private fun createApplicationModelBuilder(variantModel: VariantModel): ModelBuilder<ApplicationExtension> {
-        // for now create an app extension
+    val inputBuilder = VariantInputModelBuilder(ComponentTypeImpl.BASE_APK, dslServices)
+    inputBuilder.buildTypes { create("debug") }
+    inputBuilder.productFlavors { create("flavor") { dimension = "one" } }
 
-        AndroidLocationsBuildService.RegistrationAction(project).execute()
-
-        val variantInputModel = LegacyVariantInputManager(
-            dslServices,
-            ComponentTypeImpl.BASE_APK,
-            SourceSetManager(
-                ProjectFactory.project,
-                false,
-                dslServices,
-                DelayedActionsExecutor()
-            )
-        )
-
-        val extension = dslServices.newDecoratedInstance(
-            ApplicationExtensionImpl::class.java,
-            dslServices,
-            variantInputModel
-        )
-
-        val androidProblemReporterProvider = AndroidProblemReporterProvider.RegistrationAction(project, false).execute()
-
-        // make sure the global issue reporter is registered
-        SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
-            project, SyncOptions.EvaluationMode.IDE, SyncOptions.ErrorFormatMode.MACHINE_PARSABLE,
-            androidProblemReporterProvider
-        ).execute()
-
-        return ModelBuilder(project, variantModel, extension)
-    }
-
-    private fun createVariantModel() : VariantModel {
-        val globalConfig = mock<GlobalTaskCreationConfigImpl>()
-        whenever(globalConfig.services).thenReturn(dslServices)
-        val projectServices = mock<ProjectServices>()
-        val projectOptions = mock<ProjectOptions>()
-        val pluginManager = mock<PluginManager>()
-
-        whenever(projectServices.plugins).thenReturn(pluginManager)
-        whenever(projectServices.projectOptions).thenReturn(projectOptions)
-        whenever(pluginManager.hasPlugin(any())).thenReturn(false)
-        whenever(projectOptions.get(any<BooleanOption>())).thenReturn(false)
-
-        val inputBuilder = VariantInputModelBuilder(ComponentTypeImpl.BASE_APK, dslServices)
-        inputBuilder.buildTypes { create("debug") }
-        inputBuilder.productFlavors {
-            create("flavor") {
-                dimension = "one"
-            }
-        }
-
-        return VariantModelImpl(
-            inputBuilder.toModel(),
-            { "debug" },
-            { variantsList },
-            { testComponentList },
-            { listOf() },
-            {
-                BuildFeatureValuesImpl(
-                    dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java),
-                    projectServices
-                )
-            },
-            AndroidProjectTypes.PROJECT_TYPE_APP,
-            ProjectType.APPLICATION,
-            globalConfig
-        )
-    }
+    return VariantModelImpl(
+      inputBuilder.toModel(),
+      { "debug" },
+      { variantsList },
+      { testComponentList },
+      { listOf() },
+      { BuildFeatureValuesImpl(dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java), projectServices) },
+      AndroidProjectTypes.PROJECT_TYPE_APP,
+      ProjectType.APPLICATION,
+      globalConfig,
+    )
+  }
 }

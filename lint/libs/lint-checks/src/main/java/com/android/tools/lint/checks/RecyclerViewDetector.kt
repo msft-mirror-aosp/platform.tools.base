@@ -113,16 +113,11 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
       variablePrefix = "ViewHolder"
     }
     val message =
-      "Do not treat position as fixed; only use immediately " +
-        "and call `$variablePrefix.getAdapterPosition()` to look it up later"
+      "Do not treat position as fixed; only use immediately " + "and call `$variablePrefix.getAdapterPosition()` to look it up later"
     context.report(FIXED_POSITION, parameter, context.getLocation(parameter), message)
   }
 
-  private fun checkDataBinders(
-    context: JavaContext,
-    declaration: UMethod,
-    references: List<UCallExpression>?,
-  ) {
+  private fun checkDataBinders(context: JavaContext, declaration: UMethod, references: List<UCallExpression>?) {
     if (references != null && references.isNotEmpty()) {
       val targets = Lists.newArrayList<UCallExpression>()
       val sources = Lists.newArrayList<UCallExpression>()
@@ -190,11 +185,10 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Determines whether a given variable "escapes" either to a field or to a nested runnable. (We
-   * deliberately ignore variables that escape via method calls.)
+   * Determines whether a given variable "escapes" either to a field or to a nested runnable. (We deliberately ignore variables that escape
+   * via method calls.)
    */
-  private class ParameterEscapesVisitor(private val bindClass: PsiClass, variable: PsiParameter) :
-    AbstractUastVisitor() {
+  private class ParameterEscapesVisitor(private val bindClass: PsiClass, variable: PsiParameter) : AbstractUastVisitor() {
     private val variables: MutableList<PsiVariable>
     private var escapes: Boolean = false
     private var foundInnerClass: Boolean = false
@@ -302,8 +296,7 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(RecyclerViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(RecyclerViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val FIXED_POSITION =

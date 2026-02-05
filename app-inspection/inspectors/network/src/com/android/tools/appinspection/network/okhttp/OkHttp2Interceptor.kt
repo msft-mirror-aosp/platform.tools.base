@@ -32,10 +32,8 @@ import okio.sink
 import okio.source
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport.OKHTTP2
 
-class OkHttp2Interceptor(
-  private val trackerFactory: HttpTrackerFactory,
-  private val interceptionRuleService: InterceptionRuleService,
-) : Interceptor {
+class OkHttp2Interceptor(private val trackerFactory: HttpTrackerFactory, private val interceptionRuleService: InterceptionRuleService) :
+  Interceptor {
 
   override fun intercept(chain: Interceptor.Chain): Response {
     val request = chain.request()
@@ -78,11 +76,7 @@ class OkHttp2Interceptor(
     return tracker
   }
 
-  private fun trackResponse(
-    tracker: HttpConnectionTracker,
-    request: Request,
-    response: Response,
-  ): Response {
+  private fun trackResponse(tracker: HttpConnectionTracker, request: Request, response: Response): Response {
     val fields = mutableMapOf<String?, List<String>>()
     fields.putAll(response.headers().toMultimap())
     fields[FIELD_RESPONSE_STATUS_CODE] = listOf(response.code().toString())
@@ -93,13 +87,9 @@ class OkHttp2Interceptor(
         NetworkResponse(response.code(), fields, response.body().source().inputStream()),
       )
 
-    tracker.trackResponseHeaders(
-      interceptedResponse.responseCode,
-      interceptedResponse.responseHeaders,
-    )
+    tracker.trackResponseHeaders(interceptedResponse.responseCode, interceptedResponse.responseHeaders)
     val source = tracker.trackResponseBody(interceptedResponse.body).source().buffer()
-    val body =
-      ResponseBody.create(response.body().contentType(), response.body().contentLength(), source)
+    val body = ResponseBody.create(response.body().contentType(), response.body().contentLength(), source)
     if (interceptedResponse.responseHeaders.containsKey(null)) {
       throw Exception("OkHttp2 does not allow null in headers")
     }

@@ -16,11 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.googleMapsFragment.res.layout
 
-
-fun fragmentMapXml(
-  fragmentClass: String,
-  packageName: String
-) = """
+fun fragmentMapXml(fragmentClass: String, packageName: String) =
+  """
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"

@@ -19,74 +19,64 @@ package com.android.tools.render.compose
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.readPreviewRenderingResultJson
+import java.nio.file.Paths
+import javax.imageio.ImageIO
 import org.junit.Assert.assertNull
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Ignore
 import org.junit.rules.RuleChain
 import org.junit.rules.TemporaryFolder
-import javax.imageio.ImageIO
-import java.nio.file.Paths
 
 class ScreenshotRenderTest {
 
-    private val tmpFolder = TemporaryFolder()
-    private val gradleProject = GradleProjectRule(
-        tmpFolder,
-        "tools/base/standalone-render/compose-cli/testData/compose-application",
-        "tools/external/gradle/gradle-8.2-bin.zip"
+  private val tmpFolder = TemporaryFolder()
+  private val gradleProject =
+    GradleProjectRule(
+      tmpFolder,
+      "tools/base/standalone-render/compose-cli/testData/compose-application",
+      "tools/external/gradle/gradle-8.2-bin.zip",
     )
 
-    @JvmField
-    @Rule
-    val chain: RuleChain = RuleChain.outerRule(tmpFolder).around(gradleProject)
+  @JvmField @Rule val chain: RuleChain = RuleChain.outerRule(tmpFolder).around(gradleProject)
 
-    @Ignore("b/440394932")
-    @Test
-    fun testCororutinePreview() {
-        val screenshots = listOf(
-            ComposeScreenshot(
-                "com.example.composeapplication.PreviewsKt.PreviewCoroutines",
-                emptyList(),
-                emptyMap(),
-                "com.example.composeapplication.PreviewsKt.PreviewCoroutines_screenshot"
-            )
+  @Ignore("b/440394932")
+  @Test
+  fun testCororutinePreview() {
+    val screenshots =
+      listOf(
+        ComposeScreenshot(
+          "com.example.composeapplication.PreviewsKt.PreviewCoroutines",
+          emptyList(),
+          emptyMap(),
+          "com.example.composeapplication.PreviewsKt.PreviewCoroutines_screenshot",
         )
-        commonTest(
-            screenshots,
-            "small"
-        )
+      )
+    commonTest(screenshots, "small")
+  }
+
+  private fun commonTest(screenshots: List<ComposeScreenshot>, goldenName: String) {
+    val outputFolder = tmpFolder.newFolder()
+    val metaDatafolder = tmpFolder.newFolder()
+    val resultsFile = tmpFolder.newFile("results.json")
+    val jsonSettings = gradleProject.createSettingsFile(outputFolder, resultsFile, metaDatafolder, screenshots)
+
+    runComposeCliRender(jsonSettings)
+    val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
+    assertNull(result.globalError)
+    result.screenshotResults.forEach { assertNull(it.error) }
+    screenshots.forEach { screenshot ->
+      val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
+      val relativeImagePath = (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
+      val imageFile = Paths.get(outputFolder.absolutePath, relativeImagePath).toFile()
+      val img = ImageIO.read(imageFile)
+      ImageDiffUtil.assertImageSimilar(
+        TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),
+        img,
+      )
     }
 
-    private fun commonTest(
-        screenshots: List<ComposeScreenshot>,
-        goldenName: String,
-    ) {
-        val outputFolder = tmpFolder.newFolder()
-        val metaDatafolder = tmpFolder.newFolder()
-        val resultsFile = tmpFolder.newFile("results.json")
-        val jsonSettings =
-            gradleProject.createSettingsFile(outputFolder, resultsFile, metaDatafolder, screenshots)
-
-        runComposeCliRender(jsonSettings)
-        val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
-        assertNull(result.globalError)
-        result.screenshotResults.forEach {
-            assertNull(it.error)
-        }
-        screenshots.forEach { screenshot ->
-            val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
-            val relativeImagePath =
-                (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
-            val imageFile = Paths.get(outputFolder.absolutePath, relativeImagePath).toFile()
-            val img = ImageIO.read(imageFile)
-            ImageDiffUtil.assertImageSimilar(
-                TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),
-                img
-            )
-        }
-
-        // Stop the daemon otherwise it could keep the lock on the temporary folder
-        gradleProject.executeGradleTask("--stop")
-    }
+    // Stop the daemon otherwise it could keep the lock on the temporary folder
+    gradleProject.executeGradleTask("--stop")
+  }
 }

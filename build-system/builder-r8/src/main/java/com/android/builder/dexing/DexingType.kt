@@ -18,24 +18,21 @@ package com.android.builder.dexing
 
 /**
  * The type of dex we produce. It can be:
+ * - [MONO_DEX]: multidex disabled (only one final dex file is produced)
+ * - [LEGACY_MULTIDEX]: multidex enabled and minSdkVersion < 21
+ * - [NATIVE_MULTIDEX]: multidex enabled and minSdkVersion >= 21
  *
- *  - [MONO_DEX]: multidex disabled (only one final dex file is produced)
- *  - [LEGACY_MULTIDEX]: multidex enabled and minSdkVersion < 21
- *  - [NATIVE_MULTIDEX]: multidex enabled and minSdkVersion >= 21
- *
- * Note that we can also run native multidex for a dynamic feature module regardless of
- * minSdkVersion because the base module will take care of packaging the dex files from
- * dynamic feature modules correctly if minSdkVersion < 21.
+ * Note that we can also run native multidex for a dynamic feature module regardless of minSdkVersion because the base module will take care
+ * of packaging the dex files from dynamic feature modules correctly if minSdkVersion < 21.
  */
 enum class DexingType {
-    MONO_DEX,
-    LEGACY_MULTIDEX,
-    NATIVE_MULTIDEX;
+  MONO_DEX,
+  LEGACY_MULTIDEX,
+  NATIVE_MULTIDEX;
 
-    val isMultiDex: Boolean
-        get() = (this == LEGACY_MULTIDEX || this == NATIVE_MULTIDEX)
+  val isMultiDex: Boolean
+    get() = (this == LEGACY_MULTIDEX || this == NATIVE_MULTIDEX)
 
-    val isLegacyMultiDex: Boolean
-        get() = (this == LEGACY_MULTIDEX)
-
+  val isLegacyMultiDex: Boolean
+    get() = (this == LEGACY_MULTIDEX)
 }

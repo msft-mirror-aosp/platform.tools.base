@@ -53,10 +53,7 @@ internal class CompiledSourceFile(
     to(if (isComponent(into)) componentToJar(into) else into)
   }
 
-  /**
-   * Returns the list of files to be packaged/created (the bytecode and based on the [type],
-   * optionally sources)
-   */
+  /** Returns the list of files to be packaged/created (the bytecode and based on the [type], optionally sources) */
   fun getPackagedFiles(): List<TestFile> {
     val files = ArrayList(getBytecodeFiles())
     if (type == BytecodeTestFile.Type.RESOURCE) {
@@ -89,10 +86,7 @@ internal class CompiledSourceFile(
     }
   }
 
-  /**
-   * Returns true if this compiled file is not complete (e.g. test author is running test without
-   * knowing the binary contents yet)
-   */
+  /** Returns true if this compiled file is not complete (e.g. test author is running test without knowing the binary contents yet) */
   fun isMissingClasses(): Boolean {
     if (type == BytecodeTestFile.Type.RESOURCE) {
       return false
@@ -113,10 +107,9 @@ internal class CompiledSourceFile(
   }
 
   /**
-   * If the file does not already provide a list of encoded files (e.g. test is being written or
-   * updated), go and compute it, fail the test and emit the right source to drop into the test. The
-   * test infrastructure will invoke this once the rest of the project has been constructed for all
-   * the compiled source files that are missing class definitions.
+   * If the file does not already provide a list of encoded files (e.g. test is being written or updated), go and compute it, fail the test
+   * and emit the right source to drop into the test. The test infrastructure will invoke this once the rest of the project has been
+   * constructed for all the compiled source files that are missing class definitions.
    *
    * Returns true if the file had to be compiled.
    */
@@ -211,17 +204,14 @@ internal class CompiledSourceFile(
     val sdkHome =
       System.getenv("ANDROID_SDK_ROOT")
         ?: System.getenv("ANDROID_HOME")
-        ?: error(
-          "Couldn't find an Android SDK environment to compile with; " + "set \$ANDROID_SDK_ROOT"
-        )
+        ?: error("Couldn't find an Android SDK environment to compile with; " + "set \$ANDROID_SDK_ROOT")
     if (!File(sdkHome).isDirectory) {
       fail("$sdkHome is not a directory")
     }
 
     val platforms =
-      File(sdkHome, "platforms").listFiles { _: File, name: String ->
-        name.startsWith("android-") && name.indexOf('.') == -1
-      } ?: error("Couldn't find platforms")
+      File(sdkHome, "platforms").listFiles { _: File, name: String -> name.startsWith("android-") && name.indexOf('.') == -1 }
+        ?: error("Couldn't find platforms")
     Arrays.sort(platforms) { o1: File, o2: File ->
       val n1 = o1.name
       val n2 = o2.name
@@ -253,10 +243,7 @@ internal class CompiledSourceFile(
     val kotlinc =
       System.getenv("LINT_TEST_KOTLINC")
         ?: findOnPath("kotlinc" + if (isWindows) ".bat" else "")
-        ?: error(
-          "Couldn't find kotlinc to update test file $target " +
-            "with. Point to it with \$LINT_TEST_KOTLINC"
-        )
+        ?: error("Couldn't find kotlinc to update test file $target " + "with. Point to it with \$LINT_TEST_KOTLINC")
 
     if (!File(kotlinc).isFile) {
       fail("$kotlinc is not a file")
@@ -271,10 +258,7 @@ internal class CompiledSourceFile(
             if (javaHome != null) {
               "$javaHome/bin/javac"
             } else {
-              error(
-                "Couldn't find javac to update test file $target " +
-                  "with. Point to it with \$LINT_TEST_JAVAC"
-              )
+              error("Couldn't find javac to update test file $target " + "with. Point to it with \$LINT_TEST_JAVAC")
             }
           }
           .let {
@@ -303,9 +287,7 @@ internal class CompiledSourceFile(
     // Create the test file declaration, e.g. bytecode("target", ...
     val declaration = StringBuilder()
     declaration.indent(indent)
-    declaration.append(
-      if (type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE) "compiled" else "bytecode"
-    )
+    declaration.append(if (type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE) "compiled" else "bytecode")
     declaration.append("(\n")
     indent++
     declaration.indent(indent)
@@ -368,9 +350,7 @@ internal class CompiledSourceFile(
 
       val path = binaryFile.path.substring(classesDir.path.length + 1)
       java.indent(indent).append("\"").append(path).append(":\" +\n")
-      java.append(
-        toBase64gzipJava(bytes, indent * 4, indentStart = true, includeEmptyPrefix = false)
-      )
+      java.append(toBase64gzipJava(bytes, indent * 4, indentStart = true, includeEmptyPrefix = false))
 
       indent--
       kotlin.indent(indent).append("\"\"\"\n")
@@ -386,8 +366,8 @@ internal class CompiledSourceFile(
   }
 
   /**
-   * Returns true if the given [file] with the given [bytes] content looks like it was compiled from
-   * the source file pointed to by relative path [target].
+   * Returns true if the given [file] with the given [bytes] content looks like it was compiled from the source file pointed to by relative
+   * path [target].
    */
   private fun isClassForSource(file: File, bytes: ByteArray, target: String): Boolean {
     if (file.path.endsWith(DOT_CLASS)) {
@@ -416,9 +396,7 @@ internal class CompiledSourceFile(
 
   private var bytecodeFiles: List<TestFile>? = null
 
-  /**
-   * Returns the list of binary test class files currently included in this compiled source file.
-   */
+  /** Returns the list of binary test class files currently included in this compiled source file. */
   override fun getBytecodeFiles(): List<TestFile> {
     return bytecodeFiles ?: createBytecodeFiles().also { bytecodeFiles = it }
   }
@@ -428,10 +406,7 @@ internal class CompiledSourceFile(
     for (originalEncoded in encodedFiles) {
       val encoded = originalEncoded.trimIndent()
       val index = encoded.indexOf(':')
-      assertTrue(
-        "Expected encoded binary file to start with a colon " + "separated filename",
-        index != -1,
-      )
+      assertTrue("Expected encoded binary file to start with a colon " + "separated filename", index != -1)
       val path = encoded.substring(0, index).replace('＄', '$').trim()
       val bytes = encoded.substring(index + 1).trim()
       val producer = TestFiles.getByteProducerForBase64gzip(bytes)
@@ -444,10 +419,7 @@ internal class CompiledSourceFile(
       val actualChecksum =
         computeCheckSum(
           source.contents,
-          classFiles
-            .sortedBy { it.targetRelativePath }
-            .map { (it as BinaryTestFile).binaryContents }
-            .toList(),
+          classFiles.sortedBy { it.targetRelativePath }.map { (it as BinaryTestFile).binaryContents }.toList(),
         )
       // We only create integer checksums to keep the fingerprints short
       if (checksum.toInt() != actualChecksum) {
@@ -467,10 +439,7 @@ internal class CompiledSourceFile(
   }
 
   companion object {
-    /**
-     * Creates all the source and class files for the given (in [compiled]) list of compiled source
-     * files, into [targetDir].
-     */
+    /** Creates all the source and class files for the given (in [compiled]) list of compiled source files, into [targetDir]. */
     @Throws(IOException::class)
     fun createFiles(targetDir: File, compiled: List<CompiledSourceFile>) {
       val paths = HashSet<String>()
@@ -496,8 +465,7 @@ internal class CompiledSourceFile(
       val targetMap: MutableMap<String, MutableList<CompiledSourceFile>> = HashMap()
       for (testFile in compiled) {
         val list =
-          targetMap[testFile.targetRelativePath]
-            ?: ArrayList<CompiledSourceFile>().also { targetMap[testFile.targetRelativePath] = it }
+          targetMap[testFile.targetRelativePath] ?: ArrayList<CompiledSourceFile>().also { targetMap[testFile.targetRelativePath] = it }
         list.add(testFile)
       }
       for ((target, files) in targetMap) {

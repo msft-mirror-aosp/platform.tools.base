@@ -21,53 +21,49 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Base variant-aware non-incremental task
- */
+/** Base variant-aware non-incremental task */
 @DisableCachingByDefault
 abstract class NonIncrementalTask : AndroidVariantTask() {
 
-    @Throws(Exception::class)
-    protected abstract fun doTaskAction()
+  @Throws(Exception::class) protected abstract fun doTaskAction()
 
-    @TaskAction
-    fun taskAction() {
-        recordTaskAction {
-            cleanUpTaskOutputs()
-            doTaskAction()
-        }
+  @TaskAction
+  fun taskAction() {
+    recordTaskAction {
+      cleanUpTaskOutputs()
+      doTaskAction()
     }
+  }
 }
 
 /** [AndroidGlobalTask] that is non-incremental. */
 @DisableCachingByDefault
 abstract class NonIncrementalGlobalTask : AndroidGlobalTask() {
 
-    protected abstract fun doTaskAction()
+  protected abstract fun doTaskAction()
 
-    @TaskAction
-    fun taskAction() {
-        recordTaskAction {
-            cleanUpTaskOutputs()
-            doTaskAction()
-        }
+  @TaskAction
+  fun taskAction() {
+    recordTaskAction {
+      cleanUpTaskOutputs()
+      doTaskAction()
     }
+  }
 }
 
 /**
- * Used to ensure task outputs are deleted before a task is run
- * non-incrementally.
+ * Used to ensure task outputs are deleted before a task is run non-incrementally.
  *
- * To avoid issues such as http://issuetracker.google.com/150274427#comment17
- * where the current workaround is for users to delete build directories manually after AGP updates,
+ * To avoid issues such as http://issuetracker.google.com/150274427#comment17 where the current workaround is for users to delete build
+ * directories manually after AGP updates,
  */
 fun Task.cleanUpTaskOutputs() {
-    for (file in outputs.files) {
-        if (file.isDirectory) {
-            // Only clear output directory contents, keep the directory.
-            FileUtils.deleteDirectoryContents(file)
-        } else {
-            FileUtils.deletePath(file)
-        }
+  for (file in outputs.files) {
+    if (file.isDirectory) {
+      // Only clear output directory contents, keep the directory.
+      FileUtils.deleteDirectoryContents(file)
+    } else {
+      FileUtils.deletePath(file)
     }
+  }
 }

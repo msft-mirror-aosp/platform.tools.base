@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.scrollActivity.res.values
 
-
 fun stringsXml() =
   """<resources>
 <string name="large_text">

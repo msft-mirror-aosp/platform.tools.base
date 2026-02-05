@@ -23,82 +23,70 @@ import org.junit.Test
 
 class MessageRewrite2Test {
 
-    @get:Rule
-    val rule = GradleRule.from {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.use"
+          defaultConfig.applicationId = "com.example.api.use"
+        }
+        files {
+          add(
+            "src/main/res/values/strings.xml",
+            // language=xml
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="app_name">###</string>
+                <string name="text">default text</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+  @Test
+  fun testProjectIsOk() {
+    rule.build.executor.run("assembleDebug")
+  }
+
+  @Test
+  fun testErrorInStrings() {
+    val build =
+      rule.build {
         androidApplication {
-            android {
-                namespace = "com.example.api.use"
-                defaultConfig.applicationId = "com.example.api.use"
-            }
-            files {
-                add(
-                    "src/main/res/values/strings.xml",
-                    //language=xml
-                    """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <resources>
-                            <string name="app_name">###</string>
-                            <string name="text">default text</string>
-                        </resources>
-                    """.trimIndent()
-                )
-            }
+          files.update("src/main/res/values/strings.xml").searchAndReplace("default text", "don't <> work", lenient = true)
         }
+      }
+    build.executor.expectFailure().run("assembleDebug").apply {
+      assertErrorContains(FileUtils.join("src", "main", "res", "values", "strings.xml"))
     }
+  }
 
-
-    @Test
-    fun testProjectIsOk() {
-        rule.build.executor.run("assembleDebug")
+  @Test
+  fun testErrorInStringsForCompile() {
+    // Incorrect strings.xml should cause AAPT to throw an error and we should rewrite it to
+    // point to the original file.
+    val build =
+      rule.build {
+        androidApplication { files.update("src/main/res/values/strings.xml").searchAndReplace("default text", "<%s %d>", lenient = true) }
+      }
+    build.executor.expectFailure().run("assembleDebug").apply {
+      assertErrorContains(FileUtils.join("src", "main", "res", "values", "strings.xml"))
     }
+  }
 
-    @Test
-    fun testErrorInStrings() {
-        val build = rule.build {
-            androidApplication {
-                files.update("src/main/res/values/strings.xml")
-                .searchAndReplace("default text", "don't <> work", lenient = true)
-            }
-        }
-        build.executor.expectFailure().run("assembleDebug").apply {
-            assertErrorContains(
-                FileUtils.join(
-                    "src", "main", "res", "values", "strings.xml"
-                )
-            )
-        }
-    }
-
-    @Test
-    fun testErrorInStringsForCompile() {
-        // Incorrect strings.xml should cause AAPT to throw an error and we should rewrite it to
-        // point to the original file.
-        val build = rule.build {
-            androidApplication {
-                files.update("src/main/res/values/strings.xml")
-                    .searchAndReplace("default text", "<%s %d>", lenient = true)
-            }
-        }
-        build.executor.expectFailure().run("assembleDebug").apply {
-            assertErrorContains(
-                FileUtils.join(
-                    "src", "main", "res", "values", "strings.xml"
-                )
-            )
-        }
-    }
-
-    @Test
-    fun testAllowMultipleSubstitution() {
-        // AAPT1 and AAPT2 (with the legacy flag) should allow multiple substitutions specified in a
-        // non=positional format - an error should not be thrown.
-        val build = rule.build {
-            androidApplication {
-                files.update("src/main/res/values/strings.xml")
-                    .searchAndReplace("default text", "%s %d", lenient = true)
-            }
-        }
-        build.executor.run("assembleDebug")
-    }
-
+  @Test
+  fun testAllowMultipleSubstitution() {
+    // AAPT1 and AAPT2 (with the legacy flag) should allow multiple substitutions specified in a
+    // non=positional format - an error should not be thrown.
+    val build =
+      rule.build {
+        androidApplication { files.update("src/main/res/values/strings.xml").searchAndReplace("default text", "%s %d", lenient = true) }
+      }
+    build.executor.run("assembleDebug")
+  }
 }

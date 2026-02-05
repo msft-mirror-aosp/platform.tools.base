@@ -22,13 +22,11 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
 /** [AndroidModuleInfo] wrapping a single [AndroidVersion]. */
-internal class StandaloneModuleInfo(
-    override val packageName: String,
-    androidVersion: AndroidVersion
-) : AndroidModuleInfo {
-    override val runtimeMinSdkVersion: ListenableFuture<AndroidVersion>
-        get() = Futures.immediateFuture(minSdkVersion)
-    override val minSdkVersion: AndroidVersion = androidVersion
-    override val targetSdkVersion: AndroidVersion = androidVersion
-    override val buildSdkVersion: AndroidVersion = androidVersion
+internal class StandaloneModuleInfo(override val packageName: String, androidVersion: AndroidVersion) : AndroidModuleInfo {
+  override val runtimeMinSdkVersion: ListenableFuture<AndroidVersion>
+    get() = Futures.immediateFuture(minSdkVersion)
+
+  override val minSdkVersion: AndroidVersion = androidVersion
+  override val targetSdkVersion: AndroidVersion = androidVersion
+  override val buildSdkVersion: AndroidVersion = androidVersion
 }

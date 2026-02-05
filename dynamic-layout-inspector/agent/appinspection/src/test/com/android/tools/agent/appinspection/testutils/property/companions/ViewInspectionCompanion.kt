@@ -26,36 +26,36 @@ import com.android.tools.agent.appinspection.testutils.property.EnumPropertyRead
 
 class ViewInspectionCompanion : InspectionCompanion<View> {
 
-    companion object {
-        const val OFFSET = 0 // Start index of view properties
-        val NUM_PROPERTIES = Property.values().size
+  companion object {
+    const val OFFSET = 0 // Start index of view properties
+    val NUM_PROPERTIES = Property.values().size
 
-        fun addResourceNames(resourceNames: MutableMap<Int, String>) {
-            resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/visibility"
-        }
+    fun addResourceNames(resourceNames: MutableMap<Int, String>) {
+      resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/visibility"
     }
+  }
 
-    private val visibilityMapper: (Int) -> String? = { value ->
-        when (value) {
-            View.VISIBLE -> "visible"
-            View.INVISIBLE -> "invisible"
-            View.GONE -> "gone"
-            else -> null
-        }
+  private val visibilityMapper: (Int) -> String? = { value ->
+    when (value) {
+      View.VISIBLE -> "visible"
+      View.INVISIBLE -> "invisible"
+      View.GONE -> "gone"
+      else -> null
     }
+  }
 
-    private enum class Property {
-        // TODO: Add way more properties
-        VISIBILITY,
-    }
+  private enum class Property {
+    // TODO: Add way more properties
+    VISIBILITY
+  }
 
-    override fun mapProperties(mapper: PropertyMapper) {
-        val enumMapper = EnumPropertyMapper<Property>(mapper, OFFSET)
-        enumMapper.mapIntEnum(Property.VISIBILITY, visibilityMapper)
-    }
+  override fun mapProperties(mapper: PropertyMapper) {
+    val enumMapper = EnumPropertyMapper<Property>(mapper, OFFSET)
+    enumMapper.mapIntEnum(Property.VISIBILITY, visibilityMapper)
+  }
 
-    override fun readProperties(view: View, reader: PropertyReader) {
-        val enumReader = EnumPropertyReader<Property>(reader, OFFSET)
-        enumReader.readIntEnum(Property.VISIBILITY, view.visibility)
-    }
+  override fun readProperties(view: View, reader: PropertyReader) {
+    val enumReader = EnumPropertyReader<Property>(reader, OFFSET)
+    enumReader.readIntEnum(Property.VISIBILITY, view.visibility)
+  }
 }

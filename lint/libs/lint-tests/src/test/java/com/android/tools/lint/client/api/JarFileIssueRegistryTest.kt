@@ -44,8 +44,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val loggedWarnings = StringWriter()
     val client = createClient(loggedWarnings)
     getSingleRegistry(client, File("bogus"))
-    assertThat(loggedWarnings.toString())
-      .contains("Could not load custom lint check jar file bogus")
+    assertThat(loggedWarnings.toString()).contains("Could not load custom lint check jar file bogus")
   }
 
   fun testCached() {
@@ -414,10 +413,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val vendor = registry.vendor
     assertNotNull(vendor)
     assertEquals("android.support.v7.lint.appcompat", vendor.identifier)
-    assertEquals(
-      "Android Open Source Project (android.support.v7.lint.appcompat)",
-      vendor.vendorName,
-    )
+    assertEquals("Android Open Source Project (android.support.v7.lint.appcompat)", vendor.vendorName)
     assertEquals("https://issuetracker.google.com/issues/new?component=192731", vendor.feedbackUrl)
   }
 
@@ -440,12 +436,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         }
       }
 
-      override fun log(
-        severity: Severity,
-        exception: Throwable?,
-        format: String?,
-        vararg args: Any,
-      ) {
+      override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
         if (format != null) {
           loggedWarnings.append(String.format(format, *args) + '\n')
         }
@@ -468,10 +459,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         *lintApiStubs,
         bytecode(
           "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
           0x70522285,
         ),
         bytecode(
@@ -635,10 +623,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         *lintApiStubs,
         bytecode(
           "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
           0x70522285,
         ),
         bytecode(
@@ -757,10 +742,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         *lintApiStubs,
         bytecode(
           "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
           0x70522285,
         ),
         bytecode(
@@ -992,14 +974,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
       "No issues found.",
       "",
       LintCliFlags.ERRNO_SUCCESS,
-      arrayOf(
-        "--lint-rule-jars",
-        lintJar.path,
-        dir.path,
-        "--XskipJarVerification",
-        "--disable",
-        "_TestIssueId",
-      ),
+      arrayOf("--lint-rule-jars", lintJar.path, dir.path, "--XskipJarVerification", "--disable", "_TestIssueId"),
       null,
       null,
     )
@@ -1017,10 +992,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
       .files(
         jar(
           "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "androidx.fragment.lint.FragmentIssueRegistry",
-          ),
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "androidx.fragment.lint.FragmentIssueRegistry"),
           bytes(
             "androidx/fragment/lint/FragmentIssueRegistry.class",
             byteArrayOf(
@@ -3829,10 +3801,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         *lintApiStubs,
         bytecode(
           "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
           0x70522285,
         ),
         bytecode(
@@ -4290,15 +4259,9 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
   }
 }
 
-fun createGlobalLintJarClient(
-  lintJar: File,
-  clientName: String? = null,
-  log: ((String) -> Unit)? = null,
-) =
-  object :
-    com.android.tools.lint.checks.infrastructure.TestLintClient(clientName ?: CLIENT_UNIT_TESTS) {
-    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> =
-      listOf(lintJar)
+fun createGlobalLintJarClient(lintJar: File, clientName: String? = null, log: ((String) -> Unit)? = null) =
+  object : com.android.tools.lint.checks.infrastructure.TestLintClient(clientName ?: CLIENT_UNIT_TESTS) {
+    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> = listOf(lintJar)
 
     override fun findRuleJars(project: Project): List<File> = emptyList()
 
@@ -4307,15 +4270,13 @@ fun createGlobalLintJarClient(
     }
 
     override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
-      log?.invoke(String.format(format ?: "", *args))
-        ?: super.log(severity, exception, format, *args)
+      log?.invoke(String.format(format ?: "", *args)) ?: super.log(severity, exception, format, *args)
     }
   }
 
 fun createProjectLintJarClient(lintJar: File) =
   object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
-    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> =
-      emptyList()
+    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> = emptyList()
 
     override fun findRuleJars(project: Project): List<File> = listOf(lintJar)
   }

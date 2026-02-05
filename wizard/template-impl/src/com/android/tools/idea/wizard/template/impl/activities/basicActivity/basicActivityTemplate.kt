@@ -24,7 +24,6 @@ import com.android.tools.idea.wizard.template.Constraint.NAVIGATION
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
 import com.android.tools.idea.wizard.template.Constraint.UNIQUE
 import com.android.tools.idea.wizard.template.FormFactor
-import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.LanguageWidget
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
@@ -37,7 +36,6 @@ import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.activityToLayout
 import com.android.tools.idea.wizard.template.booleanParameter
 import com.android.tools.idea.wizard.template.classToResource
-import com.android.tools.idea.wizard.template.impl.activities.basicActivity.generateBasicActivity
 import com.android.tools.idea.wizard.template.impl.activities.common.MIN_API
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.layoutToActivity
@@ -45,7 +43,8 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
 
-val basicActivityTemplate get() = template {
+val basicActivityTemplate
+  get() = template {
     name = "Basic Views Activity"
     minApi = MIN_API
     description = "Creates a new basic activity"
@@ -57,113 +56,111 @@ val basicActivityTemplate get() = template {
 
     lateinit var activityClass: StringParameter
     val layoutName: StringParameter = stringParameter {
-        name = "Layout Name"
-        constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
-        suggest = { activityToLayout(activityClass.value) }
-        default = "activity_main"
-        help = "The name of the layout to create for the activity"
-        loggable = true
+      name = "Layout Name"
+      constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
+      suggest = { activityToLayout(activityClass.value) }
+      default = "activity_main"
+      help = "The name of the layout to create for the activity"
+      loggable = true
     }
 
     activityClass = stringParameter {
-        name = "Activity Name"
-        constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-        suggest = { layoutToActivity(layoutName.value) }
-        default = "MainActivity"
-        help = "The name of the activity class to create"
-        loggable = true
+      name = "Activity Name"
+      constraints = listOf(CLASS, UNIQUE, NONEMPTY)
+      suggest = { layoutToActivity(layoutName.value) }
+      default = "MainActivity"
+      help = "The name of the activity class to create"
+      loggable = true
     }
 
     val menuName: StringParameter = stringParameter {
-        name = "Menu Resource File"
-        constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
-        suggest = { "menu_" + classToResource(activityClass.value) }
-        visible = { isNewModule }
-        default = "menu_main"
-        help = "The name of the resource file to create for the menu items"
-        loggable = true
+      name = "Menu Resource File"
+      constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
+      suggest = { "menu_" + classToResource(activityClass.value) }
+      visible = { isNewModule }
+      default = "menu_main"
+      help = "The name of the resource file to create for the menu items"
+      loggable = true
     }
     val isLauncher: BooleanParameter = booleanParameter {
-        name = "Launcher Activity"
-        visible = { !isNewModule }
-        default = false
-        help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
+      name = "Launcher Activity"
+      visible = { !isNewModule }
+      default = false
+      help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
     val contentLayoutName: StringParameter = stringParameter {
-        name = "Content Layout Name"
-        constraints = listOf(LAYOUT, UNIQUE)
-        suggest = { activityToLayout(activityClass.value, "content") }
-        default = "content_main"
-        visible = { false }
-        help = "The name of the App Bar layout to create for the activity"
-        loggable = true
+      name = "Content Layout Name"
+      constraints = listOf(LAYOUT, UNIQUE)
+      suggest = { activityToLayout(activityClass.value, "content") }
+      default = "content_main"
+      visible = { false }
+      help = "The name of the App Bar layout to create for the activity"
+      loggable = true
     }
 
     val firstFragmentLayoutName: StringParameter = stringParameter {
-        name = "First fragment Layout Name"
-        constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
-        default = "fragment_first"
-        visible = { false }
-        help = "The name of the layout of the Fragment as the initial destination in Navigation"
-        loggable = true
+      name = "First fragment Layout Name"
+      constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
+      default = "fragment_first"
+      visible = { false }
+      help = "The name of the layout of the Fragment as the initial destination in Navigation"
+      loggable = true
     }
 
     val secondFragmentLayoutName: StringParameter = stringParameter {
-        name = "First fragment Layout Name"
-        constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
-        default = "fragment_second"
-        visible = { false }
-        help = "The name of the layout of the Fragment as the second destination in Navigation"
-        loggable = true
+      name = "First fragment Layout Name"
+      constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
+      default = "fragment_second"
+      visible = { false }
+      help = "The name of the layout of the Fragment as the second destination in Navigation"
+      loggable = true
     }
 
     val navGraphName = stringParameter {
-        name = "Navigation graph name"
-        default = "nav_graph"
-        help = "The name of the navigation graph"
-        visible = { false }
-        constraints = listOf(NAVIGATION, UNIQUE)
-        suggest = { "nav_graph" }
-        loggable = true
+      name = "Navigation graph name"
+      default = "nav_graph"
+      help = "The name of the navigation graph"
+      visible = { false }
+      constraints = listOf(NAVIGATION, UNIQUE)
+      suggest = { "nav_graph" }
+      loggable = true
     }
 
     val packageName = defaultPackageNameParameter
 
     widgets(
-        TextFieldWidget(activityClass),
-        TextFieldWidget(layoutName),
-        TextFieldWidget(menuName),
-        CheckBoxWidget(isLauncher),
-        Separator, // for example
-        PackageNameWidget(packageName),
-        LanguageWidget(),
+      TextFieldWidget(activityClass),
+      TextFieldWidget(layoutName),
+      TextFieldWidget(menuName),
+      CheckBoxWidget(isLauncher),
+      Separator, // for example
+      PackageNameWidget(packageName),
+      LanguageWidget(),
 
-        // Invisible widgets. Defining these to impose constraints
-        TextFieldWidget(contentLayoutName),
-        TextFieldWidget(firstFragmentLayoutName),
-        TextFieldWidget(secondFragmentLayoutName),
-        TextFieldWidget(navGraphName)
+      // Invisible widgets. Defining these to impose constraints
+      TextFieldWidget(contentLayoutName),
+      TextFieldWidget(firstFragmentLayoutName),
+      TextFieldWidget(secondFragmentLayoutName),
+      TextFieldWidget(navGraphName),
     )
 
-    thumb {
-        File("basic-activity-material3").resolve("template_basic_activity_material3.png")
-    }
+    thumb { File("basic-activity-material3").resolve("template_basic_activity_material3.png") }
 
     recipe = { data: TemplateData ->
-        val moduleData = data as ModuleTemplateData
+      val moduleData = data as ModuleTemplateData
 
-        generateBasicActivity(
-            moduleData = data,
-            activityClass = activityClass.value,
-            layoutName = layoutName.value,
-            contentLayoutName = contentLayoutName.value,
-            packageName = packageName.value,
-            menuName = menuName.value,
-            isLauncher = isLauncher.value,
-            firstFragmentLayoutName = firstFragmentLayoutName.value,
-            secondFragmentLayoutName = secondFragmentLayoutName.value,
-            navGraphName = navGraphName.value
-        )
+      generateBasicActivity(
+        moduleData = data,
+        activityClass = activityClass.value,
+        layoutName = layoutName.value,
+        contentLayoutName = contentLayoutName.value,
+        packageName = packageName.value,
+        menuName = menuName.value,
+        isLauncher = isLauncher.value,
+        firstFragmentLayoutName = firstFragmentLayoutName.value,
+        secondFragmentLayoutName = secondFragmentLayoutName.value,
+        navGraphName = navGraphName.value,
+      )
     }
-}
+  }

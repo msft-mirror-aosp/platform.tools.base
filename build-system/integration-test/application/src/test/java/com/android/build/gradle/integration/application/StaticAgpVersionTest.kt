@@ -23,28 +23,32 @@ import org.junit.Rule
 import org.junit.Test
 
 class StaticAgpVersionTest {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(MinimalSubProject.app("com.example")
-            .appendToBuild(
-                // language=groovy
-                """
-                import com.android.build.api.AndroidPluginVersion
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example")
+          .appendToBuild(
+            // language=groovy
+            """
+            import com.android.build.api.AndroidPluginVersion
 
-                task checkAgpVersion {
-                    doLast {
-                        def currentPluginVersion = AndroidPluginVersion.getCurrent()
-                        assert currentPluginVersion != null
-                        println currentPluginVersion
-                    }
+            task checkAgpVersion {
+                doLast {
+                    def currentPluginVersion = AndroidPluginVersion.getCurrent()
+                    assert currentPluginVersion != null
+                    println currentPluginVersion
                 }
-            """.trimIndent()))
-        .create()
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    @Test
-    fun testStaticAgpVersion() {
-        project.executor().run("checkAgpVersion")
-            .assertOutputContains("$CURRENT_AGP_VERSION")
-    }
+  @Test
+  fun testStaticAgpVersion() {
+    project.executor().run("checkAgpVersion").assertOutputContains("$CURRENT_AGP_VERSION")
+  }
 }

@@ -25,11 +25,9 @@ import org.gradle.work.DisableCachingByDefault
  * DO NOT EXTEND THIS METHOD DIRECTLY. Instead extend:
  * - [NewIncrementalTask]
  * - [NonIncrementalTask]
- *
  */
 @DisableCachingByDefault
 abstract class AndroidVariantTask : BaseTask(), VariantTask {
 
-    @Internal("No influence on output, this is for our build stats reporting mechanism")
-    override lateinit var variantName: String
+  @Internal("No influence on output, this is for our build stats reporting mechanism") override lateinit var variantName: String
 }

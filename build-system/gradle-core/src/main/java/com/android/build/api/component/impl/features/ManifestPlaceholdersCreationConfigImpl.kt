@@ -20,15 +20,9 @@ import com.android.build.gradle.internal.component.features.ManifestPlaceholders
 import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.provider.MapProperty
 
-class ManifestPlaceholdersCreationConfigImpl(
-    placeholders: Map<String, String>,
-    internalServices: VariantServices
-): ManifestPlaceholdersCreationConfig {
-    override val placeholders: MapProperty<String, String> by lazy {
-        internalServices.mapPropertyOf(
-            String::class.java,
-            String::class.java,
-            placeholders
-        )
-    }
+class ManifestPlaceholdersCreationConfigImpl(placeholders: Map<String, String>, internalServices: VariantServices) :
+  ManifestPlaceholdersCreationConfig {
+  override val placeholders: MapProperty<String, String> by lazy {
+    internalServices.mapPropertyOf(String::class.java, String::class.java, placeholders)
+  }
 }

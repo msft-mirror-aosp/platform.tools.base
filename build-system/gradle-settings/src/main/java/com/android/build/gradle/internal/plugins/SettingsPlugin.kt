@@ -18,25 +18,19 @@ package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.internal.dsl.SettingsExtensionImpl
+import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-class SettingsPlugin @Inject constructor (private val objectFactory: ObjectFactory): Plugin<Settings> {
+class SettingsPlugin @Inject constructor(private val objectFactory: ObjectFactory) : Plugin<Settings> {
 
-    override fun apply(settings: Settings) {
-        val settingsExtension = settings.extensions.create(
-            SettingsExtension::class.java,
-            "android",
-            SettingsExtensionImpl::class.java,
-            objectFactory
-        )
+  override fun apply(settings: Settings) {
+    val settingsExtension =
+      settings.extensions.create(SettingsExtension::class.java, "android", SettingsExtensionImpl::class.java, objectFactory)
 
-        // as Project objects cannot query for the Settings object (and its extensions), we
-        // deposit the extension instance into each project using the extra Properties.
-        settings.gradle.beforeProject { project ->
-            project.extensions.extraProperties["_android_settings"] = settingsExtension
-        }
-    }
+    // as Project objects cannot query for the Settings object (and its extensions), we
+    // deposit the extension instance into each project using the extra Properties.
+    settings.gradle.beforeProject { project -> project.extensions.extraProperties["_android_settings"] = settingsExtension }
+  }
 }

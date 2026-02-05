@@ -21,55 +21,47 @@ import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-open class AnalyticsEnabledDeviceTestBuilder(
-    val delegate: DeviceTestBuilder,
-    val stats: GradleBuildVariant.Builder,
-): DeviceTestBuilder {
+open class AnalyticsEnabledDeviceTestBuilder(val delegate: DeviceTestBuilder, val stats: GradleBuildVariant.Builder) : DeviceTestBuilder {
 
-    override var enable: Boolean
-        get() = delegate.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.ANDROID_TEST_ENABLED_VALUE
-            delegate.enable = value
-        }
+  override var enable: Boolean
+    get() = delegate.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    override var enableMultiDex: Boolean?
-        get() = throw PropertyAccessNotAllowedException("enableMultiDex", "DeviceTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.ENABLE_MULTI_DEX_VALUE
-            delegate.enableMultiDex = value
-        }
-    override var targetSdk: Int?
-        get() = delegate.targetSdk
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
-            delegate.targetSdk = value
-        }
-    override var targetSdkPreview: String?
-        get() = delegate.targetSdkPreview
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TARGET_SDK_PREVIEW_VALUE
-            delegate.targetSdkPreview = value
-        }
+  override var enableMultiDex: Boolean?
+    get() = throw PropertyAccessNotAllowedException("enableMultiDex", "DeviceTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLE_MULTI_DEX_VALUE
+      delegate.enableMultiDex = value
+    }
 
+  override var targetSdk: Int?
+    get() = delegate.targetSdk
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
+      delegate.targetSdk = value
+    }
 
-    override var enableCodeCoverage: Boolean
-        get() =  throw PropertyAccessNotAllowedException("enableCodeCoverage", "DeviceTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE
-            delegate.enableCodeCoverage = value
-        }
+  override var targetSdkPreview: String?
+    get() = delegate.targetSdkPreview
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_PREVIEW_VALUE
+      delegate.targetSdkPreview = value
+    }
 
-    override var debuggable: Boolean
-        get() = throw PropertyAccessNotAllowedException("debuggable", "DeviceTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.DEVICE_TEST_DEBUGGABLE_VALUE
-            delegate.debuggable = value
-        }
+  override var enableCodeCoverage: Boolean
+    get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "DeviceTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE
+      delegate.enableCodeCoverage = value
+    }
+
+  override var debuggable: Boolean
+    get() = throw PropertyAccessNotAllowedException("debuggable", "DeviceTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.DEVICE_TEST_DEBUGGABLE_VALUE
+      delegate.debuggable = value
+    }
 }

@@ -27,9 +27,7 @@ private val ktTokenToPsiModifier =
     KtTokens.PROTECTED_KEYWORD to PsiModifier.PROTECTED,
   )
 
-internal fun KtClassOrObject.computeModifiersByPsi(
-  hasAbstractMember: (KtClassOrObject) -> Boolean
-): Set<String> {
+internal fun KtClassOrObject.computeModifiersByPsi(hasAbstractMember: (KtClassOrObject) -> Boolean): Set<String> {
   val psiModifiers = hashSetOf<String>()
 
   for (tokenAndModifier in ktTokenToPsiModifier) {

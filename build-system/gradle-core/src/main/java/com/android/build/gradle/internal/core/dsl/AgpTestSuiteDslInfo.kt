@@ -19,7 +19,4 @@ package com.android.build.gradle.internal.core.dsl
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
 
-class AgpTestSuiteDslInfo(
-    val testSuite: AgpTestSuiteImpl,
-    val targets: Collection<AgpTestSuiteTargetImpl>
-)
+class AgpTestSuiteDslInfo(val testSuite: AgpTestSuiteImpl, val targets: Collection<AgpTestSuiteTargetImpl>)

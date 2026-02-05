@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Legac
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -31,123 +32,99 @@ import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class SourcesDirectoryModelTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-                defaultConfig.minSdk = 14
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          enableKotlin = false
+          defaultConfig.minSdk = 14
         }
+      }
     }
 
-    @Test
-    fun `test adding source directories to IDE model with addGeneratedSourceDirectory and addStaticSourceDirectory`() {
-        val build = rule.build {
-            androidApplication {
-                pluginCallbacks += AppCallback::class.java
-            }
+  @Test
+  fun `test adding source directories to IDE model with addGeneratedSourceDirectory and addStaticSourceDirectory`() {
+    val build = rule.build { androidApplication { pluginCallbacks += AppCallback::class.java } }
+
+    val result = build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+
+    with(result).compareBasicAndroidProject(goldenFile = "SourceDirectories")
+    with(result).compareAndroidProject(goldenFile = "SourceDirectories_AndroidProject")
+  }
+
+  class AppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.apply {
+        onVariants(selector().all()) { variant ->
+          // use addGeneratedSourceDirectory for adding generated source directories
+          val assetCreationTask = project.tasks.register("create${variant.name}Asset", AssetCreatorTask::class.java)
+
+          variant.sources.assets?.addGeneratedSourceDirectory(assetCreationTask) { it.outputDirectory }
+
+          // add java generator task
+          val javaCreationTask = project.tasks.register("create${variant.name}JavaGenerator", JavaCreatorTask::class.java)
+
+          variant.sources.java?.addGeneratedSourceDirectory(javaCreationTask) { it.outputDirectory }
+
+          // use addStaticSourceDirectory to add static directories
+          val staticJavaPath = "src/${variant.name}/staticJava"
+          File(project.projectDir, staticJavaPath).mkdirs()
+
+          variant.sources.java?.addStaticSourceDirectory(staticJavaPath)
+
+          val staticAssetsPath = "src/${variant.name}/staticAssets"
+          File(project.projectDir, staticAssetsPath).mkdirs()
+
+          variant.sources.assets?.addStaticSourceDirectory(staticAssetsPath)
         }
-
-        val result = build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels()
-
-        with(result).compareBasicAndroidProject(goldenFile = "SourceDirectories")
-        with(result).compareAndroidProject(goldenFile = "SourceDirectories_AndroidProject")
+      }
     }
+  }
 
-    class AppCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.apply {
-                onVariants(selector().all()) { variant ->
-                    // use addGeneratedSourceDirectory for adding generated source directories
-                    val assetCreationTask =
-                        project.tasks.register(
-                            "create${variant.name}Asset",
-                            AssetCreatorTask::class.java
-                        )
+  @Test
+  fun `test adding generated source directory to IDE model with registerJavaGeneratingTask old API`() {
+    val build =
+      rule.build {
+        androidApplication { pluginCallbacks += LegacyAppCallback::class.java }
+        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      }
 
-                    variant.sources.assets?.addGeneratedSourceDirectory(assetCreationTask) {
-                        it.outputDirectory
-                    }
+    val result = build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
 
-                    // add java generator task
-                    val javaCreationTask = project.tasks.register(
-                        "create${variant.name}JavaGenerator",
-                        JavaCreatorTask::class.java
-                    )
+    with(result).compareBasicAndroidProject(goldenFile = "SourceDirectories2")
+    with(result).compareAndroidProject(goldenFile = "SourceDirectories2_AndroidProject")
+  }
 
-                    variant.sources.java?.addGeneratedSourceDirectory(javaCreationTask) {
-                        it.outputDirectory
-                    }
-
-                    // use addStaticSourceDirectory to add static directories
-                    val staticJavaPath = "src/${variant.name}/staticJava"
-                    File(project.projectDir, staticJavaPath).mkdirs()
-
-                    variant.sources.java?.addStaticSourceDirectory(staticJavaPath)
-
-                    val staticAssetsPath = "src/${variant.name}/staticAssets"
-                    File(project.projectDir, staticAssetsPath).mkdirs()
-
-                    variant.sources.assets?.addStaticSourceDirectory(staticAssetsPath)
-                }
-            }
-        }
+  class LegacyAppCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.applicationVariants.all { variant ->
+        val outDir = File(project.layout.buildDirectory.asFile.get(), "java_stubs")
+        // add java generator task
+        val javaCreationTask =
+          project.tasks.register("create${variant.name}JavaGenerator", JavaCreatorTask::class.java) { it.outputDirectory.set(outDir) }
+        variant.registerJavaGeneratingTask(javaCreationTask, outDir)
+      }
     }
-
-    @Test
-    fun `test adding generated source directory to IDE model with registerJavaGeneratingTask old API`() {
-        val build = rule.build {
-            androidApplication {
-                pluginCallbacks += LegacyAppCallback::class.java
-            }
-            gradleProperties {
-                add(BooleanOption.USE_NEW_DSL, false)
-            }
-        }
-
-        val result = build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels()
-
-        with(result).compareBasicAndroidProject(goldenFile = "SourceDirectories2")
-        with(result).compareAndroidProject(goldenFile = "SourceDirectories2_AndroidProject")
-    }
-
-    class LegacyAppCallback: LegacyApplicationCallback {
-        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-            extension.applicationVariants.all { variant ->
-                val outDir = File(project.layout.buildDirectory.asFile.get(), "java_stubs")
-                // add java generator task
-                val javaCreationTask =
-                    project.tasks.register("create${variant.name}JavaGenerator", JavaCreatorTask::class.java) {
-                        it.outputDirectory.set(outDir)
-                    }
-                variant.registerJavaGeneratingTask(javaCreationTask, outDir)
-            }
-        }
-    }
+  }
 }
 
-abstract class AssetCreatorTask: DefaultTask() {
-    @get:OutputFiles
-    abstract val outputDirectory: DirectoryProperty
-    @TaskAction
-    fun taskAction() { /* pretend we write content here */ }
+abstract class AssetCreatorTask : DefaultTask() {
+  @get:OutputFiles abstract val outputDirectory: DirectoryProperty
+
+  @TaskAction
+  fun taskAction() {
+    /* pretend we write content here */
+  }
 }
 
-abstract class JavaCreatorTask: DefaultTask() {
-    @get:OutputFiles
-    abstract val outputDirectory: DirectoryProperty
-    @TaskAction
-    fun taskAction() { /* pretend we write content here */ }
-}
+abstract class JavaCreatorTask : DefaultTask() {
+  @get:OutputFiles abstract val outputDirectory: DirectoryProperty
 
+  @TaskAction
+  fun taskAction() {
+    /* pretend we write content here */
+  }
+}

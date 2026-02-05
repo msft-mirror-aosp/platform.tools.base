@@ -27,30 +27,29 @@ import org.gradle.api.model.ObjectFactory
  * This class handles initiating and configuring the factory object and its parameters.
  */
 class AsmClassVisitorFactoryEntry<ParamT : InstrumentationParameters>(
-    private val visitorFactoryClass: Class<out AsmClassVisitorFactory<ParamT>>,
-    private val paramsConfig: (ParamT) -> Unit
+  private val visitorFactoryClass: Class<out AsmClassVisitorFactory<ParamT>>,
+  private val paramsConfig: (ParamT) -> Unit,
 ) {
-    lateinit var visitorFactory: AsmClassVisitorFactory<ParamT>
-        private set
+  lateinit var visitorFactory: AsmClassVisitorFactory<ParamT>
+    private set
 
-    fun configure(
-        objectFactory: ObjectFactory,
-        apiVersion: Int
-    ) {
-        // Gradle currently can't figure out the class type of the parameters and instead
-        // instantiates the parameters as InstrumentationParameters type. So we handle injecting
-        // the correct parameters object on our own.
-        val paramsClass = getParamsImplClass(visitorFactoryClass)
-        @Suppress("UNCHECKED_CAST")
-        val parameters = if (paramsClass == InstrumentationParameters.None::class.java) {
-            InstrumentationParameters.None()
-        } else {
-            objectFactory.newInstance(paramsClass)
-        } as ParamT
-        paramsConfig.invoke(parameters)
+  fun configure(objectFactory: ObjectFactory, apiVersion: Int) {
+    // Gradle currently can't figure out the class type of the parameters and instead
+    // instantiates the parameters as InstrumentationParameters type. So we handle injecting
+    // the correct parameters object on our own.
+    val paramsClass = getParamsImplClass(visitorFactoryClass)
+    @Suppress("UNCHECKED_CAST")
+    val parameters =
+      if (paramsClass == InstrumentationParameters.None::class.java) {
+        InstrumentationParameters.None()
+      } else {
+        objectFactory.newInstance(paramsClass)
+      }
+        as ParamT
+    paramsConfig.invoke(parameters)
 
-        visitorFactory = objectFactory.newInstance(visitorFactoryClass)
-        visitorFactory.parameters.setDisallowChanges(parameters)
-        visitorFactory.instrumentationContext.apiVersion.setDisallowChanges(apiVersion)
-    }
+    visitorFactory = objectFactory.newInstance(visitorFactoryClass)
+    visitorFactory.parameters.setDisallowChanges(parameters)
+    visitorFactory.instrumentationContext.apiVersion.setDisallowChanges(apiVersion)
+  }
 }

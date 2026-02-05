@@ -16,38 +16,35 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.io.File
 
-class FakeGradleDirectory(private val dir: File): Directory {
-    override fun files(vararg p0: Any?): FileCollection {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+class FakeGradleDirectory(private val dir: File) : Directory {
+  override fun files(vararg p0: Any?): FileCollection {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun getAsFileTree(): FileTree {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun getAsFileTree(): FileTree {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun file(p0: String?): RegularFile {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun file(p0: String?): RegularFile {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun file(p0: Provider<out CharSequence>?): Provider<RegularFile> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+  override fun file(p0: Provider<out CharSequence>?): Provider<RegularFile> {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun dir(p0: String): Directory =
-        FakeGradleDirectory(File(dir, p0))
+  override fun dir(p0: String): Directory = FakeGradleDirectory(File(dir, p0))
 
+  override fun dir(p0: Provider<out CharSequence>?): Provider<Directory> {
+    TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
+  }
 
-    override fun dir(p0: Provider<out CharSequence>?): Provider<Directory> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getAsFile() = dir
-
+  override fun getAsFile() = dir
 }

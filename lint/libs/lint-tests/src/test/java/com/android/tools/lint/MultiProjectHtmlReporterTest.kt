@@ -64,12 +64,7 @@ class MultiProjectHtmlReporterTest : AbstractCheckTest() {
       dir.mkdirs()
       val reporter = MultiProjectHtmlReporter(client, dir, LintCliFlags())
       val project = Project.create(client, File("/foo/bar/Foo"), File("/foo/bar/Foo"))
-      val location1 =
-        create(
-          File("/foo/bar/Foo/AndroidManifest.xml"),
-          DefaultPosition(6, 4, 198),
-          DefaultPosition(6, 42, 236),
-        )
+      val location1 = create(File("/foo/bar/Foo/AndroidManifest.xml"), DefaultPosition(6, 4, 198), DefaultPosition(6, 42, 236))
       val incident1 =
         Incident(
             ManifestDetector.MULTIPLE_USES_SDK,
@@ -81,23 +76,12 @@ class MultiProjectHtmlReporterTest : AbstractCheckTest() {
             this.project = project
             severity = Severity.WARNING
           }
-      val location2 =
-        create(
-          File("/foo/bar/Foo/res/layout/main.xml"),
-          DefaultPosition(11, 8, 377),
-          DefaultPosition(11, 27, 396),
-        )
+      val location2 = create(File("/foo/bar/Foo/res/layout/main.xml"), DefaultPosition(11, 8, 377), DefaultPosition(11, 27, 396))
       val incident2 =
-        Incident(
-            HardcodedValuesDetector.ISSUE,
-            "Hardcoded string \"Fooo\", should use @string resource",
-            location2,
-            null,
-          )
-          .apply {
-            this.project = project
-            severity = Severity.WARNING
-          }
+        Incident(HardcodedValuesDetector.ISSUE, "Hardcoded string \"Fooo\", should use @string resource", location2, null).apply {
+          this.project = project
+          severity = Severity.WARNING
+        }
       val incidents: MutableList<Incident> = ArrayList()
       incidents.add(incident1)
       incidents.add(incident2)

@@ -25,28 +25,25 @@ import org.junit.Test
 
 class InitWithThisTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Before
-    fun before() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun before() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 android.buildTypes {
     debug {
         initWith debug
     }
 }
-"""
-        )
-    }
+""",
+    )
+  }
 
-    @Test
-    fun testNoStackOverFlow() {
-        // run lint to trigger VariantManager.finalizeDefaultVariantDsl
-        project.execute("lint")
-    }
+  @Test
+  fun testNoStackOverFlow() {
+    // run lint to trigger VariantManager.finalizeDefaultVariantDsl
+    project.execute("lint")
+  }
 }

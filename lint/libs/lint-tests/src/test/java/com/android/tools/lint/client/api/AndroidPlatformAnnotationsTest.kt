@@ -24,9 +24,8 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask
 import org.junit.Test
 
 /**
- * [AndroidPlatformAnnotations] are mostly tested via the [AndroidPlatformAnnotationsTestMode],
- * which reframes every single annotation test into a platform annotation test by bytecode
- * transforming the annotations over to the platform space and expecting the same output as with
+ * [AndroidPlatformAnnotations] are mostly tested via the [AndroidPlatformAnnotationsTestMode], which reframes every single annotation test
+ * into a platform annotation test by bytecode transforming the annotations over to the platform space and expecting the same output as with
  * androidx.
  *
  * This test case adds some extra manual tests for specific scenarios that have come up.

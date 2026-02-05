@@ -20,16 +20,14 @@ import com.android.ide.common.repository.AgpVersion
 import java.io.File
 
 /**
- * Metadata about the project from the build system perspective. This is a generalization of the
- * older builder-model library which communicated Gradle project information to lint.
+ * Metadata about the project from the build system perspective. This is a generalization of the older builder-model library which
+ * communicated Gradle project information to lint.
  *
- * Not all build systems have the same capabilities. The LintModel skews a bit towards Gradle and
- * some concepts provided by the Android Gradle plugin, such as "variants", "product flavors" and so
- * on.
+ * Not all build systems have the same capabilities. The LintModel skews a bit towards Gradle and some concepts provided by the Android
+ * Gradle plugin, such as "variants", "product flavors" and so on.
  *
- * This is called a "module" to match the Android Studio and IntelliJ notion of what a module is.
- * Lint itself (but not this model) calls modules projects, which matches the older Eclipse and
- * Gradle terminology.
+ * This is called a "module" to match the Android Studio and IntelliJ notion of what a module is. Lint itself (but not this model) calls
+ * modules projects, which matches the older Eclipse and Gradle terminology.
  */
 interface LintModelModule {
   val loader: LintModelModuleLoader?
@@ -63,27 +61,19 @@ interface LintModelModule {
   val lintRuleJars: List<File>
 
   /**
-   * The resource prefix to use, if any. This is an optional prefix which can be set and which is
-   * used by the defaults to automatically choose new resources with a certain prefix, warn if
-   * resources are not using the given prefix, etc. This helps work with resources in the app
-   * namespace where there could otherwise be unintentional duplicated resource names between
-   * unrelated libraries.
+   * The resource prefix to use, if any. This is an optional prefix which can be set and which is used by the defaults to automatically
+   * choose new resources with a certain prefix, warn if resources are not using the given prefix, etc. This helps work with resources in
+   * the app namespace where there could otherwise be unintentional duplicated resource names between unrelated libraries.
    */
   val resourcePrefix: String?
   val dynamicFeatures: Collection<String>
 
-  /**
-   * Returns the boot classpath matching the compile target. This is typically android.jar plus
-   * other optional libraries.
-   */
+  /** Returns the boot classpath matching the compile target. This is typically android.jar plus other optional libraries. */
   val bootClassPath: List<File>
   val javaSourceLevel: String?
   val compileTarget: String
 
-  /**
-   * Returns the namespace of the main artifact. When this is not null, it overrides the value from
-   * the Android manifest.
-   */
+  /** Returns the namespace of the main artifact. When this is not null, it overrides the value from the Android manifest. */
   val namespace: String?
     get() = defaultVariant()?.`package`
 
@@ -92,8 +82,8 @@ interface LintModelModule {
   fun defaultVariant(): LintModelVariant? = variants.firstOrNull()
 
   /**
-   * Returns true if none of the build types used by this module have enabled shrinking, or false if
-   * at least one variant's build type is known to use shrinking.
+   * Returns true if none of the build types used by this module have enabled shrinking, or false if at least one variant's build type is
+   * known to use shrinking.
    */
   fun neverShrinking(): Boolean
 

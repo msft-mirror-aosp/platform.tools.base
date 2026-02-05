@@ -24,144 +24,130 @@ import com.android.SdkConstants.MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_EXTENSION_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_PROPERTY
 import com.android.Version
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.ide.common.repository.AgpVersion
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.fail
-import org.gradle.testfixtures.ProjectBuilder
-import org.gradle.workers.WorkerExecutor
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.lang.RuntimeException
 import java.util.Properties
 import javax.inject.Inject
+import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.workers.WorkerExecutor
+import org.junit.Assert.fail
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
-/**
- * Unit tests for [AarMetadataTask].
- */
+/** Unit tests for [AarMetadataTask]. */
 class AarMetadataTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var task: AarMetadataTask
-    private lateinit var outputFile: File
+  private lateinit var task: AarMetadataTask
+  private lateinit var outputFile: File
 
-    abstract class AarMetadataForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) :
-        AarMetadataTask() {
-        override val workerExecutor = testWorkerExecutor
-    }
+  abstract class AarMetadataForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) : AarMetadataTask() {
+    override val workerExecutor = testWorkerExecutor
+  }
 
-    @Before
-    fun setUp() {
-        val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        task = project.tasks.register(
-            "aarMetadataTask",
-            AarMetadataForTest::class.java,
-            FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder())
-        ).get()
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-        outputFile = temporaryFolder.newFile("AarMetadata.xml")
-    }
+  @Before
+  fun setUp() {
+    val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    task =
+      project.tasks
+        .register("aarMetadataTask", AarMetadataForTest::class.java, FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder()))
+        .get()
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+    outputFile = temporaryFolder.newFile("AarMetadata.xml")
+  }
 
-    @Test
-    fun testBasic() {
-        task.output.set(outputFile)
-        task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
-        task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
-        task.minAgpVersion.set("7.0.0")
-        task.forceCompileSdkPreview.set("Tiramisu")
-        task.coreLibraryDesugaringEnabled.set(true)
-        task.taskAction()
+  @Test
+  fun testBasic() {
+    task.output.set(outputFile)
+    task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
+    task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
+    task.minCompileSdkVersion.set(CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1, codeName = "Tiramisu"))
+    task.minAgpVersion.set("7.0.0")
+    task.coreLibraryDesugaringEnabled.set(true)
+    task.taskAction()
 
-        checkAarMetadataFile(
-            outputFile,
-            AarMetadataTask.AAR_FORMAT_VERSION,
-            AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdk = "28",
-            minCompileSdkExtension = "1",
-            minAgpVersion = "7.0.0",
-            compileSdkPreview = "Tiramisu",
-            coreLibraryDesugaringEnabled = "true"
+    checkAarMetadataFile(
+      outputFile,
+      AarMetadataTask.AAR_FORMAT_VERSION,
+      AarMetadataTask.AAR_METADATA_VERSION,
+      minCompileSdk = "28",
+      minCompileSdkExtension = "1",
+      minAgpVersion = "7.0.0",
+      compileSdkPreview = "Tiramisu",
+      coreLibraryDesugaringEnabled = "true",
+    )
+  }
+
+  @Test
+  fun testUnstableMinAgpVersion() {
+    task.output.set(outputFile)
+    task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
+    task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
+    task.minCompileSdkVersion.set(CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1))
+    task.minAgpVersion.set("7.0.0-beta01")
+    task.coreLibraryDesugaringEnabled.set(false)
+    try {
+      task.taskAction()
+      fail("expecting RuntimeException")
+    } catch (e: RuntimeException) {
+      assertThat(e.message)
+        .contains(
+          "The specified minAgpVersion (7.0.0-beta01) is not valid. The minAgpVersion " +
+            "must be a stable AGP version, formatted with major, minor, and micro " +
+            "values (for example \"4.0.0\")."
         )
     }
+  }
 
-    @Test
-    fun testUnstableMinAgpVersion() {
-        task.output.set(outputFile)
-        task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
-        task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
-        task.minAgpVersion.set("7.0.0-beta01")
-        task.coreLibraryDesugaringEnabled.set(false)
-        try {
-            task.taskAction()
-            fail("expecting RuntimeException")
-        } catch (e: RuntimeException) {
-            assertThat(e.message).contains(
-                "The specified minAgpVersion (7.0.0-beta01) is not valid. The minAgpVersion " +
-                        "must be a stable AGP version, formatted with major, minor, and micro " +
-                        "values (for example \"4.0.0\")."
-            )
-        }
-    }
-
-    @Test
-    fun testFutureMinAgpVersion() {
-        task.output.set(outputFile)
-        task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
-        task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
-        task.minAgpVersion.set("10000.0.0")
-        task.coreLibraryDesugaringEnabled.set(false)
-        try {
-            task.taskAction()
-            fail("expecting RuntimeException")
-        } catch (e: RuntimeException) {
-            val currentAgpVersion = AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION)
-            assertThat(e.message).contains(
-                "The specified minAgpVersion (10000.0.0) is not valid because it is a later " +
-                        "version than the version of AGP used for this build ($currentAgpVersion)."
-            )
-        }
-    }
-
-    private fun checkAarMetadataFile(
-        file: File,
-        aarFormatVersion: String,
-        aarMetadataVersion: String,
-        minCompileSdk: String,
-        minCompileSdkExtension: String,
-        minAgpVersion: String,
-        compileSdkPreview: String? = null,
-        coreLibraryDesugaringEnabled: String
-    ) {
-        assertThat(file).exists()
-        val properties = Properties()
-        file.inputStream().use { properties.load(it) }
-        assertThat(properties.getProperty(AAR_FORMAT_VERSION_PROPERTY)).isEqualTo(aarFormatVersion)
-        assertThat(properties.getProperty(AAR_METADATA_VERSION_PROPERTY))
-            .isEqualTo(aarMetadataVersion)
-        assertThat(properties.getProperty(MIN_COMPILE_SDK_PROPERTY)).isEqualTo(minCompileSdk)
-        assertThat(properties.getProperty(MIN_COMPILE_SDK_EXTENSION_PROPERTY))
-            .isEqualTo(minCompileSdkExtension)
-        assertThat(properties.getProperty(MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY))
-            .isEqualTo(minAgpVersion)
-        compileSdkPreview?.let {
-            assertThat(properties.getProperty(FORCE_COMPILE_SDK_PREVIEW_PROPERTY))
-                .isEqualTo(compileSdkPreview)
-        }
-        assertThat(properties.getProperty(CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY)).isEqualTo(
-            coreLibraryDesugaringEnabled
+  @Test
+  fun testFutureMinAgpVersion() {
+    task.output.set(outputFile)
+    task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
+    task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
+    task.minCompileSdkVersion.set(CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1))
+    task.minAgpVersion.set("10000.0.0")
+    task.coreLibraryDesugaringEnabled.set(false)
+    try {
+      task.taskAction()
+      fail("expecting RuntimeException")
+    } catch (e: RuntimeException) {
+      val currentAgpVersion = AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+      assertThat(e.message)
+        .contains(
+          "The specified minAgpVersion (10000.0.0) is not valid because it is a later " +
+            "version than the version of AGP used for this build ($currentAgpVersion)."
         )
     }
+  }
+
+  private fun checkAarMetadataFile(
+    file: File,
+    aarFormatVersion: String,
+    aarMetadataVersion: String,
+    minCompileSdk: String,
+    minCompileSdkExtension: String,
+    minAgpVersion: String,
+    compileSdkPreview: String? = null,
+    coreLibraryDesugaringEnabled: String,
+  ) {
+    assertThat(file).exists()
+    val properties = Properties()
+    file.inputStream().use { properties.load(it) }
+    assertThat(properties.getProperty(AAR_FORMAT_VERSION_PROPERTY)).isEqualTo(aarFormatVersion)
+    assertThat(properties.getProperty(AAR_METADATA_VERSION_PROPERTY)).isEqualTo(aarMetadataVersion)
+    assertThat(properties.getProperty(MIN_COMPILE_SDK_PROPERTY)).isEqualTo(minCompileSdk)
+    assertThat(properties.getProperty(MIN_COMPILE_SDK_EXTENSION_PROPERTY)).isEqualTo(minCompileSdkExtension)
+    assertThat(properties.getProperty(MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY)).isEqualTo(minAgpVersion)
+    compileSdkPreview?.let { assertThat(properties.getProperty(FORCE_COMPILE_SDK_PREVIEW_PROPERTY)).isEqualTo(compileSdkPreview) }
+    assertThat(properties.getProperty(CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY)).isEqualTo(coreLibraryDesugaringEnabled)
+  }
 }

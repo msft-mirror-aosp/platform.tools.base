@@ -22,9 +22,7 @@ class PrivateResourceDetectorTest {
   @get:Rule var temporaryFolder = TemporaryFolder()
 
   fun lint(): TestLintTask {
-    return TestLintTask.lint()
-      .issues(PrivateResourceDetector.ISSUE)
-      .sdkHome(TestUtils.getSdk().toFile())
+    return TestLintTask.lint().issues(PrivateResourceDetector.ISSUE).sdkHome(TestUtils.getSdk().toFile())
   }
 
   // Sample code
@@ -73,8 +71,7 @@ class PrivateResourceDetectorTest {
       )
     )
 
-  private val defaultRClass: TestFile =
-    rClass("test.pkg", "@string/my_private_string", "@string/my_public_string")
+  private val defaultRClass: TestFile = rClass("test.pkg", "@string/my_private_string", "@string/my_public_string")
 
   private val gradle: TestFile =
     gradle(
@@ -339,21 +336,14 @@ class PrivateResourceDetectorTest {
     //       you also need to mark that local resource as a deliberate override,
     //       but if not you'll get a warning in the XML file where the override is
     //       defined.)
-    lint()
-      .files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle)
-      .run()
-      .expectClean()
+    lint().files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle).run().expectClean()
   }
 
   @Test
   fun testAllowLocalOverridesWithResourceRepository() {
     // Regression test for
     //   https://code.google.com/p/android/issues/detail?id=207152
-    lint()
-      .files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle)
-      .supportResourceRepository(true)
-      .run()
-      .expectClean()
+    lint().files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle).supportResourceRepository(true).run().expectClean()
   }
 
   @Test
@@ -379,16 +369,8 @@ class PrivateResourceDetectorTest {
                 """
           )
           .indented(),
-        rClass(
-          "com.example.resourcevisibility",
-          "@anim/abc_fade_in",
-          "@style/Animation_Design_BottomSheetDialog",
-        ),
-        rClass(
-          "com.google.android.material",
-          "@anim/abc_fade_in",
-          "@style/Animation_Design_BottomSheetDialog",
-        ),
+        rClass("com.example.resourcevisibility", "@anim/abc_fade_in", "@style/Animation_Design_BottomSheetDialog"),
+        rClass("com.google.android.material", "@anim/abc_fade_in", "@style/Animation_Design_BottomSheetDialog"),
         gradle(
             """
                 apply plugin: 'com.android.application'
@@ -415,12 +397,7 @@ class PrivateResourceDetectorTest {
               ),
               createLibrary(
                 artifact = "androidx.appcompat:appcompat:1.3.1",
-                all =
-                  listOf(
-                    "@attr/autoCompleteTextViewStyle",
-                    "@anim/abc_fade_in",
-                    "@drawable/abc_edit_text_material",
-                  ),
+                all = listOf("@attr/autoCompleteTextViewStyle", "@anim/abc_fade_in", "@drawable/abc_edit_text_material"),
                 public = listOf("@attr/autoCompleteTextViewStyle"),
               ),
               createLibrary(
@@ -481,8 +458,8 @@ class PrivateResourceDetectorTest {
               createLibrary(
                 artifact = "androidx.cardview:cardview:1.0.0",
                 all = listOf("@dimen/cardview_default_elevation"),
-                public =
-                  emptyList(), // No public.txt file at all, so all resources are implicitly public.
+                public = emptyList(), // No public.txt file at all, so all resources are
+                // implicitly public.
               ),
             )
           ),
@@ -495,11 +472,7 @@ class PrivateResourceDetectorTest {
     val file = File(temporaryFolder.root, artifact.replace(':', '_') + "/" + FN_RESOURCE_TEXT)
     var id = 0x7f040000
     file.parentFile?.mkdirs()
-    file.writeText(
-      resources
-        .map { it.toUrl() }
-        .joinToString("\n") { "int ${it.type} ${it.name} 0x${Integer.toHexString(id++)}" }
-    )
+    file.writeText(resources.map { it.toUrl() }.joinToString("\n") { "int ${it.type} ${it.name} 0x${Integer.toHexString(id++)}" })
     return file
   }
 
@@ -514,8 +487,7 @@ class PrivateResourceDetectorTest {
     return file
   }
 
-  private fun String.toUrl(): ResourceUrl =
-    ResourceUrl.parse(this) ?: error("Invalid resource reference $this")
+  private fun String.toUrl(): ResourceUrl = ResourceUrl.parse(this) ?: error("Invalid resource reference $this")
 
   private fun createLibrary(
     artifact: String,
@@ -523,20 +495,12 @@ class PrivateResourceDetectorTest {
     public: List<String> = emptyList(),
   ): Triple<String, List<String>, List<String>> = Triple(artifact, all, public)
 
-  private fun createLibraryMocker(
-    vararg libraries: Triple<String, List<String>, List<String>>
-  ): Consumer<GradleModelMocker> {
+  private fun createLibraryMocker(vararg libraries: Triple<String, List<String>, List<String>>): Consumer<GradleModelMocker> {
     return Consumer { mocker: GradleModelMocker ->
       for (library in libraries) {
         val (artifact, all, public) = library
-        mocker.withLibraryPublicResourcesFile(
-          artifact,
-          createPublicSymbolsFile(artifact, *public.toTypedArray()).path,
-        )
-        mocker.withLibrarySymbolFile(
-          artifact,
-          createAllSymbolsFile(artifact, *all.toTypedArray()).path,
-        )
+        mocker.withLibraryPublicResourcesFile(artifact, createPublicSymbolsFile(artifact, *public.toTypedArray()).path)
+        mocker.withLibrarySymbolFile(artifact, createAllSymbolsFile(artifact, *all.toTypedArray()).path)
       }
     }
   }

@@ -20,35 +20,24 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class EnabledMlModelBindingInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication { }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                buildFeatures {
-                    mlModelBinding = true
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+class EnabledMlModelBindingInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
+    deltaConfig = { androidApplication { android { buildFeatures { mlModelBinding = true } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        ensureAndroidDslDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    ensureAndroidDslDeltaIsEmpty()
+  }
 }

@@ -35,72 +35,51 @@ import java.nio.file.Path
  * @param path the Gradle path of the project
  * @param createMinimumProject whether to initialized default values on required properties
  */
-internal class AndroidLibraryDefinitionImpl(
-    path: String,
-    createMinimumProject: Boolean,
-): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_LIB)
-    }
+internal class AndroidLibraryDefinitionImpl(path: String, createMinimumProject: Boolean) :
+  AndroidProjectDefinitionImpl<LibraryExtension>(path) {
+  init {
+    applyPlugin(PluginType.ANDROID_LIB)
+  }
 
-    override val android: LibraryExtension =
-        DslProxy.createProxy(
-            LibraryExtension::class.java,
-            dslRecorder,
-        ).also {
-            if (createMinimumProject) {
-                initDefaultValues(it)
-            }
-        }
+  override val android: LibraryExtension =
+    DslProxy.createProxy(LibraryExtension::class.java, dslRecorder).also {
+      if (createMinimumProject) {
+        initDefaultValues(it)
+      }
+    }
 }
 
-/**
- * Specialized interface for library [AndroidProject] to use in the test
- */
-interface AndroidLibraryProject: AndroidProject<AndroidProjectDefinition<LibraryExtension>>,
-    GeneratesApk, GeneratesAar
+/** Specialized interface for library [AndroidProject] to use in the test */
+interface AndroidLibraryProject : AndroidProject<AndroidProjectDefinition<LibraryExtension>>, GeneratesApk, GeneratesAar
 
-/**
- * Implementation of [AndroidProject]
- */
-internal class AndroidLibraryImpl(
-    location: Path,
-    projectDefinition: AndroidProjectDefinition<LibraryExtension>,
-    namespace: String,
-) : AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(
-    location,
-    projectDefinition,
-    namespace,
-), AndroidLibraryProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
-    private val apkDelegate = GeneratesApkDelegate(projectDefinition.path, location)
+/** Implementation of [AndroidProject] */
+internal class AndroidLibraryImpl(location: Path, projectDefinition: AndroidProjectDefinition<LibraryExtension>, namespace: String) :
+  AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(location, projectDefinition, namespace),
+  AndroidLibraryProject,
+  GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
+  private val apkDelegate = GeneratesApkDelegate(projectDefinition.path, location)
 
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        if ((apkSelector as ApkSelectorImp).testSuite == null) {
-            error("Querying a non test APK from a library project.")
-        }
-        apkDelegate.assertApk(apkSelector, action)
+  override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
+    if ((apkSelector as ApkSelectorImp).testSuite == null) {
+      error("Querying a non test APK from a library project.")
     }
+    apkDelegate.assertApk(apkSelector, action)
+  }
 
-    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
-        if ((apkSelector as ApkSelectorImp).testSuite == null) {
-            error("Querying a non test APK from a library project.")
-        }
-        return apkDelegate.getApkLocationForCopy(apkSelector)
+  override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
+    if ((apkSelector as ApkSelectorImp).testSuite == null) {
+      error("Querying a non test APK from a library project.")
     }
+    return apkDelegate.getApkLocationForCopy(apkSelector)
+  }
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidLibraryProject =
-        ReversibleAndroidLibraryProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidLibraryProject =
+    ReversibleAndroidLibraryProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AndroidLibraryProject]
- */
-internal class ReversibleAndroidLibraryProject(
-    parentProject: AndroidLibraryProject,
-    fileChangeController: FileChangeController
-) : ReversibleAndroidProject<AndroidLibraryProject, AndroidProjectDefinition<LibraryExtension>>(
-    parentProject,
-    fileChangeController
-), AndroidLibraryProject,
-    GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
-    GeneratesAar by GeneratesAarFromParentDelegate(parentProject)
+/** Reversible version of [AndroidLibraryProject] */
+internal class ReversibleAndroidLibraryProject(parentProject: AndroidLibraryProject, fileChangeController: FileChangeController) :
+  ReversibleAndroidProject<AndroidLibraryProject, AndroidProjectDefinition<LibraryExtension>>(parentProject, fileChangeController),
+  AndroidLibraryProject,
+  GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
+  GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

@@ -883,8 +883,7 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
   }
 
   /**
-   * Demonstrates cases in which there are too many calls to endSection() to show that the
-   * [TraceSectionDetector] does not check for this.
+   * Demonstrates cases in which there are too many calls to endSection() to show that the [TraceSectionDetector] does not check for this.
    */
   fun testTooManyEndSections() {
     lint()
@@ -1304,10 +1303,7 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
       )
   }
 
-  /**
-   * This test ensures that similarly named third party methods don't trigger the lint check or
-   * cause crashes.
-   */
+  /** This test ensures that similarly named third party methods don't trigger the lint check or cause crashes. */
   fun testThirdPartyTraceMethods() {
     lint()
       .files(

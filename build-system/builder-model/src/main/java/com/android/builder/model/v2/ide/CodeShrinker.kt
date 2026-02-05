@@ -21,5 +21,6 @@ package com.android.builder.model.v2.ide
  * @since 4.2
  */
 enum class CodeShrinker {
-    PROGUARD, R8
+  PROGUARD,
+  R8,
 }

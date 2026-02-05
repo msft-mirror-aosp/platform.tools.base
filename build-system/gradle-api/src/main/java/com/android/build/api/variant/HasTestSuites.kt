@@ -16,16 +16,13 @@
 
 package com.android.build.api.variant
 
-/**
- * [Variant] that optionally have [TestSuite]s.
- */
+/** [Variant] that optionally have [TestSuite]s. */
 interface HasTestSuites {
 
-    /**
-     * Variant's [com.android.build.gradle.internal.testsuites.TestSuite] configuration to configure test suites associated with this
-     * variant.
-     *
-     * @return a [Map] which keys are unique names within the test suites
-     */
-    val suites: Map<String, TestSuite>
+  /**
+   * Variant's [com.android.build.gradle.internal.testsuites.TestSuite] configuration to configure test suites associated with this variant.
+   *
+   * @return a [Map] which keys are unique names within the test suites
+   */
+  val suites: Map<String, TestSuite>
 }

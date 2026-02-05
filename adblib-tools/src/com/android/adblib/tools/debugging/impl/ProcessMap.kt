@@ -19,80 +19,62 @@ import java.util.SortedMap
 import java.util.TreeMap
 
 /**
- * A custom collection similar to a map of [Int] to [T], with the intent of storing a collection
- * of unique process IDs associated to arbitrary values of type [T].
+ * A custom collection similar to a map of [Int] to [T], with the intent of storing a collection of unique process IDs associated to
+ * arbitrary values of type [T].
  *
  * [AutoCloseable.close] is called for every instance [T] discarded from the collection.
  *
  * Note: This collection is **not** thread-safe.
  */
-internal class ProcessMap<T> where T: Any {
+internal class ProcessMap<T> where T : Any {
 
-    /**
-     * Use a [SortedMap] (as opposed to a regular [Map]) merely for convenience,
-     * to keep PIDs sorted.
-     */
-    private val map: SortedMap<Int, T> = TreeMap()
+  /** Use a [SortedMap] (as opposed to a regular [Map]) merely for convenience, to keep PIDs sorted. */
+  private val map: SortedMap<Int, T> = TreeMap()
 
-    /**
-     * The [Set] of process IDs currently stored in this collection.
-     */
-    val pids: Set<Int>
-        get() = map.keys
+  /** The [Set] of process IDs currently stored in this collection. */
+  val pids: Set<Int>
+    get() = map.keys
 
-    /**
-     * The [Collection] of [T] values currently stored in this collection.
-     */
-    val values: Collection<T>
-        get() = map.values
+  /** The [Collection] of [T] values currently stored in this collection. */
+  val values: Collection<T>
+    get() = map.values
 
-    /**
-     * Incrementally update this collection so that it contains exactly all the process IDs
-     * from [effectivePids], adding and removing [T] values as needed so that
-     * [pids] == [effectivePids].
-     *
-     * * When adding an entry, [valueFactory] is invoked to create the corresponding [T] value.
-     * * When removing an existing entry, [onRemove] is invoked on the corresponding
-     *   [T] value.
-     */
-    fun updateAll(effectivePids: Set<Int>, valueFactory: (Int) -> T) {
-        val map = this
-        val lastKnownPids = map.pids
+  /**
+   * Incrementally update this collection so that it contains exactly all the process IDs from [effectivePids], adding and removing [T]
+   * values as needed so that [pids] == [effectivePids].
+   * * When adding an entry, [valueFactory] is invoked to create the corresponding [T] value.
+   * * When removing an existing entry, [onRemove] is invoked on the corresponding [T] value.
+   */
+  fun updateAll(effectivePids: Set<Int>, valueFactory: (Int) -> T) {
+    val map = this
+    val lastKnownPids = map.pids
 
-        val added = effectivePids - lastKnownPids
-        val removed = lastKnownPids - effectivePids
-        removed.forEach { pid ->
-            map.remove(pid)
-        }
-        added.forEach { pid ->
-            map.add(pid, valueFactory(pid))
-        }
+    val added = effectivePids - lastKnownPids
+    val removed = lastKnownPids - effectivePids
+    removed.forEach { pid -> map.remove(pid) }
+    added.forEach { pid -> map.add(pid, valueFactory(pid)) }
+  }
+
+  /** Remove all entries of this collection, calling [onRemove] for each [T] value. */
+  fun clear() {
+    // Close all processes
+    map.values.forEach { onRemove(it) }
+    map.clear()
+  }
+
+  private fun add(pid: Int, item: T) {
+    map.put(pid, item)?.also {
+      // This is a serious internal error: we have 2 entries with the same pid.
+      onRemove(it)
+      throw IllegalStateException("Error adding an entry for pid $pid: the collection contained an existing entry ($it)")
     }
+  }
 
-    /**
-     * Remove all entries of this collection, calling [onRemove] for each [T] value.
-     */
-    fun clear() {
-        // Close all processes
-        map.values.forEach {
-            onRemove(it)
-        }
-        map.clear()
-    }
+  private fun remove(pid: Int) {
+    map.remove(pid)?.also { onRemove(it) }
+  }
 
-    private fun add(pid: Int, item: T) {
-        map.put(pid, item)?.also {
-            // This is a serious internal error: we have 2 entries with the same pid.
-            onRemove(it)
-            throw IllegalStateException("Error adding an entry for pid $pid: the collection contained an existing entry ($it)")
-        }
-    }
-
-    private fun remove(pid: Int) {
-        map.remove(pid)?.also { onRemove(it) }
-    }
-
-    private fun onRemove(value: T) {
-        (value as? AutoCloseable)?.close()
-    }
+  private fun onRemove(value: T) {
+    (value as? AutoCloseable)?.close()
+  }
 }

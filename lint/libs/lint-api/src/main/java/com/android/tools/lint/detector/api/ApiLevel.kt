@@ -19,10 +19,7 @@ import com.android.sdklib.SdkVersionInfo
 import com.android.tools.lint.detector.api.ApiConstraint.Companion.atLeast
 import com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID
 
-/**
- * Represents an `SDK_INT` or `SDK_INT_FULL` integer, containing a specific API level (possibly with
- * minor version).
- */
+/** Represents an `SDK_INT` or `SDK_INT_FULL` integer, containing a specific API level (possibly with minor version). */
 @JvmInline
 value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
   constructor(major: Int, minor: Int) : this((SDK_INT_MULTIPLIER * major) + minor)
@@ -123,9 +120,8 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
     }
 
     /**
-     * Get the [ApiLevel] corresponding to the given integer, which can be either an `SDK_INT`
-     * representing a whole API level, or an `SDK_INT_FULL` representing a packed major+minor API
-     * level.
+     * Get the [ApiLevel] corresponding to the given integer, which can be either an `SDK_INT` representing a whole API level, or an
+     * `SDK_INT_FULL` representing a packed major+minor API level.
      */
     fun get(value: Int): ApiLevel {
       return ApiLevel(value)
@@ -135,20 +131,15 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
       return atLeast(ApiLevel(value), sdkId)
     }
 
-    fun getMinConstraint(
-      value: String,
-      sdkId: Int,
-      recognizeUnknowns: Boolean = true,
-    ): ApiConstraint.SdkApiConstraint? {
+    fun getMinConstraint(value: String, sdkId: Int, recognizeUnknowns: Boolean = true): ApiConstraint.SdkApiConstraint? {
       return get(value, recognizeUnknowns).atLeast(sdkId)
     }
 
     /**
-     * Maps a [string] like "31" and "36.2" and "UPSIDE_DOWN_CAKE" and "VANILLA_ICE_CREAM_2" to a
-     * corresponding [ApiLevel].
+     * Maps a [string] like "31" and "36.2" and "UPSIDE_DOWN_CAKE" and "VANILLA_ICE_CREAM_2" to a corresponding [ApiLevel].
      *
-     * If [recognizeUnknowns] is true, it will treat a codename it doesn't recognize as probably
-     * being the next API level, [SdkVersionInfo.HIGHEST_KNOWN_API] + 1.
+     * If [recognizeUnknowns] is true, it will treat a codename it doesn't recognize as probably being the next API level,
+     * [SdkVersionInfo.HIGHEST_KNOWN_API] + 1.
      *
      * If it cannot find an ApiLevel, it returns [NONE].
      */
@@ -171,10 +162,7 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
         else -> {
           val codeName = string.substringAfterLast('.')
           val underscore = codeName.lastIndexOf('_')
-          val hasMinor =
-            underscore != -1 &&
-              underscore < codeName.length - 1 &&
-              codeName[underscore + 1].isDigit()
+          val hasMinor = underscore != -1 && underscore < codeName.length - 1 && codeName[underscore + 1].isDigit()
           if (hasMinor) {
             val minor = codeName.substring(underscore + 1).toIntOrNull() ?: return NONE
             val majorCodeName = codeName.substring(0, underscore)

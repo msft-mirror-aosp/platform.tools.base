@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("FakeServices")
+
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.SdkComponentsBuildService
@@ -31,69 +32,62 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.model.v2.ide.ProjectType
 import com.android.testutils.TestUtils
-import com.google.common.collect.ImmutableMap
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
-import java.io.File
 
 @JvmOverloads
 fun createProjectServices(
-    project: Project = ProjectFactory.project,
-    issueReporter: SyncIssueReporter = FakeSyncIssueReporter(),
-    deprecationReporter: DeprecationReporter = FakeDeprecationReporter(),
-    objectFactory: ObjectFactory = project.objects,
-    logger: Logger = FakeLogger(),
-    providerFactory: ProviderFactory = project.providers,
-    projectOptions: ProjectOptions = ProjectOptions(providerFactory),
-    fileResolver: (Any) -> File = { File(it.toString()) }
+  project: Project = ProjectFactory.project,
+  issueReporter: SyncIssueReporter = FakeSyncIssueReporter(),
+  deprecationReporter: DeprecationReporter = FakeDeprecationReporter(),
+  objectFactory: ObjectFactory = project.objects,
+  logger: Logger = FakeLogger(),
+  providerFactory: ProviderFactory = project.providers,
+  projectOptions: ProjectOptions = ProjectOptions(providerFactory),
+  fileResolver: (Any) -> File = { File(it.toString()) },
 ): ProjectServices =
-    ProjectServices(
-        issueReporter,
-        deprecationReporter,
-        objectFactory,
-        logger,
-        providerFactory,
-        project.layout,
-        projectOptions,
-        project.gradle.sharedServices,
-        lintFromMaven = LintFromMaven(objectFactory.fileCollection(), "invalid lint"),
-        aapt2FromMaven = Aapt2FromMaven(objectFactory.fileCollection().from(TestUtils.getAapt2().parent), "test-aapt2"),
-        maxWorkerCount = 1,
-        ProjectInfo(project),
-        fileResolver = fileResolver,
-        project.configurations,
-        project.dependencies,
-        project.extensions.extraProperties,
-        project.tasks::register,
-        project.pluginManager,
-    )
+  ProjectServices(
+    issueReporter,
+    deprecationReporter,
+    objectFactory,
+    logger,
+    providerFactory,
+    project.layout,
+    projectOptions,
+    project.gradle.sharedServices,
+    lintFromMaven = LintFromMaven(objectFactory.fileCollection(), "invalid lint"),
+    aapt2FromMaven = Aapt2FromMaven(objectFactory.fileCollection().from(TestUtils.getAapt2().parent), "test-aapt2"),
+    maxWorkerCount = 1,
+    ProjectInfo(project),
+    fileResolver = fileResolver,
+    project.configurations,
+    project.dependencies,
+    project.extensions.extraProperties,
+    project.tasks::register,
+    project.pluginManager,
+  )
 
 @JvmOverloads
 fun createDslServices(
-    projectServices: ProjectServices = createProjectServices(),
-    sdkComponents: Provider<SdkComponentsBuildService> = FakeGradleProvider(null),
-    projectType: ProjectType? = null
+  projectServices: ProjectServices = createProjectServices(),
+  sdkComponents: Provider<SdkComponentsBuildService> = FakeGradleProvider(null),
+  projectType: ProjectType? = null,
 ): DslServices {
-    return DslServicesImpl(projectServices, sdkComponents, projectType)
+  return DslServicesImpl(projectServices, sdkComponents, projectType)
 }
 
 @JvmOverloads
-fun createVariantApiServices(
-    projectServices: ProjectServices = createProjectServices()
-): VariantBuilderServices = VariantBuilderServicesImpl(projectServices)
+fun createVariantApiServices(projectServices: ProjectServices = createProjectServices()): VariantBuilderServices =
+  VariantBuilderServicesImpl(projectServices)
 
 @JvmOverloads
-fun createVariantPropertiesApiServices(
-    projectServices: ProjectServices = createProjectServices()
-): VariantServices = VariantServicesImpl(
-    projectServices = projectServices,
-    forUnitTesting = true,
-)
+fun createVariantPropertiesApiServices(projectServices: ProjectServices = createProjectServices()): VariantServices =
+  VariantServicesImpl(projectServices = projectServices, forUnitTesting = true)
 
 @JvmOverloads
-fun createTaskCreationServices(
-    projectServices: ProjectServices = createProjectServices()
-): TaskCreationServices = TaskCreationServicesImpl(projectServices)
+fun createTaskCreationServices(projectServices: ProjectServices = createProjectServices()): TaskCreationServices =
+  TaskCreationServicesImpl(projectServices)

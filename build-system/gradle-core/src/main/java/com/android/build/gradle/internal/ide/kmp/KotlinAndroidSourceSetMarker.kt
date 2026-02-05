@@ -19,18 +19,15 @@ package com.android.build.gradle.internal.ide.kmp
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.tooling.core.extrasKeyOf
 
-/**
- * A marker for android sourceSets in order to handle IDE import configuration for these sourceSets.
- */
+/** A marker for android sourceSets in order to handle IDE import configuration for these sourceSets. */
 class KotlinAndroidSourceSetMarker {
-    companion object {
-        private val extrasKey = extrasKeyOf<KotlinAndroidSourceSetMarker>()
+  companion object {
+    private val extrasKey = extrasKeyOf<KotlinAndroidSourceSetMarker>()
 
-        var KotlinSourceSet.android: KotlinAndroidSourceSetMarker?
-            get() = extras[extrasKey]
-            internal set(value) {
-                if (value != null) extras[extrasKey] = value
-                else extras.remove(extrasKey)
-            }
-    }
+    var KotlinSourceSet.android: KotlinAndroidSourceSetMarker?
+      get() = extras[extrasKey]
+      internal set(value) {
+        if (value != null) extras[extrasKey] = value else extras.remove(extrasKey)
+      }
+  }
 }

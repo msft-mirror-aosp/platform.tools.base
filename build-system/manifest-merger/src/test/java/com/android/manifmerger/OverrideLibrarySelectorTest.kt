@@ -16,46 +16,42 @@
 
 package com.android.manifmerger
 
+import java.util.Optional
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.util.Optional
 
 class OverrideLibrarySelectorTest {
-    private val xmlAttribute = mock<XmlAttribute>()
-    private val xmlDocument = mock<XmlDocument> {
-        on { getPackage() } doReturn Optional.of(xmlAttribute)
-    }
-    private val xmlElement = mock<XmlElement> {
-        on { document } doReturn xmlDocument
-    }
+  private val xmlAttribute = mock<XmlAttribute>()
+  private val xmlDocument = mock<XmlDocument> { on { getPackage() } doReturn Optional.of(xmlAttribute) }
+  private val xmlElement = mock<XmlElement> { on { document } doReturn xmlDocument }
 
-    @Test
-    fun missingXmlAttribute_appliesTo() {
-        val selector = OverrideLibrarySelector("com.example.foo")
-        whenever(xmlDocument.`package`).thenReturn(Optional.empty())
-        assertFalse(selector.appliesTo(xmlElement))
-    }
+  @Test
+  fun missingXmlAttribute_appliesTo() {
+    val selector = OverrideLibrarySelector("com.example.foo")
+    whenever(xmlDocument.`package`).thenReturn(Optional.empty())
+    assertFalse(selector.appliesTo(xmlElement))
+  }
 
-    @Test
-    fun overrideSelector_appliesTo() {
-        val selector = OverrideLibrarySelector("com.example.lib1")
-        whenever(xmlAttribute.value).thenReturn("com.example.lib1")
-        assertTrue(selector.appliesTo(xmlElement))
-    }
+  @Test
+  fun overrideSelector_appliesTo() {
+    val selector = OverrideLibrarySelector("com.example.lib1")
+    whenever(xmlAttribute.value).thenReturn("com.example.lib1")
+    assertTrue(selector.appliesTo(xmlElement))
+  }
 
-    @Test
-    fun wildcardPackageName_appliesTo() {
-        val selector = OverrideLibrarySelector("com.example.*")
-        whenever(xmlAttribute.value).thenReturn("com.example.lib1")
-        assertTrue(selector.appliesTo(xmlElement))
-        whenever(xmlAttribute.value).thenReturn("com.example.lib2")
-        assertTrue(selector.appliesTo(xmlElement))
+  @Test
+  fun wildcardPackageName_appliesTo() {
+    val selector = OverrideLibrarySelector("com.example.*")
+    whenever(xmlAttribute.value).thenReturn("com.example.lib1")
+    assertTrue(selector.appliesTo(xmlElement))
+    whenever(xmlAttribute.value).thenReturn("com.example.lib2")
+    assertTrue(selector.appliesTo(xmlElement))
 
-        whenever(xmlAttribute.value).thenReturn("com.foo.lib1")
-        assertFalse(selector.appliesTo(xmlElement))
-    }
+    whenever(xmlAttribute.value).thenReturn("com.foo.lib1")
+    assertFalse(selector.appliesTo(xmlElement))
+  }
 }

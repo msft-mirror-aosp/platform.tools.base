@@ -23,10 +23,10 @@ import org.junit.Test
 /** Tests for the [parseResourceForInlineResources]. */
 class ResourceExtraXmlParserTest {
 
-    @Test
-    fun parseExtra() {
-        val xml =
-                """<?xml version="1.0" encoding="utf-8"?>
+  @Test
+  fun parseExtra() {
+    val xml =
+      """<?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -62,16 +62,14 @@ class ResourceExtraXmlParserTest {
 
 </android.support.design.widget.CoordinatorLayout>"""
 
-        val table =
-                parseResourceForInlineResources(
-                        XmlUtils.parseDocument(xml, false), IdProvider.sequential())
+    val table = parseResourceForInlineResources(XmlUtils.parseDocument(xml, false), IdProvider.sequential())
 
-        val expected =
-                SymbolTable.builder()
-                        .add(SymbolTestUtils.createSymbol("id", "toolbar", "int", 0x7f_0b_0001))
-                        .add(SymbolTestUtils.createSymbol("id", "fab", "int", 0x7f_0b_0002))
-                        .build()
+    val expected =
+      SymbolTable.builder()
+        .add(SymbolTestUtils.createSymbol("id", "toolbar", "int", 0x7f_0b_0001))
+        .add(SymbolTestUtils.createSymbol("id", "fab", "int", 0x7f_0b_0002))
+        .build()
 
-        Truth.assertThat(table).isEqualTo(expected)
-    }
+    Truth.assertThat(table).isEqualTo(expected)
+  }
 }

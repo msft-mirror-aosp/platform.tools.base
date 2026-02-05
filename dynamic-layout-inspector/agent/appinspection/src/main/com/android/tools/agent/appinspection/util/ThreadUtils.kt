@@ -19,89 +19,78 @@ package com.android.tools.agent.appinspection.util
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 
 object ThreadUtils {
-    @VisibleForTesting
-    var registerThread: (Thread) -> Unit = {}
+  @VisibleForTesting var registerThread: (Thread) -> Unit = {}
 
-    /**
-     * Create a new thread with a special name that is allowed by ThreadWatcher.
-     */
-    fun newThread(runnable: Runnable): Thread {
-        // ThreadWatcher accepts threads starting with "Studio:"
-        return Thread(runnable, "Studio:LayInsp").apply { registerThread(this) }
-    }
+  /** Create a new thread with a special name that is allowed by ThreadWatcher. */
+  fun newThread(runnable: Runnable): Thread {
+    // ThreadWatcher accepts threads starting with "Studio:"
+    return Thread(runnable, "Studio:LayInsp").apply { registerThread(this) }
+  }
 
-    fun assertOnMainThread() {
-        if (!Looper.getMainLooper().isCurrentThread) {
-            error("This work is required on the main thread")
-        }
+  fun assertOnMainThread() {
+    if (!Looper.getMainLooper().isCurrentThread) {
+      error("This work is required on the main thread")
     }
+  }
 
-    fun assertOffMainThread() {
-        if (Looper.getMainLooper().isCurrentThread) {
-            error("This work is required off the main thread")
-        }
+  fun assertOffMainThread() {
+    if (Looper.getMainLooper().isCurrentThread) {
+      error("This work is required off the main thread")
     }
+  }
 
-    /**
-     * Run some logic on the main thread, returning a future that will contain any data computed
-     * by and returned from the block.
-     *
-     * If this method is called from the main thread, it will run immediately.
-     */
-    fun <T> runOnMainThread(block: () -> T): CompletableFuture<T> {
-        return if (!Looper.getMainLooper().isCurrentThread) {
-            val future = CompletableFuture<T>()
-            Handler.createAsync(Looper.getMainLooper()).post {
-                try {
-                    future.complete(block())
-                }
-                catch (exception: Exception) {
-                    future.completeExceptionally(exception)
-                }
-            }
-            future
+  /**
+   * Run some logic on the main thread, returning a future that will contain any data computed by and returned from the block.
+   *
+   * If this method is called from the main thread, it will run immediately.
+   */
+  fun <T> runOnMainThread(block: () -> T): CompletableFuture<T> {
+    return if (!Looper.getMainLooper().isCurrentThread) {
+      val future = CompletableFuture<T>()
+      Handler.createAsync(Looper.getMainLooper()).post {
+        try {
+          future.complete(block())
+        } catch (exception: Exception) {
+          future.completeExceptionally(exception)
         }
-        else {
-            try {
-                CompletableFuture.completedFuture(block())
-            }
-            catch (exception: Exception) {
-                CompletableFuture<T>().apply { completeExceptionally(exception) }
-            }
-        }
+      }
+      future
+    } else {
+      try {
+        CompletableFuture.completedFuture(block())
+      } catch (exception: Exception) {
+        CompletableFuture<T>().apply { completeExceptionally(exception) }
+      }
     }
+  }
 
-    /**
-     * Run some logic on the main thread, returning a future that will contain any data computed
-     * by and returned from the block.
-     *
-     * If this method is called from the main thread, it will run immediately.
-     */
-    fun <T> runOnMainThreadAsync(block: () -> T): Deferred<T> {
-        return if (!Looper.getMainLooper().isCurrentThread) {
-            val deferred = CompletableDeferred<T>()
-            Handler.createAsync(Looper.getMainLooper()).post {
-                deferred.complete(block())
-            }
-            deferred
-        }
-        else {
-            CompletableDeferred(block())
-        }
+  /**
+   * Run some logic on the main thread, returning a future that will contain any data computed by and returned from the block.
+   *
+   * If this method is called from the main thread, it will run immediately.
+   */
+  fun <T> runOnMainThreadAsync(block: () -> T): Deferred<T> {
+    return if (!Looper.getMainLooper().isCurrentThread) {
+      val deferred = CompletableDeferred<T>()
+      Handler.createAsync(Looper.getMainLooper()).post { deferred.complete(block()) }
+      deferred
+    } else {
+      CompletableDeferred(block())
     }
+  }
 }
 
 /** An executor that runs tasks on the app's main thread */
 class MainThreadExecutor : Executor {
-    private val handler = Handler(Looper.getMainLooper())
+  private val handler = Handler(Looper.getMainLooper())
 
-    override fun execute(command: Runnable) {
-        handler.post(command)
-    }
+  override fun execute(command: Runnable) {
+    handler.post(command)
+  }
 }

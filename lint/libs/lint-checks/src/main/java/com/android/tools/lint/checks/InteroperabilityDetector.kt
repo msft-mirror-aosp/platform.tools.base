@@ -74,15 +74,13 @@ import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.getParentOfType
 
 /**
- * Checks for issues around creating APIs that make it harder to interoperate between Java and
- * Kotlin code.
+ * Checks for issues around creating APIs that make it harder to interoperate between Java and Kotlin code.
  *
  * See https://android.github.io/kotlin-guides/interop.html .
  */
 class InteroperabilityDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(InteroperabilityDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(InteroperabilityDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val IGNORE_DEPRECATED =
       VALUE_TRUE == System.getenv("ANDROID_LINT_NULLNESS_IGNORE_DEPRECATED") ||
@@ -221,20 +219,14 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
     }
 
     private fun isNonNullAnnotation(qualifiedName: String): Boolean {
-      return qualifiedName.endsWith("NonNull") ||
-        qualifiedName.endsWith("NotNull") ||
-        qualifiedName.endsWith("Nonnull")
+      return qualifiedName.endsWith("NonNull") || qualifiedName.endsWith("NotNull") || qualifiedName.endsWith("Nonnull")
     }
 
     private fun isNullnessAnnotation(qualifiedName: String?): Boolean {
-      return qualifiedName != null &&
-        (isNullableAnnotation(qualifiedName) || isNonNullAnnotation(qualifiedName))
+      return qualifiedName != null && (isNullableAnnotation(qualifiedName) || isNonNullAnnotation(qualifiedName))
     }
 
-    private fun JavaContext.hasNullnessAnnotation(
-      node: PsiModifierListOwner,
-      type: PsiType?,
-    ): Boolean {
+    private fun JavaContext.hasNullnessAnnotation(node: PsiModifierListOwner, type: PsiType?): Boolean {
       // Check both the annotations from the evaluator (which will include external annotations from
       // XML files) and the annotations on the node (which will include nullness annotations for
       // Kotlin not present in source), as well as annotations on the type
@@ -331,8 +323,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
                   // e.g., Lazy<String!>
                   flexibleTypeRenderer = KaFlexibleTypeRenderer.AS_RANGE
                 }
-              @OptIn(KaExperimentalApi::class)
-              ktType.render(renderer, position = Variance.INVARIANT)
+              @OptIn(KaExperimentalApi::class) ktType.render(renderer, position = Variance.INVARIANT)
             }
           reportMissingExplicitType(node, typeString)
         }
@@ -496,12 +487,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           val message =
             "This getter should not be static such that `$propertyName` can " +
               "be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes"
-          context.report(
-            KOTLIN_PROPERTY,
-            location.source as? PsiElement ?: setter,
-            location,
-            message,
-          )
+          context.report(KOTLIN_PROPERTY, location.source as? PsiElement ?: setter, location, message)
           return
         }
 
@@ -515,12 +501,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
             "The getter return type (`${getter.returnType?.presentableText}`) and setter parameter type (`${setterParameterType?.presentableText}`) getter and setter methods for property `$propertyName` should have exactly the same type to allow " +
               "be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes"
           val location = getPropertyLocation(getter, setter.javaPsi)
-          context.report(
-            KOTLIN_PROPERTY,
-            location.source as? PsiElement ?: setter,
-            location,
-            message,
-          )
+          context.report(KOTLIN_PROPERTY, location.source as? PsiElement ?: setter, location, message)
           return
         }
 
@@ -540,12 +521,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
                   "https://android.github.io/kotlin-guides/interop.html#property-prefixes"
               val location = getPropertyLocation(getter, superMethod)
               location.secondary?.message = "Super method here"
-              context.report(
-                KOTLIN_PROPERTY,
-                location.source as? PsiElement ?: setter,
-                location,
-                message,
-              )
+              context.report(KOTLIN_PROPERTY, location.source as? PsiElement ?: setter, location, message)
               return
             }
           }
@@ -621,10 +597,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
 
       return context
         .getNameLocation(primary)
-        .withSecondary(
-          context.getNameLocation(secondary),
-          "${if (secondary.name.startsWith("set")) "Setter" else "Getter"} here",
-        )
+        .withSecondary(context.getNameLocation(secondary), "${if (secondary.name.startsWith("set")) "Setter" else "Getter"} here")
     }
 
     private fun ensureNullnessKnown(node: UDeclaration, type: PsiType?) {
@@ -635,10 +608,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         // The nullability of generic type parameters is often only known by the caller.
         return
       }
-      if (
-        node is UField &&
-          (node.javaPsi as? PsiField)?.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true
-      ) {
+      if (node is UField && (node.javaPsi as? PsiField)?.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true) {
         return
       }
 
@@ -646,11 +616,8 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       // UAnnotations and the annotations from the type are PsiAnnotations, so extract the name
       // and location from each kind of annotation to make one list to loop over.
       val allAnnotations =
-        context.evaluator.getAllAnnotations(node as UAnnotated, false).map {
-          Pair(it.qualifiedName) { context.getLocation(it) }
-        } +
-          (type?.annotations?.map { Pair(it.qualifiedName) { context.getLocation(it) } }
-            ?: emptyList())
+        context.evaluator.getAllAnnotations(node as UAnnotated, false).map { Pair(it.qualifiedName) { context.getLocation(it) } } +
+          (type?.annotations?.map { Pair(it.qualifiedName) { context.getLocation(it) } } ?: emptyList())
       for ((name, location) in allAnnotations) {
         name ?: continue
 
@@ -664,8 +631,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
 
         if (isNonNullAnnotation(name)) {
           if (isEqualsParameter(node)) {
-            val message =
-              "Unexpected @NonNull: The `equals` contract allows the parameter to be null"
+            val message = "Unexpected @NonNull: The `equals` contract allows the parameter to be null"
             context.report(PLATFORM_NULLNESS, node as UElement, location(), message)
           }
           return
@@ -728,9 +694,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           context.getLocation(node.javaPsi.modifierList)
         } else if (node is UField) {
           // Ditto for fields
-          (node.javaPsi as? PsiField)?.modifierList?.let { modifierList ->
-            context.getLocation(modifierList)
-          } ?: return
+          (node.javaPsi as? PsiField)?.modifierList?.let { modifierList -> context.getLocation(modifierList) } ?: return
         } else {
           return
         }
@@ -772,10 +736,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           val parameterIndex = method.uastParameters.indexOf(node)
           if (parameterIndex >= 0 && parameterIndex < superParameters.size) {
             val superParameter = superParameters[parameterIndex]
-            if (
-              isPlatformMethod(superMethod) &&
-                !context.hasNullnessAnnotation(superParameter, superParameter.type)
-            ) {
+            if (isPlatformMethod(superMethod) && !context.hasNullnessAnnotation(superParameter, superParameter.type)) {
               return true
             }
           }
@@ -783,10 +744,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         }
       } else if (node is UMethod && !node.isConstructor) {
         val superMethod = node.findRootMethod() ?: return false
-        if (
-          isPlatformMethod(superMethod) &&
-            !context.hasNullnessAnnotation(superMethod, superMethod.returnType)
-        ) {
+        if (isPlatformMethod(superMethod) && !context.hasNullnessAnnotation(superMethod, superMethod.returnType)) {
           return true
         }
       }
@@ -868,12 +826,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         val message =
           "Avoid $typeLabel names that are Kotlin hard keywords (\"$name\"); see " +
             "https://android.github.io/kotlin-guides/interop.html#no-hard-keywords"
-        context.report(
-          NO_HARD_KOTLIN_KEYWORDS,
-          node as UElement,
-          context.getNameLocation(node as UElement),
-          message,
-        )
+        context.report(NO_HARD_KOTLIN_KEYWORDS, node as UElement, context.getNameLocation(node as UElement), message)
       }
     }
 
@@ -930,10 +883,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         if (abstractCount > 1) {
           abstractCount = 0
           for (method in cls.methods) {
-            if (
-              method.modifierList.hasModifierProperty(PsiModifier.ABSTRACT) &&
-                !context.evaluator.isOverride(method, true)
-            ) {
+            if (method.modifierList.hasModifierProperty(PsiModifier.ABSTRACT) && !context.evaluator.isOverride(method, true)) {
               abstractCount++
             }
           }

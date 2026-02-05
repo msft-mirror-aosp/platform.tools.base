@@ -18,10 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun loginViewModelJava(
-  packageName: String,
-  useAndroidX: Boolean) =
-
+fun loginViewModelJava(packageName: String, useAndroidX: Boolean) =
   """package ${packageName}.ui.login;
 
 import ${getMaterialComponentName("android.arch.lifecycle.LiveData", useAndroidX)};

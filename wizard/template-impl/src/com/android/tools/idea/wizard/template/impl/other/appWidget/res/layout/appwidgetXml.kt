@@ -21,7 +21,8 @@ import com.android.tools.idea.wizard.template.impl.other.appWidget.res.values.ge
 import com.android.tools.idea.wizard.template.impl.other.appWidget.res.values.getAppWidgetInnerViewStyleName
 import com.android.tools.idea.wizard.template.impl.other.appWidget.res.values.getAppWidgetTheme
 
-fun appwidgetXml(themesData: ThemesData) = """
+fun appwidgetXml(themesData: ThemesData) =
+  """
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/${getAppWidgetContainerStyleName(themesData.appName)}"
     android:theme="@style/${getAppWidgetTheme(themesData.main.name)}"

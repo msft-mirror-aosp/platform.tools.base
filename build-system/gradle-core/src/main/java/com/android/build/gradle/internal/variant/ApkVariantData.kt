@@ -19,16 +19,10 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.services.VariantServices
 
-/** Data about a variant that produces a APK.  */
-abstract class ApkVariantData protected constructor(
-    componentIdentity: ComponentIdentity,
-    artifacts: ArtifactsImpl,
-    services: VariantServices
-) : BaseVariantData(
-    componentIdentity,
-    artifacts,
-    services
-) {
+/** Data about a variant that produces a APK. */
+abstract class ApkVariantData
+protected constructor(componentIdentity: ComponentIdentity, artifacts: ArtifactsImpl, services: VariantServices) :
+  BaseVariantData(componentIdentity, artifacts, services) {
 
-    var compatibleScreens: Set<String> = setOf()
+  var compatibleScreens: Set<String> = setOf()
 }

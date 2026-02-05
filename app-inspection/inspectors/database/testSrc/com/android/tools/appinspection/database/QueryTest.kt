@@ -43,29 +43,16 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 // TODO: add tests for invalid queries: union of unequal number of columns, syntax error, etc.
 class QueryTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
   private val table1: Table =
-    Table(
-      "table1",
-      Column("t", "TEXT"),
-      Column("nu", "NUMERIC"),
-      Column("i", "INTEGER"),
-      Column("r", "REAL"),
-      Column("b", "BLOB"),
-    )
+    Table("table1", Column("t", "TEXT"), Column("nu", "NUMERIC"), Column("i", "INTEGER"), Column("r", "REAL"), Column("b", "BLOB"))
 
   private val table2: Table = Table("table2", Column("id", "INTEGER"), Column("name", "TEXT"))
 
@@ -110,14 +97,7 @@ class QueryTest {
 
     val expectedColumnNames = table1.columns.map { it.name }
 
-    test_valid_query(
-      DatabaseModel("db1", table1, table2),
-      values,
-      query,
-      expectedValues,
-      expectedTypes,
-      expectedColumnNames,
-    )
+    test_valid_query(DatabaseModel("db1", table1, table2), values, query, expectedValues, expectedTypes, expectedColumnNames)
   }
 
   @Test
@@ -125,12 +105,10 @@ class QueryTest {
     val databaseId = 123456789
     val command = "select * from sqlite_master"
     val queryParams = null
-    testEnvironment.sendCommand(createQueryCommand(databaseId, command, queryParams)).let { response
-      ->
+    testEnvironment.sendCommand(createQueryCommand(databaseId, command, queryParams)).let { response ->
       assertThat(response.hasErrorOccurred()).isEqualTo(true)
       val error = response.errorOccurred.content
-      assertThat(error.message)
-        .contains("Unable to perform an operation on database (id=$databaseId).")
+      assertThat(error.message).contains("Unable to perform an operation on database (id=$databaseId).")
       assertThat(error.message).contains("The database may have already been closed.")
       assertThat(error.stackTrace).isEqualTo("")
       assertThat(error.recoverability.isRecoverable).isEqualTo(true)
@@ -178,12 +156,7 @@ class QueryTest {
   fun test_valid_query_nested_query_with_a_comment() {
     test_valid_query(
       DatabaseModel("db", table2),
-      values =
-        listOf(
-          table2 to arrayOf("1", "'A'"),
-          table2 to arrayOf("2", "'B'"),
-          table2 to arrayOf("3", "'C'"),
-        ),
+      values = listOf(table2 to arrayOf("1", "'A'"), table2 to arrayOf("2", "'B'"), table2 to arrayOf("3", "'C'")),
       query = "select count(*) from (select * from table2 /* comment */)",
       expectedValues = listOf(listOf(3)),
       expectedTypes = listOf(listOf("integer")),
@@ -202,8 +175,8 @@ class QueryTest {
   }
 
   /**
-   * Same as [test_valid_query_with_params_syntax2a] but with reversed argument "names". Showcases
-   * that this syntax respects numerals after the "?" unlike all other cases (also tested here).
+   * Same as [test_valid_query_with_params_syntax2a] but with reversed argument "names". Showcases that this syntax respects numerals after
+   * the "?" unlike all other cases (also tested here).
    */
   @Test
   fun test_valid_query_with_params_syntax2b() {
@@ -254,16 +227,8 @@ class QueryTest {
   private fun test_valid_query_with_params(paramNameLeft: String, paramNameRight: String) {
     test_valid_query(
       DatabaseModel("db", table2),
-      values =
-        listOf(
-          table2 to arrayOf("1", "'A'"),
-          table2 to arrayOf("2", "'B'"),
-          table2 to arrayOf("3", "'C'"),
-        ),
-      query =
-        "select * from " +
-          "(select * from ${table2.name} where id > $paramNameLeft) " +
-          "where id < $paramNameRight",
+      values = listOf(table2 to arrayOf("1", "'A'"), table2 to arrayOf("2", "'B'"), table2 to arrayOf("3", "'C'")),
+      query = "select * from " + "(select * from ${table2.name} where id > $paramNameLeft) " + "where id < $paramNameRight",
       queryParams = listOf("1", "3"),
       expectedValues = listOf(listOf(2, "B")),
       expectedTypes = listOf(listOf("integer", "text")),
@@ -275,12 +240,7 @@ class QueryTest {
   fun test_valid_query_with_params_column_name_limitation() {
     test_valid_query(
       DatabaseModel("db", table2),
-      values =
-        listOf(
-          table2 to arrayOf("1", "'A'"),
-          table2 to arrayOf("2", "'B'"),
-          table2 to arrayOf("3", "'C'"),
-        ),
+      values = listOf(table2 to arrayOf("1", "'A'"), table2 to arrayOf("2", "'B'"), table2 to arrayOf("3", "'C'")),
       query = "select ? as col from ${table2.name}",
       queryParams = listOf("id"),
       // Note: instead of expected 1, 2, 3, we get "id", "id", "id". This is a result of
@@ -296,19 +256,11 @@ class QueryTest {
     // given
     val insertCommand = "insert into ${table2.name} values (?, ?)"
 
-    val insertValues =
-      listOf(listOf(null, null), listOf("0.5", null), listOf("'2'", null), listOf(null, "A"))
+    val insertValues = listOf(listOf(null, null), listOf("0.5", null), listOf("'2'", null), listOf(null, "A"))
 
-    val expectedValues =
-      listOf(listOf(null, null), listOf(0.5, null), listOf("'2'", null), listOf(null, "A"))
+    val expectedValues = listOf(listOf(null, null), listOf(0.5, null), listOf("'2'", null), listOf(null, "A"))
 
-    val expectedTypes =
-      listOf(
-        listOf("null", "null"),
-        listOf("float", "null"),
-        listOf("text", "null"),
-        listOf("null", "text"),
-      )
+    val expectedTypes = listOf(listOf("null", "null"), listOf("float", "null"), listOf("text", "null"), listOf("null", "text"))
 
     // when
     val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table2)))
@@ -344,16 +296,10 @@ class QueryTest {
   fun test_valid_query_missing_column_values() {
     test_valid_query(
       DatabaseModel("db", table2),
-      values =
-        listOf(
-          table2 to arrayOf("1", "'A'"),
-          table2 to arrayOf("null", "null"),
-          table2 to arrayOf("null", "'C'"),
-        ),
+      values = listOf(table2 to arrayOf("1", "'A'"), table2 to arrayOf("null", "null"), table2 to arrayOf("null", "'C'")),
       query = "select * from ${table2.name}",
       expectedValues = listOf(listOf(1, "A"), listOf(null, null), listOf(null, "C")),
-      expectedTypes =
-        listOf(listOf("integer", "text"), listOf("null", "null"), listOf("null", "text")),
+      expectedTypes = listOf(listOf("integer", "text"), listOf("null", "null"), listOf("null", "text")),
       expectedColumnNames = table2.columns.map { it.name },
     )
   }
@@ -371,10 +317,7 @@ class QueryTest {
 
     // create a database
     val db =
-      testEnvironment.openDatabase(
-        DatabaseModel("db_large_val", Table("table1", Column("c1", "blob"))),
-        writeAheadLoggingEnabled = true,
-      )
+      testEnvironment.openDatabase(DatabaseModel("db_large_val", Table("table1", Column("c1", "blob"))), writeAheadLoggingEnabled = true)
 
     // populate the database
     val records = mutableListOf<ByteArray>()
@@ -393,11 +336,7 @@ class QueryTest {
     while (true) { // break close inside the loop
       val response =
         testEnvironment.sendCommand(
-          createQueryCommand(
-            dbId,
-            "select * from table1 LIMIT 999999 OFFSET $recordCount",
-            responseSizeLimitHint = responseSizeLimitHint,
-          )
+          createQueryCommand(dbId, "select * from table1 LIMIT 999999 OFFSET $recordCount", responseSizeLimitHint = responseSizeLimitHint)
         )
       assertThat(response.hasErrorOccurred()).isFalse()
       val rows = response.query.rowsList
@@ -421,12 +360,7 @@ class QueryTest {
   @Test
   fun test_valid_query_two_table_union() {
     val values =
-      listOf(
-        table1 to repeat5("'abc'"),
-        table1 to repeat5("'xyz'"),
-        table2 to arrayOf("1", "'A'"),
-        table2 to arrayOf("2", "'B'"),
-      )
+      listOf(table1 to repeat5("'abc'"), table1 to repeat5("'xyz'"), table2 to arrayOf("1", "'A'"), table2 to arrayOf("2", "'B'"))
 
     // query construction
     val columns1 = table1.columns.take(2).map { it.name }
@@ -443,14 +377,7 @@ class QueryTest {
 
     val expectedTypes = listOf(listOf("integer", "text"), listOf("text", "text"))
 
-    test_valid_query(
-      DatabaseModel("db1", table1, table2),
-      values,
-      query,
-      expectedValues,
-      expectedTypes,
-      expectedColumnNames = columns1,
-    )
+    test_valid_query(DatabaseModel("db1", table1, table2), values, query, expectedValues, expectedTypes, expectedColumnNames = columns1)
   }
 
   private fun test_valid_query(
@@ -533,8 +460,7 @@ class QueryTest {
     issueQuery(databaseId, "alter table ${table.name} add ${newColumn.name} ${newColumn.type}")
 
     // then
-    assertThat(querySchema(databaseId))
-      .isEqualTo(listOf(Table(table.name, table.columns + newColumn)))
+    assertThat(querySchema(databaseId)).isEqualTo(listOf(Table(table.name, table.columns + newColumn)))
     assertThat(queryTotalChanges(databaseId)).isEqualTo(initialTotalChanges) // note no diff
   }
 
@@ -560,9 +486,7 @@ class QueryTest {
     // then (insert)
     issueQuery(databaseId, "select * from ${table.name}").let { response ->
       assertThat(response.rowsList).hasSize(insertCount)
-      response.rowsList.forEach { row ->
-        assertThat(row.valuesList.map { it.value.toString() }).isEqualTo(newValue)
-      }
+      response.rowsList.forEach { row -> assertThat(row.valuesList.map { it.value.toString() }).isEqualTo(newValue) }
     }
     assertThat(queryChanges(databaseId)).isEqualTo(1) // note select doesn't reset it
     assertThat(queryTotalChanges(databaseId)).isEqualTo(expectedTotalChanges)
@@ -619,11 +543,7 @@ class QueryTest {
     assertThat(response.isForcedConnection).isTrue()
   }
 
-  private fun <T> test_value64(
-    value: T,
-    fromCursor: (Cursor) -> T,
-    fromCellValue: (CellValue) -> T,
-  ) = runBlocking {
+  private fun <T> test_value64(value: T, fromCursor: (Cursor) -> T, fromCellValue: (CellValue) -> T) = runBlocking {
     val db = testEnvironment.openDatabase(DatabaseModel("db1", Table("t1", Column("c1", "INT"))))
     testEnvironment.registerAlreadyOpenDatabases(listOf(db))
     testEnvironment.sendCommand(createTrackDatabasesCommand())
@@ -661,11 +581,8 @@ class QueryTest {
     return testEnvironment.awaitDatabaseOpenedEvent(databaseInstance.displayName).databaseId
   }
 
-  private suspend fun issueQuery(
-    databaseId: Int,
-    command: String,
-    queryParams: List<String?>? = null,
-  ): QueryResponse = testEnvironment.issueQuery(databaseId, command, queryParams)
+  private suspend fun issueQuery(databaseId: Int, command: String, queryParams: List<String?>? = null): QueryResponse =
+    testEnvironment.issueQuery(databaseId, command, queryParams)
 
   private suspend fun querySchema(databaseId: Int): List<Table> =
     testEnvironment.sendCommand(createGetSchemaCommand(databaseId)).getSchema.toTableList()
@@ -683,8 +600,7 @@ class QueryTest {
 
   private suspend fun queryTotalChanges(databaseId: Int): Long = queryChanges(databaseId, true)
 
-  private inline fun <reified T> repeatN(value: T, n: Int): Array<T> =
-    (0 until n).map { value }.toTypedArray()
+  private inline fun <reified T> repeatN(value: T, n: Int): Array<T> = (0 until n).map { value }.toTypedArray()
 
   private inline fun <reified T> repeat5(v: T) = repeatN(v, 5)
 }

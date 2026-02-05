@@ -29,11 +29,8 @@ import org.gradle.api.provider.ProviderFactory
 
 open class TestRunConfigureAction
 @Inject
-constructor(
-  private val objectFactory: ObjectFactory,
-  private val providerFactory: ProviderFactory,
-  private val project: Project,
-) : DeviceTestRunConfigureAction<ManagedDevice, DeviceTestRunInput> {
+constructor(private val objectFactory: ObjectFactory, private val providerFactory: ProviderFactory, private val project: Project) :
+  DeviceTestRunConfigureAction<ManagedDevice, DeviceTestRunInput> {
 
   override fun configureTaskInput(deviceDSL: ManagedDevice): DeviceTestRunInput =
     objectFactory.newInstance(DeviceTestRunInput::class.java).apply {
@@ -56,8 +53,7 @@ constructor(
       numUniformShards.disallowChanges()
 
       extraDeviceUrlsFile.set(
-        project.tasks.named(TestLabGradlePlugin.EXTRA_DEVICE_FILES_UPLOAD_TASK_NAME).flatMap { task
-          ->
+        project.tasks.named(TestLabGradlePlugin.EXTRA_DEVICE_FILES_UPLOAD_TASK_NAME).flatMap { task ->
           (task as ExtraDeviceFilesUploadTask).outputFile
         }
       )

@@ -16,21 +16,18 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
 import java.io.File
+import org.gradle.api.Incubating
 
 /**
- * A container for a collection of files that has the capability to add a single existing file
- * or a group of existing files to the collection
+ * A container for a collection of files that has the capability to add a single existing file or a group of existing files to the
+ * collection
  */
 @Incubating
 interface ConfigurableFiles {
-    @get:Incubating
-    val files: MutableList<File>
+  @get:Incubating val files: MutableList<File>
 
-    @Incubating
-    fun file(file: Any)
+  @Incubating fun file(file: Any)
 
-    @Incubating
-    fun files(vararg files: Any)
+  @Incubating fun files(vararg files: Any)
 }

@@ -21,8 +21,6 @@ import org.gradle.api.Incubating
 /**
  * Build-time properties for Android Resources inside a [Component].
  *
- * Although empty at this point, this interface will allow adding elements in the future without
- * breaking its type hierarchy.
+ * Although empty at this point, this interface will allow adding elements in the future without breaking its type hierarchy.
  */
-@Incubating
-interface AndroidResourcesBuilder
+@Incubating interface AndroidResourcesBuilder

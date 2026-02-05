@@ -17,343 +17,226 @@
 package com.android.build.gradle.internal.variant
 
 import com.android.build.gradle.internal.utils.IssueSubject
-import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Test
 
 class DimensionCombinatorTest : AbstractVariantInputModelTest<List<DimensionCombination>>() {
-    @Test
-    fun `test default config`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug")
-                    create("release")
-                }
-            }
+  @Test
+  fun `test default config`() {
+    given {
+      android {
+        buildTypes {
+          create("debug")
+          create("release")
         }
-
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = emptyList()
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = emptyList()
-                )
-            )
-        }
+      }
     }
 
-    @Test
-    fun `test basic flavors`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug").isDebuggable = true
-                    create("release")
-                }
-                productFlavors {
-                    create("flavor1") {
-                        dimension = "one"
-                    }
-                    create("flavor2") {
-                        dimension = "one"
-                    }
-                }
-            }
-        }
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = emptyList()),
+        DimensionCombinationImpl(buildType = "release", productFlavors = emptyList()),
+      )
+    }
+  }
 
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor2")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor2")
-                )
-            )
+  @Test
+  fun `test basic flavors`() {
+    given {
+      android {
+        buildTypes {
+          create("debug").isDebuggable = true
+          create("release")
         }
+        productFlavors {
+          create("flavor1") { dimension = "one" }
+          create("flavor2") { dimension = "one" }
+        }
+      }
     }
 
-    @Test
-    fun `test multiple dimensions flavors`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug")
-                    create("release")
-                }
-                productFlavors {
-                    create("flavor1") {
-                        dimension = "one"
-                    }
-                    create("flavor2") {
-                        dimension = "one"
-                    }
-                    create("flavorA") {
-                        dimension = "two"
-                    }
-                    create("flavorB") {
-                        dimension = "two"
-                    }
-                }
-            }
-        }
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor2")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor2")),
+      )
+    }
+  }
 
-        withFlavorList {
-            listOf("one", "two")
+  @Test
+  fun `test multiple dimensions flavors`() {
+    given {
+      android {
+        buildTypes {
+          create("debug")
+          create("release")
         }
-
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor1", "two" to "flavorB")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor2", "two" to "flavorA")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor2", "two" to "flavorB")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor1", "two" to "flavorB")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor2", "two" to "flavorA")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor2", "two" to "flavorB")
-                )
-            )
+        productFlavors {
+          create("flavor1") { dimension = "one" }
+          create("flavor2") { dimension = "one" }
+          create("flavorA") { dimension = "two" }
+          create("flavorB") { dimension = "two" }
         }
+      }
     }
 
-    @Test
-    fun `test no build type or flavors`() {
-        given {
-            android {
-            }
-        }
+    withFlavorList { listOf("one", "two") }
 
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = null,
-                    productFlavors = emptyList()
-                )
-            )
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor1", "two" to "flavorA")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor1", "two" to "flavorB")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor2", "two" to "flavorA")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor2", "two" to "flavorB")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor1", "two" to "flavorA")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor1", "two" to "flavorB")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor2", "two" to "flavorA")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor2", "two" to "flavorB")),
+      )
+    }
+  }
+
+  @Test
+  fun `test no build type or flavors`() {
+    given { android {} }
+
+    expect { listOf(DimensionCombinationImpl(buildType = null, productFlavors = emptyList())) }
+  }
+
+  @Test
+  fun `test basic flavors - no build types`() {
+    given {
+      android {
+        productFlavors {
+          create("flavor1") { dimension = "one" }
+          create("flavor2") { dimension = "one" }
         }
+      }
     }
 
-    @Test
-    fun `test basic flavors - no build types`() {
-        given {
-            android {
-                productFlavors {
-                    create("flavor1") {
-                        dimension = "one"
-                    }
-                    create("flavor2") {
-                        dimension = "one"
-                    }
-                }
-            }
-        }
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = null, productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = null, productFlavors = listOf("one" to "flavor2")),
+      )
+    }
+  }
 
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = null,
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = null,
-                    productFlavors = listOf("one" to "flavor2")
-                )
-            )
+  @Test
+  fun `test missing dimension in flavors`() {
+    given {
+      android {
+        buildTypes {
+          create("debug")
+          create("release")
         }
+        productFlavors {
+          create("flavor1") {
+            // no dimension set
+          }
+          create("flavor2") {
+            // no dimension set
+          }
+        }
+      }
     }
 
-    @Test
-    fun `test missing dimension in flavors`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug")
-                    create("release")
-                }
-                productFlavors {
-                    create("flavor1") {
-                        // no dimension set
-                    }
-                    create("flavor2") {
-                        // no dimension set
-                    }
-                }
-            }
-        }
+    withFlavorList { listOf("one") }
 
-        withFlavorList { listOf("one") }
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor2")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor2")),
+      )
+    }
+  }
 
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor2")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor2")
-                )
-            )
+  @Test
+  fun `test missing dimension list with no dimension in flavors`() {
+    given {
+      android {
+        buildTypes {
+          create("debug").isDebuggable = true
+          create("release")
         }
+        productFlavors {
+          create("flavor1") {
+            // no dimension set
+          }
+          create("flavor2") {
+            // no dimension set
+          }
+        }
+      }
     }
 
-    @Test
-    fun `test missing dimension list with no dimension in flavors`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug").isDebuggable = true
-                    create("release")
-                }
-                productFlavors {
-                    create("flavor1") {
-                        // no dimension set
-                    }
-                    create("flavor2") {
-                        // no dimension set
-                    }
-                }
-            }
-        }
-
-        withIssueChecker { issues: List<SyncIssue> ->
-            Truth.assertThat(issues).named("issues").hasSize(1)
-            val issue = issues.single()
-            IssueSubject.assertThat(issue).hasType(SyncIssue.TYPE_UNNAMED_FLAVOR_DIMENSION)
-            IssueSubject.assertThat(issue)
-                .hasMessage("All flavors must now belong to a named flavor dimension. Learn more at https://d.android.com/r/tools/flavorDimensions-missing-error-message.html")
-        }
-
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor2")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor2")
-                )
-            )
-        }
+    withIssueChecker { issues: List<SyncIssue> ->
+      Truth.assertThat(issues).named("issues").hasSize(1)
+      val issue = issues.single()
+      IssueSubject.assertThat(issue).hasType(SyncIssue.TYPE_UNNAMED_FLAVOR_DIMENSION)
+      IssueSubject.assertThat(issue)
+        .hasMessage(
+          "All flavors must now belong to a named flavor dimension. Learn more at https://d.android.com/r/tools/flavorDimensions-missing-error-message.html"
+        )
     }
 
-    @Test
-    fun `test missing dimension list`() {
-        given {
-            android {
-                buildTypes {
-                    create("debug").isDebuggable = true
-                    create("release")
-                }
-                productFlavors {
-                    create("flavor1") {
-                        dimension = "one"
-                    }
-                    create("flavor2") {
-                        dimension = "one"
-                    }
-                }
-            }
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor1")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor2")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor1")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf(DimensionCombinator.FAKE_DIMENSION to "flavor2")),
+      )
+    }
+  }
+
+  @Test
+  fun `test missing dimension list`() {
+    given {
+      android {
+        buildTypes {
+          create("debug").isDebuggable = true
+          create("release")
         }
-
-        expect {
-            listOf(
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "debug",
-                    productFlavors = listOf("one" to "flavor2")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor1")
-                ),
-                DimensionCombinationImpl(
-                    buildType = "release",
-                    productFlavors = listOf("one" to "flavor2")
-                )
-            )
+        productFlavors {
+          create("flavor1") { dimension = "one" }
+          create("flavor2") { dimension = "one" }
         }
+      }
     }
 
-    private var flavorList: List<String>? = null
-
-    private fun withFlavorList(action: () -> List<String>) {
-        flavorList = action()
+    expect {
+      listOf(
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "debug", productFlavors = listOf("one" to "flavor2")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor1")),
+        DimensionCombinationImpl(buildType = "release", productFlavors = listOf("one" to "flavor2")),
+      )
     }
+  }
 
-    override fun defaultWhen(given: TestVariantInputModel): List<DimensionCombination>? {
-        // compute the flavor list if needed
-        val expectedFlavorList = flavorList ?: given.productFlavors.values.asSequence().mapNotNull { it.productFlavor.dimension }.toSet().toList()
+  private var flavorList: List<String>? = null
 
-        val variantComputer = DimensionCombinator(given, dslServices.issueReporter, expectedFlavorList)
+  private fun withFlavorList(action: () -> List<String>) {
+    flavorList = action()
+  }
 
-        return variantComputer.computeVariants()
-    }
+  override fun defaultWhen(given: TestVariantInputModel): List<DimensionCombination>? {
+    // compute the flavor list if needed
+    val expectedFlavorList =
+      flavorList ?: given.productFlavors.values.asSequence().mapNotNull { it.productFlavor.dimension }.toSet().toList()
 
-    override fun compareResult(
-        expected: List<DimensionCombination>?,
-        actual: List<DimensionCombination>?
-    ) {
-        Truth.assertThat(actual).containsExactlyElementsIn(expected)
-    }
+    val variantComputer = DimensionCombinator(given, dslServices.issueReporter, expectedFlavorList)
+
+    return variantComputer.computeVariants()
+  }
+
+  override fun compareResult(expected: List<DimensionCombination>?, actual: List<DimensionCombination>?) {
+    Truth.assertThat(actual).containsExactlyElementsIn(expected)
+  }
 }

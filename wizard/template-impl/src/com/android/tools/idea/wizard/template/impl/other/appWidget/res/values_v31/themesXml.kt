@@ -20,8 +20,10 @@ import com.android.tools.idea.wizard.template.impl.other.appWidget.res.values.ge
 
 fun themesXml(themesData: ThemesData, forDarkMode: Boolean): String {
 
-  val comment = if (forDarkMode) """Having themes.xml for night-v31 because of the priority order of the resource qualifiers."""
-  else """Having themes.xml for v31 variant because @android:dimen/system_app_widget_background_radius
+  val comment =
+    if (forDarkMode) """Having themes.xml for night-v31 because of the priority order of the resource qualifiers."""
+    else
+      """Having themes.xml for v31 variant because @android:dimen/system_app_widget_background_radius
      and @android:dimen/system_app_widget_internal_padding requires API level 31"""
 
   return """<?xml version="1.0" encoding="utf-8"?>

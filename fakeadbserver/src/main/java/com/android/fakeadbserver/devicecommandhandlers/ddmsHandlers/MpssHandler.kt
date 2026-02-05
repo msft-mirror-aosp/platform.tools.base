@@ -18,40 +18,37 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.ProfilerState
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
-/**
- * MPSS: `Method Profiling Streaming Start`
- */
+/** MPSS: `Method Profiling Streaming Start` */
 class MpssHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
-        @Suppress("UsePropertyAccessSyntax")
-        val bufferSize = payload.getInt()
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
+    @Suppress("UsePropertyAccessSyntax") val bufferSize = payload.getInt()
 
-        client.profilerState.status = ProfilerState.Status.Instrumentation
-        client.profilerState.instrumentationData.bufferSize = bufferSize
+    client.profilerState.status = ProfilerState.Status.Instrumentation
+    client.profilerState.instrumentationData.bufferSize = bufferSize
 
-        // Empty response used to be sent out before the release of Android 28
-        if (device.apiLevel < 28) {
-            JdwpPacket.createEmptyDdmsResponse(packet.id).write(jdwpHandlerOutput)
-        }
-
-        // Keep JDWP connection open
-        return true
+    // Empty response used to be sent out before the release of Android 28
+    if (device.apiLevel < 28) {
+      JdwpPacket.createEmptyDdmsResponse(packet.id).write(jdwpHandlerOutput)
     }
 
-    companion object {
+    // Keep JDWP connection open
+    return true
+  }
 
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("MPSS")
-    }
+  companion object {
+
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("MPSS")
+  }
 }

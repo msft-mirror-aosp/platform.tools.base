@@ -73,22 +73,21 @@ import org.w3c.dom.Node
 class ResourceCycleDetector : ResourceXmlDetector() {
 
   /**
-   * For each resource type, a map from a key (style name, layout name, color name, etc) to a value
-   * (parent style, included layout, referenced color, etc). Note that we only initialize this if we
-   * are in "batch mode" (not editor incremental mode) since we allow this detector to also run
-   * incrementally to look for trivial chains (e.g. of length 1).
+   * For each resource type, a map from a key (style name, layout name, color name, etc) to a value (parent style, included layout,
+   * referenced color, etc). Note that we only initialize this if we are in "batch mode" (not editor incremental mode) since we allow this
+   * detector to also run incrementally to look for trivial chains (e.g. of length 1).
    */
   private var mReferences: MutableMap<ResourceType, Multimap<String, String>>? = null
 
   /**
-   * If in batch analysis and cycles were found, in phase 2 this map should be initialized with
-   * locations for declaration definitions of the keys and values in [.mReferences]
+   * If in batch analysis and cycles were found, in phase 2 this map should be initialized with locations for declaration definitions of the
+   * keys and values in [.mReferences]
    */
   private var mLocations: MutableMap<ResourceType, Multimap<String, Location>>? = null
 
   /**
-   * If in batch analysis and cycles were found, for each resource type this is a list of chains
-   * (where each chain is a list of keys as described in [.mReferences])
+   * If in batch analysis and cycles were found, for each resource type this is a list of chains (where each chain is a list of keys as
+   * described in [.mReferences])
    */
   private var mChains: MutableMap<ResourceType, MutableList<MutableList<String>>>? = null
 
@@ -145,8 +144,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
     }
 
     // Multimap which preserves insert order (for predictable output order)
-    val newMap: Multimap<String, String> =
-      Multimaps.newListMultimap(TreeMap()) { Lists.newArrayListWithExpectedSize<String>(6) }
+    val newMap: Multimap<String, String> = Multimaps.newListMultimap(TreeMap()) { Lists.newArrayListWithExpectedSize<String>(6) }
     references[type] = newMap
 
     return newMap
@@ -227,25 +225,13 @@ class ResourceCycleDetector : ResourceXmlDetector() {
         val color = element.getAttributeNS(ANDROID_URI, ATTR_COLOR)
         if (color != null && color.startsWith(COLOR_RESOURCE_PREFIX)) {
           val currentColor = getBaseName(context.file.name)
-          handleReference(
-            context,
-            element,
-            ResourceType.COLOR,
-            currentColor,
-            color.substring(COLOR_RESOURCE_PREFIX.length),
-          )
+          handleReference(context, element, ResourceType.COLOR, currentColor, color.substring(COLOR_RESOURCE_PREFIX.length))
         }
       } else if (folderType == ResourceFolderType.DRAWABLE) {
         val drawable = element.getAttributeNS(ANDROID_URI, ATTR_DRAWABLE)
         if (drawable != null && drawable.startsWith(DRAWABLE_PREFIX)) {
           val currentColor = getBaseName(context.file.name)
-          handleReference(
-            context,
-            element,
-            ResourceType.DRAWABLE,
-            currentColor,
-            drawable.substring(DRAWABLE_PREFIX.length),
-          )
+          handleReference(context, element, ResourceType.DRAWABLE, currentColor, drawable.substring(DRAWABLE_PREFIX.length))
         }
       }
     } else if (tagName == TAG_STYLE) {
@@ -279,12 +265,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
           handleReference(context, parentNode, ResourceType.STYLE, name, parentName)
 
           if (parent.startsWith(PREFIX_RESOURCE_REF) && !parent.contains("style/")) {
-            context.report(
-              CYCLE,
-              parentNode,
-              context.getLocation(parentNode),
-              "Invalid parent reference: expected a @style",
-            )
+            context.report(CYCLE, parentNode, context.getLocation(parentNode), "Invalid parent reference: expected a @style")
           }
         }
       } else if (mReferences != null && nameNode != null) {
@@ -387,16 +368,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
             if (!itemLocations.isEmpty()) {
               val itemLocation = itemLocations.iterator().next()
               val next = chain[(i + 1) % chain.size]
-              val label =
-                ("Reference from @" +
-                  type.getName() +
-                  "/" +
-                  item +
-                  " to " +
-                  type.getName() +
-                  "/" +
-                  next +
-                  " here")
+              val label = ("Reference from @" + type.getName() + "/" + item + " to " + type.getName() + "/" + next + " here")
               itemLocation.message = label
               itemLocation.secondary = location
               location = itemLocation
@@ -419,12 +391,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
             }
           }
 
-          val message =
-            String.format(
-              "%1\$s Resource definition cycle: %2\$s",
-              type.displayName,
-              Joiner.on(" => ").join(chain),
-            )
+          val message = String.format("%1\$s Resource definition cycle: %2\$s", type.displayName, Joiner.on(" => ").join(chain))
 
           context.report(CYCLE, location, message)
         }
@@ -482,13 +449,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
     handleReference(context, attribute, url.type, from, url.name)
   }
 
-  private fun handleReference(
-    context: XmlContext,
-    node: Node,
-    type: ResourceType,
-    from: String,
-    to: String,
-  ) {
+  private fun handleReference(context: XmlContext, node: Node, type: ResourceType, from: String, to: String) {
     if (from == to) {
       // Report immediately; don't record
       if (context.isEnabled(CYCLE) && context.driver.phase == 1) {
@@ -530,10 +491,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
         val chains: MutableMap<ResourceType, MutableList<MutableList<String>>> =
           mChains
             ?: run {
-              val newMap =
-                Maps.newEnumMap<ResourceType, MutableList<MutableList<String>>>(
-                  ResourceType::class.java
-                )
+              val newMap = Maps.newEnumMap<ResourceType, MutableList<MutableList<String>>>(ResourceType::class.java)
               mChains = newMap
               mLocations = Maps.newEnumMap(ResourceType::class.java)
               context.driver.requestRepeat(this, Scope.RESOURCE_FILE_SCOPE)
@@ -625,8 +583,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(ResourceCycleDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ResourceCycleDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** Style parent cycles, resource alias cycles, layout include cycles, etc. */
     @JvmField

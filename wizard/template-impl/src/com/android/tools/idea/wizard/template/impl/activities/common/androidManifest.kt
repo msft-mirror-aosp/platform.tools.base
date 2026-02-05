@@ -29,27 +29,30 @@ fun androidManifestXml(
   generateActivityTitle: Boolean = true,
   isResizeable: Boolean = false,
   libraryName: String = "",
-  taskAffinity: String? = null
+  taskAffinity: String? = null,
 ): String {
   val appName = if (isNewModule) "app_name" else "title_" + activityToLayout(activityClass)
 
   val generateActivityTitleBlock = renderIf(generateActivityTitle) { "android:label = \"@string/$appName\"" }
 
-  val themeBlock = when {
-    activityThemeName.startsWith("@android:style/") -> """android:theme = "$activityThemeName""""
-    hasNoActionBar -> """android:theme = "@style/${activityThemeName}""""
-    else -> ""
-  }
+  val themeBlock =
+    when {
+      activityThemeName.startsWith("@android:style/") -> """android:theme = "$activityThemeName""""
+      hasNoActionBar -> """android:theme = "@style/${activityThemeName}""""
+      else -> ""
+    }
 
-  val isResizeableBlock = renderIf(isResizeable) {
-    """android:resizeableActivity="true"
+  val isResizeableBlock =
+    renderIf(isResizeable) {
+      """android:resizeableActivity="true"
      tools:targetApi="24"
     """
-  }
+    }
 
-  val toolsNameSpace = renderIf(isResizeable) {"xmlns:tools=\"http://schemas.android.com/tools\""}
+  val toolsNameSpace = renderIf(isResizeable) { "xmlns:tools=\"http://schemas.android.com/tools\"" }
 
-  val appNameBlock = renderIf(libraryName.isNotEmpty()) { "<meta-data android:name=\"android.app.lib_name\" android:value=\"$libraryName\" />" }
+  val appNameBlock =
+    renderIf(libraryName.isNotEmpty()) { "<meta-data android:name=\"android.app.lib_name\" android:value=\"$libraryName\" />" }
 
   val taskAffinityBlock = renderIf(taskAffinity != null) { taskAffinity.let { "android:taskAffinity=\"$it\"" } }
 
@@ -69,5 +72,6 @@ fun androidManifestXml(
     </activity>
     </application>
     </manifest>
-    """.collapseEmptyActivityTags()
+    """
+    .collapseEmptyActivityTags()
 }

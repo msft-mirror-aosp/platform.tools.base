@@ -17,17 +17,15 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.HasConfigurableValue
-import org.gradle.api.Action
 import javax.inject.Inject
+import org.gradle.api.Action
 
-open class HasConfigurableValueImpl<T : Any> @Inject constructor(
-    private val value: T
-): HasConfigurableValue<T> {
-    override fun configure(action: T.() -> Unit) {
-        value.action()
-    }
+open class HasConfigurableValueImpl<T : Any> @Inject constructor(private val value: T) : HasConfigurableValue<T> {
+  override fun configure(action: T.() -> Unit) {
+    value.action()
+  }
 
-    fun configure(action: Action<T>) {
-        action.execute(value)
-    }
+  fun configure(action: Action<T>) {
+    action.execute(value)
+  }
 }

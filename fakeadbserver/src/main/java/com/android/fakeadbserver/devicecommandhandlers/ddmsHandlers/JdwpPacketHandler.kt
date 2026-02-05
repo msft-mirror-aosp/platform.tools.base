@@ -20,62 +20,56 @@ import com.android.fakeadbserver.DeviceState
 
 fun interface JdwpPacketHandler {
 
-    /**
-     * Interface for fake debugger to handle incoming JDWP packets
-     *
-     * @param device The device associated with the client
-     * @param client The client associated with the connection
-     * @param packet The packet that is being handled
-     * @param jdwpHandlerOutput The stream to write the response to
-     * @return If true the fake debugger should continue accepting packets, if false it should
-     * terminate the session
-     */
-    fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: JdwpPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput
-    ): Boolean
+  /**
+   * Interface for fake debugger to handle incoming JDWP packets
+   *
+   * @param device The device associated with the client
+   * @param client The client associated with the connection
+   * @param packet The packet that is being handled
+   * @param jdwpHandlerOutput The stream to write the response to
+   * @return If true the fake debugger should continue accepting packets, if false it should terminate the session
+   */
+  fun handlePacket(device: DeviceState, client: ClientState, packet: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput): Boolean
 }
 
 data class JdwpCommandId(val cmdSet: Int, val cmd: Int)
 
 object JdwpCommands {
-    enum class CmdSet(val cmdSet: Int, val cmdList: List<Cmd>) {
-        SET_VM(1, VmCmd.values().asList());
+  enum class CmdSet(val cmdSet: Int, val cmdList: List<Cmd>) {
+    SET_VM(1, VmCmd.values().asList());
 
-        val value: Int
-            get() = cmdSet
-    }
+    val value: Int
+      get() = cmdSet
+  }
 
-    interface Cmd {
+  interface Cmd {
 
-        val name: String
-        val cmd: Int
-        val value: Int
-            get() = cmd
-    }
+    val name: String
+    val cmd: Int
+    val value: Int
+      get() = cmd
+  }
 
-    enum class VmCmd(override val cmd: Int) : Cmd {
-        CMD_VM_VERSION(1),
-        CMD_VM_CLASSESBYSIGNATURE(2),
-        CMD_VM_ALLCLASSES(3),
-        CMD_VM_ALLTHREADS(4),
-        CMD_VM_TOPLEVELTHREADGROUPS(5),
-        CMD_VM_DISPOSE(6),
-        CMD_VM_IDSIZES(7),
-        CMD_VM_SUSPEND(8),
-        CMD_VM_RESUME(9),
-        CMD_VM_EXIT(10),
-        CMD_VM_CREATESTRING(11),
-        CMD_VM_CAPABILITIES(12),
-        CMD_VM_CLASSPATHS(13),
-        CMD_VM_DISPOSEOBJECTS(14),
-        CMD_VM_HOLDEVENTS(15),
-        CMD_VM_RELEASEEVENTS(16),
-        CMD_VM_CAPABILITIESNEW(17),
-        CMD_VM_REDEFINECLASSES(18),
-        CMD_VM_SETDEFAULTSTRATUM(19),
-        CMD_VM_ALLCLASSESWITHGENERIC(20),
-    }
+  enum class VmCmd(override val cmd: Int) : Cmd {
+    CMD_VM_VERSION(1),
+    CMD_VM_CLASSESBYSIGNATURE(2),
+    CMD_VM_ALLCLASSES(3),
+    CMD_VM_ALLTHREADS(4),
+    CMD_VM_TOPLEVELTHREADGROUPS(5),
+    CMD_VM_DISPOSE(6),
+    CMD_VM_IDSIZES(7),
+    CMD_VM_SUSPEND(8),
+    CMD_VM_RESUME(9),
+    CMD_VM_EXIT(10),
+    CMD_VM_CREATESTRING(11),
+    CMD_VM_CAPABILITIES(12),
+    CMD_VM_CLASSPATHS(13),
+    CMD_VM_DISPOSEOBJECTS(14),
+    CMD_VM_HOLDEVENTS(15),
+    CMD_VM_RELEASEEVENTS(16),
+    CMD_VM_CAPABILITIESNEW(17),
+    CMD_VM_REDEFINECLASSES(18),
+    CMD_VM_SETDEFAULTSTRATUM(19),
+    CMD_VM_ALLCLASSESWITHGENERIC(20),
+  }
 }

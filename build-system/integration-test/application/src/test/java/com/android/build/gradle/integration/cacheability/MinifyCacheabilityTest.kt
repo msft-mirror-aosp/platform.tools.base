@@ -30,29 +30,23 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/**
- * Similar to [CacheabilityTest], but targeting builds with `minifyEnabled=true` to verify a
- * different set of tasks.
- */
+/** Similar to [CacheabilityTest], but targeting builds with `minifyEnabled=true` to verify a different set of tasks. */
 class MinifyCacheabilityTest {
 
-    companion object {
-        private const val GRADLE_BUILD_CACHE_DIR = "gradle-build-cache"
-    }
+  companion object {
+    private const val GRADLE_BUILD_CACHE_DIR = "gradle-build-cache"
+  }
 
-    /**
-     * The expected states of tasks when running a second build with the Gradle build cache
-     * enabled from an identical project at a different location.
-     */
-    private val EXPECTED_TASK_STATES = mapOf(
-        // Sort by alphabetical order for easier searching
-        UP_TO_DATE to setOf(
-            ":clean",
-            ":generateMinifiedAssets",
-            ":preBuild",
-            ":preMinifiedBuild",
-        ),
-        FROM_CACHE to setOf(
+  /**
+   * The expected states of tasks when running a second build with the Gradle build cache enabled from an identical project at a different
+   * location.
+   */
+  private val EXPECTED_TASK_STATES =
+    mapOf(
+      // Sort by alphabetical order for easier searching
+      UP_TO_DATE to setOf(":clean", ":generateMinifiedAssets", ":preBuild", ":preMinifiedBuild"),
+      FROM_CACHE to
+        setOf(
             ":compileMinifiedJavaWithJavac",
             ":compileMinifiedNavigationResources",
             ":compressMinifiedAssets",
@@ -70,83 +64,79 @@ class MinifyCacheabilityTest {
             ":processMinifiedManifest",
             ":processMinifiedManifestForPackage",
             ":processMinifiedNavigationResources",
-        ).plus(
+          )
+          .plus(
             if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
-                setOf(":generateMinifiedManifestClass")
+              setOf(":generateMinifiedManifestClass")
             } else {
-                setOf(":processMinifiedResources")
+              setOf(":processMinifiedResources")
             }
+          ),
+      DID_WORK to
+        setOf(
+          ":checkMinifiedAarMetadata",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckAarMetadataTask] */
+          ":checkMinifiedDuplicateClasses",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckDuplicateClassesTask] */
+          ":createMinifiedApkListingFileRedirect",
+          ":createMinifiedCompatibleScreenManifests",
+          /** Intentionally not cacheable. See [com.android.build.gradle.tasks.CompatibleScreensManifest] */
+          ":extractProguardFiles",
+          ":generateMinifiedJacocoPropertiesFile",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.coverage.JacocoPropertiesTask] */
+          ":mapMinifiedSourceSetPaths", /* Intentionally not cacheable */
+          ":mergeMinifiedAssets",
+          ":mergeMinifiedJavaResource", /* Bug 181142260 */
+          ":mergeMinifiedJniLibFolders",
+          ":processMinifiedJavaRes",
+          ":mergeMinifiedGeneratedProguardFiles",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction] */
+          ":packageMinified",
+          ":validateSigningMinified",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.ValidateSigningTask] */
+          ":writeMinifiedAppMetadata",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AppMetadataTask] */
+          ":writeMinifiedSigningConfigVersions",
+          /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask] */
         ),
-        DID_WORK to setOf(
-            ":checkMinifiedAarMetadata", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckAarMetadataTask] */
-            ":checkMinifiedDuplicateClasses", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckDuplicateClassesTask] */
-            ":createMinifiedApkListingFileRedirect",
-            ":createMinifiedCompatibleScreenManifests", /** Intentionally not cacheable. See [com.android.build.gradle.tasks.CompatibleScreensManifest] */
-            ":extractProguardFiles",
-            ":generateMinifiedJacocoPropertiesFile", /** Intentionally not cacheable. See [com.android.build.gradle.internal.coverage.JacocoPropertiesTask] */
-            ":mapMinifiedSourceSetPaths", /* Intentionally not cacheable */
-            ":mergeMinifiedAssets",
-            ":mergeMinifiedJavaResource", /* Bug 181142260 */
-            ":mergeMinifiedJniLibFolders",
-            ":processMinifiedJavaRes",
-            ":mergeMinifiedGeneratedProguardFiles", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction] */
-            ":packageMinified",
-            ":validateSigningMinified", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.ValidateSigningTask] */
-            ":writeMinifiedAppMetadata", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AppMetadataTask] */
-            ":writeMinifiedSigningConfigVersions", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask] */
-        ),
-        SKIPPED to setOf(
-            ":assembleMinified",
-            ":mergeMinifiedNativeDebugMetadata",
-            ":mergeMinifiedNativeLibs",
-            ":stripMinifiedDebugSymbols",
-        ),
-        FAILED to setOf()
+      SKIPPED to setOf(":assembleMinified", ":mergeMinifiedNativeDebugMetadata", ":mergeMinifiedNativeLibs", ":stripMinifiedDebugSymbols"),
+      FAILED to setOf(),
     )
 
-    @get:Rule
-    val buildCacheDirRoot = TemporaryFolder()
+  @get:Rule val buildCacheDirRoot = TemporaryFolder()
 
-    @get:Rule
-    val projectCopy1 = setUpTestProject("projectCopy1")
+  @get:Rule val projectCopy1 = setUpTestProject("projectCopy1")
 
-    @get:Rule
-    val projectCopy2 = setUpTestProject("projectCopy2")
+  @get:Rule val projectCopy2 = setUpTestProject("projectCopy2")
 
-    private fun setUpTestProject(projectName: String): GradleTestProject {
+  private fun setUpTestProject(projectName: String): GradleTestProject {
 
-        return GradleTestProject
-            .builder()
-            .withName(projectName)
-            .fromTestProject("minify")
-            .disableBuiltInKotlin()
-            .create()
-    }
+    return GradleTestProject.builder().withName(projectName).fromTestProject("minify").disableBuiltInKotlin().create()
+  }
 
-    @Before
-    fun setUp() {
-        for (project in listOf(projectCopy1, projectCopy2)) {
-            // Set up the project such that we can check the cacheability of AndroidUnitTest task
-            TestFileUtils.appendToFile(
-                project.buildFile,
-                """
-                    android {
-                        testOptions { unitTests { includeAndroidResources = true } }
-                        buildFeatures { resValues = true }
-                    }
-                """.trimIndent()
-            )
+  @Before
+  fun setUp() {
+    for (project in listOf(projectCopy1, projectCopy2)) {
+      // Set up the project such that we can check the cacheability of AndroidUnitTest task
+      TestFileUtils.appendToFile(
+        project.buildFile,
+        """
+        android {
+            testOptions { unitTests { includeAndroidResources = true } }
+            buildFeatures { resValues = true }
         }
+        """
+          .trimIndent(),
+      )
     }
+  }
 
-    @Test
-    fun testRelocatability() {
-        val buildCacheDir = buildCacheDirRoot.root.resolve(GRADLE_BUILD_CACHE_DIR)
+  @Test
+  fun testRelocatability() {
+    val buildCacheDir = buildCacheDirRoot.root.resolve(GRADLE_BUILD_CACHE_DIR)
 
-        CacheabilityTestHelper(projectCopy1, projectCopy2, buildCacheDir)
-            .runTasks(
-                "clean",
-                "assembleMinified")
-            .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
-    }
+    CacheabilityTestHelper(projectCopy1, projectCopy2, buildCacheDir)
+      .runTasks("clean", "assembleMinified")
+      .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
+  }
 }

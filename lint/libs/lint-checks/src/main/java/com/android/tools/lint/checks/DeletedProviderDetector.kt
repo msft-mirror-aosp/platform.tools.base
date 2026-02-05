@@ -30,10 +30,7 @@ import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 
-/**
- * Flags code that is asking for a provider that is no longer available in more recent versions of
- * the platform.
- */
+/** Flags code that is asking for a provider that is no longer available in more recent versions of the platform. */
 class DeletedProviderDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames(): List<String> {
@@ -70,8 +67,7 @@ class DeletedProviderDetector : Detector(), SourceCodeScanner {
         ISSUE,
         expression,
         context.getLocation(expression),
-        "The Crypto provider has been deleted " +
-          "in Android P (and was deprecated in Android N), so the code will crash",
+        "The Crypto provider has been deleted " + "in Android P (and was deprecated in Android N), so the code will crash",
       )
     }
   }
@@ -90,14 +86,12 @@ class DeletedProviderDetector : Detector(), SourceCodeScanner {
                 that exception at a higher level, this is not secure and should not be \
                 used.
                 """,
-          moreInfo =
-            "https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html",
+          moreInfo = "https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html",
           category = Category.SECURITY,
           priority = 9,
           severity = Severity.ERROR,
           androidSpecific = true,
-          implementation =
-            Implementation(DeletedProviderDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          implementation = Implementation(DeletedProviderDetector::class.java, Scope.JAVA_FILE_SCOPE),
         )
         .addMoreInfo("https://goo.gle/DeletedProvider")
 

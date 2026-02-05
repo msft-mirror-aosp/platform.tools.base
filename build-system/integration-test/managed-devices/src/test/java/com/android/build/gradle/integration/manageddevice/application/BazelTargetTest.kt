@@ -21,21 +21,13 @@ import org.junit.Test
 
 class BazelTargetTest {
 
-    /**
-     * This test prevents someone adding a new test file without also adding a corresponding bazel
-     * target.
-     */
-    @Test
-    fun testBazelTargetsMatchTestSourceFiles() {
-        checkBazelTargetsMatchTestSourceFiles(
-            "tools/base/build-system/integration-test/managed-devices/src/test",
-            "tools/base/build-system/integration-test/managed-devices/BUILD.bazel",
-            ignoredBazelTargets = listOf(
-                "all_test_files",
-                "integration-test-resources",
-                "managed-devices",
-                "prebuilts"
-            )
-        )
-    }
+  /** This test prevents someone adding a new test file without also adding a corresponding bazel target. */
+  @Test
+  fun testBazelTargetsMatchTestSourceFiles() {
+    checkBazelTargetsMatchTestSourceFiles(
+      "tools/base/build-system/integration-test/managed-devices/src/test",
+      "tools/base/build-system/integration-test/managed-devices/BUILD.bazel",
+      ignoredBazelTargets = listOf("all_test_files", "integration-test-resources", "managed-devices", "prebuilts"),
+    )
+  }
 }

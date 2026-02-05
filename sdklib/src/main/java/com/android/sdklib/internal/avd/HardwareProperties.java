@@ -343,39 +343,4 @@ public class HardwareProperties {
 
         return null;
     }
-
-    /**
-     * Returns the boolean value matching the given index.
-     * This is the reverse of {@link #getBooleanValueIndex(String)}.
-     *
-     * @param index 0 or 1.
-     * @return {@link #BOOLEAN_YES} for 0 or {@link #BOOLEAN_NO} for 1.
-     * @throws IndexOutOfBoundsException if index is neither 0 nor 1.
-     */
-    public static String getBooleanValue(int index) {
-        if (index == 0) {
-            return BOOLEAN_YES;
-        } else if (index == 1) {
-            return BOOLEAN_NO;
-        }
-        throw new IndexOutOfBoundsException(
-                "HardwareProperty boolean index must 0 (true) or 1 (false) but was " + index);
-    }
-
-    /**
-     * Returns the index of a boolean <var>value</var>.
-     * This if the reverse of {@link #getBooleanValue(int)}.
-     *
-     * @param value Either {@link #BOOLEAN_YES} or {@link #BOOLEAN_NO}.
-     * @return 0 for {@link #BOOLEAN_YES}, 1 for {@link #BOOLEAN_NO} or -1 for anything else.
-     */
-    public static int getBooleanValueIndex(String value) {
-        if (BOOLEAN_YES.equals(value)) {
-            return 0;
-        } else if (BOOLEAN_NO.equals(value)) {
-            return 1;
-        }
-
-        return -1;
-    }
 }

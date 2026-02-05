@@ -29,60 +29,57 @@ val INSTALL_APK_STAGING = "/data/local/tmp/adblib_tmp.apk"
 
 internal class PMLegacy(deviceServices: AdbDeviceServices) : PM(deviceServices) {
 
-    var streamed : Boolean = false
-    var options : String = ""
+  var streamed: Boolean = false
+  var options: String = ""
 
-    override suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long) : Flow<String> {
-        this.options = options.joinToString(" ").trim()
-        return flow{
-            emit("Success: created install session [1986]")
-        }
+  override suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long): Flow<String> {
+    this.options = options.joinToString(" ").trim()
+    return flow { emit("Success: created install session [1986]") }
+  }
+
+  override suspend fun streamApk(
+    device: DeviceSelector,
+    sessionID: String,
+    apk: AdbInputChannel,
+    filename: String,
+    size: Long,
+  ): Flow<String> {
+    if (streamed) {
+      throw IllegalStateException("Multiple APKs installation not supported on api < 20")
     }
+    streamed = true
 
-    override suspend fun streamApk(device: DeviceSelector, sessionID: String, apk: AdbInputChannel, filename: String, size: Long) : Flow<String>{
-        if (streamed) {
-           throw IllegalStateException("Multiple APKs installation not supported on api < 20")
-        }
-        streamed = true
+    // Push APK to device
+    deviceService.withSyncServices(device) { it.send(apk, INSTALL_APK_STAGING, RemoteFileMode.DEFAULT, null, null) }
 
-        // Push APK to device
-        deviceService.withSyncServices(device) {
-            it.send(apk, INSTALL_APK_STAGING, RemoteFileMode.DEFAULT, null, null)
-        }
-
-        // Install
-        val parameters = mutableListOf<String>("pm", "install")
-        if (options.isNotEmpty()) {
-            parameters.add(options)
-        }
-        parameters.add(INSTALL_APK_STAGING)
-        return deviceService.shell(device, parameters.joinToString(" "), TextShellCollector())
+    // Install
+    val parameters = mutableListOf<String>("pm", "install")
+    if (options.isNotEmpty()) {
+      parameters.add(options)
     }
+    parameters.add(INSTALL_APK_STAGING)
+    return deviceService.shell(device, parameters.joinToString(" "), TextShellCollector())
+  }
 
-    override suspend fun commit(device: DeviceSelector, sessionID: String) : Flow<String> {
-        // Delete APK from device
-        deleteTmpApk(device)
+  override suspend fun commit(device: DeviceSelector, sessionID: String): Flow<String> {
+    // Delete APK from device
+    deleteTmpApk(device)
 
-        return flow{
-            emit("Success")
-        }
-    }
+    return flow { emit("Success") }
+  }
 
-    override suspend fun abandon(device: DeviceSelector, sessionID: String) : Flow<String>{
-        // Delete APK from device
-        deleteTmpApk(device)
+  override suspend fun abandon(device: DeviceSelector, sessionID: String): Flow<String> {
+    // Delete APK from device
+    deleteTmpApk(device)
 
-        return flow{
-            emit("")
-        }
-    }
+    return flow { emit("") }
+  }
 
-    private suspend fun deleteTmpApk(device: DeviceSelector) {
-        deviceService.shell(device, "rm -f $INSTALL_APK_STAGING", TextShellCollector()).first()
+  private suspend fun deleteTmpApk(device: DeviceSelector) {
+    deviceService.shell(device, "rm -f $INSTALL_APK_STAGING", TextShellCollector()).first()
+  }
 
-    }
-
-    override suspend fun getStrategy(): String {
-        return "legacy"
-    }
+  override suspend fun getStrategy(): String {
+    return "legacy"
+  }
 }

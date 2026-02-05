@@ -19,20 +19,12 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/**
- * host:kill terminates the server when the command is received.
- */
+/** host:kill terminates the server when the command is received. */
 class KillCommandHandler : SimpleHostCommandHandler("kill") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        fakeAdbServer.stop()
-        writeOkay(responseSocket.getOutputStream()) // Send ok.
-        return false
-    }
-
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    fakeAdbServer.stop()
+    writeOkay(responseSocket.getOutputStream()) // Send ok.
+    return false
+  }
 }

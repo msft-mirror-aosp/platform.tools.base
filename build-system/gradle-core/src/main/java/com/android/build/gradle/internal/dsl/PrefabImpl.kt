@@ -20,12 +20,11 @@ import com.android.build.api.dsl.Prefab
 import java.io.Serializable
 import javax.inject.Inject
 
-open class PrefabImpl @Inject constructor(override var name: String) :
-    Prefab, Serializable {
+open class PrefabImpl @Inject constructor(override var name: String) : Prefab, Serializable {
 
-    override var headers: String? = null
+  override var headers: String? = null
 
-    override var libraryName: String? = null
+  override var libraryName: String? = null
 
-    override var headerOnly: Boolean = false
+  override var headerOnly: Boolean = false
 }

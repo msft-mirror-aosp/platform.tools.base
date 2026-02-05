@@ -19,13 +19,14 @@ package com.android.tools.backup
 import org.junit.internal.builders.JUnit4Builder
 import org.junit.runner.Runner
 
-class AndroidBackupRunnerBuilder: JUnit4Builder() {
+class AndroidBackupRunnerBuilder : JUnit4Builder() {
 
-    override fun runnerForClass(testClass: Class<*>?): Runner? {
-        return if (testClass != null
-            && (testClass.isAnnotationPresent(BackupAndRestoreTest::class.java)
-                    || testClass.isAnnotationPresent(RestoreTest::class.java))) {
-            AndroidBackupJUnit4Runner(testClass)
-        } else null
-    }
+  override fun runnerForClass(testClass: Class<*>?): Runner? {
+    return if (
+      testClass != null &&
+        (testClass.isAnnotationPresent(BackupAndRestoreTest::class.java) || testClass.isAnnotationPresent(RestoreTest::class.java))
+    ) {
+      AndroidBackupJUnit4Runner(testClass)
+    } else null
+  }
 }

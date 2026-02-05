@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
@@ -27,158 +26,154 @@ import org.junit.Test
 
 class KotlinSourcesModelTest {
 
-    @get:Rule
-    val project = builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun kotlinSourcesLocationInAndroidBlock() {
-        project.buildFile.appendText("""
-            buildscript {
-                dependencies {
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
-                }
-            }
+  @Test
+  fun kotlinSourcesLocationInAndroidBlock() {
+    project.buildFile.appendText(
+      """
+      buildscript {
+          dependencies {
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+          }
+      }
 
-            android {
-                sourceSets {
-                    main {
-                         kotlin.directories.add("src/main/kotlinDir")
-                    }
-                }
-            }
-        """.trimIndent())
+      android {
+          sourceSets {
+              main {
+                   kotlin.directories.add("src/main/kotlinDir")
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
 
-        val basicProject =
-            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject!!
-        assertThat(basicProject.mainSourceSet!!.sourceProvider?.kotlinDirectories)
-                .containsExactly(
-                        project.file("src/main/kotlinDir"),
-                        project.file("src/main/java"),
-                        project.file("src/main/kotlin"),
-                )
-    }
+    val basicProject = project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject!!
+    assertThat(basicProject.mainSourceSet!!.sourceProvider?.kotlinDirectories)
+      .containsExactly(project.file("src/main/kotlinDir"), project.file("src/main/java"), project.file("src/main/kotlin"))
+  }
 
-    @Test
-    fun kotlinSourcesLocationNotAllowedAndHasNoEffectWhenBuiltInKotlinEnabled() {
-        project.buildFile.appendText("""
-            buildscript {
-                dependencies {
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
-                }
-            }
+  @Test
+  fun kotlinSourcesLocationNotAllowedAndHasNoEffectWhenBuiltInKotlinEnabled() {
+    project.buildFile.appendText(
+      """
+      buildscript {
+          dependencies {
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+          }
+      }
 
-            kotlin {
-                sourceSets {
-                    main {
-                         kotlin {
-                             srcDir "src/main/kotlinDir"
-                         }
-                    }
-                }
-            }
-        """.trimIndent())
+      kotlin {
+          sourceSets {
+              main {
+                   kotlin {
+                       srcDir "src/main/kotlinDir"
+                   }
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
 
-        // There should be a sync issue (b/386221070)
-        val projectInfo = project.modelV2().ignoreSyncIssues().fetchModels().container.singleProjectInfo
-        assertThat(projectInfo.issues!!.syncIssues.single().message).contains(
-            "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin."
-        )
+    // There should be a sync issue (b/386221070)
+    val projectInfo = project.modelV2().ignoreSyncIssues().fetchModels().container.singleProjectInfo
+    assertThat(projectInfo.issues!!.syncIssues.single().message)
+      .contains("Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.")
 
-        assertThat(projectInfo.basicAndroidProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
-            .containsExactly(
-                project.file("src/main/java"),
-                project.file("src/main/kotlin"),
-            )
-    }
+    assertThat(projectInfo.basicAndroidProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
+      .containsExactly(project.file("src/main/java"), project.file("src/main/kotlin"))
+  }
 
-    @Test
-    fun kotlinSourcesLocationUsingKotlinAndroid() {
-        project.buildFile.appendText("""
-            buildscript {
-                dependencies {
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
-                }
-            }
+  @Test
+  fun kotlinSourcesLocationUsingKotlinAndroid() {
+    project.buildFile.appendText(
+      """
+      buildscript {
+          dependencies {
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+          }
+      }
 
-            apply plugin: 'kotlin-android'
-            kotlin {
-                sourceSets {
-                    main {
-                         kotlin {
-                             srcDir "src/main/kotlinDir"
-                         }
-                    }
-                }
-            }
-        """.trimIndent())
+      apply plugin: 'kotlin-android'
+      kotlin {
+          sourceSets {
+              main {
+                   kotlin {
+                       srcDir "src/main/kotlinDir"
+                   }
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
 
-        val basicProject =
-            project.modelV2()
-                .with(BooleanOption.BUILT_IN_KOTLIN, false)
-                .with(BooleanOption.USE_NEW_DSL, false)
-                .fetchModels().container.singleProjectInfo.basicAndroidProject
-        assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
-            .containsExactly(
-                project.file("src/main/kotlinDir"),
-                project.file("src/main/java"),
-                project.file("src/main/kotlin"),
-            )
-    }
+    val basicProject =
+      project
+        .modelV2()
+        .with(BooleanOption.BUILT_IN_KOTLIN, false)
+        .with(BooleanOption.USE_NEW_DSL, false)
+        .fetchModels()
+        .container
+        .singleProjectInfo
+        .basicAndroidProject
+    assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
+      .containsExactly(project.file("src/main/kotlinDir"), project.file("src/main/java"), project.file("src/main/kotlin"))
+  }
 
-    @Test
-    fun testKotlinMultiplatform() {
-        project.buildFile.appendText(
-            """
-            buildscript {
-                dependencies {
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
-                }
-            }
-            apply plugin: 'kotlin-multiplatform'
-            kotlin {
-                androidTarget()
+  @Test
+  fun testKotlinMultiplatform() {
+    project.buildFile.appendText(
+      """
+      buildscript {
+          dependencies {
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+          }
+      }
+      apply plugin: 'kotlin-multiplatform'
+      kotlin {
+          androidTarget()
 
-                sourceSets {
-                    named("androidInstrumentedTest") {
-                        dependencies {
-                        }
-                    }
-                }
+          sourceSets {
+              named("androidInstrumentedTest") {
+                  dependencies {
+                  }
+              }
+          }
 
-                androidTarget {
-                    compilations.all {
-                        kotlinOptions.jvmTarget = "1.8"
-                    }
-                }
-            }
-            """.trimIndent()
-        )
+          androidTarget {
+              compilations.all {
+                  kotlinOptions.jvmTarget = "1.8"
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
 
-        val basicProject =
-            project.modelV2()
-                .withFailOnWarning(false) // b/455891987
-                .with(BooleanOption.BUILT_IN_KOTLIN, false)
-                .with(BooleanOption.USE_NEW_DSL, false)
-                .fetchModels().container.singleProjectInfo.basicAndroidProject!!
-        val deviceTestsKotlinDirs = basicProject.mainSourceSet!!
-            .deviceTestSourceProviders[ComponentTypeImpl.ANDROID_TEST.artifactName]!!
-            .kotlinDirectories
-        assertThat(deviceTestsKotlinDirs)
-                .containsExactly(
-                        project.file("src/androidTest/java"),
-                        project.file("src/androidTest/kotlin"),
-                        project.file("src/androidInstrumentedTest/kotlin"),
-                )
-        val unitTestsKotlinDirs = basicProject.mainSourceSet!!
-            .hostTestSourceProviders[ComponentTypeImpl.UNIT_TEST.artifactName]!!
-            .kotlinDirectories
-        assertThat(unitTestsKotlinDirs)
-                .containsExactly(
-                        project.file("src/test/java"),
-                        project.file("src/test/kotlin"),
-                        project.file("src/androidUnitTest/kotlin"),
-                )
-    }
+    val basicProject =
+      project
+        .modelV2()
+        .withFailOnWarning(false) // b/455891987
+        .with(BooleanOption.BUILT_IN_KOTLIN, false)
+        .with(BooleanOption.USE_NEW_DSL, false)
+        .fetchModels()
+        .container
+        .singleProjectInfo
+        .basicAndroidProject!!
+    val deviceTestsKotlinDirs =
+      basicProject.mainSourceSet!!.deviceTestSourceProviders[ComponentTypeImpl.ANDROID_TEST.artifactName]!!.kotlinDirectories
+    assertThat(deviceTestsKotlinDirs)
+      .containsExactly(
+        project.file("src/androidTest/java"),
+        project.file("src/androidTest/kotlin"),
+        project.file("src/androidInstrumentedTest/kotlin"),
+      )
+    val unitTestsKotlinDirs =
+      basicProject.mainSourceSet!!.hostTestSourceProviders[ComponentTypeImpl.UNIT_TEST.artifactName]!!.kotlinDirectories
+    assertThat(unitTestsKotlinDirs)
+      .containsExactly(project.file("src/test/java"), project.file("src/test/kotlin"), project.file("src/androidUnitTest/kotlin"))
+  }
 }

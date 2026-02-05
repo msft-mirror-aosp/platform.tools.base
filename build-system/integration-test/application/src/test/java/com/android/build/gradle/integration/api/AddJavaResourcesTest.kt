@@ -33,81 +33,65 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class AddJavaResourcesTest(
-    private val useNewDsl: Boolean,
-    private val disallowProvider: Boolean
-) {
+class AddJavaResourcesTest(private val useNewDsl: Boolean, private val disallowProvider: Boolean) {
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "useNewDsl={0}, disallowProvider={1}")
-        fun parameters() = listOf(
-            arrayOf(true, true),
-            arrayOf(true, false),
-            arrayOf(false, true),
-            arrayOf(false, false)
-        )
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "useNewDsl={0}, disallowProvider={1}")
+    fun parameters() = listOf(arrayOf(true, true), arrayOf(true, false), arrayOf(false, true), arrayOf(false, false))
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        pluginCallbacks += if (useNewDsl) AddJavaResourcesCallback::class.java else AddJavaResourceLegacyCallback::class.java
+      }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, useNewDsl) }
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            pluginCallbacks += if (useNewDsl) AddJavaResourcesCallback::class.java else
-                AddJavaResourceLegacyCallback::class.java
-        }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, useNewDsl)
-        }
+  /** Regression test for http://b/263469991. */
+  @Test
+  fun testAddingJavaResourcesOldApi() {
+    val build = rule.build.executor.with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, disallowProvider)
+    if (disallowProvider) {
+      build.expectFailure()
     }
-
-    /** Regression test for http://b/263469991.*/
-    @Test
-    fun testAddingJavaResourcesOldApi() {
-        val build = rule.build.executor
-            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, disallowProvider)
-        if (disallowProvider) {
-            build.expectFailure()
-        }
-        build.run(":app:processDebugJavaRes")
-
-
-    }
+    build.run(":app:processDebugJavaRes")
+  }
 }
 
 abstract class VersionFileWriterTask : DefaultTask() {
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    @TaskAction
-    fun run() { }
+  @TaskAction fun run() {}
 }
 
 class AddJavaResourceLegacyCallback : LegacyApplicationCallback {
-    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-        val writeVersionFile = project.tasks.register("writeVersionFile", VersionFileWriterTask::class.java) {
-            it.outputDirectory.set(project.layout.buildDirectory.dir("foo"))
-        }
-        extension.applicationVariants.all { variant ->
-            if (variant.name == "debug") {
-                val outputDir = writeVersionFile.flatMap { it.outputDirectory }
-                extension.sourceSets.getByName(variant.name).resources.srcDir(outputDir)
-            }
-        }
+  override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+    val writeVersionFile =
+      project.tasks.register("writeVersionFile", VersionFileWriterTask::class.java) {
+        it.outputDirectory.set(project.layout.buildDirectory.dir("foo"))
+      }
+    extension.applicationVariants.all { variant ->
+      if (variant.name == "debug") {
+        val outputDir = writeVersionFile.flatMap { it.outputDirectory }
+        extension.sourceSets.getByName(variant.name).resources.srcDir(outputDir)
+      }
     }
+  }
 }
 
-class AddJavaResourcesCallback: ApplicationComponentCallback {
+class AddJavaResourcesCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension,
-    ) {
-        val writeVersionFile = project.tasks.register("writeVersionFile", VersionFileWriterTask::class.java) {
-            it.outputDirectory.set(project.layout.buildDirectory.dir("foo"))
-        }
-        androidComponents.finalizeDsl {
-            val outputDir = writeVersionFile.flatMap { it.outputDirectory }
-            it.sourceSets.getByName("debug").resources.srcDir(outputDir)
-        }
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    val writeVersionFile =
+      project.tasks.register("writeVersionFile", VersionFileWriterTask::class.java) {
+        it.outputDirectory.set(project.layout.buildDirectory.dir("foo"))
+      }
+    androidComponents.finalizeDsl {
+      val outputDir = writeVersionFile.flatMap { it.outputDirectory }
+      it.sourceSets.getByName("debug").resources.srcDir(outputDir)
     }
+  }
 }

@@ -16,12 +16,11 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.declarative.dsl.model.annotations.Restricted
 import java.io.File
+import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * DSL object for configuring lint options. Example:
- *
  * ```
  * android {
  *    lint {
@@ -105,206 +104,161 @@ import java.io.File
  * ```
  */
 interface Lint {
-    /**
-     * The set of issue IDs to suppress. Callers are allowed to modify this collection.
-     *
-     */
-    val disable: MutableSet<String>
+  /** The set of issue IDs to suppress. Callers are allowed to modify this collection. */
+  val disable: MutableSet<String>
 
-    /**
-     * The set of issue IDs to enable. Callers are allowed to modify this collection.
-     */
-    val enable: MutableSet<String>
+  /** The set of issue IDs to enable. Callers are allowed to modify this collection. */
+  val enable: MutableSet<String>
 
-    /**
-     * The exact set of issues to check set by [checkOnly].
-     *
-     * If empty, lint will detect the issues that are enabled by default plus
-     * any issues enabled via [enable] and without issues disabled via [disable].
-     */
-    val checkOnly: MutableSet<String>
+  /**
+   * The exact set of issues to check set by [checkOnly].
+   *
+   * If empty, lint will detect the issues that are enabled by default plus any issues enabled via [enable] and without issues disabled via
+   * [disable].
+   */
+  val checkOnly: MutableSet<String>
 
-    /** Whether lint should set the exit code of the process if errors are found */
-    @get:Restricted
-    var abortOnError: Boolean
+  /** Whether lint should set the exit code of the process if errors are found */
+  @get:Restricted var abortOnError: Boolean
 
-    /**
-     * Whether lint should display full paths in the error output. By default the paths are relative
-     * to the path lint was invoked from.
-     */
-    var absolutePaths: Boolean
+  /** Whether lint should display full paths in the error output. By default the paths are relative to the path lint was invoked from. */
+  var absolutePaths: Boolean
 
-    /**
-     * Whether lint should include the source lines in the output where errors occurred (true by
-     * default)
-     */
-    var noLines: Boolean
+  /** Whether lint should include the source lines in the output where errors occurred (true by default) */
+  var noLines: Boolean
 
-    /**
-     * Whether lint should be quiet (for example, not write informational messages such as paths to
-     * report files written)
-     */
-    var quiet: Boolean
+  /** Whether lint should be quiet (for example, not write informational messages such as paths to report files written) */
+  var quiet: Boolean
 
-    /** Whether lint should check all warnings, including those off by default */
-    var checkAllWarnings: Boolean
+  /** Whether lint should check all warnings, including those off by default */
+  var checkAllWarnings: Boolean
 
-    /** Returns whether lint will only check for errors (ignoring warnings) */
-    var ignoreWarnings: Boolean
+  /** Returns whether lint will only check for errors (ignoring warnings) */
+  var ignoreWarnings: Boolean
 
-    /** Whether lint should treat all warnings as errors */
-    var warningsAsErrors: Boolean
+  /** Whether lint should treat all warnings as errors */
+  var warningsAsErrors: Boolean
 
-    /**
-     * Whether lint should run all checks on test sources, instead of just the lint checks
-     * that have been specifically written to include tests (e.g. checks looking for specific test
-     * errors, or checks that need to consider testing code such as the unused resource detector)
-     */
-    var checkTestSources: Boolean
+  /**
+   * Whether lint should run all checks on test sources, instead of just the lint checks that have been specifically written to include
+   * tests (e.g. checks looking for specific test errors, or checks that need to consider testing code such as the unused resource detector)
+   */
+  var checkTestSources: Boolean
 
-    /**
-     * Whether lint should ignore all test sources. This is like [checkTestSources], but always
-     * skips analyzing tests -- meaning that it also ignores checks that have explicitly asked to
-     * look at test sources, such as the unused resource check.
-     */
-    var ignoreTestSources: Boolean
+  /**
+   * Whether lint should ignore all test sources. This is like [checkTestSources], but always skips analyzing tests -- meaning that it also
+   * ignores checks that have explicitly asked to look at test sources, such as the unused resource check.
+   */
+  var ignoreTestSources: Boolean
 
-    /**
-     * Whether lint should ignore all testFixtures sources.
-     */
-    var ignoreTestFixturesSources: Boolean
+  /** Whether lint should ignore all testFixtures sources. */
+  var ignoreTestFixturesSources: Boolean
 
-    /** Returns whether lint should run checks on generated sources. */
-    var checkGeneratedSources: Boolean
+  /** Returns whether lint should run checks on generated sources. */
+  var checkGeneratedSources: Boolean
 
-    /** Whether lint should check all dependencies too as part of its analysis. Default is false. */
-    var checkDependencies: Boolean
+  /** Whether lint should check all dependencies too as part of its analysis. Default is false. */
+  var checkDependencies: Boolean
 
-    /**
-     * Whether lint should include explanations for issue errors. (Note that HTML and XML reports
-     * intentionally do this unconditionally, ignoring this setting.)
-     */
-    var explainIssues: Boolean
+  /**
+   * Whether lint should include explanations for issue errors. (Note that HTML and XML reports intentionally do this unconditionally,
+   * ignoring this setting.)
+   */
+  var explainIssues: Boolean
 
-    /**
-     * Whether lint should include all output (e.g. include all alternate locations, not truncating
-     * long messages, etc.)
-     */
-    var showAll: Boolean
+  /** Whether lint should include all output (e.g. include all alternate locations, not truncating long messages, etc.) */
+  var showAll: Boolean
 
-    /**
-     * Whether lint should check for fatal errors during release builds. Default is true. If issues
-     * with severity "fatal" are found, the release build is aborted.
-     */
-    @get:Restricted
-    var checkReleaseBuilds: Boolean
+  /**
+   * Whether lint should check for fatal errors during release builds. Default is true. If issues with severity "fatal" are found, the
+   * release build is aborted.
+   */
+  @get:Restricted var checkReleaseBuilds: Boolean
 
-    /**
-     * The default config file to use as a fallback. This corresponds to a `lint.xml` file with
-     * severities etc to use when a project does not have more specific information.
-     */
-    var lintConfig: File?
+  /**
+   * The default config file to use as a fallback. This corresponds to a `lint.xml` file with severities etc to use when a project does not
+   * have more specific information.
+   */
+  var lintConfig: File?
 
-    /**
-     * Whether lint should write a text report.
-     *
-     * With the default setting ([textReport]`=false`),
-     * the lint task will print a summary to `stdout` if there are any lint warnings or errors
-     * including a link to the full text report.
-     *
-     * When [textReport]`=true` and [textOutput] is unset, the full report will be printed by the
-     * lint task, rather than just a summary. When [textOutput] is set, the full text report
-     * will be copied to the specified location.
-     */
-    var textReport: Boolean
+  /**
+   * Whether lint should write a text report.
+   *
+   * With the default setting ([textReport]`=false`), the lint task will print a summary to `stdout` if there are any lint warnings or
+   * errors including a link to the full text report.
+   *
+   * When [textReport]`=true` and [textOutput] is unset, the full report will be printed by the lint task, rather than just a summary. When
+   * [textOutput] is set, the full text report will be copied to the specified location.
+   */
+  var textReport: Boolean
 
-    /**
-     * Whether we should write an HTML report. Default is true. The location can be controlled by
-     * [htmlOutput].
-     */
-    var htmlReport: Boolean
+  /** Whether we should write an HTML report. Default is true. The location can be controlled by [htmlOutput]. */
+  var htmlReport: Boolean
 
-    /**
-     * Whether we should write a SARIF (OASIS Static Analysis Results Interchange Format) report.
-     * Default is false. The location can be controlled by [sarifOutput].
-     */
-    var sarifReport: Boolean
+  /**
+   * Whether we should write a SARIF (OASIS Static Analysis Results Interchange Format) report. Default is false. The location can be
+   * controlled by [sarifOutput].
+   */
+  var sarifReport: Boolean
 
-    /**
-     * Whether we should write an XML report. Default is true. The location can be controlled by
-     * [xmlOutput].
-     */
-    var xmlReport: Boolean
+  /** Whether we should write an XML report. Default is true. The location can be controlled by [xmlOutput]. */
+  var xmlReport: Boolean
 
-    /**
-     * The optional path to where a text report should be written.
-     *
-     * To output the lint report to `stdout` set [textReport]`=true`, and leave [textOutput] unset.
-     */
-    var textOutput: File?
+  /**
+   * The optional path to where a text report should be written.
+   *
+   * To output the lint report to `stdout` set [textReport]`=true`, and leave [textOutput] unset.
+   */
+  var textOutput: File?
 
-    /**
-     * The optional path to where an HTML report should be written.
-     * Setting this property will also turn on [htmlReport].
-     */
-    var htmlOutput: File?
+  /** The optional path to where an HTML report should be written. Setting this property will also turn on [htmlReport]. */
+  var htmlOutput: File?
 
-    /**
-     * The optional path to where an XML report should be written.
-     * Setting this property will also turn on [xmlReport].
-     */
-    var xmlOutput: File?
+  /** The optional path to where an XML report should be written. Setting this property will also turn on [xmlReport]. */
+  var xmlOutput: File?
 
-    /**
-     * The optional path to where a SARIF report (OASIS Static
-     * Analysis Results Interchange Format) should be written.
-     * Setting this property will also turn on [sarifReport].
-     */
-    var sarifOutput: File?
+  /**
+   * The optional path to where a SARIF report (OASIS Static Analysis Results Interchange Format) should be written. Setting this property
+   * will also turn on [sarifReport].
+   */
+  var sarifOutput: File?
 
-    /**
-     * The baseline file to use, if any. The baseline file is an XML report previously created by
-     * lint, and any warnings and errors listed in that report will be ignored from analysis.
-     *
-     * If you have a project with a large number of existing warnings, this lets you set a baseline
-     * and only see newly introduced warnings until you get a chance to go back and address the
-     * "technical debt" of the earlier warnings.
-     */
-    var baseline: File?
+  /**
+   * The baseline file to use, if any. The baseline file is an XML report previously created by lint, and any warnings and errors listed in
+   * that report will be ignored from analysis.
+   *
+   * If you have a project with a large number of existing warnings, this lets you set a baseline and only see newly introduced warnings
+   * until you get a chance to go back and address the "technical debt" of the earlier warnings.
+   */
+  var baseline: File?
 
-    /** Issues that have severity overridden to 'informational' */
-    val informational: MutableSet<String>
+  /** Issues that have severity overridden to 'informational' */
+  val informational: MutableSet<String>
 
-    /** Issues that have severity overridden to 'ignore' */
-    @Deprecated("Ignore and disable are synonyms", ReplaceWith("disable"))
-    val ignore: MutableSet<String>
+  /** Issues that have severity overridden to 'ignore' */
+  @Deprecated("Ignore and disable are synonyms", ReplaceWith("disable")) val ignore: MutableSet<String>
 
-    /** Issues that have severity overridden to 'warning' */
-    val warning: MutableSet<String>
+  /** Issues that have severity overridden to 'warning' */
+  val warning: MutableSet<String>
 
-    /** Issues that have severity overridden to 'error' */
-    val error: MutableSet<String>
+  /** Issues that have severity overridden to 'error' */
+  val error: MutableSet<String>
 
-    /** Issues that have severity overridden to 'fatal' */
-    val fatal: MutableSet<String>
+  /** Issues that have severity overridden to 'fatal' */
+  val fatal: MutableSet<String>
 
-    /**
-     * The target sdk version used when generating a lint report for a library.
-     * Must be equal or higher than main target SDK. Must be set for libraries only.
-     */
-    var targetSdk: Int?
+  /**
+   * The target sdk version used when generating a lint report for a library. Must be equal or higher than main target SDK. Must be set for
+   * libraries only.
+   */
+  var targetSdk: Int?
 
-    /**
-     * Configures all aspects regarding target sdk used when generating a
-     * lint report for a library. Must be equal or higher than main target
-     * SDK. Must be set for libraries only. See [TargetSdkSpec] for
-     * available options.
-     */
-    fun targetSdk(action: TargetSdkSpec.() -> Unit)
+  /**
+   * Configures all aspects regarding target sdk used when generating a lint report for a library. Must be equal or higher than main target
+   * SDK. Must be set for libraries only. See [TargetSdkSpec] for available options.
+   */
+  fun targetSdk(action: TargetSdkSpec.() -> Unit)
 
-    /**
-     * The target sdk preview version used when generating a lint report for a library.
-     * Must be set for libraries only.
-     */
-    var targetSdkPreview: String?
+  /** The target sdk preview version used when generating a lint report for a library. Must be set for libraries only. */
+  var targetSdkPreview: String?
 }

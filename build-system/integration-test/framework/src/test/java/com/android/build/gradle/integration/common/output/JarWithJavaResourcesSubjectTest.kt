@@ -22,116 +22,99 @@ import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 
 @Suppress("UnstableApiUsage")
-class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
+class JarWithJavaResourcesSubjectTest : BaseZipSubjectTest() {
 
-    @Test
-    fun resources() {
-        createJar("temp.jar") {
-            addEmptyClasses("com/example/SomeClass", "com/example/SomeOtherClass")
-            addTextFile("/somefile.txt", "foo")
-            addBinaryFile("/somefile.data", "foo".toByteArray())
-        }.use { jar ->
-
-            assertThat(jar) {
-                hasSize(2)
-                // should only show the classes and not the other files
-                containsExactly(
-                    "somefile.txt",
-                    "somefile.data",
-                )
-            }
-
-            // test negative results
-            expectFailure {
-                it.that(jar).hasSize(5)
-            }.assert {
-                // we don't care about testing the 'expected' and 'but was' facts
-                factKeys().containsAtLeast("value of", "jarWithJavaResources was")
-                factValue("value of").isEqualTo("jarWithJavaResources.size()")
-                factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
-            }
+  @Test
+  fun resources() {
+    createJar("temp.jar") {
+        addEmptyClasses("com/example/SomeClass", "com/example/SomeOtherClass")
+        addTextFile("/somefile.txt", "foo")
+        addBinaryFile("/somefile.data", "foo".toByteArray())
+      }
+      .use { jar ->
+        assertThat(jar) {
+          hasSize(2)
+          // should only show the classes and not the other files
+          containsExactly("somefile.txt", "somefile.data")
         }
-    }
 
-    @Test
-    fun resourceAsBytes() {
-        createJar("temp.jar") {
-            addBinaryFile("/path/to/foo.txt", "foo".toByteArray())
-        }.use { jar ->
+        // test negative results
+        expectFailure { it.that(jar).hasSize(5) }
+          .assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "jarWithJavaResources was")
+            factValue("value of").isEqualTo("jarWithJavaResources.size()")
+            factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+          }
+      }
+  }
 
-            assertThat(jar) {
-                resourceAsBytes("path/to/foo.txt").isEqualTo("foo".toByteArray())
-            }
+  @Test
+  fun resourceAsBytes() {
+    createJar("temp.jar") { addBinaryFile("/path/to/foo.txt", "foo".toByteArray()) }
+      .use { jar ->
+        assertThat(jar) { resourceAsBytes("path/to/foo.txt").isEqualTo("foo".toByteArray()) }
 
-            // test negative results
-            expectFailure {
-                it.that(jar).resourceAsBytes("path/to/foo.txt").isEqualTo("bar".toByteArray())
-            }.assert {
-                // we don't care about testing the 'expected' and 'but was' facts, we just
-                // verify the value name and the name of the 'X was' key.
-                factKeys().containsAtLeast("value of", "jarWithJavaResources was")
-                factValue("value of").isEqualTo("jarWithJavaResources.resourceAsBytes(path/to/foo.txt)")
-                factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
-            }
+        // test negative results
+        expectFailure { it.that(jar).resourceAsBytes("path/to/foo.txt").isEqualTo("bar".toByteArray()) }
+          .assert {
+            // we don't care about testing the 'expected' and 'but was' facts, we just
+            // verify the value name and the name of the 'X was' key.
+            factKeys().containsAtLeast("value of", "jarWithJavaResources was")
+            factValue("value of").isEqualTo("jarWithJavaResources.resourceAsBytes(path/to/foo.txt)")
+            factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+          }
 
-            // check querying missing class has right error
-            expectFailure {
-                it.that(jar).resourceAsBytes("missing.txt")
-            }.assert {
-                // we want to check for a specific expected/but was here as we want to validate
-                // which error is thrown
-                factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
-                factValue("value of").isEqualTo("jarWithJavaResources.entries()")
-                factValue("expected to contain").isEqualTo("missing.txt")
-                factValue("but was").isEqualTo("[path/to/foo.txt]")
-                factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
-            }
-        }
-    }
+        // check querying missing class has right error
+        expectFailure { it.that(jar).resourceAsBytes("missing.txt") }
+          .assert {
+            // we want to check for a specific expected/but was here as we want to validate
+            // which error is thrown
+            factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
+            factValue("value of").isEqualTo("jarWithJavaResources.entries()")
+            factValue("expected to contain").isEqualTo("missing.txt")
+            factValue("but was").isEqualTo("[path/to/foo.txt]")
+            factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+          }
+      }
+  }
 
+  @Test
+  fun resourceAsText() {
+    createJar("temp.jar") { addTextFile("/path/to/foo.txt", "foo") }
+      .use { jar ->
+        assertThat(jar) { resourceAsText("path/to/foo.txt").isEqualTo("foo") }
 
-    @Test
-    fun resourceAsText() {
-        createJar("temp.jar") {
-            addTextFile("/path/to/foo.txt", "foo")
-        }.use { jar ->
+        // test negative results
+        expectFailure { it.that(jar).resourceAsText("path/to/foo.txt").isEqualTo("bar") }
+          .assert {
+            // we don't care about testing the 'expected' and 'but was' facts, we just
+            // verify the value name and the name of the 'X was' key.
+            factKeys().containsAtLeast("value of", "jarWithJavaResources was")
+            factValue("value of").isEqualTo("jarWithJavaResources.resourceAsText(path/to/foo.txt)")
+            factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+          }
 
-            assertThat(jar) {
-                resourceAsText("path/to/foo.txt").isEqualTo("foo")
-            }
+        // check querying missing class has right error
+        expectFailure { it.that(jar).resourceAsText("missing.txt") }
+          .assert {
+            // we want to check for a specific expected/but was here as we want to validate
+            // which error is thrown
+            factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
+            factValue("value of").isEqualTo("jarWithJavaResources.entries()")
+            factValue("expected to contain").isEqualTo("missing.txt")
+            factValue("but was").isEqualTo("[path/to/foo.txt]")
+            factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+          }
+      }
+  }
 
-            // test negative results
-            expectFailure {
-                it.that(jar).resourceAsText("path/to/foo.txt").isEqualTo("bar")
-            }.assert {
-                // we don't care about testing the 'expected' and 'but was' facts, we just
-                // verify the value name and the name of the 'X was' key.
-                factKeys().containsAtLeast("value of", "jarWithJavaResources was")
-                factValue("value of").isEqualTo("jarWithJavaResources.resourceAsText(path/to/foo.txt)")
-                factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
-            }
+  private fun assertThat(zip: Zip, action: ResourcesSubject.() -> Unit) {
+    JarWithJavaResourcesSubject.assertThat(zip).apply(action)
+  }
 
-            // check querying missing class has right error
-            expectFailure {
-                it.that(jar).resourceAsText("missing.txt")
-            }.assert {
-                // we want to check for a specific expected/but was here as we want to validate
-                // which error is thrown
-                factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
-                factValue("value of").isEqualTo("jarWithJavaResources.entries()")
-                factValue("expected to contain").isEqualTo("missing.txt")
-                factValue("but was").isEqualTo("[path/to/foo.txt]")
-                factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
-            }
-        }
-    }
-
-    private fun assertThat(zip: Zip, action: ResourcesSubject.() -> Unit) {
-        JarWithJavaResourcesSubject.assertThat(zip).apply(action)
-    }
-
-    @CheckReturnValue
-    private fun expectFailure(action: (SimpleSubjectBuilder<JarWithJavaResourcesSubject, Zip>) -> Unit): AssertionError {
-        return ExpectFailure.expectFailureAbout(JarWithJavaResourcesSubject.jars(), action)
-    }
+  @CheckReturnValue
+  private fun expectFailure(action: (SimpleSubjectBuilder<JarWithJavaResourcesSubject, Zip>) -> Unit): AssertionError {
+    return ExpectFailure.expectFailureAbout(JarWithJavaResourcesSubject.jars(), action)
+  }
 }

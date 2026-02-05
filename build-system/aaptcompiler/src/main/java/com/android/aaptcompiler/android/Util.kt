@@ -22,52 +22,32 @@ private val littleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
 
 private val DEBUG = false
 
-/**
- * Changes the byte order of the short (on device) to the byte order of the host.
- */
+/** Changes the byte order of the short (on device) to the byte order of the host. */
 fun Short.deviceToHost() = if (littleEndian) this else java.lang.Short.reverseBytes(this)
 
-/**
- * Changes the byte order of the char on device to the byte order of the host.
- */
+/** Changes the byte order of the char on device to the byte order of the host. */
 fun Char.deviceToHost() = if (littleEndian) this else java.lang.Character.reverseBytes(this)
 
-/**
- * Changes the byte order of the int on device to the byte order of the host.
- */
+/** Changes the byte order of the int on device to the byte order of the host. */
 fun Int.deviceToHost() = if (littleEndian) this else java.lang.Integer.reverseBytes(this)
 
-/**
- * Changes the byte order of the short on host to the byte order of the device.
- */
+/** Changes the byte order of the short on host to the byte order of the device. */
 fun Short.hostToDevice() = if (littleEndian) this else java.lang.Short.reverseBytes(this)
 
-/**
- * Changes the byte order of the char on host to the byte order of the device.
- */
+/** Changes the byte order of the char on host to the byte order of the device. */
 fun Char.hostToDevice() = if (littleEndian) this else java.lang.Character.reverseBytes(this)
 
-/**
- * Changes the byte order of the int on host to the byte order of the device.
- */
+/** Changes the byte order of the int on host to the byte order of the device. */
 fun Int.hostToDevice() = if (littleEndian) this else java.lang.Integer.reverseBytes(this)
 
-/**
- * Returns true if the int reflects a "truthy" value in C++ for use in conditionals.
- */
+/** Returns true if the int reflects a "truthy" value in C++ for use in conditionals. */
 fun Int.isTruthy() = this != 0
 
-/**
- * Returns true if the short reflects a "truthy" value in C++ for use in conditionals.
- */
+/** Returns true if the short reflects a "truthy" value in C++ for use in conditionals. */
 fun Short.isTruthy() = this != 0.toShort()
 
-/**
- * Returns true if the byte reflects a "truthy" value in C++ for use in conditionals.
- */
+/** Returns true if the byte reflects a "truthy" value in C++ for use in conditionals. */
 fun Byte.isTruthy() = this != 0.toByte()
 
-/**
- * Returns true if the "pointer" reflects a "truthy" value in C++ for use in conditionals.
- */
+/** Returns true if the "pointer" reflects a "truthy" value in C++ for use in conditionals. */
 fun Any?.isTruthy() = this != null

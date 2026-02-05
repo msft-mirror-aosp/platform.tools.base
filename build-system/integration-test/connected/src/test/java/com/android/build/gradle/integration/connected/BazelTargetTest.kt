@@ -21,27 +21,25 @@ import org.junit.Test
 
 class BazelTargetTest {
 
-    /**
-     * This test prevents someone adding a new test file without also adding a corresponding bazel
-     * target.
-     */
-    @Test
-    fun testBazelTargetsMatchTestSourceFiles() {
-        checkBazelTargetsMatchTestSourceFiles(
-            "tools/base/build-system/integration-test/connected/src/test",
-            "tools/base/build-system/integration-test/connected/BUILD.bazel",
-            ignoredBazelTargets = listOf(
-                "privacy-sandbox-connected-tests",
-                "all_test_files",
-                "avd",
-                "avd_32",
-                "avd_34",
-                "avd_default_30",
-                "avd_old_emulator_binary",
-                "connected",
-                "databinding_prebuilts",
-                "prebuilts"
-            ),
-        )
-    }
+  /** This test prevents someone adding a new test file without also adding a corresponding bazel target. */
+  @Test
+  fun testBazelTargetsMatchTestSourceFiles() {
+    checkBazelTargetsMatchTestSourceFiles(
+      "tools/base/build-system/integration-test/connected/src/test",
+      "tools/base/build-system/integration-test/connected/BUILD.bazel",
+      ignoredBazelTargets =
+        listOf(
+          "privacy-sandbox-connected-tests",
+          "all_test_files",
+          "avd",
+          "avd_32",
+          "avd_34",
+          "avd_default_30",
+          "avd_old_emulator_binary",
+          "connected",
+          "databinding_prebuilts",
+          "prebuilts",
+        ),
+    )
+  }
 }

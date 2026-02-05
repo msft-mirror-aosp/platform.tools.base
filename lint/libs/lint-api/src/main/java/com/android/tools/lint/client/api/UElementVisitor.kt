@@ -105,34 +105,22 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
  * Specialized visitor for running detectors on a Java AST. It operates in three phases:
- * 1. First, it computes a set of maps where it generates a map from each significant AST attribute
- *    (such as method call names) to a list of detectors to consult whenever that attribute is
- *    encountered. Examples of "attributes" are method names, Android resource identifiers, and
- *    general AST node types such as "cast" nodes etc. These are defined on the [SourceCodeScanner]
- *    interface.
- * 2. Second, it iterates over the document a single time, delegating to the detectors found at each
- *    relevant AST attribute.
- * 3. Finally, it calls the remaining visitors (those that need to process a whole document on their
- *    own).
+ * 1. First, it computes a set of maps where it generates a map from each significant AST attribute (such as method call names) to a list of
+ *    detectors to consult whenever that attribute is encountered. Examples of "attributes" are method names, Android resource identifiers,
+ *    and general AST node types such as "cast" nodes etc. These are defined on the [SourceCodeScanner] interface.
+ * 2. Second, it iterates over the document a single time, delegating to the detectors found at each relevant AST attribute.
+ * 3. Finally, it calls the remaining visitors (those that need to process a whole document on their own).
  *
- * It also notifies all the detectors before and after the document is processed such that they can
- * do pre- and post-processing.
+ * It also notifies all the detectors before and after the document is processed such that they can do pre- and post-processing.
  */
-internal class UElementVisitor
-constructor(driver: LintDriver, private val parser: UastParser, detectors: List<Detector>) {
+internal class UElementVisitor constructor(driver: LintDriver, private val parser: UastParser, detectors: List<Detector>) {
 
-  private val methodDetectors =
-    Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(120)
-  private val constructorDetectors =
-    Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(16)
-  private val referenceDetectors =
-    Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(12)
+  private val methodDetectors = Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(120)
+  private val constructorDetectors = Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(16)
+  private val referenceDetectors = Maps.newHashMapWithExpectedSize<String, MutableList<SourceCodeScanner>>(12)
   private val resourceFieldDetectors = ArrayList<SourceCodeScanner>()
   private val allDetectors = ArrayList<SourceCodeScannerWithContext>(detectors.size)
-  private val uastHandlerDetectors =
-    Maps.newHashMapWithExpectedSize<Class<out UElement>, MutableList<SourceCodeScannerWithContext>>(
-      25
-    )
+  private val uastHandlerDetectors = Maps.newHashMapWithExpectedSize<Class<out UElement>, MutableList<SourceCodeScannerWithContext>>(25)
   private val superClassDetectors = HashMap<String, MutableList<SourceCodeScanner>>(40)
   private val annotationHandler: AnnotationHandler?
   private val callGraphDetectors = ArrayList<SourceCodeScanner>()
@@ -161,9 +149,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
         getApplicableMethodNames()?.ensureNotAll()?.associateWith(detector, methodDetectors)
         applicableSuperClasses()?.associateWith(detector, superClassDetectors)
         getApplicableUastTypes()?.associateWith(v, uastHandlerDetectors)
-        getApplicableConstructorTypes()
-          ?.ensureNotAll()
-          ?.associateWith(detector, constructorDetectors)
+        getApplicableConstructorTypes()?.ensureNotAll()?.associateWith(detector, constructorDetectors)
         getApplicableReferenceNames()?.ensureNotAll()?.associateWith(detector, referenceDetectors)
         applicableAnnotations()?.associateWith(detector, annotationScanners)
       }
@@ -250,10 +236,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
 
   fun visitGroups(projectContext: Context, allContexts: List<JavaContext>) {
     if (allContexts.isNotEmpty() && callGraphDetectors.isNotEmpty()) {
-      val callGraph =
-        projectContext.client.runReadAction(
-          Computable { generateCallGraph(projectContext, parser, allContexts) }
-        )
+      val callGraph = projectContext.client.runReadAction(Computable { generateCallGraph(projectContext, parser, allContexts) })
       if (callGraph != null) {
         for (scanner in callGraphDetectors) {
           projectContext.client.runReadAction {
@@ -265,11 +248,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
     }
   }
 
-  private fun generateCallGraph(
-    projectContext: Context,
-    parser: UastParser,
-    contexts: List<JavaContext>,
-  ): CallGraphResult? {
+  private fun generateCallGraph(projectContext: Context, parser: UastParser, contexts: List<JavaContext>): CallGraphResult? {
     if (contexts.isEmpty()) {
       return null
     }
@@ -277,8 +256,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
     try {
       val chaVisitor = ClassHierarchyVisitor()
       val receiverEvalVisitor = IntraproceduralDispatchReceiverVisitor(chaVisitor.classHierarchy)
-      val callGraphVisitor =
-        CallGraphVisitor(receiverEvalVisitor.receiverEval, chaVisitor.classHierarchy, false)
+      val callGraphVisitor = CallGraphVisitor(receiverEvalVisitor.receiverEval, chaVisitor.classHierarchy, false)
 
       for (context in contexts) {
         val uFile = parser.parse(context)
@@ -310,25 +288,18 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
           "checks, or give lint more heap space."
       if (LintClient.isGradle) {
         message +=
-          " For example, to set the Gradle daemon to use 4 GB, edit " +
-            "`gradle.properties` to contains `org.gradle.jvmargs=-Xmx4g`"
+          " For example, to set the Gradle daemon to use 4 GB, edit " + "`gradle.properties` to contains `org.gradle.jvmargs=-Xmx4g`"
       }
-      projectContext.report(
-        IssueRegistry.LINT_ERROR,
-        Location.create(projectContext.project.dir),
-        message,
-      )
+      projectContext.report(IssueRegistry.LINT_ERROR, Location.create(projectContext.project.dir), message)
       return null
     }
   }
 
   /**
-   * A stateful [SourceCodeScanner] that can [setContext] then remember a (lazily created)
-   * [uastHandler]. (In contrast, a vanilla [SourceCodeScanner] would [createUastHandler] each
-   * time).
+   * A stateful [SourceCodeScanner] that can [setContext] then remember a (lazily created) [uastHandler]. (In contrast, a vanilla
+   * [SourceCodeScanner] would [createUastHandler] each time).
    */
-  private class SourceCodeScannerWithContext(private val uastScanner: SourceCodeScanner) :
-    SourceCodeScanner by uastScanner {
+  private class SourceCodeScannerWithContext(private val uastScanner: SourceCodeScanner) : SourceCodeScanner by uastScanner {
     private var cache: UElementHandler? = null
     private lateinit var context: JavaContext
 
@@ -346,8 +317,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
     }
   }
 
-  private inner class SuperclassUastVisitor(private val context: JavaContext) :
-    AbstractUastVisitor() {
+  private inner class SuperclassUastVisitor(private val context: JavaContext) : AbstractUastVisitor() {
 
     override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
       val type = node.functionalInterfaceType
@@ -371,8 +341,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
     }
 
     private fun getRelevantDetectors(klass: PsiClass): Sequence<SourceCodeScanner> {
-      if (klass is PsiTypeParameter)
-        return sequenceOf() // See Javadoc for SourceCodeScanner.visitClass.
+      if (klass is PsiTypeParameter) return sequenceOf() // See Javadoc for SourceCodeScanner.visitClass.
       val superClasses = InheritanceUtil.getSuperClasses(klass).asSequence()
       return (superClasses + klass) // Include self.
         .mapNotNull { it.qualifiedName?.let(superClassDetectors::get) }
@@ -681,18 +650,15 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
       return super.visitPatternExpression(node)
     }
 
-    private inline fun <reified Node : UElement> eachDetectorVisit(
-      node: Node,
-      visit: UElementHandler.(Node) -> Unit,
-    ) = uastHandlerDetectors[Node::class.java]?.forEach { it.uastHandler.visit(node) }
+    private inline fun <reified Node : UElement> eachDetectorVisit(node: Node, visit: UElementHandler.(Node) -> Unit) =
+      uastHandlerDetectors[Node::class.java]?.forEach { it.uastHandler.visit(node) }
   }
 
   /**
-   * Performs common AST searches for method calls and R-type-field references. Note that this is a
-   * specialized form of the [DispatchUastVisitor].
+   * Performs common AST searches for method calls and R-type-field references. Note that this is a specialized form of the
+   * [DispatchUastVisitor].
    */
-  private inner class DelegatingUastVisitor constructor(private val mContext: JavaContext) :
-    DispatchUastVisitor() {
+  private inner class DelegatingUastVisitor constructor(private val mContext: JavaContext) : DispatchUastVisitor() {
     private val mVisitResources: Boolean = resourceFieldDetectors.isNotEmpty()
     private val mVisitMethods: Boolean = methodDetectors.isNotEmpty()
     private val mVisitConstructors: Boolean = constructorDetectors.isNotEmpty()
@@ -726,9 +692,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
           if (referenced is PsiNamedElement) {
             val name = referenced.name
             if (name != null && name != identifier) {
-              referenceDetectors[name]?.forEach { uastScanner ->
-                uastScanner.visitReference(mContext, node, referenced)
-              }
+              referenceDetectors[name]?.forEach { uastScanner -> uastScanner.visitReference(mContext, node, referenced) }
             }
           }
         }
@@ -738,13 +702,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
         val reference = ResourceReference.get(node)
         if (reference != null) {
           for (uastScanner in resourceFieldDetectors) {
-            uastScanner.visitResourceReference(
-              mContext,
-              reference.node,
-              reference.type,
-              reference.name,
-              reference.`package` == ANDROID_PKG,
-            )
+            uastScanner.visitResourceReference(mContext, reference.node, reference.type, reference.name, reference.`package` == ANDROID_PKG)
           }
         } else if (aliasedImports && node.resolve() == null) {
           val identifier = node.identifier
@@ -754,10 +712,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
             if (import.sourcePsi is KtImportDirective) {
               val ktImport = import.sourcePsi as KtImportDirective
               if (identifier == ktImport.alias?.name) {
-                val resource =
-                  ktImport.importedReference
-                    ?.let { it.toUElement() }
-                    ?.let { ResourceReference.get(it) } ?: continue
+                val resource = ktImport.importedReference?.let { it.toUElement() }?.let { ResourceReference.get(it) } ?: continue
                 for (uastScanner in resourceFieldDetectors) {
                   uastScanner.visitResourceReference(
                     mContext,

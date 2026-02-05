@@ -18,16 +18,13 @@ package com.android.tools.journeys.testengine.adapter.consumer
 
 import com.android.tools.journeys.proto.JourneyRunEvent
 
-/**
- * A consumer for [JourneyRunEvent]s. Implementations of this interface handle
- * the events produced by a JourneysResultAdapter.
- */
+/** A consumer for [JourneyRunEvent]s. Implementations of this interface handle the events produced by a JourneysResultAdapter. */
 fun interface JourneyRunEventConsumer {
 
-    /**
-     * Called by the adapter whenever a new [JourneyRunEvent] is produced.
-     *
-     * @param event The newly created event.
-     */
-    fun onEvent(event: JourneyRunEvent)
+  /**
+   * Called by the adapter whenever a new [JourneyRunEvent] is produced.
+   *
+   * @param event The newly created event.
+   */
+  fun onEvent(event: JourneyRunEvent)
 }

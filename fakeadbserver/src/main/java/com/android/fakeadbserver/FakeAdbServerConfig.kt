@@ -21,38 +21,35 @@ import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
 import com.android.sdklib.AndroidApiLevel
 
 /**
- * The properties of a [FakeAdbServer] instance, that can be re-used to create
- * a similar server instance when needed. See [FakeAdbServer.getCurrentConfig] and
- * [FakeAdbServer.Builder.setConfig]
+ * The properties of a [FakeAdbServer] instance, that can be re-used to create a similar server instance when needed. See
+ * [FakeAdbServer.getCurrentConfig] and [FakeAdbServer.Builder.setConfig]
  */
 class FakeAdbServerConfig {
 
-    val hostHandlers = ArrayList<HostCommandHandler>()
+  val hostHandlers = ArrayList<HostCommandHandler>()
 
-    val deviceHandlers = ArrayList<DeviceCommandHandler>()
+  val deviceHandlers = ArrayList<DeviceCommandHandler>()
 
-    val devices = ArrayList<DeviceStateConfig>()
+  val devices = ArrayList<DeviceStateConfig>()
 
-    val mdnsServices = ArrayList<MdnsService>()
+  val mdnsServices = ArrayList<MdnsService>()
 }
 
-/**
- * The properties of a [DeviceState] that can be re-used across [FakeAdbServer] instances.
- */
+/** The properties of a [DeviceState] that can be re-used across [FakeAdbServer] instances. */
 data class DeviceStateConfig(
-    val serialNumber: String,
-    val fileSystem: DeviceFileSystem,
-    val logcatMessages: ArrayList<String>,
-    val processes: ArrayList<ProcessState>,
-    val hostConnectionType: HostConnectionType,
-    val manufacturer: String,
-    val model: String,
-    val buildVersionRelease: String,
-    val buildVersionSdk: AndroidApiLevel,
-    val cpuAbi: String,
-    val properties: Map<String, String>,
-    val deviceStatus: DeviceState.DeviceStatus,
-    val isRoot: Boolean,
-    val maxSpeedMbps: Long,
-    val negotiatedSpeedMbps: Long,
+  val serialNumber: String,
+  val fileSystem: DeviceFileSystem,
+  val logcatMessages: ArrayList<String>,
+  val processes: ArrayList<ProcessState>,
+  val hostConnectionType: HostConnectionType,
+  val manufacturer: String,
+  val model: String,
+  val buildVersionRelease: String,
+  val buildVersionSdk: AndroidApiLevel,
+  val cpuAbi: String,
+  val properties: Map<String, String>,
+  val deviceStatus: DeviceState.DeviceStatus,
+  val isRoot: Boolean,
+  val maxSpeedMbps: Long,
+  val negotiatedSpeedMbps: Long,
 )

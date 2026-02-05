@@ -55,8 +55,7 @@ class SdCardDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-    listOf(ULiteralExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>>? = listOf(ULiteralExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler? =
     object : UElementHandler() {
@@ -75,12 +74,10 @@ class SdCardDetector : Detector(), SourceCodeScanner {
               s.startsWith("file://sdcard/") ||
               s.startsWith("file:///sdcard/")
           ) {
-            val message =
-              """Do not hardcode "/sdcard/"; use `Environment.getExternalStorageDirectory().getPath()` instead"""
+            val message = """Do not hardcode "/sdcard/"; use `Environment.getExternalStorageDirectory().getPath()` instead"""
             Incident(context).issue(ISSUE).at(node).message(message).report()
           } else if (s.startsWith("/data/data/") || s.startsWith("/data/user/")) {
-            val message =
-              """Do not hardcode "`/data/`"; use `Context.getFilesDir().getPath()` instead"""
+            val message = """Do not hardcode "`/data/`"; use `Context.getFilesDir().getPath()` instead"""
             Incident(context).issue(ISSUE).at(node).message(message).report()
           }
         }

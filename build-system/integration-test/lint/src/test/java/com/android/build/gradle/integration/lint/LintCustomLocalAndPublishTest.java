@@ -48,7 +48,6 @@ public class LintCustomLocalAndPublishTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintCustomLocalAndPublishRules")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Test

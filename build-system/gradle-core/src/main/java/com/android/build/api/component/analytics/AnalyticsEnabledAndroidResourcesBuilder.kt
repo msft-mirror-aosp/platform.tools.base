@@ -19,7 +19,5 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.AndroidResourcesBuilder
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-open class AnalyticsEnabledAndroidResourcesBuilder(
-    androidResources: AndroidResourcesBuilder,
-    val stats: GradleBuildVariant.Builder,
-) : AndroidResourcesBuilder
+open class AnalyticsEnabledAndroidResourcesBuilder(androidResources: AndroidResourcesBuilder, val stats: GradleBuildVariant.Builder) :
+  AndroidResourcesBuilder

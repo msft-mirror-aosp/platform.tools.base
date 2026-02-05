@@ -19,14 +19,11 @@ import com.android.build.gradle.api.JavaCompileOptions
 import com.android.builder.model.ProductFlavor
 import org.gradle.api.Named
 
-/**
- * A product flavor with addition properties for building with Gradle plugin. @Deprecated do not
- * use. Use a more specific type instead
- */
+/** A product flavor with addition properties for building with Gradle plugin. @Deprecated do not use. Use a more specific type instead */
 @Deprecated("Use com.android.build.api.dsl.ProductFlavor instead")
 interface CoreProductFlavor : ProductFlavor, Named {
-    val ndkConfig: CoreNdkOptions
-    val externalNativeBuildOptions: CoreExternalNativeBuildOptions
-    val javaCompileOptions: JavaCompileOptions
-    val shaders: CoreShaderOptions
+  val ndkConfig: CoreNdkOptions
+  val externalNativeBuildOptions: CoreExternalNativeBuildOptions
+  val javaCompileOptions: JavaCompileOptions
+  val shaders: CoreShaderOptions
 }

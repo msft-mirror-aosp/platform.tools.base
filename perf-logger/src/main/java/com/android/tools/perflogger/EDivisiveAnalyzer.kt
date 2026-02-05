@@ -19,9 +19,9 @@ import com.google.gson.stream.JsonWriter
 
 /** A non parameterized analyzer that implements the e-divisive algorithm. */
 object EDivisiveAnalyzer : Analyzer {
-    override fun outputJson(writer: JsonWriter) {
-        writer.beginObject()
-        writer.name("type").value("EDivisiveAnalyzer")
-        writer.endObject()
-    }
+  override fun outputJson(writer: JsonWriter) {
+    writer.beginObject()
+    writer.name("type").value("EDivisiveAnalyzer")
+    writer.endObject()
+  }
 }

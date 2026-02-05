@@ -28,25 +28,23 @@ import com.intellij.util.concurrency.AppExecutorUtil
 
 /** [IJFramework] implementation for the standalone rendering. */
 object IJFramework : Disposable {
-    private val application = MockApplication(this)
+  private val application = MockApplication(this)
 
-    init {
-        ApplicationManager.setApplication(application, this)
-        PluginManagerCore.setPluginSet(PluginSetBuilder(emptySet())
-            .createPluginSetWithEnabledModulesMap())
-    }
+  init {
+    ApplicationManager.setApplication(application, this)
+    PluginManagerCore.setPluginSet(PluginSetBuilder(emptySet()).createPluginSetWithEnabledModulesMap())
+  }
 
-    fun createProject(): Project {
-        return MockProject(null, application)
-    }
+  fun createProject(): Project {
+    return MockProject(null, application)
+  }
 
-    fun <T : Any> registerService(
-        serviceInterface: Class<T>, serviceImplementation: T, disposable: Disposable) {
-        application.registerService(serviceInterface, serviceImplementation, disposable)
-    }
+  fun <T : Any> registerService(serviceInterface: Class<T>, serviceImplementation: T, disposable: Disposable) {
+    application.registerService(serviceInterface, serviceImplementation, disposable)
+  }
 
-    override fun dispose() {
-        RenderService.shutdownRenderExecutor()
-        AppExecutorUtil.shutdownApplicationScheduledExecutorService()
-    }
+  override fun dispose() {
+    RenderService.shutdownRenderExecutor()
+    AppExecutorUtil.shutdownApplicationScheduledExecutorService()
+  }
 }

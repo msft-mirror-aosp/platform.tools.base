@@ -27,91 +27,78 @@ import org.junit.Test
 
 class MissingDependencyModelTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation("foo:bar:1.1")
-            }
+  @get:Rule val rule = GradleRule.from { androidApplication { dependencies { implementation("foo:bar:1.1") } } }
+
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    Truth.assertThat(
+        result.container.getProject().variantDependencies?.mainArtifact?.unresolvedDependencies?.map {
+          UnresolvedDependencyImpl(it.name, it.cause)
         }
-    }
-
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-
-        Truth.assertThat(
-            result.container.getProject().variantDependencies?.mainArtifact?.unresolvedDependencies?.map {
-                UnresolvedDependencyImpl(it.name, it.cause)
-            }
-        ).containsExactly(UnresolvedDependencyImpl("foo:bar:1.1", null))
-    }
+      )
+      .containsExactly(UnresolvedDependencyImpl("foo:bar:1.1", null))
+  }
 }
 
 class UnresolvedVariantDependencyModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                buildTypes {
-                    create("staging") { }
-                }
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary { }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { buildTypes { create("staging") {} } }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidLibrary {}
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "staging")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "staging")
 
-        val appInfo = result.container.rootInfoMap[":app"] ?: throw RuntimeException("No app info")
-        val variantDependencies =
-            appInfo.variantDependencies ?: throw RuntimeException("No variant dep")
+    val appInfo = result.container.rootInfoMap[":app"] ?: throw RuntimeException("No app info")
+    val variantDependencies = appInfo.variantDependencies ?: throw RuntimeException("No variant dep")
 
-        val unresolvedDeps = variantDependencies.mainArtifact.unresolvedDependencies.map {
-            UnresolvedDependencyImpl(it.name, it.cause?.fixLineEndings()?.fixAgpVersion())
-        }
+    val unresolvedDeps =
+      variantDependencies.mainArtifact.unresolvedDependencies.map {
+        UnresolvedDependencyImpl(it.name, it.cause?.fixLineEndings()?.fixAgpVersion())
+      }
 
-        Truth.assertThat(unresolvedDeps).hasSize(1)
-        Truth.assertThat(unresolvedDeps.single().name).isEqualTo("project :lib")
-        Truth.assertThat(unresolvedDeps.single().cause).isEqualTo(
-                """
-No matching variant of project :lib was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
-  - Variant 'debugApiElements' declares a component for use during compile-time, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
-      - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
-      - Other compatible attributes:
-          - Doesn't say anything about its component category (required a library)
-          - Doesn't say anything about its target Java environment (preferred optimized for Android)
-          - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
-  - Variant 'debugRuntimeElements' declares a component for use during runtime, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
-      - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
-      - Other compatible attributes:
-          - Doesn't say anything about its component category (required a library)
-          - Doesn't say anything about its target Java environment (preferred optimized for Android)
-          - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
-  - Variant 'releaseApiElements' declares a component for use during compile-time, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
-      - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'release' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
-      - Other compatible attributes:
-          - Doesn't say anything about its component category (required a library)
-          - Doesn't say anything about its target Java environment (preferred optimized for Android)
-          - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
-  - Variant 'releaseRuntimeElements' declares a component for use during runtime, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
-      - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'release' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
-      - Other compatible attributes:
-          - Doesn't say anything about its component category (required a library)
-          - Doesn't say anything about its target Java environment (preferred optimized for Android)
-          - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
-""".trimIndent()
-        )
-    }
+    Truth.assertThat(unresolvedDeps).hasSize(1)
+    Truth.assertThat(unresolvedDeps.single().name).isEqualTo("project :lib")
+    Truth.assertThat(unresolvedDeps.single().cause)
+      .isEqualTo(
+        """
+        No matching variant of project :lib was found. The consumer was configured to find a library for use during compile-time, preferably optimized for Android, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}', attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging', attribute 'org.jetbrains.kotlin.platform.type' with value 'androidJvm' but:
+          - Variant 'debugApiElements' declares a component for use during compile-time, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
+              - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
+              - Other compatible attributes:
+                  - Doesn't say anything about its component category (required a library)
+                  - Doesn't say anything about its target Java environment (preferred optimized for Android)
+                  - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
+          - Variant 'debugRuntimeElements' declares a component for use during runtime, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
+              - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'debug' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
+              - Other compatible attributes:
+                  - Doesn't say anything about its component category (required a library)
+                  - Doesn't say anything about its target Java environment (preferred optimized for Android)
+                  - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
+          - Variant 'releaseApiElements' declares a component for use during compile-time, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
+              - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'release' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
+              - Other compatible attributes:
+                  - Doesn't say anything about its component category (required a library)
+                  - Doesn't say anything about its target Java environment (preferred optimized for Android)
+                  - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
+          - Variant 'releaseRuntimeElements' declares a component for use during runtime, as well as attribute 'com.android.build.api.attributes.AgpVersionAttr' with value '{AGP-VERSION}':
+              - Incompatible because this component declares a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'release' and the consumer needed a component, as well as attribute 'com.android.build.api.attributes.BuildTypeAttr' with value 'staging'
+              - Other compatible attributes:
+                  - Doesn't say anything about its component category (required a library)
+                  - Doesn't say anything about its target Java environment (preferred optimized for Android)
+                  - Doesn't say anything about org.jetbrains.kotlin.platform.type (required 'androidJvm')
+        """
+          .trimIndent()
+      )
+  }
 }
 
 private fun String.fixLineEndings(): String = this.replace("\r\n", "\n")

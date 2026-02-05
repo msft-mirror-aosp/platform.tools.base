@@ -20,81 +20,62 @@ import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.read
 import com.android.adblib.utils.createChildScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
- * Implementation of an [AdbInputChannel] that reads data from another [AdbInputChannel]
- * in a coroutine that runs concurrently with [read] operations, hence "reading ahead"
- * data from the input.
+ * Implementation of an [AdbInputChannel] that reads data from another [AdbInputChannel] in a coroutine that runs concurrently with [read]
+ * operations, hence "reading ahead" data from the input.
  */
-internal class AdbReadAheadInputChannel(
-    session: AdbSession,
-    private val input: AdbInputChannel,
-    bufferSize: Int = DEFAULT_BUFFER_SIZE
-) : AdbInputChannel {
+internal class AdbReadAheadInputChannel(session: AdbSession, private val input: AdbInputChannel, bufferSize: Int = DEFAULT_BUFFER_SIZE) :
+  AdbInputChannel {
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    /**
-     * The [AdbPipedInputChannelImpl] used to concurrently store read-ahead data as well as
-     * provide data for [read] operations.
-     */
-    private val pipe = AdbPipedInputChannelImpl(session, bufferSize)
+  /** The [AdbPipedInputChannelImpl] used to concurrently store read-ahead data as well as provide data for [read] operations. */
+  private val pipe = AdbPipedInputChannelImpl(session, bufferSize)
 
-    /**
-     * The scope of the read-ahead coroutine.
-     */
-    private val scope = session.scope.createChildScope(isSupervisor = true)
+  /** The scope of the read-ahead coroutine. */
+  private val scope = session.scope.createChildScope(isSupervisor = true)
 
-    init {
-        scope.launch {
-            runCatching {
-                readAhead(input, bufferSize)
-            }.onFailure { exception: Throwable ->
-                pipe.pipeSource.error(exception)
-            }
-        }
+  init {
+    scope.launch { runCatching { readAhead(input, bufferSize) }.onFailure { exception: Throwable -> pipe.pipeSource.error(exception) } }
+  }
+
+  override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    pipe.read(buffer, timeout, unit).also { logger.verbose { "read: Read $it bytes from pipe '$pipe'" } }
+  }
+
+  override suspend fun readExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    buffer.remaining().also { byteCount ->
+      pipe.readExactly(buffer, timeout, unit).also { logger.verbose { "read: Read $byteCount bytes from pipe '$pipe'" } }
     }
+  }
 
-    override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        pipe.read(buffer, timeout, unit).also {
-            logger.verbose { "read: Read $it bytes from pipe '$pipe'" }
-        }
-    }
+  override fun close() {
+    logger.debug { "Closing read-ahead channel" }
+    scope.cancel("Read ahead input closed")
+    pipe.close()
+    input.close()
+  }
 
-    override suspend fun readExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        buffer.remaining().also { byteCount ->
-            pipe.readExactly(buffer, timeout, unit).also {
-                logger.verbose { "read: Read $byteCount bytes from pipe '$pipe'" }
-            }
-        }
+  private suspend fun readAhead(input: AdbInputChannel, bufferSize: Int) {
+    logger.debug { "readAhead(input=$input, bufferSize=$bufferSize)" }
+    val buffer = ByteBuffer.allocate(bufferSize)
+    while (true) {
+      buffer.clear() // [position=0, limit=capacity]
+      val byteCount = input.read(buffer) // [position=byteCount, limit=capacity]
+      logger.verbose { "readAhead: Read $byteCount bytes from input channel '$input'" }
+      if (byteCount < 0) {
+        // Reached EOF, signal "pipeSource" we are done adding bytes
+        pipe.pipeSource.close()
+        break
+      }
+      buffer.flip() // [position=byteCount, limit=capacity] -> [position=0, limit]
+      pipe.pipeSource.writeExactly(buffer)
+      logger.verbose { "readAhead: Written $byteCount bytes to pipe '$pipe'" }
     }
-
-    override fun close() {
-        logger.debug { "Closing read-ahead channel" }
-        scope.cancel("Read ahead input closed")
-        pipe.close()
-        input.close()
-    }
-
-    private suspend fun readAhead(input: AdbInputChannel, bufferSize: Int) {
-        logger.debug { "readAhead(input=$input, bufferSize=$bufferSize)" }
-        val buffer = ByteBuffer.allocate(bufferSize)
-        while (true) {
-            buffer.clear() // [position=0, limit=capacity]
-            val byteCount = input.read(buffer) // [position=byteCount, limit=capacity]
-            logger.verbose { "readAhead: Read $byteCount bytes from input channel '$input'" }
-            if (byteCount < 0) {
-                // Reached EOF, signal "pipeSource" we are done adding bytes
-                pipe.pipeSource.close()
-                break
-            }
-            buffer.flip() // [position=byteCount, limit=capacity] -> [position=0, limit]
-            pipe.pipeSource.writeExactly(buffer)
-            logger.verbose { "readAhead: Written $byteCount bytes to pipe '$pipe'" }
-        }
-    }
+  }
 }

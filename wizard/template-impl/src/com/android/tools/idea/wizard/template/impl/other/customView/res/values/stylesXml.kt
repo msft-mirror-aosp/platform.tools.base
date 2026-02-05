@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.customView.res.values
 
 import com.android.tools.idea.wizard.template.MaterialColor.*
 
-fun stylesXml(themeName: String) = """
+fun stylesXml(themeName: String) =
+  """
 <resources>
     <style name="${getCustomViewStyle(themeName)}" parent="">
         <item name="android:background">@color/${GRAY_400.colorName}</item>

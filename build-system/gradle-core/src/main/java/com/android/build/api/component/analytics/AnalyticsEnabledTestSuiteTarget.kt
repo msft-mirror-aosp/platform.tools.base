@@ -20,23 +20,20 @@ import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 
 open class AnalyticsEnabledTestSuiteTarget(
-    private val delegate: TestSuiteTarget,
-    val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): TestSuiteTarget
-{
-    override val enabled: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_TARGET_ENABLE_VALUE
-            return delegate.enabled
-        }
+  private val delegate: TestSuiteTarget,
+  val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+) : TestSuiteTarget {
+  override val enabled: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_TARGET_ENABLE_VALUE
+      return delegate.enabled
+    }
 
-    override val targetDevices: Collection<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_TARGET_TARGET_DEVICES_VALUE
-            return delegate.targetDevices
-        }
+  override val targetDevices: Collection<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_TARGET_TARGET_DEVICES_VALUE
+      return delegate.targetDevices
+    }
 
-    override fun getName(): String = delegate.name
+  override fun getName(): String = delegate.name
 }

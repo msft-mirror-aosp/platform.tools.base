@@ -17,34 +17,23 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
 class LibUnitTestClasses {
 
-    @get:Rule
-    val library = GradleRule.from {
-        androidLibrary {
-            android {
-                testOptions {
-                    unitTests.isIncludeAndroidResources = true
-                }
-            }
-        }
-    }
+  @get:Rule val library = GradleRule.from { androidLibrary { android { testOptions { unitTests.isIncludeAndroidResources = true } } } }
 
-    /**
-     * Tests that a library project that is both including android resources (probably though a
-     * convention plugin across multiple sub projects) and does not have any test sources will be
-     * correctly skipped. This is a regression test for b/411739086 where Gradle complains that
-     * there are sources (R.jar in this case) and yet not tests were executed which will not be
-     * supported starting in Gradle 9.0
-     */
-    @Test
-    fun checkClassesDir() {
-        val buildResult = library.build.executor.run("testDebugUnitTest")
-        Truth.assertThat(buildResult.skippedTasks).contains(":lib:testDebugUnitTest")
-    }
+  /**
+   * Tests that a library project that is both including android resources (probably though a convention plugin across multiple sub
+   * projects) and does not have any test sources will be correctly skipped. This is a regression test for b/411739086 where Gradle
+   * complains that there are sources (R.jar in this case) and yet not tests were executed which will not be supported starting in Gradle
+   * 9.0
+   */
+  @Test
+  fun checkClassesDir() {
+    val buildResult = library.build.executor.run("testDebugUnitTest")
+    Truth.assertThat(buildResult.skippedTasks).contains(":lib:testDebugUnitTest")
+  }
 }

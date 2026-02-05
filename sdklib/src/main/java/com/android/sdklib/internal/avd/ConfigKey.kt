@@ -17,9 +17,7 @@ package com.android.sdklib.internal.avd
 
 import com.android.sdklib.devices.CameraLocation
 
-/**
- * Keys to config entries in an AVD's config.ini file (which resides within the AVD's data folder).
- */
+/** Keys to config entries in an AVD's config.ini file (which resides within the AVD's data folder). */
 object ConfigKey {
   /** Charset encoding used by the avd.ini/config.ini. */
   const val ENCODING = "avd.ini.encoding" // $NON-NLS-1$
@@ -33,9 +31,7 @@ object ConfigKey {
   /** The first tag display name of the AVD's system image */
   const val TAG_DISPLAY = "tag.display" // $NON-NLS-1$
 
-  /**
-   * The display names of the tags of the AVD's system image, represented as a comma-separated list
-   */
+  /** The display names of the tags of the AVD's system image, represented as a comma-separated list */
   const val TAG_DISPLAYNAMES = "tag.displaynames" // $NON-NLS-1$
 
   /** The ABI of the AVD's system image */
@@ -75,23 +71,18 @@ object ConfigKey {
   const val SHOW_DEVICE_FRAME = "showDeviceFrame"
 
   /**
-   * The SDK-relative path of the skin folder, if any, or a 320x480 like constant for a numeric skin
-   * size.
+   * The SDK-relative path of the skin folder, if any, or a 320x480 like constant for a numeric skin size.
    *
    * @see NUMERIC_SKIN_SIZE
    */
   const val SKIN_PATH = "skin.path" // $NON-NLS-1$
 
-  /**
-   * The SDK-relative path of the skin folder to be selected if skins for this device become
-   * enabled.
-   */
+  /** The SDK-relative path of the skin folder to be selected if skins for this device become enabled. */
   const val BACKUP_SKIN_PATH = "skin.path.backup" // $NON-NLS-1$
 
   /**
-   * A UI name for the skin. This config key is ignored by the emulator. It is only used by the SDK
-   * manager or tools to give a friendlier name to the skin. If missing, use the [SKIN_PATH] key
-   * instead.
+   * A UI name for the skin. This config key is ignored by the emulator. It is only used by the SDK manager or tools to give a friendlier
+   * name to the skin. If missing, use the [SKIN_PATH] key instead.
    */
   const val SKIN_NAME = "skin.name" // $NON-NLS-1$
 
@@ -99,8 +90,7 @@ object ConfigKey {
   const val SKIN_DYNAMIC = "skin.dynamic" // $NON-NLS-1$
 
   /**
-   * The path to the sdcard file. If missing, the default name "sdcard.img" will be used for the
-   * sdcard, if there's such a file.
+   * The path to the sdcard file. If missing, the default name "sdcard.img" will be used for the sdcard, if there's such a file.
    *
    * @see SDCARD_IMG
    */
@@ -115,25 +105,21 @@ object ConfigKey {
   const val SDCARD_SIZE = "sdcard.size" // $NON-NLS-1$
 
   /**
-   * The first path where the emulator looks for system images. Typically this is the path to the
-   * add-on system image or the path to the platform system image if there's no add-on.
+   * The first path where the emulator looks for system images. Typically this is the path to the add-on system image or the path to the
+   * platform system image if there's no add-on.
    *
    * The emulator looks at [IMAGES_1] before [IMAGES_2].
    */
   const val IMAGES_1 = "image.sysdir.1" // $NON-NLS-1$
 
   /**
-   * The second path where the emulator looks for system images. Typically this is the path to the
-   * platform system image.
+   * The second path where the emulator looks for system images. Typically this is the path to the platform system image.
    *
    * @see IMAGES_1
    */
   const val IMAGES_2 = "image.sysdir.2" // $NON-NLS-1$
 
-  /**
-   * The presence of the snapshots file. This property is for UI purposes only. It is not used by
-   * the emulator.
-   */
+  /** The presence of the snapshots file. This property is for UI purposes only. It is not used by the emulator. */
   const val SNAPSHOT_PRESENT = "snapshot.present" // $NON-NLS-1$
 
   /** Flag indicating if hardware graphics emulation is enabled */
@@ -148,27 +134,21 @@ object ConfigKey {
   /** Latency of the simulated network, represented by [AvdNetworkLatency]. */
   const val NETWORK_LATENCY = "runtime.network.latency"
 
-  /**
-   * Flag indicating the emulator should perform a cold boot rather than using a snapshot. This is
-   * read by the emulator.
-   */
+  /** Flag indicating the emulator should perform a cold boot rather than using a snapshot. This is read by the emulator. */
   const val FORCE_COLD_BOOT_MODE = "fastboot.forceColdBoot"
 
   /**
-   * Flag indicating that [CHOSEN_SNAPSHOT_FILE] should be booted by default. This is not read by
-   * the emulator; Studio must read this and pass the necessary command-line arguments.
+   * Flag indicating that [CHOSEN_SNAPSHOT_FILE] should be booted by default. This is not read by the emulator; Studio must read this and
+   * pass the necessary command-line arguments.
    */
   const val FORCE_CHOSEN_SNAPSHOT_BOOT_MODE = "fastboot.forceChosenSnapshotBoot"
 
-  /**
-   * Flag indicating the emulator should boot from the default snapshot. This is not read by the
-   * emulator.
-   */
+  /** Flag indicating the emulator should boot from the default snapshot. This is not read by the emulator. */
   const val FORCE_FAST_BOOT_MODE = "fastboot.forceFastBoot"
 
   /**
-   * Indicates a snapshot to be booted by default. This is not read by the emulator; Studio must
-   * read this and pass it as a command-line argument to the emulator.
+   * Indicates a snapshot to be booted by default. This is not read by the emulator; Studio must read this and pass it as a command-line
+   * argument to the emulator.
    */
   const val CHOSEN_SNAPSHOT_FILE = "fastboot.chosenSnapshotFile"
 
@@ -179,8 +159,7 @@ object ConfigKey {
   const val CAMERA_BACK = "hw.camera.back" // $NON-NLS-1$
 
   /** The sensor orientation for the given camera */
-  @JvmStatic
-  fun cameraSensorOrientation(location: CameraLocation) = "hw.camera.$location.orientation"
+  @JvmStatic fun cameraSensorOrientation(location: CameraLocation) = "hw.camera.$location.orientation"
 
   /** The amount of RAM the emulated device should have */
   const val RAM_SIZE = "hw.ramSize"
@@ -194,16 +173,15 @@ object ConfigKey {
   /**
    * The hash of the device this AVD is based on.
    *
-   * This old hash is deprecated and shouldn't be used anymore. It represents the Device.hashCode()
-   * and is not stable across implementations.
+   * This old hash is deprecated and shouldn't be used anymore. It represents the Device.hashCode() and is not stable across
+   * implementations.
    *
    * @see DEVICE_HASH_V2
    */
   const val DEVICE_HASH_V1 = "hw.device.hash"
 
   /**
-   * The hash of the device hardware properties actually present in the config.ini. This replaces
-   * [DEVICE_HASH_V1].
+   * The hash of the device hardware properties actually present in the config.ini. This replaces [DEVICE_HASH_V1].
    *
    * To find this hash, use `DeviceManager.getHardwareProperties(device).get(DEVICE_HASH_V2)`.
    */

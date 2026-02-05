@@ -23,12 +23,12 @@ import com.android.ide.common.symbols.parseManifest
 import com.android.testutils.apk.Zip
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.lang.reflect.Field
 import java.net.URLClassLoader
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 private const val PERMISSION_ONE = "com.permission.ONE"
 private const val PERMISSION_TWO = "com.permission.TWO"
@@ -36,147 +36,135 @@ private const val CLASHING_PERMISSION = "com.clashing.ONE"
 
 class GenerateManifestClassTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun testSimplePermission() {
-        val manifestTestConfig = ManifestClassData(
-                manifestFile = createManifest(listOf(PERMISSION_ONE)),
-                namespace = "test",
-                outputFilePath = temporaryFolder.newFile("manifest.jar"))
+  @Test
+  fun testSimplePermission() {
+    val manifestTestConfig =
+      ManifestClassData(
+        manifestFile = createManifest(listOf(PERMISSION_ONE)),
+        namespace = "test",
+        outputFilePath = temporaryFolder.newFile("manifest.jar"),
+      )
 
-        ManifestClassGenerator(manifestTestConfig).generate()
+    ManifestClassGenerator(manifestTestConfig).generate()
 
-        Zip(manifestTestConfig.outputFilePath).use {
-            assertThat(it.entries).hasSize(2)
-            assertThat(it.entries.map { f -> f.toString() })
-                    .containsExactly("/test/Manifest.class", "/test/Manifest\$permission.class")
-        }
-
-        URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
-            val actualFields = loadFields(it, "test.Manifest\$permission")
-            assertThat(actualFields)
-                    .containsExactly("""java.lang.String ONE = "$PERMISSION_ONE"""")
-        }
+    Zip(manifestTestConfig.outputFilePath).use {
+      assertThat(it.entries).hasSize(2)
+      assertThat(it.entries.map { f -> f.toString() }).containsExactly("/test/Manifest.class", "/test/Manifest\$permission.class")
     }
 
-    @Test
-    fun testClashingPermission() {
-        val manifestClashingPermission = ManifestClassData(
-                manifestFile = createManifest(listOf(PERMISSION_ONE, CLASHING_PERMISSION)),
-                namespace = "test",
-                outputFilePath = temporaryFolder.newFile("manifest.jar")
-        )
+    URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
+      val actualFields = loadFields(it, "test.Manifest\$permission")
+      assertThat(actualFields).containsExactly("""java.lang.String ONE = "$PERMISSION_ONE"""")
+    }
+  }
 
-        ManifestClassGenerator(manifestClashingPermission).generate()
+  @Test
+  fun testClashingPermission() {
+    val manifestClashingPermission =
+      ManifestClassData(
+        manifestFile = createManifest(listOf(PERMISSION_ONE, CLASHING_PERMISSION)),
+        namespace = "test",
+        outputFilePath = temporaryFolder.newFile("manifest.jar"),
+      )
 
-        URLClassLoader(arrayOf(manifestClashingPermission.outputFilePath.toURI().toURL()), null).use {
-            val actualFields = loadFields(it, "test.Manifest\$permission")
-            // The last one wins.
-            assertThat(actualFields)
-                    .containsExactly("""java.lang.String ONE = "$CLASHING_PERMISSION"""")
-        }
+    ManifestClassGenerator(manifestClashingPermission).generate()
 
-        // Now swap order and make sure the last one wins.
-        FileUtils.delete(manifestClashingPermission.manifestFile)
-        val manifestPermissionOne = manifestClashingPermission.copy(
-                manifestFile = createManifest(listOf(CLASHING_PERMISSION, PERMISSION_ONE)))
-        ManifestClassGenerator(manifestPermissionOne).generate()
-
-        URLClassLoader(arrayOf(manifestPermissionOne.outputFilePath.toURI().toURL()), null).use {
-            val actualFields = loadFields(it, "test.Manifest\$permission")
-            assertThat(actualFields)
-                    .containsExactly("""java.lang.String ONE = "$PERMISSION_ONE"""")
-        }
+    URLClassLoader(arrayOf(manifestClashingPermission.outputFilePath.toURI().toURL()), null).use {
+      val actualFields = loadFields(it, "test.Manifest\$permission")
+      // The last one wins.
+      assertThat(actualFields).containsExactly("""java.lang.String ONE = "$CLASHING_PERMISSION"""")
     }
 
-    @Test
-    fun testAllPermissions() {
-        val manifestTestConfig = ManifestClassData(
-                manifestFile = createManifest(listOf(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION)),
-                namespace = "com.example.app",
-                outputFilePath = temporaryFolder.newFile("manifest.jar")
-        )
-        ManifestClassGenerator(manifestTestConfig).generate()
+    // Now swap order and make sure the last one wins.
+    FileUtils.delete(manifestClashingPermission.manifestFile)
+    val manifestPermissionOne = manifestClashingPermission.copy(manifestFile = createManifest(listOf(CLASHING_PERMISSION, PERMISSION_ONE)))
+    ManifestClassGenerator(manifestPermissionOne).generate()
 
-        URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
-            val actualFields = loadFields(it, "com.example.app.Manifest\$permission")
-            // The last one wins.
-            assertThat(actualFields)
-                    .containsExactly(
-                            """java.lang.String ONE = "$CLASHING_PERMISSION"""",
-                            """java.lang.String TWO = "$PERMISSION_TWO"""")
-        }
+    URLClassLoader(arrayOf(manifestPermissionOne.outputFilePath.toURI().toURL()), null).use {
+      val actualFields = loadFields(it, "test.Manifest\$permission")
+      assertThat(actualFields).containsExactly("""java.lang.String ONE = "$PERMISSION_ONE"""")
     }
+  }
 
-    @Test
-    fun testNoPermissionsEmptyClass() {
-        val manifestTestConfig = ManifestClassData(
-                manifestFile = createManifest(listOf()),
-                namespace = "test",
-                outputFilePath = temporaryFolder.newFile("manifest.jar")
-        )
+  @Test
+  fun testAllPermissions() {
+    val manifestTestConfig =
+      ManifestClassData(
+        manifestFile = createManifest(listOf(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION)),
+        namespace = "com.example.app",
+        outputFilePath = temporaryFolder.newFile("manifest.jar"),
+      )
+    ManifestClassGenerator(manifestTestConfig).generate()
 
-        ManifestClassGenerator(manifestTestConfig).generate()
-
-        URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
-            val actualFields = loadFields(it, "test.Manifest")
-            assertThat(actualFields).isEmpty()
-        }
+    URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
+      val actualFields = loadFields(it, "com.example.app.Manifest\$permission")
+      // The last one wins.
+      assertThat(actualFields)
+        .containsExactly("""java.lang.String ONE = "$CLASHING_PERMISSION"""", """java.lang.String TWO = "$PERMISSION_TWO"""")
     }
+  }
 
-    @Test
-    fun testGetFullyQualifiedClassName() {
-        val manifestTestConfig = ManifestClassData(
-                manifestFile = createManifest(listOf()),
-                namespace = "",
-                outputFilePath = temporaryFolder.newFile("manifest.jar")
-        )
-        var manifestClassGenerator = ManifestClassGenerator(manifestTestConfig)
-        assertThat(manifestClassGenerator.fullyQualifiedManifestClassName).isEqualTo("Manifest")
+  @Test
+  fun testNoPermissionsEmptyClass() {
+    val manifestTestConfig =
+      ManifestClassData(
+        manifestFile = createManifest(listOf()),
+        namespace = "test",
+        outputFilePath = temporaryFolder.newFile("manifest.jar"),
+      )
 
-        manifestClassGenerator = ManifestClassGenerator(
-                manifestTestConfig.copy(namespace = "test"))
-        assertThat(manifestClassGenerator.fullyQualifiedManifestClassName)
-                .isEqualTo("test/Manifest")
+    ManifestClassGenerator(manifestTestConfig).generate()
 
-        manifestClassGenerator = ManifestClassGenerator(
-                manifestTestConfig.copy(namespace = "com.example.app"))
-        assertThat(manifestClassGenerator.fullyQualifiedManifestClassName)
-                .isEqualTo("com/example/app/Manifest")
+    URLClassLoader(arrayOf(manifestTestConfig.outputFilePath.toURI().toURL()), null).use {
+      val actualFields = loadFields(it, "test.Manifest")
+      assertThat(actualFields).isEmpty()
     }
+  }
 
-    @Test
-    fun testGetPermissionName() {
-        assertThat(getPermissionName(PERMISSION_ONE)).isEqualTo("ONE")
-        assertThat(getPermissionName(CLASHING_PERMISSION)).isEqualTo("ONE")
-        assertThat(getPermissionName(PERMISSION_ONE))
-                .isEqualTo(getPermissionName(CLASHING_PERMISSION))
-    }
+  @Test
+  fun testGetFullyQualifiedClassName() {
+    val manifestTestConfig =
+      ManifestClassData(manifestFile = createManifest(listOf()), namespace = "", outputFilePath = temporaryFolder.newFile("manifest.jar"))
+    var manifestClassGenerator = ManifestClassGenerator(manifestTestConfig)
+    assertThat(manifestClassGenerator.fullyQualifiedManifestClassName).isEqualTo("Manifest")
 
-    @Test
-    fun testParsingManifestForCustomPermissions() {
-        val manifest = createManifest(listOf(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION))
-        val foundPermissions = parseManifest(manifest).customPermissions
+    manifestClassGenerator = ManifestClassGenerator(manifestTestConfig.copy(namespace = "test"))
+    assertThat(manifestClassGenerator.fullyQualifiedManifestClassName).isEqualTo("test/Manifest")
 
-        assertThat(foundPermissions).hasSize(3)
-        assertThat(foundPermissions)
-                .containsExactly(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION)
-    }
+    manifestClassGenerator = ManifestClassGenerator(manifestTestConfig.copy(namespace = "com.example.app"))
+    assertThat(manifestClassGenerator.fullyQualifiedManifestClassName).isEqualTo("com/example/app/Manifest")
+  }
 
-    private fun createManifest(permissions: List<String>): File {
-        val manifest = temporaryFolder.newFile("AndroidManifest.xml")
-        var content =
-                """
+  @Test
+  fun testGetPermissionName() {
+    assertThat(getPermissionName(PERMISSION_ONE)).isEqualTo("ONE")
+    assertThat(getPermissionName(CLASHING_PERMISSION)).isEqualTo("ONE")
+    assertThat(getPermissionName(PERMISSION_ONE)).isEqualTo(getPermissionName(CLASHING_PERMISSION))
+  }
+
+  @Test
+  fun testParsingManifestForCustomPermissions() {
+    val manifest = createManifest(listOf(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION))
+    val foundPermissions = parseManifest(manifest).customPermissions
+
+    assertThat(foundPermissions).hasSize(3)
+    assertThat(foundPermissions).containsExactly(PERMISSION_ONE, PERMISSION_TWO, CLASHING_PERMISSION)
+  }
+
+  private fun createManifest(permissions: List<String>): File {
+    val manifest = temporaryFolder.newFile("AndroidManifest.xml")
+    var content =
+      """
                 <manifest
                   xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.app" >
              """
 
-        permissions.forEach {
-            content +=
-                    """
+    permissions.forEach {
+      content +=
+        """
                 <permission
                 android:name = "$it"
                 android:label = "@string/deadlyActivity"
@@ -184,24 +172,20 @@ class GenerateManifestClassTest {
                 android:permissionGroup = "android.permission-group.COST_MONEY"
                 android:protectionLevel = "dangerous" />
                 """
-        }
-
-        content += """</manifest>"""
-
-        FileUtils.writeToFile(manifest, content.trimIndent())
-        return manifest
     }
 
-    private fun loadFields(classLoader: ClassLoader, name: String) =
-            classLoader.loadClass(name)
-                    .fields
-                    .map { field ->
-                        "${field.type.typeName} ${field.name} = ${valueAsString(field)}"
-                    }
-                    .toList()
+    content += """</manifest>"""
 
-    private fun valueAsString(field: Field) = when (field.type.typeName) {
-        "java.lang.String" -> "\"${field.get(null)}\""
-        else -> throw IllegalStateException("Unexpected type " + field.type.typeName)
+    FileUtils.writeToFile(manifest, content.trimIndent())
+    return manifest
+  }
+
+  private fun loadFields(classLoader: ClassLoader, name: String) =
+    classLoader.loadClass(name).fields.map { field -> "${field.type.typeName} ${field.name} = ${valueAsString(field)}" }.toList()
+
+  private fun valueAsString(field: Field) =
+    when (field.type.typeName) {
+      "java.lang.String" -> "\"${field.get(null)}\""
+      else -> throw IllegalStateException("Unexpected type " + field.type.typeName)
     }
 }

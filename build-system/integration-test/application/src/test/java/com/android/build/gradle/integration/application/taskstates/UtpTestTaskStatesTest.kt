@@ -25,42 +25,32 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 private fun assertTaskExists(project: GradleTestProject, task: String) {
-    project.executor()
-        .withArgument("--dry-run")
-        .run(task)
+  project.executor().withArgument("--dry-run").run(task)
 }
 
-private fun assertTaskDoesNotExist(
-    project: GradleTestProject,
-    task: String) {
+private fun assertTaskDoesNotExist(project: GradleTestProject, task: String) {
 
-    project.executor()
-        .expectFailure()
-        .withArgument("--dry-run")
-        .run(task)
+  project.executor().expectFailure().withArgument("--dry-run").run(task)
 }
 
-/**
- * Verifies Unified Test Platform task creation when Devices are modified from the DSL.
- */
+/** Verifies Unified Test Platform task creation when Devices are modified from the DSL. */
 @RunWith(JUnit4::class)
 class UtpTestTaskStatesTest {
 
-    @get:Rule
-    var project = EmptyActivityProjectBuilder().build()
+  @get:Rule var project = EmptyActivityProjectBuilder().build()
 
-    lateinit var appProject: GradleTestProject
+  lateinit var appProject: GradleTestProject
 
-    @Before
-    fun setup() {
-        appProject = project.getSubproject("app")
-    }
+  @Before
+  fun setup() {
+    appProject = project.getSubproject("app")
+  }
 
-    @Test
-    fun checkUtpTasksWithoutFlag() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=false\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkUtpTasksWithoutFlag() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=false\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -75,30 +65,30 @@ class UtpTestTaskStatesTest {
                     execution = "ANDROIDX_TEST_ORCHESTRATOR"
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkUtpFlagAloneDoesNotAddCleanAndAllDevicesTask() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+  @Test
+  fun checkUtpFlagAloneDoesNotAddCleanAndAllDevicesTask() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
 
-        assertTaskDoesNotExist(project, "app:cleanManagedDevices")
-        assertTaskDoesNotExist(project, "app:allDevicesDebugAndroidTest")
-        assertTaskDoesNotExist(project, "app:allDevicesCheck")
-    }
+    assertTaskDoesNotExist(project, "app:cleanManagedDevices")
+    assertTaskDoesNotExist(project, "app:allDevicesDebugAndroidTest")
+    assertTaskDoesNotExist(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkDslAddsSetupTestAndCleanTasksWithFlag() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkDslAddsSetupTestAndCleanTasksWithFlag() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -113,20 +103,21 @@ class UtpTestTaskStatesTest {
                     execution = "ANDROIDX_TEST_ORCHESTRATOR"
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkAddLocalDevicesAddsTasks() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkAddLocalDevicesAddsTasks() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -140,20 +131,21 @@ class UtpTestTaskStatesTest {
                     }
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkDslSupportsMultipleDevices() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkDslSupportsMultipleDevices() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -173,23 +165,24 @@ class UtpTestTaskStatesTest {
                     execution = "ANDROIDX_TEST_ORCHESTRATOR"
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:someDeviceNameSetup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:someDeviceNameDebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:someDeviceNameCheck")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:someDeviceNameSetup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:someDeviceNameDebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:someDeviceNameCheck")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkAddVariantAddsTests() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkAddVariantAddsTests() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 flavorDimensions "version"
                 productFlavors {
@@ -217,23 +210,24 @@ class UtpTestTaskStatesTest {
                     execution = "ANDROIDX_TEST_ORCHESTRATOR"
                 }
             }
-        """)
+        """
+    )
 
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DemoDebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDemoDebugAndroidTest")
-        assertTaskExists(project, "app:device1FullDebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesFullDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DemoDebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDemoDebugAndroidTest")
+    assertTaskExists(project, "app:device1FullDebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesFullDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkDeviceGroupTasks() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkDeviceGroupTasks() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -253,22 +247,23 @@ class UtpTestTaskStatesTest {
                     execution = "ANDROIDX_TEST_ORCHESTRATOR"
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:testGroupDebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:testGroupCheck")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:testGroupDebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:testGroupCheck")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 
-    @Test
-    fun checkAddLocalDevicesAddsTasksOldApi() {
-        project.gradlePropertiesFile.appendText(
-            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
-        appProject.buildFile.appendText("""
+  @Test
+  fun checkAddLocalDevicesAddsTasksOldApi() {
+    project.gradlePropertiesFile.appendText("\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+    appProject.buildFile.appendText(
+      """
             android {
                 testOptions {
                     managedDevices {
@@ -282,12 +277,13 @@ class UtpTestTaskStatesTest {
                     }
                 }
             }
-        """)
-        assertTaskExists(project, "app:cleanManagedDevices")
-        assertTaskExists(project, "app:device1Setup")
-        assertTaskExists(project, "app:device1DebugAndroidTest")
-        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
-        assertTaskExists(project, "app:device1Check")
-        assertTaskExists(project, "app:allDevicesCheck")
-    }
+        """
+    )
+    assertTaskExists(project, "app:cleanManagedDevices")
+    assertTaskExists(project, "app:device1Setup")
+    assertTaskExists(project, "app:device1DebugAndroidTest")
+    assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+    assertTaskExists(project, "app:device1Check")
+    assertTaskExists(project, "app:allDevicesCheck")
+  }
 }

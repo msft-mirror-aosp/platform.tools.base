@@ -22,35 +22,26 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Creates the final, immutable [SourceFileCoverageReport] from a fully populated
- * [SourceFileReportBuilder].
+ * Creates the final, immutable [SourceFileCoverageReport] from a fully populated [SourceFileReportBuilder].
  *
- * This function is responsible for enriching the raw coverage data held by the builder
- * with the actual source file content. This separates the file I/O concern from the
- * builder classes, which act as pure data accumulators during the parsing phase.
+ * This function is responsible for enriching the raw coverage data held by the builder with the actual source file content. This separates
+ * the file I/O concern from the builder classes, which act as pure data accumulators during the parsing phase.
  *
  * @param path The project-relative path to the source file.
  * @param projectBaseDir The base directory of the project, used to resolve the file path.
- * @param builder A builder containing the complete, aggregated coverage data for the
- *        source file across all variants and test suites.
+ * @param builder A builder containing the complete, aggregated coverage data for the source file across all variants and test suites.
  * @return A single [SourceFileCoverageReport] for the given source file.
  * @throws IOException if the source file cannot be read.
  * @throws IllegalArgumentException if the source file does not exist at the specified path.
  */
-fun createSourceFileReport(
-    path: String,
-    projectBaseDir: File,
-    builder: SourceFileReportBuilder
-): SourceFileCoverageReport {
-    val sourceFile = File(projectBaseDir, path)
-    require(sourceFile.exists()) {
-        "Failed to generate coverage report. Source file not found: ${sourceFile.absolutePath}"
-    }
+fun createSourceFileReport(path: String, projectBaseDir: File, builder: SourceFileReportBuilder): SourceFileCoverageReport {
+  val sourceFile = File(projectBaseDir, path)
+  require(sourceFile.exists()) { "Failed to generate coverage report. Source file not found: ${sourceFile.absolutePath}" }
 
-    // Read the source file lines. Any IOException will propagate and fail the build,
-    // ensuring that missing or unreadable source files do not lead to an incomplete
-    // or misleading report.
-    val sourceCodeLines = sourceFile.readLines()
+  // Read the source file lines. Any IOException will propagate and fail the build,
+  // ensuring that missing or unreadable source files do not lead to an incomplete
+  // or misleading report.
+  val sourceCodeLines = sourceFile.readLines()
 
-    return builder.build(sourceCodeLines)
+  return builder.build(sourceCodeLines)
 }

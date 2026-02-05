@@ -17,11 +17,11 @@
 package com.android.build.gradle.internal.core.dsl.features
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support shaders.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support shaders.
  */
 interface ShadersDslInfo {
-    val defaultGlslcArgs: List<String>
+  val defaultGlslcArgs: List<String>
 
-    val scopedGlslcArgs: Map<String, List<String>>
+  val scopedGlslcArgs: Map<String, List<String>>
 }

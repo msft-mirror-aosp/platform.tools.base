@@ -39,16 +39,11 @@ class PendingIntentMutableFlagDetector : Detector(), SourceCodeScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (!context.evaluator.isMemberInClass(method, "android.app.PendingIntent")) return
-    val flagsArgument =
-      node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_FLAG) ?: return
+    val flagsArgument = node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_FLAG) ?: return
     val flags = ConstantEvaluator.evaluate(context, flagsArgument) as? Int ?: return
     if (flags and FLAG_MASK == 0) {
       val fix =
-        fix()
-          .alternatives(
-            buildMutabilityFlagFix(context, flagsArgument),
-            buildMutabilityFlagFix(context, flagsArgument, mutable = true),
-          )
+        fix().alternatives(buildMutabilityFlagFix(context, flagsArgument), buildMutabilityFlagFix(context, flagsArgument, mutable = true))
       val incident =
         Incident(
           issue = ISSUE,
@@ -71,9 +66,7 @@ class PendingIntentMutableFlagDetector : Detector(), SourceCodeScanner {
 
   companion object {
     private const val FLAG_MASK =
-      PendingIntentUtils.FLAG_IMMUTABLE or
-        PendingIntentUtils.FLAG_MUTABLE or
-        PendingIntentUtils.FLAG_UPDATE_CURRENT
+      PendingIntentUtils.FLAG_IMMUTABLE or PendingIntentUtils.FLAG_MUTABLE or PendingIntentUtils.FLAG_UPDATE_CURRENT
 
     @JvmField
     val ISSUE =
@@ -92,36 +85,27 @@ class PendingIntentMutableFlagDetector : Detector(), SourceCodeScanner {
           category = Category.SECURITY,
           priority = 5,
           /**
-           * The severity of this issue is reported conditionally. See the overridden
-           * `filterIncident` method.
+           * The severity of this issue is reported conditionally. See the overridden `filterIncident` method.
            * - targetSdk >= 31: FATAL
            * - 23 <= targetSdk < 31: WARNING
            * - targetSdk < 23: not reported
            */
           severity = Severity.FATAL,
-          implementation =
-            Implementation(PendingIntentMutableFlagDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          implementation = Implementation(PendingIntentMutableFlagDetector::class.java, Scope.JAVA_FILE_SCOPE),
           androidSpecific = true,
-          moreInfo =
-            "https://developer.android.com/about/versions/12/behavior-changes-12#pending-intent-mutability",
+          moreInfo = "https://developer.android.com/about/versions/12/behavior-changes-12#pending-intent-mutability",
         )
         .addMoreInfo("https://goo.gle/UnspecifiedImmutableFlag")
 
-    private fun buildMutabilityFlagFix(
-      context: JavaContext,
-      originalArg: UExpression,
-      mutable: Boolean = false,
-    ): LintFix {
-      val addFlagText =
-        if (mutable) PendingIntentUtils.FLAG_MUTABLE_STR else PendingIntentUtils.FLAG_IMMUTABLE_STR
+    private fun buildMutabilityFlagFix(context: JavaContext, originalArg: UExpression, mutable: Boolean = false): LintFix {
+      val addFlagText = if (mutable) PendingIntentUtils.FLAG_MUTABLE_STR else PendingIntentUtils.FLAG_IMMUTABLE_STR
       val name = if (mutable) "Add FLAG_MUTABLE" else "Add FLAG_IMMUTABLE (preferred)"
       val isKotlin = context.uastFile?.lang == KotlinLanguage.INSTANCE
       val originalArgString = originalArg.asSourceString()
 
       val fixText =
         if (originalArgString == "0") addFlagText
-        else if (isKotlin) "$originalArgString or $addFlagText"
-        else "$originalArgString | $addFlagText"
+        else if (isKotlin) "$originalArgString or $addFlagText" else "$originalArgString | $addFlagText"
 
       return LintFix.create()
         .name(name)

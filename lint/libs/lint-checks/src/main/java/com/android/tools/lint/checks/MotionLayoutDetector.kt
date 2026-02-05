@@ -42,11 +42,9 @@ class MotionLayoutDetector : ResourceXmlDetector() {
   private var resourceModel: ResourceUsageModel? = null
   private var references: MutableMap<Resource, Location>? = null
 
-  override fun appliesTo(folderType: ResourceFolderType) =
-    folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.XML
+  override fun appliesTo(folderType: ResourceFolderType) = folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.XML
 
-  override fun getApplicableElements() =
-    listOf(MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName(), MOTION_SCENE)
+  override fun getApplicableElements() = listOf(MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName(), MOTION_SCENE)
 
   override fun afterCheckRootProject(context: Context) {
     if (!referencesRecorded) {
@@ -114,17 +112,14 @@ class MotionLayoutDetector : ResourceXmlDetector() {
     }
   }
 
-  private fun isIncrementalMode(context: Context): Boolean =
-    !context.scope.contains(Scope.ALL_RESOURCE_FILES)
+  private fun isIncrementalMode(context: Context): Boolean = !context.scope.contains(Scope.ALL_RESOURCE_FILES)
 
-  private fun motionSceneUrlFromMotionLayoutFileName(context: XmlContext): String =
-    "@xml/${context.file.nameWithoutExtension}_scene"
+  private fun motionSceneUrlFromMotionLayoutFileName(context: XmlContext): String = "@xml/${context.file.nameWithoutExtension}_scene"
 
   companion object {
     const val KEY_URL = "url"
 
-    private val IMPLEMENTATION =
-      Implementation(MotionLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MotionLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val INVALID_SCENE_FILE_REFERENCE =

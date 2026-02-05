@@ -22,62 +22,57 @@ import com.android.build.gradle.internal.core.dsl.InstrumentedTestComponentDslIn
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.VariantServices
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.dexing.DexingType
 import org.gradle.api.provider.Provider
 
 internal class InstrumentedTestDslInfoImpl(
-    private val buildTypeObj: BuildType,
-    private val productFlavorList: List<ProductFlavor>,
-    private val defaultConfig: DefaultConfig,
-    private val dataProvider: ManifestDataProvider,
-    private val services: VariantServices,
-    override val instrumentationRunnerArguments: Map<String, String>
-): InstrumentedTestComponentDslInfo {
+  private val buildTypeObj: BuildType,
+  private val productFlavorList: List<ProductFlavor>,
+  private val defaultConfig: DefaultConfig,
+  private val dataProvider: ManifestDataProvider,
+  private val services: VariantServices,
+  override val instrumentationRunnerArguments: Map<String, String>,
+) : InstrumentedTestComponentDslInfo {
 
-    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> =
-        getInstrumentationRunner(productFlavorList, defaultConfig, dataProvider, dexingType, services)
+  override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> =
+    getInstrumentationRunner(productFlavorList, defaultConfig, dataProvider, dexingType, services)
 
-    override val handleProfiling: Provider<Boolean>
-        get() {
-            // first check whether the DSL has the info
-            val fromFlavor =
-                productFlavorList.asSequence().map { it.testHandleProfiling }
-                    .firstOrNull { it != null }
-                    ?: defaultConfig.testHandleProfiling
+  override val handleProfiling: Provider<Boolean>
+    get() {
+      // first check whether the DSL has the info
+      val fromFlavor =
+        productFlavorList.asSequence().map { it.testHandleProfiling }.firstOrNull { it != null } ?: defaultConfig.testHandleProfiling
 
-            if (fromFlavor != null) {
-                val finalFromFlavor: Boolean = fromFlavor
-                return services.provider { finalFromFlavor }
-            }
+      if (fromFlavor != null) {
+        val finalFromFlavor: Boolean = fromFlavor
+        return services.provider { finalFromFlavor }
+      }
 
-            // else return the value from the Manifest
-            return dataProvider.manifestData.map { it.handleProfiling ?: DEFAULT_HANDLE_PROFILING }
-        }
-    override val functionalTest: Provider<Boolean>
-        get() {
-            // first check whether the DSL has the info
-            val fromFlavor =
-                productFlavorList.asSequence().map { it.testFunctionalTest }
-                    .firstOrNull { it != null }
-                    ?: defaultConfig.testFunctionalTest
+      // else return the value from the Manifest
+      return dataProvider.manifestData.map { it.handleProfiling ?: DEFAULT_HANDLE_PROFILING }
+    }
 
-            if (fromFlavor != null) {
-                val finalFromFlavor: Boolean = fromFlavor
-                return services.provider { finalFromFlavor }
-            }
+  override val functionalTest: Provider<Boolean>
+    get() {
+      // first check whether the DSL has the info
+      val fromFlavor =
+        productFlavorList.asSequence().map { it.testFunctionalTest }.firstOrNull { it != null } ?: defaultConfig.testFunctionalTest
 
-            // else return the value from the Manifest
-            return dataProvider.manifestData.map { it.functionalTest ?: DEFAULT_FUNCTIONAL_TEST }
-        }
-    override val testLabel: Provider<String>
-        get() {
-            // there is actually no DSL value for this.
-            return dataProvider.manifestData.map {
-                it.testLabel ?: ""
-            }
-        }
+      if (fromFlavor != null) {
+        val finalFromFlavor: Boolean = fromFlavor
+        return services.provider { finalFromFlavor }
+      }
 
-    override val isAndroidTestCoverageEnabled: Boolean
-        get() = buildTypeObj.enableAndroidTestCoverage || buildTypeObj.isTestCoverageEnabled
+      // else return the value from the Manifest
+      return dataProvider.manifestData.map { it.functionalTest ?: DEFAULT_FUNCTIONAL_TEST }
+    }
+
+  override val testLabel: Provider<String>
+    get() {
+      // there is actually no DSL value for this.
+      return dataProvider.manifestData.map { it.testLabel ?: "" }
+    }
+
+  override val isAndroidTestCoverageEnabled: Boolean
+    get() = buildTypeObj.enableAndroidTestCoverage || buildTypeObj.isTestCoverageEnabled
 }

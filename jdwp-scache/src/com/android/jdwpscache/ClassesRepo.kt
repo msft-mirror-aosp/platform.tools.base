@@ -29,8 +29,8 @@ import com.android.jdwppacket.vm.AllClassesWithGenericsReply
 class ClassesRepo {
 
   /**
-   * We cache class information reply packets. If the class is unloaded, we must clear all its
-   * cached data. This struct gives us all keys contains in `cache` for a classID.
+   * We cache class information reply packets. If the class is unloaded, we must clear all its cached data. This struct gives us all keys
+   * contains in `cache` for a classID.
    */
   private val classIdToKeys: MutableMap<Long, MutableList<CmdKey>> = mutableMapOf()
 

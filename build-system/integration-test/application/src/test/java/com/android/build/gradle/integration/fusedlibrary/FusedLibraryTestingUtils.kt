@@ -27,42 +27,42 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.internal.impldep.org.apache.maven.model.io.xpp3.MavenXpp3Reader
 
 object FusedLibraryTestConstants {
-    const val FUSED_LIBRARY_GROUP = "my-company"
-    const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
-    const val FUSED_LIBRARY_VERSION = "1.0"
-    const val FUSED_LIBRARY_REPO_NAME = "repo"
+  const val FUSED_LIBRARY_GROUP = "my-company"
+  const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
+  const val FUSED_LIBRARY_VERSION = "1.0"
+  const val FUSED_LIBRARY_REPO_NAME = "repo"
 }
 
 fun assertExpectedPomDependencies(pom: Path, dependencies: List<String>) {
-    Truth.assertThat(pom.isRegularFile()).isTrue()
-    val xmlMavenPomReader = MavenXpp3Reader()
-    pom.toFile().inputStream().use { inStream ->
-        val parsedPom = xmlMavenPomReader.read(inStream)
-        assertThat(parsedPom.dependencies.map {
-            "${it.groupId}:${it.artifactId}:${it.version} scope:${it.scope}"
-        }).containsExactlyElementsIn(dependencies)
-    }
+  Truth.assertThat(pom.isRegularFile()).isTrue()
+  val xmlMavenPomReader = MavenXpp3Reader()
+  pom.toFile().inputStream().use { inStream ->
+    val parsedPom = xmlMavenPomReader.read(inStream)
+    assertThat(parsedPom.dependencies.map { "${it.groupId}:${it.artifactId}:${it.version} scope:${it.scope}" })
+      .containsExactlyElementsIn(dependencies)
+  }
 }
 
-class FusedLibPublicationCallback: GenericCallback {
-    override fun handleProject(project: Project) {
-        project.plugins.apply("maven-publish")
+class FusedLibPublicationCallback : GenericCallback {
+  override fun handleProject(project: Project) {
+    project.plugins.apply("maven-publish")
 
-        val publishing = project.extensions.findByType(PublishingExtension::class.java)
-            ?: throw RuntimeException("Could not find extension of type PublishingExtension")
-        publishing.apply {
-            publications.create("release", MavenPublication::class.java) {
-                it.groupId = FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
-                it.artifactId = FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
-                it.version = FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
-                it.from(project.components.getByName("fusedLibraryComponent"))
-            }
-            repositories {
-                it.maven {
-                    it.name = "myrepo"
-                    it.url = project.uri(project.layout.buildDirectory.dir(FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME))
-                }
-            }
+    val publishing =
+      project.extensions.findByType(PublishingExtension::class.java)
+        ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+    publishing.apply {
+      publications.create("release", MavenPublication::class.java) {
+        it.groupId = FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
+        it.artifactId = FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
+        it.version = FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
+        it.from(project.components.getByName("fusedLibraryComponent"))
+      }
+      repositories {
+        it.maven {
+          it.name = "myrepo"
+          it.url = project.uri(project.layout.buildDirectory.dir(FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME))
         }
+      }
     }
+  }
 }

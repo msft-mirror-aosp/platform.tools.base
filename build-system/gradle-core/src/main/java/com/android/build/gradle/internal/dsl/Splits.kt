@@ -19,10 +19,9 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class Splits @Inject constructor(dslServices: DslServices) :
-    com.android.build.api.dsl.Splits {
-    abstract override val abi: AbiSplitOptions
+abstract class Splits @Inject constructor(dslServices: DslServices) : com.android.build.api.dsl.Splits {
+  abstract override val abi: AbiSplitOptions
 
-    override val abiFilters: Set<String>
-        get() = abi.applicableFilters
+  override val abiFilters: Set<String>
+    get() = abi.applicableFilters
 }

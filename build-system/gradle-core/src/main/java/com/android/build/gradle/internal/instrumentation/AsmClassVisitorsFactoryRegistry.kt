@@ -24,59 +24,48 @@ import com.android.builder.errors.IssueReporter
 import org.gradle.api.model.ObjectFactory
 
 class AsmClassVisitorsFactoryRegistry(private val issueReporter: IssueReporter) {
-    private var isLocked = false
-    var framesComputationMode = FramesComputationMode.COPY_FRAMES
+  private var isLocked = false
+  var framesComputationMode = FramesComputationMode.COPY_FRAMES
 
-    val projectClassesVisitors =
-        ArrayList<AsmClassVisitorFactoryEntry<out InstrumentationParameters>>()
-    val dependenciesClassesVisitors =
-        ArrayList<AsmClassVisitorFactoryEntry<out InstrumentationParameters>>()
+  val projectClassesVisitors = ArrayList<AsmClassVisitorFactoryEntry<out InstrumentationParameters>>()
+  val dependenciesClassesVisitors = ArrayList<AsmClassVisitorFactoryEntry<out InstrumentationParameters>>()
 
-    fun <ParamT : InstrumentationParameters> register(
-        classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
-        scope: InstrumentationScope,
-        instrumentationParamsConfig: (ParamT) -> Unit
-    ) {
-        if (isLocked) {
-            issueReporter.reportError(
-                IssueReporter.Type.EDIT_LOCKED_DSL_VALUE,
-                "It is too late to register the class visitor factory " +
-                        "${classVisitorFactoryImplClass.name}, " +
-                        "The DSL is now locked as the variants have been created.\n"
-            )
-            return
-        }
-        val visitorEntry = AsmClassVisitorFactoryEntry(
-            classVisitorFactoryImplClass,
-            instrumentationParamsConfig
-        )
-        if (scope == InstrumentationScope.ALL) {
-            dependenciesClassesVisitors.add(visitorEntry)
-        }
-        projectClassesVisitors.add(visitorEntry)
+  fun <ParamT : InstrumentationParameters> register(
+    classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
+    scope: InstrumentationScope,
+    instrumentationParamsConfig: (ParamT) -> Unit,
+  ) {
+    if (isLocked) {
+      issueReporter.reportError(
+        IssueReporter.Type.EDIT_LOCKED_DSL_VALUE,
+        "It is too late to register the class visitor factory " +
+          "${classVisitorFactoryImplClass.name}, " +
+          "The DSL is now locked as the variants have been created.\n",
+      )
+      return
     }
-
-    fun setAsmFramesComputationMode(mode: FramesComputationMode) {
-        if (isLocked) {
-            issueReporter.reportError(
-                IssueReporter.Type.EDIT_LOCKED_DSL_VALUE,
-                "It is too late to set the asm frames computation mode, " +
-                        "The DSL is now locked as the variants have been created.\n"
-            )
-            return
-        }
-        if (mode.ordinal > framesComputationMode.ordinal) {
-            framesComputationMode = mode
-        }
+    val visitorEntry = AsmClassVisitorFactoryEntry(classVisitorFactoryImplClass, instrumentationParamsConfig)
+    if (scope == InstrumentationScope.ALL) {
+      dependenciesClassesVisitors.add(visitorEntry)
     }
+    projectClassesVisitors.add(visitorEntry)
+  }
 
-    fun configureAndLock(objectFactory: ObjectFactory, asmApiVersion: Int) {
-        isLocked = true
-        projectClassesVisitors.forEach {
-            it.configure(
-                objectFactory,
-                asmApiVersion
-            )
-        }
+  fun setAsmFramesComputationMode(mode: FramesComputationMode) {
+    if (isLocked) {
+      issueReporter.reportError(
+        IssueReporter.Type.EDIT_LOCKED_DSL_VALUE,
+        "It is too late to set the asm frames computation mode, " + "The DSL is now locked as the variants have been created.\n",
+      )
+      return
     }
+    if (mode.ordinal > framesComputationMode.ordinal) {
+      framesComputationMode = mode
+    }
+  }
+
+  fun configureAndLock(objectFactory: ObjectFactory, asmApiVersion: Int) {
+    isLocked = true
+    projectClassesVisitors.forEach { it.configure(objectFactory, asmApiVersion) }
+  }
 }

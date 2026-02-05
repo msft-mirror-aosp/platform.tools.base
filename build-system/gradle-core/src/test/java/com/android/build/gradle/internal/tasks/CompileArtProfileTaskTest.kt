@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.services.createProjectServices
 import com.android.build.gradle.internal.services.createTaskCreationServices
 import com.android.build.gradle.internal.services.getBuildServiceName
 import com.google.common.truth.Truth
+import javax.inject.Inject
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Rule
@@ -39,105 +40,85 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import javax.inject.Inject
 
 @RunWith(Parameterized::class)
 class CompileArtProfileTaskTest(private val r8Rewriting: Boolean) {
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        @Parameterized.Parameters(name = "r8Rewriting={0}")
-        fun getParameters(): Collection<Array<Any>> {
-            return listOf(arrayOf(false), arrayOf(true))
+    @JvmStatic
+    @Parameterized.Parameters(name = "r8Rewriting={0}")
+    fun getParameters(): Collection<Array<Any>> {
+      return listOf(arrayOf(false), arrayOf(true))
+    }
+  }
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
+
+  private val project by lazy { ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build() }
+  private val objects by lazy { project.objects }
+
+  abstract class CompileArtProfileForTest @Inject constructor(override val workerExecutor: WorkerExecutor) : CompileArtProfileTask()
+
+  private interface TestCreationConfig : ApkCreationConfig, VariantCreationConfig
+
+  @Test
+  fun testConfigurationAndWorkParameters() {
+    val taskCreationServices = createTaskCreationServices(createProjectServices(project = project))
+
+    val analyticsServices =
+      project.gradle.sharedServices.registerIfAbsent(
+        getBuildServiceName(AnalyticsService::class.java),
+        FakeNoOpAnalyticsService::class.java,
+      ) {}
+
+    val creationConfig = mock<TestCreationConfig>()
+    val taskContainer = mock<MutableTaskContainer>()
+    whenever(creationConfig.taskContainer).thenReturn(taskContainer)
+    whenever(taskContainer.preBuildTask).thenReturn(project.tasks.register("preBuild"))
+    whenever(creationConfig.name).thenReturn("test")
+    whenever(creationConfig.services).thenReturn(taskCreationServices)
+
+    val artifacts = mock<ArtifactsImpl>()
+    whenever(creationConfig.artifacts).thenReturn(artifacts)
+
+    val experimentalProperties = objects.mapProperty(String::class.java, Any::class.java)
+    experimentalProperties.put(ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.key, r8Rewriting)
+    whenever(creationConfig.experimentalProperties).thenReturn(experimentalProperties)
+
+    val mergedFile = temporaryFolder.newFile("merged_file.txt")
+    val workerExecutor =
+      FakeGradleWorkExecutor(objectFactory = project.objects, tmpDir = temporaryFolder.newFolder(), executionMode = ExecutionMode.CAPTURING)
+
+    val creationAction = CompileArtProfileTask.CreationAction(creationConfig)
+    val taskProvider = project.tasks.register("test", CompileArtProfileForTest::class.java, workerExecutor)
+    // the mapping file is always provided to the task so create it and make it available
+    // through the artifact APIs.
+    val mappingFile = temporaryFolder.newFile("mapping_file")
+    whenever(artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE)).thenReturn(objects.fileProperty().also { it.set(mappingFile) })
+
+    taskProvider.get().let {
+      // fist, configure the task to the minimum required to run the task action.
+      it.analyticsService.set(analyticsServices)
+      creationAction.configureObfuscationMappingFile(it)
+      it.mergedArtProfile.set(mergedFile)
+
+      // ensure the configuration set the task input correctly.
+      Truth.assertThat(it.useMappingFile.get()).isEqualTo(!r8Rewriting)
+
+      // run the task and make sure the work action parameters contain the right values.
+      it.taskAction()
+      Truth.assertThat(workerExecutor.capturedParameters).hasSize(1)
+      val workParameters =
+        workerExecutor.capturedParameters.single().let { workParameters ->
+          Truth.assertThat(workParameters).isInstanceOf(CompileArtProfileTask.CompileArtProfileWorkAction.Parameters::class.java)
+          workParameters as CompileArtProfileTask.CompileArtProfileWorkAction.Parameters
         }
+      if (r8Rewriting) {
+        Truth.assertThat(workParameters.obfuscationMappingFile.orNull).isNull()
+      } else {
+        Truth.assertThat(workParameters.obfuscationMappingFile.get().asFile).isEqualTo(mappingFile)
+      }
     }
-
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
-
-    private val project by lazy {
-        ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
-    }
-    private val objects by lazy {
-        project.objects
-    }
-
-    abstract class CompileArtProfileForTest @Inject constructor(
-        override val workerExecutor: WorkerExecutor
-    ): CompileArtProfileTask()
-    private interface TestCreationConfig: ApkCreationConfig, VariantCreationConfig
-
-    @Test
-    fun testConfigurationAndWorkParameters() {
-        val taskCreationServices= createTaskCreationServices(createProjectServices(project = project))
-
-        val analyticsServices = project.gradle.sharedServices.registerIfAbsent(
-            getBuildServiceName(AnalyticsService::class.java),
-            FakeNoOpAnalyticsService::class.java
-        ) {}
-
-
-        val creationConfig = mock<TestCreationConfig>()
-        val taskContainer = mock<MutableTaskContainer>()
-        whenever(creationConfig.taskContainer).thenReturn(taskContainer)
-        whenever(taskContainer.preBuildTask).thenReturn(
-            project.tasks.register("preBuild")
-        )
-        whenever(creationConfig.name).thenReturn("test")
-        whenever(creationConfig.services).thenReturn(taskCreationServices)
-
-        val artifacts = mock<ArtifactsImpl>()
-        whenever(creationConfig.artifacts).thenReturn(artifacts)
-
-        val experimentalProperties = objects.mapProperty(String::class.java, Any::class.java)
-        experimentalProperties.put(ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.key, r8Rewriting)
-        whenever(creationConfig.experimentalProperties).thenReturn(experimentalProperties)
-
-        val mergedFile = temporaryFolder.newFile("merged_file.txt")
-        val workerExecutor = FakeGradleWorkExecutor(
-            objectFactory = project.objects,
-            tmpDir = temporaryFolder.newFolder(),
-            executionMode = ExecutionMode.CAPTURING
-        )
-
-        val creationAction = CompileArtProfileTask.CreationAction(creationConfig)
-        val taskProvider = project.tasks.register(
-            "test",
-            CompileArtProfileForTest::class.java,
-            workerExecutor,
-        )
-        // the mapping file is always provided to the task so create it and make it available
-        // through the artifact APIs.
-        val mappingFile = temporaryFolder.newFile("mapping_file")
-        whenever(artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE)).thenReturn(
-            objects.fileProperty().also { it.set(mappingFile) }
-        )
-
-        taskProvider.get().let {
-            // fist, configure the task to the minimum required to run the task action.
-            it.analyticsService.set(analyticsServices)
-            creationAction.configureObfuscationMappingFile(it)
-            it.mergedArtProfile.set(mergedFile)
-
-            // ensure the configuration set the task input correctly.
-            Truth.assertThat(it.useMappingFile.get()).isEqualTo(!r8Rewriting)
-
-            // run the task and make sure the work action parameters contain the right values.
-            it.taskAction()
-            Truth.assertThat(workerExecutor.capturedParameters).hasSize(1)
-            val workParameters = workerExecutor.capturedParameters.single().let { workParameters ->
-                Truth.assertThat(workParameters).isInstanceOf(
-                    CompileArtProfileTask.CompileArtProfileWorkAction.Parameters::class.java)
-                workParameters as CompileArtProfileTask.CompileArtProfileWorkAction.Parameters
-            }
-            if (r8Rewriting) {
-                Truth.assertThat(workParameters.obfuscationMappingFile.orNull).isNull()
-            } else {
-                Truth.assertThat(workParameters.obfuscationMappingFile.get().asFile).isEqualTo(
-                    mappingFile
-                )
-            }
-        }
-    }
+  }
 }

@@ -19,20 +19,20 @@ package com.android.build.api.apiTest.kotlin
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import kotlin.test.assertNotNull
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
-import kotlin.test.assertNotNull
 
-class GetApkFromBundleTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun getApksFromBundleTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayApkFromBundle"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class GetApkFromBundleTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun getApksFromBundleTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayApkFromBundle"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -69,33 +69,35 @@ class GetApkFromBundleTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# artifacts.get in Kotlin
-This sample shows how to obtain a universal APK from the AGP. Because it goes through the bundle
-file, it is a slower build flow than using the [SingleArtifact.APK] public artifact.
-The built artifact is identified by its [SingleArtifact and in this case, it's [SingleArtifact.APK_FROM_BUNDLE].
-The [onVariants] block will wire the [DisplayApkFromBundle] input property (apkFromBundle) by using
-the [Artifacts.get] call with the right [SingleArtifact.
-`apkFromBundle.set(artifacts.get(SingleArtifact.APK_FROM_BUNDLE))`
-## To Run
-./gradlew debugDisplayApkFromBundle
-expected result : "Got an Universal APK...." message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Got a Universal APK ")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            Truth.assertThat(task(":app:packageDebugBundle")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            Truth.assertThat(task(":app:packageDebugUniversalApk")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+        This sample shows how to obtain a universal APK from the AGP. Because it goes through the bundle
+        file, it is a slower build flow than using the [SingleArtifact.APK] public artifact.
+        The built artifact is identified by its [SingleArtifact and in this case, it's [SingleArtifact.APK_FROM_BUNDLE].
+        The [onVariants] block will wire the [DisplayApkFromBundle] input property (apkFromBundle) by using
+        the [Artifacts.get] call with the right [SingleArtifact.
+        `apkFromBundle.set(artifacts.get(SingleArtifact.APK_FROM_BUNDLE))`
+        ## To Run
+        ./gradlew debugDisplayApkFromBundle
+        expected result : "Got an Universal APK...." message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Got a Universal APK ")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      Truth.assertThat(task(":app:packageDebugBundle")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      Truth.assertThat(task(":app:packageDebugUniversalApk")!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+    }
+  }
 }

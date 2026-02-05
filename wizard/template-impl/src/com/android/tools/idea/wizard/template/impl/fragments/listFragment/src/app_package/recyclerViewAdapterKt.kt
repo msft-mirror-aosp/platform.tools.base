@@ -29,17 +29,23 @@ fun recyclerViewAdapterKt(
   fragmentLayout: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     return ViewHolder(${layoutToViewBindingClass(fragmentLayout)}.inflate(LayoutInflater.from(parent.context), parent, false))
-  """ else """
+  """
+    else
+      """
     val view = LayoutInflater.from(parent.context).inflate(R.layout.${fragmentLayout}, parent, false)
     return ViewHolder(view)
   """
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     inner class ViewHolder(binding: ${layoutToViewBindingClass(fragmentLayout)}) : RecyclerView.ViewHolder(binding.root) {
         val idView: TextView = binding.itemNumber
         val contentView: TextView = binding.content
@@ -48,7 +54,9 @@ fun recyclerViewAdapterKt(
             return super.toString() + " '" + contentView.text + "'"
         }
     }
-  """ else """
+  """
+    else
+      """
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val idView: TextView = view.findViewById(R.id.item_number)
         val contentView: TextView = view.findViewById(R.id.content)

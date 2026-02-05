@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
@@ -30,119 +29,104 @@ import org.junit.Test
 
 class InstrumentationRunnerConnectedTest {
 
-    companion object {
-        @get:ClassRule
-        @get:JvmStatic
-        val emulator = getEmulator()
+  companion object {
+    @get:ClassRule @get:JvmStatic val emulator = getEmulator()
+  }
+
+  @get:Rule val project = builder().fromTestProject("separateTestModule").create()
+
+  @Before
+  fun setUp() {
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    executor().run("uninstallAll")
+  }
+
+  @Test
+  fun validateTestInstrumentationRunnerArgumentsPerFlavor() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          defaultConfig {
+              testInstrumentationRunnerArguments(value: 'default', size: 'small')
+          }
+
+          flavorDimensions 'foo'
+          productFlavors {
+              f1 {}
+
+              f2  {
+                  testInstrumentationRunnerArgument 'value', 'f2'
+              }
+
+              f3  {
+                  testInstrumentationRunnerArguments['otherValue'] = 'f3'
+              }
+
+              f4  {
+                  testInstrumentationRunnerArguments(otherValue: 'f4.1')
+                  testInstrumentationRunnerArguments = [otherValue: 'f4.2']
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    var result = executor().run(":app:connectedF1DebugAndroidTest")
+    checkArgsInOutput(f2ArgPresent = false, f3ArgPresent = false, f4ArgPresent = false, result)
+
+    result = executor().run(":app:connectedF2DebugAndroidTest")
+    checkArgsInOutput(f2ArgPresent = true, f3ArgPresent = false, f4ArgPresent = false, result)
+
+    result = executor().run(":app:connectedF3DebugAndroidTest")
+    checkArgsInOutput(f2ArgPresent = false, f3ArgPresent = true, f4ArgPresent = false, result)
+
+    result = executor().run(":app:connectedF4DebugAndroidTest")
+    checkArgsInOutput(f2ArgPresent = false, f3ArgPresent = false, f4ArgPresent = true, result)
+  }
+
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
+
+  private fun checkArgsInOutput(f2ArgPresent: Boolean, f3ArgPresent: Boolean, f4ArgPresent: Boolean, result: GradleBuildResult) {
+    assertThat(result.stdout).contains("key: \"size\"\nvalue: \"small\"")
+    assertThat(result.stdout).doesNotContain("key: \"otherValue\"\nvalue: \"f4.1\"")
+
+    val f2String = "key: \"value\"\nvalue: \"f2\""
+    if (f2ArgPresent) {
+      assertThat(result.stdout).contains(f2String)
+    } else {
+      assertThat(result.stdout).doesNotContain(f2String)
+      assertThat(result.stdout).contains("key: \"value\"\nvalue: \"default\"")
     }
 
-    @get:Rule
-    val project = builder()
-            .fromTestProject("separateTestModule")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .create()
+    val f3String = "key: \"otherValue\"\nvalue: \"f3\""
+    if (f3ArgPresent) assertThat(result.stdout).contains(f3String) else assertThat(result.stdout).doesNotContain(f3String)
 
-    @Before
-    fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        executor().run("uninstallAll")
-    }
+    val f4String = "key: \"otherValue\"\nvalue: \"f4.2\""
+    if (f4ArgPresent) assertThat(result.stdout).contains(f4String) else assertThat(result.stdout).doesNotContain(f4String)
+  }
 
-    @Test
-    fun validateTestInstrumentationRunnerArgumentsPerFlavor() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    defaultConfig {
-                        testInstrumentationRunnerArguments(value: 'default', size: 'small')
-                    }
+  @Test
+  fun validateTestVariantInstrumentationRunnerArguments() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("test").buildFile,
+      """
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              variant.instrumentationRunnerArguments.put('testKey', 'testValue')
+          })
+      }
+      """
+        .trimIndent(),
+    )
 
-                    flavorDimensions 'foo'
-                    productFlavors {
-                        f1 {}
-
-                        f2  {
-                            testInstrumentationRunnerArgument 'value', 'f2'
-                        }
-
-                        f3  {
-                            testInstrumentationRunnerArguments['otherValue'] = 'f3'
-                        }
-
-                        f4  {
-                            testInstrumentationRunnerArguments(otherValue: 'f4.1')
-                            testInstrumentationRunnerArguments = [otherValue: 'f4.2']
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-
-        var result = executor().run(":app:connectedF1DebugAndroidTest")
-        checkArgsInOutput(
-            f2ArgPresent = false, f3ArgPresent = false, f4ArgPresent = false, result)
-
-        result = executor().run(":app:connectedF2DebugAndroidTest")
-        checkArgsInOutput(
-            f2ArgPresent = true, f3ArgPresent = false, f4ArgPresent = false, result)
-
-        result = executor().run(":app:connectedF3DebugAndroidTest")
-        checkArgsInOutput(
-            f2ArgPresent = false, f3ArgPresent = true, f4ArgPresent = false, result)
-
-        result = executor().run(":app:connectedF4DebugAndroidTest")
-        checkArgsInOutput(
-            f2ArgPresent = false, f3ArgPresent = false, f4ArgPresent = true, result)
-    }
-
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-    }
-
-    private fun checkArgsInOutput(
-        f2ArgPresent: Boolean,
-        f3ArgPresent: Boolean,
-        f4ArgPresent: Boolean,
-        result: GradleBuildResult
-    ) {
-        assertThat(result.stdout).contains("key: \"size\"\nvalue: \"small\"")
-        assertThat(result.stdout).doesNotContain("key: \"otherValue\"\nvalue: \"f4.1\"")
-
-        val f2String = "key: \"value\"\nvalue: \"f2\""
-        if (f2ArgPresent) {
-            assertThat(result.stdout).contains(f2String)
-        } else {
-            assertThat(result.stdout).doesNotContain(f2String)
-            assertThat(result.stdout).contains("key: \"value\"\nvalue: \"default\"")
-        }
-
-        val f3String = "key: \"otherValue\"\nvalue: \"f3\""
-        if (f3ArgPresent) assertThat(result.stdout).contains(f3String)
-        else assertThat(result.stdout).doesNotContain(f3String)
-
-        val f4String = "key: \"otherValue\"\nvalue: \"f4.2\""
-        if (f4ArgPresent) assertThat(result.stdout).contains(f4String)
-        else assertThat(result.stdout).doesNotContain(f4String)
-    }
-
-    @Test
-    fun validateTestVariantInstrumentationRunnerArguments() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("test").buildFile,
-            """
-                androidComponents {
-                    onVariants(selector().all(), { variant ->
-                        variant.instrumentationRunnerArguments.put('testKey', 'testValue')
-                    })
-                }
-            """.trimIndent()
-        )
-
-        val result = executor().run(":test:connectedCheck")
-        assertThat(result.stdout).contains("key: \"testKey\"\nvalue: \"testValue\"")
-    }
+    val result = executor().run(":test:connectedCheck")
+    assertThat(result.stdout).contains("key: \"testKey\"\nvalue: \"testValue\"")
+  }
 }

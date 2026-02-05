@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 package com.android.tools.render.common
-/**
- * In case of empty image path, the message will contain the text to be displayed instead
- */
+/** In case of empty image path, the message will contain the text to be displayed instead */
 sealed class ImagePathOrMessage {
-    data class ImagePath(val path: String) : ImagePathOrMessage()
-    data class ErrorMessage(val message: String) : ImagePathOrMessage()
+  data class ImagePath(val path: String) : ImagePathOrMessage()
+
+  data class ErrorMessage(val message: String) : ImagePathOrMessage()
 }

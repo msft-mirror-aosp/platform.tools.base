@@ -38,11 +38,10 @@ import com.android.xml.AndroidManifest.NODE_APPLICATION
 import org.w3c.dom.Attr
 
 /**
- * Detector that checks that the `android:hasCode` application attribute is set to false when we
- * detect a Watch Face Format usage.
+ * Detector that checks that the `android:hasCode` application attribute is set to false when we detect a Watch Face Format usage.
  *
- * We detect the usage of WFF by checking the presence of the [WATCH_FACE_FORMAT_VERSION_PROPERTY]
- * property or the presence of a Declarative Watch Face file in `res/raw`.
+ * We detect the usage of WFF by checking the presence of the [WATCH_FACE_FORMAT_VERSION_PROPERTY] property or the presence of a Declarative
+ * Watch Face file in `res/raw`.
  */
 class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
   override fun afterCheckFile(context: Context) {
@@ -50,10 +49,7 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
     val xmlContext = context as? XmlContext ?: return
     val root = xmlContext.document.documentElement
     val application = XmlUtils.getFirstSubTagByName(root, NODE_APPLICATION) ?: return
-    if (
-      !hasWatchFaceFormatVersionProperty(application) &&
-        !hasDeclarativeWatchFaceFile(context.project)
-    ) {
+    if (!hasWatchFaceFormatVersionProperty(application) && !hasDeclarativeWatchFaceFile(context.project)) {
       return
     }
 
@@ -91,17 +87,12 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
       Issue.create(
         id = "WatchFaceFormatDeclaresHasNoCode",
         briefDescription = "The `hasCode` attribute should be set to `false`",
-        explanation =
-          "Watch Face Format is a resource-only format, so the `hasCode` attribute should be set to `false` to reflect this.",
+        explanation = "Watch Face Format is a resource-only format, so the `hasCode` attribute should be set to `false` to reflect this.",
         category = Category.CORRECTNESS,
         priority = 7,
         severity = Severity.ERROR,
         moreInfo = "https://developer.android.com/training/wearables/wff/setup#declare-wff-use",
-        implementation =
-          Implementation(
-            WatchFaceFormatDeclaresHasNoCodeDetector::class.java,
-            Scope.MANIFEST_SCOPE,
-          ),
+        implementation = Implementation(WatchFaceFormatDeclaresHasNoCodeDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
       )
   }

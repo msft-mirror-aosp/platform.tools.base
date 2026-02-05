@@ -27,58 +27,43 @@ import org.jetbrains.annotations.TestOnly
 
 private class StrongReference<T>(val value: T) : WeakReference<T>(value)
 
-/**
- * Equivalent to the IntelliJ `ModificationTracker` but for [ChangeTrackerCachedValue].
- */
+/** Equivalent to the IntelliJ `ModificationTracker` but for [ChangeTrackerCachedValue]. */
 fun interface ChangeTracker {
-  /**
-   * Returns the modification count.
-   */
+  /** Returns the modification count. */
   fun count(): Long
 
   companion object {
     val NEVER_CHANGE: ChangeTracker = ChangeTracker { 0L }
-    val EVER_CHANGING = object : ChangeTracker {
-      private val counter = AtomicLong(0L)
+    val EVER_CHANGING =
+      object : ChangeTracker {
+        private val counter = AtomicLong(0L)
 
-      override fun count(): Long = counter.getAndIncrement()
-    }
+        override fun count(): Long = counter.getAndIncrement()
+      }
   }
 }
 
-/**
- * Constructs a ChangeTracker that aggregates multiple [ChangeTracker]s.
- */
-fun ChangeTracker(trackers: Collection<ChangeTracker>): ChangeTracker =
-  ChangeTracker { trackers.sumOf { it.count() } }
+/** Constructs a ChangeTracker that aggregates multiple [ChangeTracker]s. */
+fun ChangeTracker(trackers: Collection<ChangeTracker>): ChangeTracker = ChangeTracker { trackers.sumOf { it.count() } }
+
+/** Constructs a ChangeTracker that aggregates multiple [ChangeTracker]s. */
+fun ChangeTracker(vararg trackers: ChangeTracker): ChangeTracker = ChangeTracker { trackers.sumOf { it.count() } }
 
 /**
- * Constructs a ChangeTracker that aggregates multiple [ChangeTracker]s.
+ * Class that caches a value until one of the dependencies changes, or it's collected by the garbage collection. This class provides similar
+ * capabilities to the `CachedValuesManager` but avoids depending on any IntelliJ platform. For cases where the value only depends on
+ * trackers, this is a more lightweight solution that does not hold references to the project.
  */
-fun ChangeTracker(vararg trackers: ChangeTracker): ChangeTracker =
-  ChangeTracker { trackers.sumOf { it.count() } }
-
-/**
- * Class that caches a value until one of the dependencies changes, or it's collected by the garbage collection.
- * This class provides similar capabilities to the `CachedValuesManager` but avoids depending on any IntelliJ platform. For cases
- * where the value only depends on trackers, this is a more lightweight solution that does not hold references to the project.
- */
-class ChangeTrackerCachedValue<T> private constructor(
-  val referenceFactory: (T) -> Reference<T>,
-) {
+class ChangeTrackerCachedValue<T> private constructor(val referenceFactory: (T) -> Reference<T>) {
   private val nullReference: Reference<T> = WeakReference(null)
 
   private val cachedLock = ReentrantReadWriteLock()
 
-  @GuardedBy("cachedLock")
-  private var cachedReferenceCount: Long = -1
+  @GuardedBy("cachedLock") private var cachedReferenceCount: Long = -1
 
-  @GuardedBy("cachedLock")
-  private var cachedReference: Reference<T> = nullReference
+  @GuardedBy("cachedLock") private var cachedReference: Reference<T> = nullReference
 
-  /**
-   * Obtains and updates the cached value using the [provider]
-   */
+  /** Obtains and updates the cached value using the [provider] */
   private suspend fun updateAndGetCachedValue(provider: suspend () -> T, dependency: ChangeTracker): T {
     val value = provider()
     val dependencyValue = dependency.count()
@@ -90,8 +75,8 @@ class ChangeTrackerCachedValue<T> private constructor(
   }
 
   /**
-   * Returns the value referenced by this [ChangeTrackerCachedValue]. This call might call the [provider]
-   * if the current value is out-of-date or has never been obtained before.
+   * Returns the value referenced by this [ChangeTrackerCachedValue]. This call might call the [provider] if the current value is
+   * out-of-date or has never been obtained before.
    */
   private suspend fun get(provider: suspend () -> T, dependency: ChangeTracker): T {
     cachedLock.read {
@@ -108,27 +93,14 @@ class ChangeTrackerCachedValue<T> private constructor(
   }
 
   companion object {
-    /**
-     * Returns a [ChangeTrackerCachedValue] that holds a cached value via a [SoftReference].
-     */
-    fun <T> softReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue {
-      SoftReference(it)
-    }
+    /** Returns a [ChangeTrackerCachedValue] that holds a cached value via a [SoftReference]. */
+    fun <T> softReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue { SoftReference(it) }
 
-    /**
-     * Returns a [ChangeTrackerCachedValue] that holds a cached value via a [WeakReference].
-     */
-    fun <T> weakReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue {
-      WeakReference(it)
-    }
+    /** Returns a [ChangeTrackerCachedValue] that holds a cached value via a [WeakReference]. */
+    fun <T> weakReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue { WeakReference(it) }
 
-    /**
-     * Returns a [ChangeTrackerCachedValue] that holds a cached value via a [StrongReference].
-     */
-    @TestOnly
-    fun <T> strongReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue {
-      StrongReference(it)
-    }
+    /** Returns a [ChangeTrackerCachedValue] that holds a cached value via a [StrongReference]. */
+    @TestOnly fun <T> strongReference(): ChangeTrackerCachedValue<T> = ChangeTrackerCachedValue { StrongReference(it) }
 
     suspend fun <T> get(cached: ChangeTrackerCachedValue<T>, provider: suspend () -> T, dependency: ChangeTracker): T =
       cached.get(provider, dependency)

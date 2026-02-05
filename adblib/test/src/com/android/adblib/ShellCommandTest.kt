@@ -20,57 +20,57 @@ import org.junit.Test
 
 class ShellCommandTest {
 
-    @Test
-    fun test_escapeDeviceFileName_doesNothingForNormalCharacters() {
-        // Act
-        val result = ShellCommand.escapeDeviceFileName("foobar")
+  @Test
+  fun test_escapeDeviceFileName_doesNothingForNormalCharacters() {
+    // Act
+    val result = ShellCommand.escapeDeviceFileName("foobar")
 
-        // Assert
-        Assert.assertEquals("foobar", result)
-    }
+    // Assert
+    Assert.assertEquals("foobar", result)
+  }
 
-    @Test
-    fun test_escapeDeviceFileName_escapesSpecialCharacters() {
-        // Act
-        val result = ShellCommand.escapeDeviceFileName("foo bar&")
+  @Test
+  fun test_escapeDeviceFileName_escapesSpecialCharacters() {
+    // Act
+    val result = ShellCommand.escapeDeviceFileName("foo bar&")
 
-        // Assert
-        Assert.assertEquals("foo\\ bar\\&", result)
-    }
+    // Assert
+    Assert.assertEquals("foo\\ bar\\&", result)
+  }
 
-    @Test
-    fun test_mapDevicePathSegments_preservesEmpty() {
-        // Act
-        val result = ShellCommand.mapDevicePathSegments("") { it }
+  @Test
+  fun test_mapDevicePathSegments_preservesEmpty() {
+    // Act
+    val result = ShellCommand.mapDevicePathSegments("") { it }
 
-        // Assert
-        Assert.assertEquals("", result)
-    }
+    // Assert
+    Assert.assertEquals("", result)
+  }
 
-    @Test
-    fun test_mapDevicePathSegments_preservesRoot() {
-        // Act
-        val result = ShellCommand.mapDevicePathSegments("/") { it }
+  @Test
+  fun test_mapDevicePathSegments_preservesRoot() {
+    // Act
+    val result = ShellCommand.mapDevicePathSegments("/") { it }
 
-        // Assert
-        Assert.assertEquals("/", result)
-    }
+    // Assert
+    Assert.assertEquals("/", result)
+  }
 
-    @Test
-    fun test_mapDevicePathSegments_preservesEmptySegments() {
-        // Act
-        val result = ShellCommand.mapDevicePathSegments("/a//b") { it }
+  @Test
+  fun test_mapDevicePathSegments_preservesEmptySegments() {
+    // Act
+    val result = ShellCommand.mapDevicePathSegments("/a//b") { it }
 
-        // Assert
-        Assert.assertEquals("/a//b", result)
-    }
+    // Assert
+    Assert.assertEquals("/a//b", result)
+  }
 
-    @Test
-    fun test_mapDevicePathSegments_supportsEscapingAllSegments() {
-        // Act
-        val result = ShellCommand.mapDevicePathSegments("/a b//b&c") { ShellCommand.escapeDevicePath(it) }
+  @Test
+  fun test_mapDevicePathSegments_supportsEscapingAllSegments() {
+    // Act
+    val result = ShellCommand.mapDevicePathSegments("/a b//b&c") { ShellCommand.escapeDevicePath(it) }
 
-        // Assert
-        Assert.assertEquals("/a\\ b//b\\&c", result)
-    }
+    // Assert
+    Assert.assertEquals("/a\\ b//b\\&c", result)
+  }
 }

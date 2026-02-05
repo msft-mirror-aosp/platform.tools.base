@@ -21,20 +21,11 @@ import org.junit.Rule
 import org.junit.Test
 
 class AnalyticsConcurrencyTest {
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withProfileOutput()
-        .from {
-            repeat(100) {
-                androidApplication(":app_$it") {}
-            }
-        }
+  @get:Rule val rule = GradleRule.configure().withProfileOutput().from { repeat(100) { androidApplication(":app_$it") {} } }
 
-    // Regression tests for b/420715479.
-    @Test
-    fun configuringProjectShouldNotCauseConcurrencyIssues() {
-        rule.build.executor
-            .withArguments(listOf("--max-workers", "10"))
-            .run("tasks")
-    }
+  // Regression tests for b/420715479.
+  @Test
+  fun configuringProjectShouldNotCauseConcurrencyIssues() {
+    rule.build.executor.withArguments(listOf("--max-workers", "10")).run("tasks")
+  }
 }

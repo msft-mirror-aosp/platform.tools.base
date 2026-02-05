@@ -16,12 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-fun detailsActivityJava(
-  detailsActivity: String,
-  detailsFragmentClass: String,
-  detailsLayoutName: String,
-  packageName: String
-) = """
+fun detailsActivityJava(detailsActivity: String, detailsFragmentClass: String, detailsLayoutName: String, packageName: String) =
+  """
 package ${packageName};
 
 import android.os.Bundle;

@@ -24,28 +24,20 @@ import com.android.build.gradle.internal.tasks.mlkit.codegen.getProcessorName
 import com.android.tools.mlkit.TensorInfo
 import com.squareup.javapoet.MethodSpec
 
-/** Injector to inject image process code.  */
+/** Injector to inject image process code. */
 class ImageProcessInjector : CodeBlockInjector() {
-    override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
-        methodBuilder.addStatement(
-            "\$L = \$L.getHeight()",
-            getImageHeightFieldName(tensorInfo),
-            tensorInfo.identifierName
-        )
-        methodBuilder.addStatement(
-            "\$L = \$L.getWidth()",
-            getImageWidthFieldName(tensorInfo),
-            tensorInfo.identifierName
-        )
+  override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
+    methodBuilder.addStatement("\$L = \$L.getHeight()", getImageHeightFieldName(tensorInfo), tensorInfo.identifierName)
+    methodBuilder.addStatement("\$L = \$L.getWidth()", getImageWidthFieldName(tensorInfo), tensorInfo.identifierName)
 
-        val typeName = getParameterType(tensorInfo)
-        val processedTypeName = getProcessedTypeName(tensorInfo)
-        methodBuilder.addStatement(
-            "\$T \$L = \$L.process(\$L)",
-            typeName,
-            processedTypeName,
-            getProcessorName(tensorInfo),
-            tensorInfo.identifierName
-        )
-    }
+    val typeName = getParameterType(tensorInfo)
+    val processedTypeName = getProcessedTypeName(tensorInfo)
+    methodBuilder.addStatement(
+      "\$T \$L = \$L.process(\$L)",
+      typeName,
+      processedTypeName,
+      getProcessorName(tensorInfo),
+      tensorInfo.identifierName,
+    )
+  }
 }

@@ -21,22 +21,20 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class PingCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "ping"
-) {
-    companion object {
-        const val PING_COMMAND_FAKE_OUTPUT = "pong\n"
-    }
+class PingCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "ping") {
+  companion object {
+    const val PING_COMMAND_FAKE_OUTPUT = "pong\n"
+  }
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        shellCommandOutput.writeStdout(PING_COMMAND_FAKE_OUTPUT)
-    }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    shellCommandOutput.writeStdout(PING_COMMAND_FAKE_OUTPUT)
+  }
 }

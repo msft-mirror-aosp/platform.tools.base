@@ -26,66 +26,60 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.ResolvableDependencies
 
 /**
- * Checks whether a configuration contains AndroidX or legacy support library dependencies, and
- * issues an error/warning where appropriate based on the current settings of the
- * `android.useAndroidX` and `android.enableJetifier` properties.
+ * Checks whether a configuration contains AndroidX or legacy support library dependencies, and issues an error/warning where appropriate
+ * based on the current settings of the `android.useAndroidX` and `android.enableJetifier` properties.
  */
 object AndroidXDependencyCheck {
 
-    /**
-     * Check to run when `android.useAndroidX=false` and `android.enabledJetifier=false`.
-     *
-     * NOTE: The caller must invoke this check only under the above condition.
-     */
-    class AndroidXDisabledJetifierDisabled(
-            private val project: Project,
-            private val configurationName: String,
-            private val issueReporter: IssueReporter
-    ) : Action<ResolvableDependencies> {
+  /**
+   * Check to run when `android.useAndroidX=false` and `android.enabledJetifier=false`.
+   *
+   * NOTE: The caller must invoke this check only under the above condition.
+   */
+  class AndroidXDisabledJetifierDisabled(
+    private val project: Project,
+    private val configurationName: String,
+    private val issueReporter: IssueReporter,
+  ) : Action<ResolvableDependencies> {
 
-        override fun execute(resolvableDependencies: ResolvableDependencies) {
-            // Report only once
-            if (project.extensions.extraProperties.has(issueReported)) {
-                return
-            }
+    override fun execute(resolvableDependencies: ResolvableDependencies) {
+      // Report only once
+      if (project.extensions.extraProperties.has(issueReported)) {
+        return
+      }
 
-            val result = resolvableDependencies.resolutionResult
-            val androidXDependencies = result.getModuleComponents {
-                AndroidXDependencySubstitution.isAndroidXDependency("${it.group}:${it.module}:${it.version}")
-            }
-            val configurationDisplayPath = project.getConfigurationDisplayPath(configurationName)
-            val pathsToAndroidXDependencies = androidXDependencies.map {
-                result.getPathToComponent(it).getPathString(configurationDisplayPath)
-            }.filterNot {
-                // Ignore databinding-compiler (see bug 179377689)
-                it.contains("androidx.databinding:databinding-compiler:")
-            }
-            if (pathsToAndroidXDependencies.isNotEmpty()) {
-                project.extensions.extraProperties.set(issueReported, true)
-                val message =
-                    "Configuration `$configurationDisplayPath` contains AndroidX dependencies," +
-                            " but the `${BooleanOption.USE_ANDROID_X.propertyName}` property is not enabled," +
-                            " which may cause runtime issues.\n" +
-                            "Set `${BooleanOption.USE_ANDROID_X.propertyName}=true` in the `gradle.properties` file and retry.\n" +
-                            "The following AndroidX dependencies are detected:\n" +
-                            pathsToAndroidXDependencies.joinToString("\n")
-                issueReporter.reportError(
-                        ANDROID_X_PROPERTY_NOT_ENABLED,
-                        message,
-                        pathsToAndroidXDependencies.joinToString(",")
-                )
-            }
-        }
+      val result = resolvableDependencies.resolutionResult
+      val androidXDependencies =
+        result.getModuleComponents { AndroidXDependencySubstitution.isAndroidXDependency("${it.group}:${it.module}:${it.version}") }
+      val configurationDisplayPath = project.getConfigurationDisplayPath(configurationName)
+      val pathsToAndroidXDependencies =
+        androidXDependencies
+          .map { result.getPathToComponent(it).getPathString(configurationDisplayPath) }
+          .filterNot {
+            // Ignore databinding-compiler (see bug 179377689)
+            it.contains("androidx.databinding:databinding-compiler:")
+          }
+      if (pathsToAndroidXDependencies.isNotEmpty()) {
+        project.extensions.extraProperties.set(issueReported, true)
+        val message =
+          "Configuration `$configurationDisplayPath` contains AndroidX dependencies," +
+            " but the `${BooleanOption.USE_ANDROID_X.propertyName}` property is not enabled," +
+            " which may cause runtime issues.\n" +
+            "Set `${BooleanOption.USE_ANDROID_X.propertyName}=true` in the `gradle.properties` file and retry.\n" +
+            "The following AndroidX dependencies are detected:\n" +
+            pathsToAndroidXDependencies.joinToString("\n")
+        issueReporter.reportError(ANDROID_X_PROPERTY_NOT_ENABLED, message, pathsToAndroidXDependencies.joinToString(","))
+      }
     }
+  }
 
-    private fun Project.getConfigurationDisplayPath(configurationName: String): String {
-        return if (project.path == ":") {
-            ":$configurationName"
-        } else {
-            "${project.path}:$configurationName"
-        }
+  private fun Project.getConfigurationDisplayPath(configurationName: String): String {
+    return if (project.path == ":") {
+      ":$configurationName"
+    } else {
+      "${project.path}:$configurationName"
     }
+  }
 }
 
-private val issueReported =
-    "${AndroidXDependencyCheck.AndroidXDisabledJetifierDisabled::class.java.name}_issue_reported"
+private val issueReported = "${AndroidXDependencyCheck.AndroidXDisabledJetifierDisabled::class.java.name}_issue_reported"

@@ -24,82 +24,64 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType.DATA_BINDING_DEPENDENCY_ARTIFACTS
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
 /** Assemble tests for kotlin. */
 @RunWith(FilterableParameterized::class)
 class DataBindingKotlinAppTest(useAndroidX: Boolean) {
-    @Rule
-    @JvmField
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("databindingAndKotlin")
-            .withDependencyChecker(false) // breaks w/ kapt
-            .addGradleProperties(
-                BooleanOption.USE_ANDROID_X.propertyName
-                        + "="
-                        + useAndroidX
-            )
-            // see b/477573058
-            .disableBuiltInKotlin()
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-            .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("databindingAndKotlin")
+      .withDependencyChecker(false) // breaks w/ kapt
+      .addGradleProperties(BooleanOption.USE_ANDROID_X.propertyName + "=" + useAndroidX)
+      .create()
 
-    companion object {
-        @Parameterized.Parameters(name = "useAndroidX_{0}")
-        @JvmStatic
-        fun params() = listOf(
-            arrayOf(true),
-            arrayOf(false)
-        )
+  companion object {
+    @Parameterized.Parameters(name = "useAndroidX_{0}") @JvmStatic fun params() = listOf(arrayOf(true), arrayOf(false))
+  }
+
+  @Test
+  fun compile() {
+    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("app:assembleDebug")
+    val app = project.getSubproject("app")
+
+    // Dependency artifacts should be present: 2 from androidx.databinding.library.baseAdapters
+    // and 2 from the library subproject (regression test for bug 161814391).
+    val dependencyArtifactsDir =
+      File(
+        DATA_BINDING_DEPENDENCY_ARTIFACTS.getOutputDir(app.buildDir),
+        "debug" + File.separator + "dataBindingMergeDependencyArtifactsDebug",
+      )
+    assertThat(dependencyArtifactsDir.list().size).isEqualTo(4)
+
+    // Check APK's contents
+    val appBindingClass = "Lcom/example/android/kotlin/databinding/ActivityLayoutBinding;"
+    val libBindingClass = "Lcom/example/android/kotlin/lib/databinding/LibActivityLayoutBinding;"
+    app.getApk(GradleTestProject.ApkType.DEBUG).use {
+      assertThat(it).containsClass(appBindingClass)
+      assertThat(it).containsClass(libBindingClass)
+      // implementations should be in as well.
+      assertThat(it).containsClass(appBindingClass.replace(";", "Impl;"))
+      assertThat(it).containsClass(libBindingClass.replace(";", "Impl;"))
     }
+  }
 
-    @Test
-    fun compile() {
-        project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .run("app:assembleDebug")
-        val app = project.getSubproject("app")
-
-        // Dependency artifacts should be present: 2 from androidx.databinding.library.baseAdapters
-        // and 2 from the library subproject (regression test for bug 161814391).
-        val dependencyArtifactsDir =
-            File(DATA_BINDING_DEPENDENCY_ARTIFACTS.getOutputDir(app.buildDir),
-                "debug" + File.separator + "dataBindingMergeDependencyArtifactsDebug")
-        assertThat(dependencyArtifactsDir.list().size).isEqualTo(4)
-
-        // Check APK's contents
-        val appBindingClass = "Lcom/example/android/kotlin/databinding/ActivityLayoutBinding;"
-        val libBindingClass = "Lcom/example/android/kotlin/lib/databinding/LibActivityLayoutBinding;"
-        app.getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThat(it).containsClass(appBindingClass)
-            assertThat(it).containsClass(libBindingClass)
-            // implementations should be in as well.
-            assertThat(it).containsClass(
-                appBindingClass.replace(";", "Impl;")
-            )
-            assertThat(it).containsClass(
-                libBindingClass.replace(";", "Impl;")
-            )
-        }
-    }
-
-    @Test
-    fun showErrorOnManualVersionMismatch() {
-        val kapt = """
+  @Test
+  fun showErrorOnManualVersionMismatch() {
+    val kapt =
+      """
             dependencies {
                 kapt "${SdkConstants.DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT}:3.0.0"
             }
             """
-        TestFileUtils.appendToFile(project.getSubproject(":app").buildFile, kapt)
-        val result = project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .expectFailure().run("app:assembleDebug")
-        assertThat(result.failureMessage)
-            .contains("Data Binding annotation processor version needs to match the")
-    }
+    TestFileUtils.appendToFile(project.getSubproject(":app").buildFile, kapt)
+    val result = project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).expectFailure().run("app:assembleDebug")
+    assertThat(result.failureMessage).contains("Data Binding annotation processor version needs to match the")
+  }
 }

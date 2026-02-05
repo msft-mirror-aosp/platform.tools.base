@@ -19,7 +19,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.2.1"
+GRADLE_VERSION = "9.3.1"
 
 filegroup(
     name = "gradle-distrib",
@@ -44,9 +44,21 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.3.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.3.1"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.2.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.2.1"],
     visibility = ["//visibility:public"],
 )
 

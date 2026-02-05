@@ -23,9 +23,7 @@ import org.junit.Test
 class BroadcastReceiverUtilsTest {
   @Test
   fun testBasics() {
-    assertTrue(
-      BroadcastReceiverUtils.isProtectedBroadcast("android.accounts.action.ACCOUNT_REMOVED")
-    )
+    assertTrue(BroadcastReceiverUtils.isProtectedBroadcast("android.accounts.action.ACCOUNT_REMOVED"))
     assertFalse(BroadcastReceiverUtils.isProtectedBroadcast("not.a.permission"))
   }
 
@@ -45,9 +43,7 @@ class BroadcastReceiverUtilsTest {
     }
 
     val sb = StringBuilder()
-    val prefix =
-      "  fun isProtectedBroadcast(actionName: String): Boolean {\n" +
-        "    return when (actionName) {\n"
+    val prefix = "  fun isProtectedBroadcast(actionName: String): Boolean {\n" + "    return when (actionName) {\n"
     val suffix = "      else -> false\n" + "    }"
     sb.append(prefix)
     for (name in permissions.sorted()) {
@@ -60,17 +56,14 @@ class BroadcastReceiverUtilsTest {
     val replacement = sb.toString()
 
     // Replace existing
-    val utilsRelativePath =
-      "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/BroadcastReceiverUtils.kt"
+    val utilsRelativePath = "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/BroadcastReceiverUtils.kt"
     val utilsFile = resolveWorkspacePath(utilsRelativePath).toFile()
 
     val t = utilsFile.readText()
     val index = t.indexOf(prefix)
     val end = t.indexOf("}", index + 1)
     if (index == -1 || end == -1)
-      error(
-        "Couldn't find existing switch; has the code formatting changed? Compare to the `prefix` and `suffix` variables above!"
-      )
+      error("Couldn't find existing switch; has the code formatting changed? Compare to the `prefix` and `suffix` variables above!")
     val replaced = t.substring(0, index) + replacement.toString() + t.substring(end + 1)
     utilsFile.writeText(replaced)
     println("Updated the switch table in $utilsFile")

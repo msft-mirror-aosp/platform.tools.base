@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -26,91 +25,80 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Integration tests for the lint models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false.
- * See [LintModelPerComponentIntegrationTest] for similar tests when it is true.
+ * Integration tests for the lint models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See
+ * [LintModelPerComponentIntegrationTest] for similar tests when it is true.
  */
 class LintModelIntegrationTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestProject("lintKotlin")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
-            .dontOutputLogOnFailure()
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestProject("lintKotlin")
+      .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
+      .dontOutputLogOnFailure()
+      .create()
 
-    /**
-     * Test lint report models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See
-     * [LintModelPerComponentIntegrationTest] for similar test when it is true.
-     */
-    @Test
-    fun checkLintReportModels() {
-        // Check lint runs correctly before asserting about the model.
-        executor()
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
-            .expectFailure()
-            .run("clean", ":app:lintDebug")
-        executor()
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
-            .expectFailure()
-            .run(":app:clean", ":app:lintDebug")
-        val lintResults = project.file("app/build/reports/lint-results.txt")
-        assertThat(lintResults).contains("9 errors, 4 warnings")
+  /**
+   * Test lint report models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See [LintModelPerComponentIntegrationTest] for
+   * similar test when it is true.
+   */
+  @Test
+  fun checkLintReportModels() {
+    // Check lint runs correctly before asserting about the model.
+    executor().with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false).expectFailure().run("clean", ":app:lintDebug")
+    executor().with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false).expectFailure().run(":app:clean", ":app:lintDebug")
+    val lintResults = project.file("app/build/reports/lint-results.txt")
+    assertThat(lintResults).contains("9 errors, 4 warnings")
 
-        checkLintModels(
-            project = project,
-            lintModelDir = project.getSubproject("app").intermediatesDir.toPath()
-                .resolve("lint_report_lint_model/debug/generateDebugLintReportModel"),
-            modelSnapshotResourceRelativePath = "kotlinmodel/app/lintReportDebug",
-            "debug-androidTestArtifact-dependencies.xml",
-            "debug-androidTestArtifact-libraries.xml",
-            "debug-artifact-dependencies.xml",
-            "debug-artifact-libraries.xml",
-            "debug-testArtifact-dependencies.xml",
-            "debug-testArtifact-libraries.xml",
-            "debug.xml",
-            "module.xml",
-        )
-    }
+    checkLintModels(
+      project = project,
+      lintModelDir =
+        project.getSubproject("app").intermediatesDir.toPath().resolve("lint_report_lint_model/debug/generateDebugLintReportModel"),
+      modelSnapshotResourceRelativePath = "kotlinmodel/app/lintReportDebug",
+      "debug-androidTestArtifact-dependencies.xml",
+      "debug-androidTestArtifact-libraries.xml",
+      "debug-artifact-dependencies.xml",
+      "debug-artifact-libraries.xml",
+      "debug-testArtifact-dependencies.xml",
+      "debug-testArtifact-libraries.xml",
+      "debug.xml",
+      "module.xml",
+    )
+  }
 
-    /**
-     * Test lint analysis models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See
-     * [LintModelPerComponentIntegrationTest] for similar test when it is true.
-     */
-    @Test
-    fun checkLintAnalysisModels() {
-        executor()
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
-            .expectFailure()
-            .run("clean", ":app:lintDebug")
+  /**
+   * Test lint analysis models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See [LintModelPerComponentIntegrationTest] for
+   * similar test when it is true.
+   */
+  @Test
+  fun checkLintAnalysisModels() {
+    executor().with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false).expectFailure().run("clean", ":app:lintDebug")
 
-        checkLintModels(
-            project = project,
-            lintModelDir = project.getSubproject("app").intermediatesDir.toPath()
-                .resolve("incremental/lintAnalyzeDebug"),
-            modelSnapshotResourceRelativePath = "kotlinmodel/app/lintAnalyzeDebug",
-            "debug-androidTestArtifact-dependencies.xml",
-            "debug-androidTestArtifact-libraries.xml",
-            "debug-artifact-dependencies.xml",
-            "debug-artifact-libraries.xml",
-            "debug-testArtifact-dependencies.xml",
-            "debug-testArtifact-libraries.xml",
-            "debug.xml",
-            "module.xml",
-        )
-    }
+    checkLintModels(
+      project = project,
+      lintModelDir = project.getSubproject("app").intermediatesDir.toPath().resolve("incremental/lintAnalyzeDebug"),
+      modelSnapshotResourceRelativePath = "kotlinmodel/app/lintAnalyzeDebug",
+      "debug-androidTestArtifact-dependencies.xml",
+      "debug-androidTestArtifact-libraries.xml",
+      "debug-artifact-dependencies.xml",
+      "debug-artifact-libraries.xml",
+      "debug-testArtifact-dependencies.xml",
+      "debug-testArtifact-libraries.xml",
+      "debug.xml",
+      "module.xml",
+    )
+  }
 
-    /**
-     * Test library lint report models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false.
-     * See [LintModelPerComponentIntegrationTest] for similar test when it is true.
-     */
-    @Test
-    fun checkLibraryLintModels() {
-        // Enable core library desugaring in library module as regression test for b/260755411
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
+  /**
+   * Test library lint report models when [BooleanOption.LINT_ANALYSIS_PER_COMPONENT] is false. See [LintModelPerComponentIntegrationTest]
+   * for similar test when it is true.
+   */
+  @Test
+  fun checkLibraryLintModels() {
+    // Enable core library desugaring in library module as regression test for b/260755411
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
                 android {
                     compileOptions {
                         coreLibraryDesugaringEnabled = true
@@ -123,36 +111,31 @@ class LintModelIntegrationTest {
 
                 // Test for b/321937600
                 version = "1.0"
-            """.trimIndent()
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("library").buildFile,
-            "minSdkVersion 15",
-            "minSdkVersion 24"
-        )
+            """
+        .trimIndent(),
+    )
+    TestFileUtils.searchAndReplace(project.getSubproject("library").buildFile, "minSdkVersion 15", "minSdkVersion 24")
 
-        // Check lint runs correctly before asserting about the model.
-        executor()
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
-            .run("clean", ":library:lintDebug")
+    // Check lint runs correctly before asserting about the model.
+    executor().with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false).run("clean", ":library:lintDebug")
 
-        checkLintModels(
-            project = project,
-            lintModelDir = project.getSubproject("library").intermediatesDir.toPath()
-                .resolve("lint_report_lint_model/debug/generateDebugLintReportModel"),
-            modelSnapshotResourceRelativePath = "kotlinmodel/library/lintDebug",
-            "debug-androidTestArtifact-dependencies.xml",
-            "debug-androidTestArtifact-libraries.xml",
-            "debug-artifact-dependencies.xml",
-            "debug-artifact-libraries.xml",
-            "debug-testArtifact-dependencies.xml",
-            "debug-testArtifact-libraries.xml",
-            "debug.xml",
-            "module.xml",
-        )
-    }
+    checkLintModels(
+      project = project,
+      lintModelDir =
+        project.getSubproject("library").intermediatesDir.toPath().resolve("lint_report_lint_model/debug/generateDebugLintReportModel"),
+      modelSnapshotResourceRelativePath = "kotlinmodel/library/lintDebug",
+      "debug-androidTestArtifact-dependencies.xml",
+      "debug-androidTestArtifact-libraries.xml",
+      "debug-artifact-dependencies.xml",
+      "debug-artifact-libraries.xml",
+      "debug-testArtifact-dependencies.xml",
+      "debug-testArtifact-libraries.xml",
+      "debug.xml",
+      "module.xml",
+    )
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
 }

@@ -19,8 +19,14 @@ import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
 fun emptyActivityJava(
-  packageName: String, namespace: String, activityClass: String, layoutName: String, generateLayout: Boolean, useAndroidX: Boolean
-) = """
+  packageName: String,
+  namespace: String,
+  activityClass: String,
+  layoutName: String,
+  generateLayout: Boolean,
+  useAndroidX: Boolean,
+) =
+  """
 package ${packageName};
 
 import android.os.Bundle;

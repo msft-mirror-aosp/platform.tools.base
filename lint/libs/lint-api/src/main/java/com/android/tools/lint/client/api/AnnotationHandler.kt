@@ -139,10 +139,7 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.w3c.dom.Node
 
 /** Looks up annotations on method calls and enforces the various things they express. */
-internal class AnnotationHandler(
-  private val driver: LintDriver,
-  private val scanners: Map<String, Collection<SourceCodeScanner>>,
-) {
+internal class AnnotationHandler(private val driver: LintDriver, private val scanners: Map<String, Collection<SourceCodeScanner>>) {
 
   val relevantAnnotations: Set<String> = HashSet(scanners.keys)
 
@@ -151,9 +148,8 @@ internal class AnnotationHandler(
   }
 
   /**
-   * Clears the caches that map from UElement and PSI element to a list of relevant annotations.
-   * These caches are useful while visiting a file (where we may request the annotations for an
-   * element multiple times), so should be cleared after visiting each file.
+   * Clears the caches that map from UElement and PSI element to a list of relevant annotations. These caches are useful while visiting a
+   * file (where we may request the annotations for an element multiple times), so should be cleared after visiting each file.
    */
   fun clearAnnotationCaches() {
     relevantAnnotationsCacheUast.clear()
@@ -189,8 +185,7 @@ internal class AnnotationHandler(
       if (check != null) {
         val type =
           when (p.operator) {
-            UastBinaryOperator.ASSIGN ->
-              if (check === rightOperand) ASSIGNMENT_RHS else ASSIGNMENT_LHS
+            UastBinaryOperator.ASSIGN -> if (check === rightOperand) ASSIGNMENT_RHS else ASSIGNMENT_LHS
             UastBinaryOperator.EQUALS,
             UastBinaryOperator.NOT_EQUALS,
             UastBinaryOperator.IDENTITY_EQUALS,
@@ -252,8 +247,7 @@ internal class AnnotationHandler(
     val method = node.resolveOverloadedOperator()
     if (method != null) {
       if (
-        (node.operator == UastBinaryOperator.EQUALS ||
-          node.operator == UastBinaryOperator.NOT_EQUALS) &&
+        (node.operator == UastBinaryOperator.EQUALS || node.operator == UastBinaryOperator.NOT_EQUALS) &&
           (node.rightOperand.isNullLiteral() || node.leftOperand.isNullLiteral())
       ) {
         // If you have "a != null" on a data class technically
@@ -309,10 +303,7 @@ internal class AnnotationHandler(
     checkAnnotations(context, node, DEFINITION, psiParameter, annotations)
   }
 
-  /**
-   * Adds all the relevant annotations associated with this modifier list owner, and returns the
-   * number of annotations added.
-   */
+  /** Adds all the relevant annotations associated with this modifier list owner, and returns the number of annotations added. */
   private fun MutableList<AnnotationInfo>.addAnnotations(
     evaluator: JavaEvaluator,
     owner: PsiModifierListOwner,
@@ -329,11 +320,10 @@ internal class AnnotationHandler(
   }
 
   /**
-   * Pick up annotations that the developer may have intended to apply to the getter/setter: those
-   * using a default usage site which probably isn't what developers intended (this is usually the
-   * parameter or private field; it's never the property getter or setter), or specifying it on the
-   * property itself. (If specifying for example get: or set:, then UAST will already propagate the
-   * annotations to the correct place.)
+   * Pick up annotations that the developer may have intended to apply to the getter/setter: those using a default usage site which probably
+   * isn't what developers intended (this is usually the parameter or private field; it's never the property getter or setter), or
+   * specifying it on the property itself. (If specifying for example get: or set:, then UAST will already propagate the annotations to the
+   * correct place.)
    */
   private fun MutableList<AnnotationInfo>.addDefaultAnnotations(
     evaluator: JavaEvaluator,
@@ -386,8 +376,7 @@ internal class AnnotationHandler(
               it
             }
           }
-        val relevantAnnotations =
-          filterRelevantAnnotations(evaluator, listOf(defaultSiteAnnotation))
+        val relevantAnnotations = filterRelevantAnnotations(evaluator, listOf(defaultSiteAnnotation))
         for (annotation in relevantAnnotations) {
           if (addAnnotation(annotation, owner, annoSource, false)) {
             count++
@@ -421,27 +410,19 @@ internal class AnnotationHandler(
     return true
   }
 
-  private fun UAnnotation.toAnnotationInfo(
-    owner: PsiElement,
-    source: AnnotationOrigin,
-  ): AnnotationInfo? {
+  private fun UAnnotation.toAnnotationInfo(owner: PsiElement, source: AnnotationOrigin): AnnotationInfo? {
     val name = qualifiedName ?: return null
     return AnnotationInfo(this, name, owner, source)
   }
 
   private val relevantAnnotationsCacheUast = HashMap<UAnnotated, List<UAnnotation>>(2048)
 
-  private fun getRelevantAnnotations(
-    evaluator: JavaEvaluator,
-    annotated: UAnnotated,
-    origin: AnnotationOrigin,
-  ): List<AnnotationInfo> {
+  private fun getRelevantAnnotations(evaluator: JavaEvaluator, annotated: UAnnotated, origin: AnnotationOrigin): List<AnnotationInfo> {
     @Suppress("UElementAsPsi") val owner = annotated as? PsiElement ?: return emptyList()
 
     val filteredAnnotations =
       relevantAnnotationsCacheUast.getOrPut(annotated) {
-        val allAnnotations: List<UAnnotation> =
-          evaluator.getAllAnnotations(annotated, inHierarchy = true)
+        val allAnnotations: List<UAnnotation> = evaluator.getAllAnnotations(annotated, inHierarchy = true)
         filterRelevantAnnotations(evaluator, allAnnotations)
       }
 
@@ -457,13 +438,9 @@ internal class AnnotationHandler(
     return filteredAnnotations.mapNotNull { it.toAnnotationInfo(owner, origin) }
   }
 
-  private data class RelevantAnnotationsCachePsiKey(
-    val owner: PsiModifierListOwner,
-    val inHierarchy: Boolean,
-  )
+  private data class RelevantAnnotationsCachePsiKey(val owner: PsiModifierListOwner, val inHierarchy: Boolean)
 
-  private val relevantAnnotationsCachePsi =
-    HashMap<RelevantAnnotationsCachePsiKey, List<UAnnotation>>(4096)
+  private val relevantAnnotationsCachePsi = HashMap<RelevantAnnotationsCachePsiKey, List<UAnnotation>>(4096)
 
   private fun getRelevantAnnotations(
     evaluator: JavaEvaluator,
@@ -478,17 +455,11 @@ internal class AnnotationHandler(
   }
 
   /** Returns a list of annotations surrounding the given [annotated] element. */
-  private fun getMemberAnnotations(
-    context: JavaContext,
-    annotated: PsiModifierListOwner,
-  ): MutableList<AnnotationInfo> {
+  private fun getMemberAnnotations(context: JavaContext, annotated: PsiModifierListOwner): MutableList<AnnotationInfo> {
     return getMemberAnnotations(context.evaluator, annotated)
   }
 
-  private fun getMemberAnnotations(
-    evaluator: JavaEvaluator,
-    annotated: PsiModifierListOwner,
-  ): MutableList<AnnotationInfo> {
+  private fun getMemberAnnotations(evaluator: JavaEvaluator, annotated: PsiModifierListOwner): MutableList<AnnotationInfo> {
     // Using an ArrayDeque such that we can cheaply add/remove from the front of the
     // list (for example, after computing a list of annotations surrounding a call,
     // we prepend each parameter in turn to pass a full context list)
@@ -547,9 +518,7 @@ internal class AnnotationHandler(
       }
     }
 
-    val ktFile =
-      topLevelClass.containingFile as? KtFile
-        ?: (topLevelClass as? KtLightClass)?.kotlinOrigin?.containingKtFile
+    val ktFile = topLevelClass.containingFile as? KtFile ?: (topLevelClass as? KtLightClass)?.kotlinOrigin?.containingKtFile
     // Reading a compiled [KtFile] triggers decompilation. When there are no decompiler
     // plugins registered (which is the case for CLI), this raises an exception when
     // reading annotations or package names from binaries (.class, .jar, or .knm).
@@ -700,10 +669,7 @@ internal class AnnotationHandler(
   }
 
   // Visit the type of a declaration or parameter
-  private fun visitDeclarationTypeReference(
-    context: JavaContext,
-    reference: UTypeReferenceExpression,
-  ) {
+  private fun visitDeclarationTypeReference(context: JavaContext, reference: UTypeReferenceExpression) {
     val psi = reference.sourcePsi ?: return
     if (psi is PsiCompiledElement) {
       // Make sure we don't visit binary elements -- b/312177842
@@ -755,13 +721,7 @@ internal class AnnotationHandler(
         override fun visitType(type: PsiType) {
           val cls = context.evaluator.getTypeClass(type) ?: return
           val annotations = getMemberAnnotations(context, cls)
-          checkAnnotations(
-            context,
-            location,
-            CLASS_REFERENCE_AS_IMPLICIT_DECLARATION_TYPE,
-            cls,
-            annotations,
-          )
+          checkAnnotations(context, location, CLASS_REFERENCE_AS_IMPLICIT_DECLARATION_TYPE, cls, annotations)
         }
       }
     )
@@ -773,14 +733,7 @@ internal class AnnotationHandler(
       getMemberAnnotations(parser.evaluator, referenced).ifEmpty {
         return
       }
-    checkAnnotations(
-      context,
-      reference,
-      UastEmptyExpression(null),
-      AnnotationUsageType.XML_REFERENCE,
-      referenced,
-      annotations,
-    )
+    checkAnnotations(context, reference, UastEmptyExpression(null), AnnotationUsageType.XML_REFERENCE, referenced, annotations)
   }
 
   // TODO: visitField too such that we can enforce initializer consistency with
@@ -824,13 +777,7 @@ internal class AnnotationHandler(
             override fun visitReturnExpression(node: UReturnExpression): Boolean {
               val returnValue = node.returnExpression
               if (returnValue != null) {
-                checkAnnotations(
-                  context,
-                  returnValue,
-                  METHOD_RETURN,
-                  method as UAnnotated,
-                  methodAnnotations,
-                )
+                checkAnnotations(context, returnValue, METHOD_RETURN, method as UAnnotated, methodAnnotations)
               }
               return super.visitReturnExpression(node)
             }
@@ -845,14 +792,7 @@ internal class AnnotationHandler(
       if (method.isConstructor) {
         val uClass = method.getContainingUClass() ?: return
         if (!hasImplicitDefaultConstructor(uClass)) { // already reported as IMPLICIT_CONSTRUCTOR
-          checkSuperImplicitConstructor(
-            context,
-            method,
-            uClass,
-            method,
-            METHOD_OVERRIDE,
-            method.uastParameters.isEmpty(),
-          )
+          checkSuperImplicitConstructor(context, method, uClass, method, METHOD_OVERRIDE, method.uastParameters.isEmpty())
         }
       }
       return
@@ -879,9 +819,8 @@ internal class AnnotationHandler(
   }
 
   /**
-   * From [uClass], check its super constructor (recursively) to see if it extends/delegates to an
-   * annotated super constructor. This is special-cased because when there are implicit
-   * constructors, resolve will return null.
+   * From [uClass], check its super constructor (recursively) to see if it extends/delegates to an annotated super constructor. This is
+   * special-cased because when there are implicit constructors, resolve will return null.
    */
   private fun checkSuperImplicitConstructor(
     context: JavaContext,
@@ -910,13 +849,7 @@ internal class AnnotationHandler(
             if (body is UBlockExpression) {
               val implicit = body.expressions.firstOrNull()?.isSuperCall()?.not() ?: true
               if (implicit) {
-                checkAnnotations(
-                  context,
-                  argument,
-                  IMPLICIT_CONSTRUCTOR_CALL,
-                  defaultConstructor,
-                  annotations,
-                )
+                checkAnnotations(context, argument, IMPLICIT_CONSTRUCTOR_CALL, defaultConstructor, annotations)
               }
             }
           }
@@ -927,11 +860,9 @@ internal class AnnotationHandler(
   }
 
   /**
-   * Returns whether this call is a constructor delegation call. It *should* be a
-   * [USuperExpression], but sometimes it shows up as a plain [UCallExpression]. Note that this
-   * method should only be called for known calls to constructors; it does not check for this. In
-   * other words, this method can return true if you call it on a random `super` call in a method
-   * referencing a non-constructor.
+   * Returns whether this call is a constructor delegation call. It *should* be a [USuperExpression], but sometimes it shows up as a plain
+   * [UCallExpression]. Note that this method should only be called for known calls to constructors; it does not check for this. In other
+   * words, this method can return true if you call it on a random `super` call in a method referencing a non-constructor.
    */
   private fun UExpression.isSuperCall(): Boolean {
     return this is USuperExpression ||
@@ -940,10 +871,7 @@ internal class AnnotationHandler(
       this is UCallExpression && receiver == null && methodIdentifier?.name == "super"
   }
 
-  fun visitSimpleNameReferenceExpression(
-    context: JavaContext,
-    node: USimpleNameReferenceExpression,
-  ) {
+  fun visitSimpleNameReferenceExpression(context: JavaContext, node: USimpleNameReferenceExpression) {
     /* Pending:
     // In a qualified expression like x.y.z, only do field reference checks on z?
     val parent = node.uastParent
@@ -984,10 +912,7 @@ internal class AnnotationHandler(
     var prev: UElement = node
     var parent = prev.uastParent
     while (true) {
-      if (
-        parent is UParenthesizedExpression ||
-          parent is UQualifiedReferenceExpression && parent.selector === prev
-      ) {
+      if (parent is UParenthesizedExpression || parent is UQualifiedReferenceExpression && parent.selector === prev) {
         prev = parent
         parent = parent.uastParent ?: break
       } else if (parent is UBinaryExpression && parent.leftOperand === prev) {
@@ -1025,10 +950,7 @@ internal class AnnotationHandler(
     }
   }
 
-  fun visitCallableReferenceExpression(
-    context: JavaContext,
-    methodReference: UCallableReferenceExpression,
-  ) {
+  fun visitCallableReferenceExpression(context: JavaContext, methodReference: UCallableReferenceExpression) {
     val method = methodReference.resolve() as? PsiMethod ?: return
     val annotations = getMemberAnnotations(context, method)
     checkAnnotations(context, methodReference, METHOD_REFERENCE, method, annotations)
@@ -1037,14 +959,11 @@ internal class AnnotationHandler(
   fun visitAnnotation(context: JavaContext, annotation: UAnnotation) {
     // Check annotation references; these are a form of method call
     val qualifiedName = annotation.qualifiedName
-    if (
-      qualifiedName == null || qualifiedName.startsWith("java.") || qualifiedName == KOTLIN_SUPPRESS
-    ) {
+    if (qualifiedName == null || qualifiedName.startsWith("java.") || qualifiedName == KOTLIN_SUPPRESS) {
       return
     }
 
-    val selfInfo =
-      AnnotationInfo(annotation, qualifiedName, annotation.sourcePsi ?: annotation.javaPsi, SELF)
+    val selfInfo = AnnotationInfo(annotation, qualifiedName, annotation.sourcePsi ?: annotation.javaPsi, SELF)
     checkAnnotations(context, annotation, DEFINITION, null as PsiElement?, listOf(selfInfo))
 
     if (SUPPORT_ANNOTATIONS_PREFIX.isPrefix(qualifiedName)) {
@@ -1110,13 +1029,7 @@ internal class AnnotationHandler(
     if (variableAnnotations.isNotEmpty()) {
       val initializer = variable.uastInitializer
       if (initializer != null) {
-        checkAnnotations(
-          context,
-          initializer,
-          ASSIGNMENT_RHS,
-          variable as UAnnotated,
-          variableAnnotations,
-        )
+        checkAnnotations(context, initializer, ASSIGNMENT_RHS, variable as UAnnotated, variableAnnotations)
       }
     }
 
@@ -1142,16 +1055,10 @@ internal class AnnotationHandler(
     val initializer = variable.uastInitializer
     if (initializer is USimpleNameReferenceExpression) {
       val resolved = initializer.tryResolve()
-      if (
-        resolved != null && resolved is PsiModifierListOwner && !isOverloadedMethodCall(initializer)
-      ) {
+      if (resolved != null && resolved is PsiModifierListOwner && !isOverloadedMethodCall(initializer)) {
         val initializerAnnotations =
           if (resolved is PsiLocalVariable)
-            getRelevantAnnotations(
-              context.evaluator,
-              resolved as? UAnnotated ?: resolved.toUElement() as UAnnotated,
-              VARIABLE,
-            )
+            getRelevantAnnotations(context.evaluator, resolved as? UAnnotated ?: resolved.toUElement() as UAnnotated, VARIABLE)
           else getMemberAnnotations(context, resolved)
         if (initializerAnnotations.isNotEmpty()) {
           checkAnnotations(context, variable, ASSIGNMENT_LHS, resolved, initializerAnnotations)
@@ -1161,23 +1068,19 @@ internal class AnnotationHandler(
   }
 
   /** Extract the relevant annotations from the call and run the checks on the annotations. */
-  private fun checkCall(context: JavaContext, method: PsiMethod, call: UExpression) =
-    doCheckCall(context, method, call, null)
+  private fun checkCall(context: JavaContext, method: PsiMethod, call: UExpression) = doCheckCall(context, method, call, null)
 
   /**
    * Extract the relevant annotations from the call and run the checks on the annotations.<p>
    *
-   * This method is used in cases where UCallExpression.resolve() returns null. One important case
-   * this happens is when an implicit, generated, default constructor (a class with no explicit
-   * constructor in the source code) is called.
+   * This method is used in cases where UCallExpression.resolve() returns null. One important case this happens is when an implicit,
+   * generated, default constructor (a class with no explicit constructor in the source code) is called.
    */
   private fun checkCallUnresolved(context: JavaContext, call: UCallExpression) {
     val evaluator = context.evaluator
     val containingClass =
       call.classReference?.resolve() as? PsiClass
-        ?: (call.sourcePsi as? PsiNewExpression)?.anonymousClass?.baseClassType?.let {
-          evaluator.getTypeClass(it)
-        }
+        ?: (call.sourcePsi as? PsiNewExpression)?.anonymousClass?.baseClassType?.let { evaluator.getTypeClass(it) }
     doCheckCall(context, null, call, containingClass)
 
     if (call.isSuperCall() && call.valueArgumentCount == 0) {
@@ -1193,12 +1096,7 @@ internal class AnnotationHandler(
   }
 
   /** Do the checks of a call based on the method, class, and package annotations given. */
-  private fun doCheckCall(
-    context: JavaContext,
-    method: PsiMethod?,
-    call: UExpression,
-    containingClass: PsiClass?,
-  ) {
+  private fun doCheckCall(context: JavaContext, method: PsiMethod?, call: UExpression, containingClass: PsiClass?) {
     val evaluator = context.evaluator
     if (method != null) {
       val annotations = getMemberAnnotations(context, method)
@@ -1247,10 +1145,7 @@ internal class AnnotationHandler(
     }
   }
 
-  private fun filterRelevantAnnotations(
-    evaluator: JavaEvaluator,
-    annotations: List<UAnnotation>,
-  ): List<UAnnotation> {
+  private fun filterRelevantAnnotations(evaluator: JavaEvaluator, annotations: List<UAnnotation>): List<UAnnotation> {
     var result: MutableList<UAnnotation>? = null
     val length = annotations.size
     if (length == 0) {

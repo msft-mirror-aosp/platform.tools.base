@@ -36,197 +36,183 @@ import kotlinx.coroutines.runInterruptible
 
 class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
 
-    val inetAddress: InetAddress
-        get() = server?.inetAddress ?: throw IllegalStateException("Server not started")
+  val inetAddress: InetAddress
+    get() = server?.inetAddress ?: throw IllegalStateException("Server not started")
 
-    val port: Int
-        get() = server?.port ?: 0
+  val port: Int
+    get() = server?.port ?: 0
 
-    val socketAddress: InetSocketAddress
-        get() = InetSocketAddress(inetAddress, port)
+  val socketAddress: InetSocketAddress
+    get() = InetSocketAddress(inetAddress, port)
 
-    private var _lastChannelProvider: TestingChannelProvider? = null
+  private var _lastChannelProvider: TestingChannelProvider? = null
 
-    val channelProvider: TestingChannelProvider
-        get() = _lastChannelProvider ?: throw IllegalStateException("Channel provider not initialized")
+  val channelProvider: TestingChannelProvider
+    get() = _lastChannelProvider ?: throw IllegalStateException("Channel provider not initialized")
 
-    private val builder = FakeAdbServer.Builder()
-    private var server: FakeAdbServer? = null
+  private val builder = FakeAdbServer.Builder()
+  private var server: FakeAdbServer? = null
 
-    val fakeAdbServer: FakeAdbServer
-        get() = server ?: throw IllegalStateException("FakeAdbServer not initialized")
+  val fakeAdbServer: FakeAdbServer
+    get() = server ?: throw IllegalStateException("FakeAdbServer not initialized")
 
-    suspend fun device(serialNumber: String): DeviceState {
-        return runInterruptible {
-            fakeAdbServer.deviceListCopy
-                .get(5_000, TimeUnit.MILLISECONDS)
-                .first {
-                    it.deviceId == serialNumber
-                }
-        }
-    }
+  suspend fun device(serialNumber: String): DeviceState {
+    return runInterruptible { fakeAdbServer.deviceListCopy.get(5_000, TimeUnit.MILLISECONDS).first { it.deviceId == serialNumber } }
+  }
 
-    fun buildDefault(): FakeAdbServerProvider {
-        // Build the server and configure it to use the default ADB command handlers.
-        installDefaultCommandHandlers()
-        build()
-        return this
-    }
+  fun buildDefault(): FakeAdbServerProvider {
+    // Build the server and configure it to use the default ADB command handlers.
+    installDefaultCommandHandlers()
+    build()
+    return this
+  }
 
-    fun setFeatures(vararg features : String) : FakeAdbServerProvider {
-        builder.setFeatures(features.toSet())
-        return this
-    }
+  fun setFeatures(vararg features: String): FakeAdbServerProvider {
+    builder.setFeatures(features.toSet())
+    return this
+  }
 
-    fun buildWithFeatures(features : Set<String>) : FakeAdbServerProvider {
-        // Build the server and configure it to use the default ADB command handlers.
-        builder.installDefaultCommandHandlers()
-        builder.setFeatures(features)
-        build()
-        return this
-    }
+  fun buildWithFeatures(features: Set<String>): FakeAdbServerProvider {
+    // Build the server and configure it to use the default ADB command handlers.
+    builder.installDefaultCommandHandlers()
+    builder.setFeatures(features)
+    build()
+    return this
+  }
 
-    fun installHostHandler(handler: HostCommandHandler): FakeAdbServerProvider {
-        builder.addHostHandler(handler)
-        return this
-    }
+  fun installHostHandler(handler: HostCommandHandler): FakeAdbServerProvider {
+    builder.addHostHandler(handler)
+    return this
+  }
 
-    fun installDeviceHandler(handler: DeviceCommandHandler): FakeAdbServerProvider {
-        builder.addDeviceHandler(handler)
-        return this
-    }
+  fun installDeviceHandler(handler: DeviceCommandHandler): FakeAdbServerProvider {
+    builder.addDeviceHandler(handler)
+    return this
+  }
 
-    fun installDefaultCommandHandlers(): FakeAdbServerProvider {
-        builder.installDefaultCommandHandlers()
-        return this
-    }
+  fun installDefaultCommandHandlers(): FakeAdbServerProvider {
+    builder.installDefaultCommandHandlers()
+    return this
+  }
 
-    fun build(): FakeAdbServerProvider {
-        server = builder.build()
-        return this
-    }
+  fun build(): FakeAdbServerProvider {
+    server = builder.build()
+    return this
+  }
 
-    override fun connectDevice(
-        deviceId: String,
-        manufacturer: String,
-        deviceModel: String,
-        release: String,
-        sdk: AndroidApiLevel,
-        hostConnectionType: HostConnectionType,
-        maxSpeedMbps: Long,
-        negotiatedSpeedMbps: Long,
-    ): DeviceState {
-        val deviceState = server?.connectDevice(
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            hostConnectionType,
-            maxSpeedMbps = maxSpeedMbps,
-            negotiatedSpeedMbps = negotiatedSpeedMbps,
-        )?.get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS) ?: throw IllegalArgumentException()
-        deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return deviceState
-    }
-
-    fun registerNetworkDevice(
-        address: String,
-        deviceId: String,
-        manufacturer: String,
-        deviceModel: String,
-        release: String,
-        sdk: AndroidApiLevel,
-    ) {
-        server?.registerNetworkDevice(
-            address,
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            HostConnectionType.NETWORK,
-            maxSpeedMbps = DEFAULT_SPEED,
-            negotiatedSpeedMbps = DEFAULT_SPEED,
+  override fun connectDevice(
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    hostConnectionType: HostConnectionType,
+    maxSpeedMbps: Long,
+    negotiatedSpeedMbps: Long,
+  ): DeviceState {
+    val deviceState =
+      server
+        ?.connectDevice(
+          deviceId,
+          manufacturer,
+          deviceModel,
+          release,
+          sdk,
+          hostConnectionType,
+          maxSpeedMbps = maxSpeedMbps,
+          negotiatedSpeedMbps = negotiatedSpeedMbps,
         )
+        ?.get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS) ?: throw IllegalArgumentException()
+    deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    return deviceState
+  }
+
+  fun registerNetworkDevice(
+    address: String,
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+  ) {
+    server?.registerNetworkDevice(
+      address,
+      deviceId,
+      manufacturer,
+      deviceModel,
+      release,
+      sdk,
+      HostConnectionType.NETWORK,
+      maxSpeedMbps = DEFAULT_SPEED,
+      negotiatedSpeedMbps = DEFAULT_SPEED,
+    )
+  }
+
+  fun addMdnsService(service: MdnsService) {
+    server?.addMdnsService(service)?.get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+  }
+
+  fun start(): FakeAdbServerProvider {
+    server?.start()
+    return this
+  }
+
+  fun stop(): FakeAdbServerProvider {
+    server?.close()
+    return this
+  }
+
+  fun restart() {
+    // Save current server config and close it
+    val config = server?.currentConfig
+    server?.close()
+
+    // Build a new server, using saved config to restore as much state as possible
+    val builder = FakeAdbServer.Builder()
+    config?.let { builder.setConfig(it) }
+    server = builder.build()
+    server?.start()
+  }
+
+  fun createChannelProvider(host: AdbSessionHost): TestingChannelProvider {
+    return TestingChannelProvider(host, portSupplier = { port }).also { _lastChannelProvider = it }
+  }
+
+  override fun close() {
+    server?.close()
+  }
+
+  fun awaitTermination() {
+    server?.awaitServerTermination()
+  }
+
+  override fun disconnectDevice(deviceId: String) {
+    server?.disconnectDevice(deviceId)
+  }
+
+  class TestingChannelProvider(host: AdbSessionHost, portSupplier: suspend () -> Int) : AdbServerChannelProvider {
+
+    private val provider = AdbServerChannelProvider.createOpenLocalHost(host, portSupplier)
+
+    private val createdChannelsField = ArrayList<TestingAdbChannel>()
+
+    val createdChannels: List<TestingAdbChannel>
+      get() = synchronized(createdChannelsField) { createdChannelsField.toList() }
+
+    val lastCreatedChannel: TestingAdbChannel?
+      get() {
+        return synchronized(createdChannelsField) { createdChannelsField.lastOrNull() }
+      }
+
+    override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
+      val channel = provider.createChannel(timeout, unit)
+      return TestingAdbChannel(channel).also { synchronized(createdChannelsField) { createdChannelsField.add(it) } }
     }
+  }
 
-    fun addMdnsService(service: MdnsService) {
-        server?.addMdnsService(service)?.get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-    }
+  class TestingAdbChannel(private val channel: AdbChannel) : AdbChannel by channel {
 
-    fun start(): FakeAdbServerProvider {
-        server?.start()
-        return this
-    }
-
-    fun stop(): FakeAdbServerProvider {
-        server?.close()
-        return this
-    }
-
-    fun restart() {
-        // Save current server config and close it
-        val config = server?.currentConfig
-        server?.close()
-
-        // Build a new server, using saved config to restore as much state as possible
-        val builder = FakeAdbServer.Builder()
-        config?.let { builder.setConfig(it) }
-        server = builder.build()
-        server?.start()
-    }
-
-    fun createChannelProvider(host: AdbSessionHost): TestingChannelProvider {
-        return TestingChannelProvider(host, portSupplier = { port }).also {
-            _lastChannelProvider = it
-        }
-    }
-
-    override fun close() {
-        server?.close()
-    }
-
-    fun awaitTermination() {
-        server?.awaitServerTermination()
-    }
-
-    override fun disconnectDevice(deviceId: String) {
-        server?.disconnectDevice(deviceId)
-    }
-
-    class TestingChannelProvider(host: AdbSessionHost, portSupplier: suspend () -> Int) :
-      AdbServerChannelProvider {
-
-        private val provider = AdbServerChannelProvider.createOpenLocalHost(host, portSupplier)
-
-        private val createdChannelsField = ArrayList<TestingAdbChannel>()
-
-        val createdChannels: List<TestingAdbChannel>
-            get() = synchronized(createdChannelsField) {
-                createdChannelsField.toList()
-            }
-
-        val lastCreatedChannel: TestingAdbChannel?
-            get() {
-                return synchronized(createdChannelsField) {
-                    createdChannelsField.lastOrNull()
-                }
-            }
-
-        override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
-            val channel = provider.createChannel(timeout, unit)
-            return TestingAdbChannel(channel).also {
-                synchronized(createdChannelsField) {
-                    createdChannelsField.add(it)
-                }
-            }
-        }
-    }
-
-    class TestingAdbChannel(private val channel: AdbChannel) : AdbChannel by channel {
-
-        val isOpen: Boolean
-            get() = (channel as AdbSocketChannelImpl).isOpen
-    }
+    val isOpen: Boolean
+      get() = (channel as AdbSocketChannelImpl).isOpen
+  }
 }

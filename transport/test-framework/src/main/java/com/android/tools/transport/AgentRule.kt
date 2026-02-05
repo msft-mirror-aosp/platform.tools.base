@@ -15,76 +15,66 @@
  */
 package com.android.tools.transport
 
-import com.android.tools.profiler.proto.Agent
-import com.android.tools.profiler.proto.AgentServiceGrpc
-import com.android.tools.profiler.proto.Common
 import com.android.tools.idea.io.grpc.Server
 import com.android.tools.idea.io.grpc.netty.NettyServerBuilder
 import com.android.tools.idea.io.grpc.stub.StreamObserver
-import org.junit.rules.ExternalResource
+import com.android.tools.profiler.proto.Agent
+import com.android.tools.profiler.proto.AgentServiceGrpc
+import com.android.tools.profiler.proto.Common
 import java.net.ServerSocket
 import java.util.Queue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
+import org.junit.rules.ExternalResource
 
 class AgentRule : ExternalResource() {
 
-    private lateinit var server: Server
-    private lateinit var socket: ServerSocket
-    private var origConfigAddr: Long = 0
+  private lateinit var server: Server
+  private lateinit var socket: ServerSocket
+  private var origConfigAddr: Long = 0
 
-    val events: BlockingQueue<Common.Event> = LinkedBlockingQueue()
-    val payloads: MutableMap<Int, ByteArray> = mutableMapOf()
+  val events: BlockingQueue<Common.Event> = LinkedBlockingQueue()
+  val payloads: MutableMap<Int, ByteArray> = mutableMapOf()
 
-    override fun before() {
-        socket = ServerSocket(0)
-        socket.close()
-        server = NettyServerBuilder
-            .forPort(socket.localPort)
-            .addService(TestAgentServiceImpl(events, payloads))
-            .build()
-            .start()
-        try {
-            origConfigAddr = setUpAgentForTest("localhost:" + socket.localPort)
-        }
-        catch (e: UnsatisfiedLinkError) {
-            println("Your test native library must depend on\n" +
-                    "//tools/base/transport/test-framework:native_test_support, or your test must depend on\n" +
-                    "//tools/base/transport/test-framework:libagentrule-jni.so and you must load agentrule-jni")
-            throw e
-        }
+  override fun before() {
+    socket = ServerSocket(0)
+    socket.close()
+    server = NettyServerBuilder.forPort(socket.localPort).addService(TestAgentServiceImpl(events, payloads)).build().start()
+    try {
+      origConfigAddr = setUpAgentForTest("localhost:" + socket.localPort)
+    } catch (e: UnsatisfiedLinkError) {
+      println(
+        "Your test native library must depend on\n" +
+          "//tools/base/transport/test-framework:native_test_support, or your test must depend on\n" +
+          "//tools/base/transport/test-framework:libagentrule-jni.so and you must load agentrule-jni"
+      )
+      throw e
+    }
+  }
+
+  override fun after() {
+    resetAgent(origConfigAddr)
+    server.shutdownNow()
+  }
+
+  private external fun setUpAgentForTest(channelName: String): Long
+
+  private external fun resetAgent(origConfigAddr: Long)
+
+  private class TestAgentServiceImpl(private val events: Queue<Common.Event>, private val payloads: MutableMap<Int, ByteArray>) :
+    AgentServiceGrpc.AgentServiceImplBase() {
+    override fun sendEvent(request: Agent.SendEventRequest?, responseObserver: StreamObserver<Agent.EmptyResponse>?) {
+      request?.event?.let { events.add(it) }
+      responseObserver?.onNext(Agent.EmptyResponse.getDefaultInstance())
+      responseObserver?.onCompleted()
     }
 
-    override fun after() {
-        resetAgent(origConfigAddr)
-        server.shutdownNow()
+    override fun sendBytes(request: Agent.SendBytesRequest, responseObserver: StreamObserver<Agent.EmptyResponse>?) {
+      if (!request.isComplete) {
+        payloads[request.name.toInt()] = request.bytes.toByteArray()
+      }
+      responseObserver?.onNext(Agent.EmptyResponse.getDefaultInstance())
+      responseObserver?.onCompleted()
     }
-
-    private external fun setUpAgentForTest(channelName: String): Long
-    private external fun resetAgent(origConfigAddr: Long)
-
-    private class TestAgentServiceImpl(
-        private val events: Queue<Common.Event>,
-        private val payloads: MutableMap<Int, ByteArray>
-    ) : AgentServiceGrpc.AgentServiceImplBase() {
-        override fun sendEvent(
-            request: Agent.SendEventRequest?,
-            responseObserver: StreamObserver<Agent.EmptyResponse>?
-        ) {
-            request?.event?.let { events.add(it) }
-            responseObserver?.onNext(Agent.EmptyResponse.getDefaultInstance())
-            responseObserver?.onCompleted()
-        }
-
-        override fun sendBytes(
-            request: Agent.SendBytesRequest,
-            responseObserver: StreamObserver<Agent.EmptyResponse>?
-        ) {
-            if (!request.isComplete) {
-                payloads[request.name.toInt()] = request.bytes.toByteArray()
-            }
-            responseObserver?.onNext(Agent.EmptyResponse.getDefaultInstance())
-            responseObserver?.onCompleted()
-        }
-    }
+  }
 }

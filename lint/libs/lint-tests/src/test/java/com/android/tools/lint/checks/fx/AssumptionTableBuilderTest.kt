@@ -63,12 +63,10 @@ class AssumptionTableBuilderTest {
     val assumptions =
       SideEffect.build {
         // Math::max : (Int, Int) -> Int @ pure
-        static<Int, Int>(Math::max) assumedAs
-          given(Int::class(), Int::class()) { range = Int::class() }
+        static<Int, Int>(Math::max) assumedAs given(Int::class(), Int::class()) { range = Int::class() }
 
         // Math::max : (Float, Float) -> Float @ pure
-        static<Float, Float>(Math::max) assumedAs
-          given(Float::class(), Float::class()) { range = Float::class() }
+        static<Float, Float>(Math::max) assumedAs given(Float::class(), Float::class()) { range = Float::class() }
 
         // println : () -> Unit @ effectful
         static(::println) assumedAs
@@ -137,8 +135,7 @@ class AssumptionTableBuilderTest {
         Truth.assertThat(domains).hasSize(2)
         Truth.assertThat(range).isInstanceOf(Type.Application::class.java)
         Truth.assertThat((range as Type.Application).args).hasSize(1)
-        Truth.assertThat((range as Type.Application).args.first())
-          .isInstanceOf(Type.Sym.Param::class.java)
+        Truth.assertThat((range as Type.Application).args.first()).isInstanceOf(Type.Sym.Param::class.java)
         Truth.assertThat(effect.concrete).isEqualTo(SideEffect.Pure)
         Truth.assertThat(effect.constraint).isEqualTo(Constraint.MostPermissive)
         Truth.assertThat(effect.invocations).hasSize(1)

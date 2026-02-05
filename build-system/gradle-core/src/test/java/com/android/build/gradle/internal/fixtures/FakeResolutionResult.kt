@@ -26,53 +26,53 @@ import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.provider.Provider
 
-class FakeResolutionResult(private val root: ResolvedComponentResult): ResolutionResult {
-    override fun getRoot(): ResolvedComponentResult = root
+class FakeResolutionResult(private val root: ResolvedComponentResult) : ResolutionResult {
+  override fun getRoot(): ResolvedComponentResult = root
 
-    override fun getRootComponent(): Provider<ResolvedComponentResult> {
-        return FakeProviderFactory.factory.provider { getRoot() }
-    }
+  override fun getRootComponent(): Provider<ResolvedComponentResult> {
+    return FakeProviderFactory.factory.provider { getRoot() }
+  }
 
-    override fun getRootVariant(): Provider<ResolvedVariantResult> {
-        TODO("Not yet implemented")
-    }
+  override fun getRootVariant(): Provider<ResolvedVariantResult> {
+    TODO("Not yet implemented")
+  }
 
-    override fun getAllComponents(): MutableSet<ResolvedComponentResult> {
-        val allComponents = mutableSetOf<ResolvedComponentResult>()
-        collectComponentsRecursively(root, allComponents)
-        return allComponents
-    }
+  override fun getAllComponents(): MutableSet<ResolvedComponentResult> {
+    val allComponents = mutableSetOf<ResolvedComponentResult>()
+    collectComponentsRecursively(root, allComponents)
+    return allComponents
+  }
 
-    override fun getRequestedAttributes(): AttributeContainer {
-        TODO("Not yet implemented")
-    }
+  override fun getRequestedAttributes(): AttributeContainer {
+    TODO("Not yet implemented")
+  }
 
-    override fun allDependencies(p0: Action<in DependencyResult>) {
-        TODO("Not yet implemented")
-    }
+  override fun allDependencies(p0: Action<in DependencyResult>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun allDependencies(p0: Closure<Any>) {
-        TODO("Not yet implemented")
-    }
+  override fun allDependencies(p0: Closure<Any>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun getAllDependencies(): MutableSet<out DependencyResult> {
-        TODO("Not yet implemented")
-    }
+  override fun getAllDependencies(): MutableSet<out DependencyResult> {
+    TODO("Not yet implemented")
+  }
 
-    override fun allComponents(p0: Action<in ResolvedComponentResult>) {
-        TODO("Not yet implemented")
-    }
+  override fun allComponents(p0: Action<in ResolvedComponentResult>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun allComponents(p0: Closure<Any>) {
-        TODO("Not yet implemented")
-    }
+  override fun allComponents(p0: Closure<Any>) {
+    TODO("Not yet implemented")
+  }
 
-    private fun collectComponentsRecursively(component: ResolvedComponentResult, collectedComponent: MutableSet<ResolvedComponentResult>) {
-        if (!collectedComponent.add(component)) {
-            return
-        }
-        for (childDependency in component.dependencies) {
-            collectComponentsRecursively((childDependency as ResolvedDependencyResult).selected, collectedComponent)
-        }
+  private fun collectComponentsRecursively(component: ResolvedComponentResult, collectedComponent: MutableSet<ResolvedComponentResult>) {
+    if (!collectedComponent.add(component)) {
+      return
     }
+    for (childDependency in component.dependencies) {
+      collectComponentsRecursively((childDependency as ResolvedDependencyResult).selected, collectedComponent)
+    }
+  }
 }

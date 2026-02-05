@@ -119,13 +119,22 @@ val viewModelActivityTemplate
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
       TextFieldWidget(fragmentPackage),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("viewmodel-activity").resolve("template_blank_activity.png") }
 
     recipe = { data: TemplateData ->
-      viewModelActivityRecipe(data as ModuleTemplateData, activityClass.value, activityLayout.value, fragmentClass.value,
-                              fragmentLayout.value, viewModelClass.value, isLauncher.value, packageName.value, fragmentPackage.value)
+      viewModelActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        activityLayout.value,
+        fragmentClass.value,
+        fragmentLayout.value,
+        viewModelClass.value,
+        isLauncher.value,
+        packageName.value,
+        fragmentPackage.value,
+      )
     }
   }

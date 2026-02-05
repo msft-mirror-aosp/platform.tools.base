@@ -21,69 +21,56 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class FlavorlibTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("flavorlib")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("flavorlib").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        executor().run("clean", "assembleDebug");
-    }
+  @Before
+  fun setUp() {
+    executor().run("clean", "assembleDebug")
+  }
 
-    @Test
-    fun `test libs debug VariantDependencies model`() {
-        val result = project.modelV2().fetchModels(variantName = "debug")
+  @Test
+  fun `test libs debug VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib1") }, goldenFile = "lib1_DebugVariantDependencies"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib2") }, goldenFile = "lib2_DebugVariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":lib1") }, goldenFile = "lib1_DebugVariantDependencies")
+    with(result).compareVariantDependencies(projectAction = { getProject(":lib2") }, goldenFile = "lib2_DebugVariantDependencies")
+  }
 
-    @Test
-    fun `test libs release VariantDependencies model`() {
-        val result = project.modelV2().fetchModels(variantName = "release")
+  @Test
+  fun `test libs release VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "release")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib1") }, goldenFile = "lib1_ReleaseVariantDependencies"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib2") }, goldenFile = "lib2_ReleaseVariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":lib1") }, goldenFile = "lib1_ReleaseVariantDependencies")
+    with(result).compareVariantDependencies(projectAction = { getProject(":lib2") }, goldenFile = "lib2_ReleaseVariantDependencies")
+  }
 
-    @Test
-    fun lint() {
-        executor().run("lint")
-    }
+  @Test
+  fun lint() {
+    executor().run("lint")
+  }
 
-    @Test
-    fun report() {
-        executor().run("signingReport")
-        // run twice to verify config cached run works
-        executor().run("signingReport")
-    }
+  @Test
+  fun report() {
+    executor().run("signingReport")
+    // run twice to verify config cached run works
+    executor().run("signingReport")
+  }
 
-    @Test
-    fun checkExplodedAar() {
-        val intermediates: File =
-            FileUtils.join(project.projectDir, "app", "build", "intermediates")
-        assertThat(intermediates).isDirectory()
-        assertThat(File(intermediates, "exploded-aar")).doesNotExist()
-    }
+  @Test
+  fun checkExplodedAar() {
+    val intermediates: File = FileUtils.join(project.projectDir, "app", "build", "intermediates")
+    assertThat(intermediates).isDirectory()
+    assertThat(File(intermediates, "exploded-aar")).doesNotExist()
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
 }

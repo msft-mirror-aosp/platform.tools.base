@@ -58,14 +58,7 @@ class ByteOrderMarkDetector : ResourceXmlDetector(), SourceCodeScanner, GradleSc
           Implementation(
             ByteOrderMarkDetector::class.java,
             // Applies to all text files
-            EnumSet.of(
-              Scope.MANIFEST,
-              Scope.RESOURCE_FILE,
-              Scope.JAVA_FILE,
-              Scope.GRADLE_FILE,
-              Scope.PROPERTY_FILE,
-              Scope.PROGUARD_FILE,
-            ),
+            EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE, Scope.JAVA_FILE, Scope.GRADLE_FILE, Scope.PROPERTY_FILE, Scope.PROGUARD_FILE),
             Scope.RESOURCE_FILE_SCOPE,
             Scope.JAVA_FILE_SCOPE,
             Scope.MANIFEST_SCOPE,

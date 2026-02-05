@@ -16,41 +16,35 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.ApplicationAndroidResources
-import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledApplicationAndroidResourcesTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: ApplicationAndroidResources = mock()
+  private val delegate: ApplicationAndroidResources = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledApplicationAndroidResources by lazy {
-        AnalyticsEnabledApplicationAndroidResources(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledApplicationAndroidResources by lazy { AnalyticsEnabledApplicationAndroidResources(delegate, stats) }
 
-    @Test
-    fun generateLocaleConfig() {
-        whenever(delegate.generateLocaleConfig).thenReturn(true)
-        Truth.assertThat(proxy.generateLocaleConfig).isEqualTo(true)
+  @Test
+  fun generateLocaleConfig() {
+    whenever(delegate.generateLocaleConfig).thenReturn(true)
+    Truth.assertThat(proxy.generateLocaleConfig).isEqualTo(true)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.GENERATE_LOCALE_CONFIG_FLAG_VALUE)
-        verify(delegate, times(1))
-            .generateLocaleConfig
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.GENERATE_LOCALE_CONFIG_FLAG_VALUE)
+    verify(delegate, times(1)).generateLocaleConfig
+  }
 }

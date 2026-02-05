@@ -22,10 +22,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.model.LintModelLintOptions
 import com.android.tools.lint.model.LintModelSeverity
 
-/**
- * Consult the lint.xml file, but override with the suitable flags configured via
- * [LintModelLintOptions].
- */
+/** Consult the lint.xml file, but override with the suitable flags configured via [LintModelLintOptions]. */
 open class LintOptionsConfiguration(
   configurations: ConfigurationHierarchy,
   private val lintOptions: LintModelLintOptions,
@@ -47,11 +44,7 @@ open class LintOptionsConfiguration(
     } else {
       disabledIds = mutableSetOf()
       disabledCategories = mutableSetOf()
-      partition(
-        disable,
-        disabledIds as MutableSet<String>,
-        disabledCategories as MutableSet<Category>,
-      )
+      partition(disable, disabledIds as MutableSet<String>, disabledCategories as MutableSet<Category>)
     }
     val enable = lintOptions.enable
     if (enable.isEmpty()) {
@@ -74,11 +67,7 @@ open class LintOptionsConfiguration(
   }
 
   /** Split a series of strings into categories and issue ids. */
-  private fun partition(
-    candidates: Collection<String>,
-    ids: MutableSet<String>,
-    categories: MutableSet<Category>,
-  ) {
+  private fun partition(candidates: Collection<String>, ids: MutableSet<String>, categories: MutableSet<Category>) {
     for (id in candidates) {
       val category = Category.getCategory(id)
       if (category != null) {

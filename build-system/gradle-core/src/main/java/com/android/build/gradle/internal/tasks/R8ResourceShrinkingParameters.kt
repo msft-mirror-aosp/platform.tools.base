@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.dexing.ResourceShrinkingConfig
+import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -43,151 +44,140 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import java.io.File
 
 /** Parameters required for running resource shrinking. */
 abstract class R8ResourceShrinkingParameters {
 
-    /**
-     * Indicates whether resource shrinking will be performed.
-     *
-     * NOTE: The other properties in this class will be set only if [enabled] == true.
-     */
-    @get:Input
-    abstract val enabled: Property<Boolean>
+  /**
+   * Indicates whether resource shrinking will be performed.
+   *
+   * NOTE: The other properties in this class will be set only if [enabled] == true.
+   */
+  @get:Input abstract val enabled: Property<Boolean>
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional // Set iff enabled == true
-    abstract val linkedResourcesInputDir: DirectoryProperty
+  @get:InputDirectory
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:Optional // Set iff enabled == true
+  abstract val linkedResourcesInputDir: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional // Set iff enabled == true
-    abstract val mergedNotCompiledResourcesInputDir: DirectoryProperty
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:Optional // Set iff enabled == true
+  abstract val mergedNotCompiledResourcesInputDir: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional // Set iff enabled == true
-    abstract val mergedNotCompiledNavigationResourcesInputDir: DirectoryProperty
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:Optional // Set iff enabled == true
+  abstract val mergedNotCompiledNavigationResourcesInputDir: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:Optional // Set iff enabled == true and the application has dynamic features
-    abstract val featureLinkedResourcesInputFiles: ConfigurableFileCollection
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NAME_ONLY)
+  @get:Optional // Set iff enabled == true and the application has dynamic features
+  abstract val featureLinkedResourcesInputFiles: ConfigurableFileCollection
 
-    @get:Input
-    @get:Optional // Set iff enabled == true
-    abstract val optimizedShrinking: Property<Boolean>
+  @get:Input
+  @get:Optional // Set iff enabled == true
+  abstract val optimizedShrinking: Property<Boolean>
 
-    @get:Input
-    @get:Optional // Set iff enabled == true
-    abstract val nonFinalResIds: Property<Boolean>
+  @get:Input
+  @get:Optional // Set iff enabled == true
+  abstract val nonFinalResIds: Property<Boolean>
 
-    @get:OutputFile
-    @get:Optional // Set iff enabled == true && a log file is provided
-    abstract val logFile: RegularFileProperty
+  @get:OutputFile
+  @get:Optional // Set iff enabled == true && a log file is provided
+  abstract val logFile: RegularFileProperty
 
-    @get:OutputDirectory
-    @get:Optional // Set iff enabled == true
-    abstract val shrunkResourcesOutputDir: DirectoryProperty
+  @get:OutputDirectory
+  @get:Optional // Set iff enabled == true
+  abstract val shrunkResourcesOutputDir: DirectoryProperty
 
-    @get:OutputDirectory
-    @get:Optional // Set iff enabled == true and the application has dynamic features
-    abstract val featureShrunkResourcesOutputDir: DirectoryProperty
+  @get:OutputDirectory
+  @get:Optional // Set iff enabled == true and the application has dynamic features
+  abstract val featureShrunkResourcesOutputDir: DirectoryProperty
 
-    // This is to compute multi-APK file names
-    @get:Nested
-    @get:Optional // Set iff enabled == true
-    abstract val multiOutputHandler: Property<MultiOutputHandler>
+  // This is to compute multi-APK file names
+  @get:Nested
+  @get:Optional // Set iff enabled == true
+  abstract val multiOutputHandler: Property<MultiOutputHandler>
 
-    fun toConfig(): ResourceShrinkingConfig? {
-        return if (enabled.get()) {
-            val inputArtifacts = loadInputBuiltArtifacts().elements
-            ResourceShrinkingConfig(
-                linkedResourcesInputFiles = inputArtifacts.map { File(it.outputFile) },
-                mergedNotCompiledResourcesInputDirs = listOf(
-                    mergedNotCompiledResourcesInputDir.get().asFile,
-                    mergedNotCompiledNavigationResourcesInputDir.get().asFile
-                ),
-                featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
-                optimizedShrinking = optimizedShrinking.get(),
-                nonFinalResIds = nonFinalResIds.get(),
-                logFile = logFile.asFile.orNull,
-                shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
-                featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull
-            )
-        } else null
-    }
+  fun toConfig(): ResourceShrinkingConfig? {
+    return if (enabled.get()) {
+      val inputArtifacts = loadInputBuiltArtifacts().elements
+      ResourceShrinkingConfig(
+        linkedResourcesInputFiles = inputArtifacts.map { File(it.outputFile) },
+        mergedNotCompiledResourcesInputDirs =
+          listOf(mergedNotCompiledResourcesInputDir.get().asFile, mergedNotCompiledNavigationResourcesInputDir.get().asFile),
+        featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
+        optimizedShrinking = optimizedShrinking.get(),
+        nonFinalResIds = nonFinalResIds.get(),
+        logFile = logFile.asFile.orNull,
+        shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
+        featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull,
+      )
+    } else null
+  }
 
-    fun loadInputBuiltArtifacts(): BuiltArtifactsImpl {
-        return BuiltArtifactsLoaderImpl().load(linkedResourcesInputDir.get())!!
-    }
+  fun loadInputBuiltArtifacts(): BuiltArtifactsImpl {
+    return BuiltArtifactsLoaderImpl().load(linkedResourcesInputDir.get())!!
+  }
 
-    fun saveOutputBuiltArtifactsMetadata() {
-        val inputArtifacts = loadInputBuiltArtifacts()
-        val outputArtifacts = inputArtifacts.copy(
-            artifactType = SHRUNK_RESOURCES_PROTO_FORMAT,
-            elements = inputArtifacts.elements.map { getOutputBuiltArtifact(it) }
-        )
-        outputArtifacts.save(shrunkResourcesOutputDir.get())
-    }
+  fun saveOutputBuiltArtifactsMetadata() {
+    val inputArtifacts = loadInputBuiltArtifacts()
+    val outputArtifacts =
+      inputArtifacts.copy(
+        artifactType = SHRUNK_RESOURCES_PROTO_FORMAT,
+        elements = inputArtifacts.elements.map { getOutputBuiltArtifact(it) },
+      )
+    outputArtifacts.save(shrunkResourcesOutputDir.get())
+  }
 
-    private fun getOutputBuiltArtifact(inputBuiltArtifact: BuiltArtifactImpl): BuiltArtifactImpl {
-        val outputFileName = multiOutputHandler.get().getOutputNameForSplit(
-            prefix = SHRUNK_RESOURCES_PROTO_FORMAT.name().lowercase().replace("_", "-"),
-            suffix = "",
-            outputType = inputBuiltArtifact.outputType,
-            filters = inputBuiltArtifact.filters
+  private fun getOutputBuiltArtifact(inputBuiltArtifact: BuiltArtifactImpl): BuiltArtifactImpl {
+    val outputFileName =
+      multiOutputHandler
+        .get()
+        .getOutputNameForSplit(
+          prefix = SHRUNK_RESOURCES_PROTO_FORMAT.name().lowercase().replace("_", "-"),
+          suffix = "",
+          outputType = inputBuiltArtifact.outputType,
+          filters = inputBuiltArtifact.filters,
         ) + SdkConstants.DOT_RES
 
-        return inputBuiltArtifact.newOutput(shrunkResourcesOutputDir.get().asFile.resolve(outputFileName).toPath())
-    }
-
+    return inputBuiltArtifact.newOutput(shrunkResourcesOutputDir.get().asFile.resolve(outputFileName).toPath())
+  }
 }
 
 /** Returns true if R8 resource shrinking is enabled. */
 fun ApplicationCreationConfig.runResourceShrinking(): Boolean {
-    return androidResourcesCreationConfig?.useResourceShrinker == true
+  return androidResourcesCreationConfig?.useResourceShrinker == true
 }
 
 /**
  * Returns true if R8 will run optimized shrinking for both code and resources. That is:
- *   - [BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING] == true, and
- *   - the feature additionally requires that [BooleanOption.USE_NON_FINAL_RES_IDS] == true
+ * - [BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING] == true, and
+ * - the feature additionally requires that [BooleanOption.USE_NON_FINAL_RES_IDS] == true
  */
 fun ApplicationCreationConfig.runOptimizedShrinking(): Boolean {
-    return runResourceShrinking()
-            && services.projectOptions[BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING]
+  return runResourceShrinking() && services.projectOptions[BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING]
 }
 
-fun R8ResourceShrinkingParameters.initialize(
-    creationConfig: ApplicationCreationConfig
-) {
-    enabled.setDisallowChanges(true)
-    creationConfig.artifacts.setTaskInputToFinalProduct(
-        LINKED_RESOURCES_PROTO_FORMAT,
-        linkedResourcesInputDir
+fun R8ResourceShrinkingParameters.initialize(creationConfig: ApplicationCreationConfig) {
+  enabled.setDisallowChanges(true)
+  creationConfig.artifacts.setTaskInputToFinalProduct(LINKED_RESOURCES_PROTO_FORMAT, linkedResourcesInputDir)
+  creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.MERGED_NOT_COMPILED_RES, mergedNotCompiledResourcesInputDir)
+  creationConfig.artifacts.setTaskInputToFinalProduct(
+    InternalArtifactType.UPDATED_NAVIGATION_XML,
+    mergedNotCompiledNavigationResourcesInputDir,
+  )
+  if (creationConfig.shrinkingWithDynamicFeatures) {
+    featureLinkedResourcesInputFiles.fromDisallowChanges(
+      creationConfig.variantDependencies.getArtifactFileCollection(
+        AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
+        AndroidArtifacts.ArtifactScope.PROJECT,
+        AndroidArtifacts.ArtifactType.REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT,
+      )
     )
-    creationConfig.artifacts.setTaskInputToFinalProduct(
-        InternalArtifactType.MERGED_NOT_COMPILED_RES,
-        mergedNotCompiledResourcesInputDir
-    )
-    creationConfig.artifacts.setTaskInputToFinalProduct(
-        InternalArtifactType.UPDATED_NAVIGATION_XML,
-        mergedNotCompiledNavigationResourcesInputDir
-    )
-    if (creationConfig.shrinkingWithDynamicFeatures) {
-        featureLinkedResourcesInputFiles.fromDisallowChanges(
-            creationConfig.variantDependencies.getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-                AndroidArtifacts.ArtifactScope.PROJECT,
-                AndroidArtifacts.ArtifactType.REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT
-            )
-        )
-    }
-    optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
-    nonFinalResIds.setDisallowChanges(creationConfig.services.projectOptions.getProvider(
-        BooleanOption.USE_NON_FINAL_RES_IDS))
-    multiOutputHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
+  }
+  optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
+  nonFinalResIds.setDisallowChanges(creationConfig.services.projectOptions.getProvider(BooleanOption.USE_NON_FINAL_RES_IDS))
+  multiOutputHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
 }

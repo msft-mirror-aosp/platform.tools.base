@@ -52,27 +52,21 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 import org.w3c.dom.Element
 
 /**
- * Looks for an issue related to manifests declaring only a readPermission for ContentProviders that
- * implement any of the write APIs (insert, update, and delete), thereby exposing these write APIs
- * to other apps with no permission check.
+ * Looks for an issue related to manifests declaring only a readPermission for ContentProviders that implement any of the write APIs
+ * (insert, update, and delete), thereby exposing these write APIs to other apps with no permission check.
  */
 class ProviderPermissionDetector : Detector(), SourceCodeScanner {
   override fun applicableSuperClasses(): List<String> = listOf(CLASS_CONTENTPROVIDER)
 
   /**
-   * For each ContentProvider implementation, if any of its write APIs are implemented, adds its
-   * location and implemented write methods into the lint map. Here, implemented API is defined by
-   * [isImplemented].
+   * For each ContentProvider implementation, if any of its write APIs are implemented, adds its location and implemented write methods into
+   * the lint map. Here, implemented API is defined by [isImplemented].
    */
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val providerName = declaration.qualifiedName ?: return
-    val implWriteMethods =
-      declaration.methods.filter { it.isProviderAbstractWriteMethod() && it.isImplemented() }
+    val implWriteMethods = declaration.methods.filter { it.isProviderAbstractWriteMethod() && it.isImplemented() }
     if (implWriteMethods.isEmpty()) return
-    val implementedWriteMethodNames =
-      implWriteMethods.joinToString(prefix = "{", separator = ", ", postfix = "}") {
-        "`${it.name}`"
-      }
+    val implementedWriteMethodNames = implWriteMethods.joinToString(prefix = "{", separator = ", ", postfix = "}") { "`${it.name}`" }
     val providerMap = LintMap()
     providerMap.put(KEY_LOCATION, context.getNameLocation(declaration))
     providerMap.put(KEY_IMPL_WRITE_METHODS, implementedWriteMethodNames)
@@ -85,10 +79,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Only considers the main app. Iterates over all provider tags and reports
-   * [PROVIDER_READ_PERMISSION_ONLY] issue if it occurs.
-   */
+  /** Only considers the main app. Iterates over all provider tags and reports [PROVIDER_READ_PERMISSION_ONLY] issue if it occurs. */
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
     if (!context.driver.isIsolated() && context.project.isLibrary) return
     val mergedManifest = context.mainProject.mergedManifest ?: return
@@ -109,20 +100,13 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
    * [PROVIDER_READ_PERMISSION_ONLY] issue occurs if a provider satisfies all of these conditions:
    * - It has a readPermission attribute.
    * - It doesn't have permission and writePermission attributes.
-   * - It has at least one implemented write API which is identified by the provider's existence in
-   *   the lint map.
+   * - It has at least one implemented write API which is identified by the provider's existence in the lint map.
    *
-   * If the detector is running "on-the-fly", the issue will be reported in the location of the
-   * corresponding ContentProvider.
+   * If the detector is running "on-the-fly", the issue will be reported in the location of the corresponding ContentProvider.
    *
-   * If the detector isn't running "on-the-fly", the issue will be reported in the location of the
-   * provider's manifest entry.
+   * If the detector isn't running "on-the-fly", the issue will be reported in the location of the provider's manifest entry.
    */
-  private fun reportIfProviderReadPermissionOnlyOccurs(
-    context: Context,
-    provider: Element,
-    providersMap: LintMap,
-  ) {
+  private fun reportIfProviderReadPermissionOnlyOccurs(context: Context, provider: Element, providersMap: LintMap) {
     val readPermission = provider.getAttributeNodeNS(ANDROID_URI, ATTR_READ_PERMISSION) ?: return
     provider.getAttributeNodeNS(ANDROID_URI, ATTR_WRITE_PERMISSION)?.let {
       return
@@ -143,12 +127,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
         "$providerName implements $implementedWriteMethods write APIs but " +
           "does not protect them with a permission. Update the <provider> tag to use " +
           "android:permission or android:writePermission",
-        fix()
-          .replace()
-          .text(ATTR_READ_PERMISSION)
-          .with(ATTR_PERMISSION)
-          .range(manifestLocation)
-          .build(),
+        fix().replace().text(ATTR_READ_PERMISSION).with(ATTR_PERMISSION).range(manifestLocation).build(),
       )
     )
   }
@@ -166,8 +145,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
     val body = this.uastBody ?: return false
     val expressions = if (body is UBlockExpression) body.expressions else listOf(body)
     val first = expressions.firstOrNull()?.skipParenthesizedExprDown()
-    return expressions.size > 1 ||
-      !(first.isThrowExpression() || first.isReturnLiteral() || first.isNeverReturningCall())
+    return expressions.size > 1 || !(first.isThrowExpression() || first.isReturnLiteral() || first.isNeverReturningCall())
   }
 
   private fun UExpression?.isThrowExpression(): Boolean {
@@ -219,8 +197,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
         priority = 5,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(ProviderPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(ProviderPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
 
     const val KEY_LOCATION = "location"

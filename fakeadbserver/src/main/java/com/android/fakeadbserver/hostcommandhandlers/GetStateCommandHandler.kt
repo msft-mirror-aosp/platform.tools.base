@@ -19,20 +19,12 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/**
- * host-prefix:get-state return the last known state of the device
- */
+/** host-prefix:get-state return the last known state of the device */
 class GetStateCommandHandler : SimpleHostCommandHandler("get-state") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        assert(device != null)
-        writeOkayResponse(responseSocket.getOutputStream(), device!!.deviceStatus.state)
-        return false
-    }
-
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    assert(device != null)
+    writeOkayResponse(responseSocket.getOutputStream(), device!!.deviceStatus.state)
+    return false
+  }
 }

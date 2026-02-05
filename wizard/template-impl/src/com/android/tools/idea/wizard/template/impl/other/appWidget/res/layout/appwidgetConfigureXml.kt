@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.appWidget.res.layout
 
-fun appwidgetConfigureXml() = """
+fun appwidgetConfigureXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

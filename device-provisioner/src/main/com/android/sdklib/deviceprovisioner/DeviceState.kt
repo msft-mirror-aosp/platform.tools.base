@@ -37,34 +37,25 @@ sealed interface DeviceState {
   val connectedDevice: ConnectedDevice?
     get() = null
 
-  /**
-   * Indicates that the device is in the process of changing state; generally, this would correspond
-   * to a spinner in the UI.
-   */
+  /** Indicates that the device is in the process of changing state; generally, this would correspond to a spinner in the UI. */
   val isTransitioning: Boolean
 
   /**
-   * Indicates that the device is ready for normal use. While being in the Connected state means we
-   * have a ConnectedDevice and can see the device via ADB, it may not be fully operational. For
-   * example, we may be waiting for authorization, or waiting for the device to complete booting. If
-   * this is false, more details of the status should be present in "status".
+   * Indicates that the device is ready for normal use. While being in the Connected state means we have a ConnectedDevice and can see the
+   * device via ADB, it may not be fully operational. For example, we may be waiting for authorization, or waiting for the device to
+   * complete booting. If this is false, more details of the status should be present in "status".
    */
   val isReady: Boolean
 
-  /**
-   * A very short, user-visible summary of the state of the device, e.g. "Offline", "Starting up",
-   * "Connecting", "Connected".
-   */
+  /** A very short, user-visible summary of the state of the device, e.g. "Offline", "Starting up", "Connecting", "Connected". */
   val status: String
 
   /**
-   * If present, there is a problem with the device. Some operations may be unavailable. The
-   * [RepairDeviceAction] may be able to resolve it.
+   * If present, there is a problem with the device. Some operations may be unavailable. The [RepairDeviceAction] may be able to resolve it.
    */
   val error: DeviceError?
 
-  fun isOnline(): Boolean =
-    connectedDevice?.deviceInfo?.deviceState == com.android.adblib.DeviceState.ONLINE
+  fun isOnline(): Boolean = connectedDevice?.deviceInfo?.deviceState == com.android.adblib.DeviceState.ONLINE
 
   data class Disconnected(
     override val properties: DeviceProperties,
@@ -79,8 +70,8 @@ sealed interface DeviceState {
   }
 
   /**
-   * The state of a device that is connected to ADB. The device may not be usable yet; most clients
-   * will want to wait for it to be [ready][isReady].
+   * The state of a device that is connected to ADB. The device may not be usable yet; most clients will want to wait for it to be
+   * [ready][isReady].
    */
   data class Connected(
     override val properties: DeviceProperties,
@@ -144,8 +135,7 @@ class TimeoutTracker(private val duration: Duration) {
   fun isTimedOut() = stopwatch.elapsed() >= duration
 }
 
-suspend fun com.android.adblib.DeviceProperties.isBootComplete() =
-  all().find { it.name == "dev.bootcomplete" }?.value == "1"
+suspend fun com.android.adblib.DeviceProperties.isBootComplete() = all().find { it.name == "dev.bootcomplete" }?.value == "1"
 
 data class BootStatus(val isBooted: Boolean)
 

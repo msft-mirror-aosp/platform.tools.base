@@ -20,40 +20,37 @@ import com.android.build.api.component.UnitTest
 import com.android.build.api.variant.HostTest
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.tasks.testing.Test
-import javax.inject.Inject
 
-open class AnalyticsEnabledHostTest @Inject constructor(
-    override val delegate: HostTest,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-) : AnalyticsEnabledTestComponent(delegate, stats, objectFactory), UnitTest, HostTest {
-    override val manifestPlaceholders: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
-            return delegate.manifestPlaceholders
-        }
-
-    override fun configureTestTask(action: (Test) -> Unit) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
-        delegate.configureTestTask(action)
+open class AnalyticsEnabledHostTest
+@Inject
+constructor(override val delegate: HostTest, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledTestComponent(delegate, stats, objectFactory), UnitTest, HostTest {
+  override val manifestPlaceholders: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
+      return delegate.manifestPlaceholders
     }
 
-    override val codeCoverageEnabled: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE
-            return delegate.codeCoverageEnabled
-        }
+  override fun configureTestTask(action: (Test) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
+    delegate.configureTestTask(action)
+  }
 
-    override val androidResourcesIncluded: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE
-            return delegate.androidResourcesIncluded
-        }
+  override val codeCoverageEnabled: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE
+      return delegate.codeCoverageEnabled
+    }
+
+  override val androidResourcesIncluded: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE
+      return delegate.androidResourcesIncluded
+    }
 }

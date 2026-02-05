@@ -33,8 +33,7 @@ class PathContext(val basePath: Path) {
     basePath.resolve(path).createDirectories()
   }
 
-  fun path(subPath: String, action: PathContext.() -> Unit) =
-    with(PathContext(basePath.resolve(subPath)), action)
+  fun path(subPath: String, action: PathContext.() -> Unit) = with(PathContext(basePath.resolve(subPath)), action)
 }
 
 class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
@@ -42,10 +41,7 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
   val progress = FakeProgressIndicator()
 
   open inner class TestSdkPackage(val path: Path, val definition: PathContext.() -> Unit) {
-    constructor(
-      relativePath: String,
-      definition: PathContext.() -> Unit,
-    ) : this(sdkLocation.resolve(relativePath), definition)
+    constructor(relativePath: String, definition: PathContext.() -> Unit) : this(sdkLocation.resolve(relativePath), definition)
 
     private val isWritten = AtomicBoolean()
 

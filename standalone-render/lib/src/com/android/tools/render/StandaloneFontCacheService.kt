@@ -23,8 +23,9 @@ import java.io.File
 
 /** [DownloadableFontCacheService] that can't download the fonts but can fetch them from the sdk. */
 internal class StandaloneFontCacheService(fontPath: String?) :
-    DownloadableFontCacheServiceImpl(
-        FontDownloader.NOOP_FONT_DOWNLOADER,
-        object : FontsFolderProvider {
-            override val fontsFolder: File? = fontPath?.let { File(it) }
-        })
+  DownloadableFontCacheServiceImpl(
+    FontDownloader.NOOP_FONT_DOWNLOADER,
+    object : FontsFolderProvider {
+      override val fontsFolder: File? = fontPath?.let { File(it) }
+    },
+  )

@@ -22,16 +22,14 @@ import kotlin.IndexOutOfBoundsException
 import kotlin.math.max
 
 /**
- * Inspired by protobuf's ZeroCopyOutputStream, offers blocks of memory in which to write without
- * knowing the full size of the entire payload. At the core of BigBuffer, it is a list of memory
- * blocks. As one fills up, another block is allocated and appended to the end of the list.
+ * Inspired by protobuf's ZeroCopyOutputStream, offers blocks of memory in which to write without knowing the full size of the entire
+ * payload. At the core of BigBuffer, it is a list of memory blocks. As one fills up, another block is allocated and appended to the end of
+ * the list.
  *
- * <p> This class is primarily used to flatten StringPool blobs which do not their size, until after
- * it has been written.
+ * <p> This class is primarily used to flatten StringPool blobs which do not their size, until after it has been written.
  *
- * @property blockSize the minimum block size per block. If an entry to the BigBuffer through a
- * call to [nextBlock] would be larger than this, a block will be created large enough to fit the
- * entry.
+ * @property blockSize the minimum block size per block. If an entry to the BigBuffer through a call to [nextBlock] would be larger than
+ *   this, a block will be created large enough to fit the entry.
  */
 class BigBuffer(val blockSize: Int = 1024) {
   var size: Int = 0
@@ -39,11 +37,9 @@ class BigBuffer(val blockSize: Int = 1024) {
 
   internal val blocks = mutableListOf<Block>()
 
-  internal class Block(
-    internal var size: Int, internal  val blockSize: Int, internal val data: ByteBuffer)
+  internal class Block(internal var size: Int, internal val blockSize: Int, internal val data: ByteBuffer)
 
-  data class BlockRef internal constructor(
-    internal val start: Int, val size: Int, internal val block: Block) {
+  data class BlockRef internal constructor(internal val start: Int, val size: Int, internal val block: Block) {
 
     fun writeByte(value: Byte, location: Int) {
       if (location + 1 > size) {
@@ -95,12 +91,10 @@ class BigBuffer(val blockSize: Int = 1024) {
   }
 
   /**
-   * Retrieves a block ref large enough to contain an entry with element size. Allocated a new block
-   * if necessary.
+   * Retrieves a block ref large enough to contain an entry with element size. Allocated a new block if necessary.
    *
    * @param elementSize the size of the entry that needs to be created.
-   * @return a reference to a portion of a block of the required size. Writing to this reference
-   * will modify the underlying [BigBuffer].
+   * @return a reference to a portion of a block of the required size. Writing to this reference will modify the underlying [BigBuffer].
    */
   fun nextBlock(elementSize: Int): BlockRef {
     if (blocks.isNotEmpty()) {
@@ -115,10 +109,7 @@ class BigBuffer(val blockSize: Int = 1024) {
     }
 
     val actualSize = max(this.blockSize, elementSize)
-    val block = Block(
-      elementSize,
-      actualSize,
-      ByteBuffer.wrap(ByteArray(actualSize)).order(ByteOrder.nativeOrder()))
+    val block = Block(elementSize, actualSize, ByteBuffer.wrap(ByteArray(actualSize)).order(ByteOrder.nativeOrder()))
     blocks.add(block)
     size += elementSize
     return BlockRef(0, elementSize, block)
@@ -133,13 +124,11 @@ class BigBuffer(val blockSize: Int = 1024) {
     nextBlock(bytes)
   }
 
-  /**
-   * Pads the [BigBuffer] so that the next created entry is aligned to a 4 byte chunk.
-   */
+  /** Pads the [BigBuffer] so that the next created entry is aligned to a 4 byte chunk. */
   fun align4() {
     val unaligned = size % 4
     if (unaligned != 0) {
-      pad(4-unaligned)
+      pad(4 - unaligned)
     }
   }
 
@@ -149,20 +138,17 @@ class BigBuffer(val blockSize: Int = 1024) {
    * @param index the index of the block to be retrieved.
    * @return a reference to this block.
    *
-   * <p> It is not guaranteed, nor is it expected that the {@code n}th block will be equivalent to
-   * the {@code n}th entry. This is because multiple entries, if small enough, will be collected
-   * to the same block.
+   * <p> It is not guaranteed, nor is it expected that the {@code n}th block will be equivalent to the {@code n}th entry. This is because
+   * multiple entries, if small enough, will be collected to the same block.
    */
   fun block(index: Int): BlockRef {
     return BlockRef(0, blocks[index].size, blocks[index])
   }
 
   /**
-   * Appends the given BigBuffer to the current blocks. The given buffer will be empty after this
-   * operation is complete.
+   * Appends the given BigBuffer to the current blocks. The given buffer will be empty after this operation is complete.
    *
-   * @param other the [BigBuffer] to be appended to the current buffer. This buffer will be empty,
-   * after this method is complete.
+   * @param other the [BigBuffer] to be appended to the current buffer. This buffer will be empty, after this method is complete.
    */
   fun append(other: BigBuffer) {
     blocks.addAll(other.blocks)
@@ -172,9 +158,7 @@ class BigBuffer(val blockSize: Int = 1024) {
     other.size = 0
   }
 
-  /**
-   * Returns the contents of the [BigBuffer] as one cohesive array of bytes.
-   */
+  /** Returns the contents of the [BigBuffer] as one cohesive array of bytes. */
   fun toBytes(): ByteArray {
     val array = ByteArray(size)
     var currentLocation = 0

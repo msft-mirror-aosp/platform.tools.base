@@ -1,0 +1,17 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/sys-img2/03"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <localPackage path="system-images;android-22;google_apis;x86" obsolete="false">
+        <type-details xsi:type="sdk:sysImgDetailsType">
+            <api-level>22</api-level>
+            <base-extension>true</base-extension>
+            <tag><id>google_apis</id><display>Google APIs</display></tag>
+            <vendor><id>google</id><display>Google</display></vendor>
+            <abi>x86</abi>
+        </type-details>
+        <revision>
+            <major>1</major>
+        </revision>
+        <display-name>Sample system image</display-name>
+    </localPackage>
+</common:repository>

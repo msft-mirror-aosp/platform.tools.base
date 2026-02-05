@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.composeActivityMa
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun themeKt(
-  packageName: String,
-  themeName: String
-) = """
+fun themeKt(packageName: String, themeName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.ui.theme
 
 import android.app.Activity

@@ -44,8 +44,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
   companion object Issues {
     const val KEY_METHOD = "method"
 
-    private val IMPLEMENTATION =
-      Implementation(CallSuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(CallSuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Missing call to super. */
     @JvmField
@@ -70,8 +69,8 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
     private const val ON_VISIBILITY_CHANGED = "onVisibilityChanged"
 
     /**
-     * Checks whether the given method overrides a method which requires the super method to be
-     * invoked, and if so, returns it (otherwise returns null)
+     * Checks whether the given method overrides a method which requires the super method to be invoked, and if so, returns it (otherwise
+     * returns null)
      */
     fun getRequiredSuperMethod(evaluator: JavaEvaluator, method: PsiMethod): PsiMethod? {
 
@@ -95,13 +94,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           // but we want to enforce this right away until the AAR
           // is updated to supply it once @CallSuper is available in
           // the support library
-          if (
-            evaluator.isMemberInSubClassOf(
-              method,
-              "android.support.wearable.watchface.WatchFaceService.Engine",
-              false,
-            )
-          ) {
+          if (evaluator.isMemberInSubClassOf(method, "android.support.wearable.watchface.WatchFaceService.Engine", false)) {
             return directSuper
           }
         }
@@ -112,9 +105,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           if (
             CALL_SUPER_ANNOTATION.isEquals(signature) ||
               signature == AOSP_CALL_SUPER_ANNOTATION ||
-              signature != null &&
-                (signature.endsWith(".OverrideMustInvoke") ||
-                  signature.endsWith(".OverridingMethodsMustInvokeSuper"))
+              signature != null && (signature.endsWith(".OverrideMustInvoke") || signature.endsWith(".OverridingMethodsMustInvokeSuper"))
           ) {
             return directSuper
           }
@@ -162,8 +153,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
     }
 
   /** Visits a method and determines whether the method calls its super method. */
-  private class SuperCallVisitor
-  constructor(private val targetMethod: PsiMethod, private val childClass: PsiElement?) :
+  private class SuperCallVisitor constructor(private val targetMethod: PsiMethod, private val childClass: PsiElement?) :
     AbstractUastVisitor() {
     val superCalls = mutableListOf<USuperExpression>()
     val callsSuperCount: Int

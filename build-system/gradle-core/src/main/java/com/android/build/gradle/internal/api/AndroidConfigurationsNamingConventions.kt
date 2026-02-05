@@ -19,74 +19,71 @@ package com.android.build.gradle.internal.api
 import com.android.utils.appendCapitalized
 import org.gradle.api.tasks.SourceSet
 
-data class AndroidSourceSetName(
-    val name: String
-) {
+data class AndroidSourceSetName(val name: String) {
 
-    companion object {
-        const val CONFIG_NAME_COMPILE_ONLY = "compileOnly"
-        const val CONFIG_NAME_COMPILE_ONLY_API = "compileOnlyApi"
+  companion object {
+    const val CONFIG_NAME_COMPILE_ONLY = "compileOnly"
+    const val CONFIG_NAME_COMPILE_ONLY_API = "compileOnlyApi"
 
-        private const val CONFIG_NAME_COMPILE = "compile"
-        private const val CONFIG_NAME_PUBLISH = "publish"
-        private const val CONFIG_NAME_APK = "apk"
-        private const val CONFIG_NAME_PROVIDED = "provided"
-        private const val CONFIG_NAME_ANNOTATION_PROCESSOR = "annotationProcessor"
-        private const val CONFIG_NAME_KAPT = "kapt"
-        private const val CONFIG_NAME_API = "api"
-        private const val CONFIG_NAME_IMPLEMENTATION = "implementation"
-        private const val CONFIG_NAME_RUNTIME_ONLY = "runtimeOnly"
+    private const val CONFIG_NAME_COMPILE = "compile"
+    private const val CONFIG_NAME_PUBLISH = "publish"
+    private const val CONFIG_NAME_APK = "apk"
+    private const val CONFIG_NAME_PROVIDED = "provided"
+    private const val CONFIG_NAME_ANNOTATION_PROCESSOR = "annotationProcessor"
+    private const val CONFIG_NAME_KAPT = "kapt"
+    private const val CONFIG_NAME_API = "api"
+    private const val CONFIG_NAME_IMPLEMENTATION = "implementation"
+    private const val CONFIG_NAME_RUNTIME_ONLY = "runtimeOnly"
+  }
+
+  private fun getName(config: String): String {
+    return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
+      config
+    } else {
+      name.appendCapitalized(config)
+    }
+  }
+
+  val apiConfigurationName: String
+    get() = getName(CONFIG_NAME_API)
+
+  val compileOnlyConfigurationName: String
+    get() = getName(CONFIG_NAME_COMPILE_ONLY)
+
+  val compileOnlyApiConfigurationName: String
+    get() = getName(CONFIG_NAME_COMPILE_ONLY_API)
+
+  val implementationConfigurationName: String
+    get() = getName(CONFIG_NAME_IMPLEMENTATION)
+
+  val runtimeOnlyConfigurationName: String
+    get() = getName(CONFIG_NAME_RUNTIME_ONLY)
+
+  val compileConfigurationName: String
+    get() = getName(CONFIG_NAME_COMPILE)
+
+  val providedConfigurationName: String
+    get() = getName(CONFIG_NAME_PROVIDED)
+
+  val annotationProcessorConfigurationName: String
+    get() = getName(CONFIG_NAME_ANNOTATION_PROCESSOR)
+
+  /**
+   * [kaptConfigurationName] matches the naming convention used by JetBrains' KAPT Gradle plugin (and the KSP Gradle plugin) instead of
+   * AGP's configuration naming convention.
+   */
+  val kaptConfigurationName: String
+    get() {
+      return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
+        CONFIG_NAME_KAPT
+      } else {
+        CONFIG_NAME_KAPT.appendCapitalized(name)
+      }
     }
 
-    private fun getName(config: String): String {
-        return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
-            config
-        } else {
-            name.appendCapitalized(config)
-        }
-    }
+  val publishedPackageConfigurationName: String
+    get() = getName(CONFIG_NAME_PUBLISH)
 
-    val apiConfigurationName: String
-        get() = getName(CONFIG_NAME_API)
-
-    val compileOnlyConfigurationName: String
-        get() = getName(CONFIG_NAME_COMPILE_ONLY)
-
-    val compileOnlyApiConfigurationName: String
-        get() = getName(CONFIG_NAME_COMPILE_ONLY_API)
-
-    val implementationConfigurationName: String
-        get() = getName(CONFIG_NAME_IMPLEMENTATION)
-
-    val runtimeOnlyConfigurationName: String
-        get() = getName(CONFIG_NAME_RUNTIME_ONLY)
-
-    val compileConfigurationName: String
-        get() = getName(CONFIG_NAME_COMPILE)
-
-    val providedConfigurationName: String
-        get() = getName(CONFIG_NAME_PROVIDED)
-
-    val annotationProcessorConfigurationName: String
-        get() = getName(CONFIG_NAME_ANNOTATION_PROCESSOR)
-
-    /**
-     * [kaptConfigurationName] matches the naming convention used by JetBrains' KAPT Gradle plugin
-     * (and the KSP Gradle plugin) instead of AGP's configuration naming convention.
-     */
-    val kaptConfigurationName: String
-        get() {
-            return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
-                CONFIG_NAME_KAPT
-            } else {
-                CONFIG_NAME_KAPT.appendCapitalized(name)
-            }
-        }
-
-    val publishedPackageConfigurationName: String
-        get() = getName(CONFIG_NAME_PUBLISH)
-
-    val packageConfigurationName: String
-        get() = getName(CONFIG_NAME_APK)
-
+  val packageConfigurationName: String
+    get() = getName(CONFIG_NAME_APK)
 }

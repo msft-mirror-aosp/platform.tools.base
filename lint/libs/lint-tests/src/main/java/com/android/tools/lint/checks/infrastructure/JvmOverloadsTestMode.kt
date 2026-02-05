@@ -37,16 +37,11 @@ import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
 
 /**
- * Test mode which converts if statements in Kotlin files to when statements. In the future we could
- * also try to convert Java if statements into switches if the comparisons are eligible (e.g.
- * constant expressions).
+ * Test mode which converts if statements in Kotlin files to when statements. In the future we could also try to convert Java if statements
+ * into switches if the comparisons are eligible (e.g. constant expressions).
  */
 class JvmOverloadsTestMode :
-  UastSourceTransformationTestMode(
-    description = "Handling @JvmOverloads methods",
-    "TestMode.JVM_OVERLOADS",
-    "jvmoverloads",
-  ) {
+  UastSourceTransformationTestMode(description = "Handling @JvmOverloads methods", "TestMode.JVM_OVERLOADS", "jvmoverloads") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -81,12 +76,7 @@ class JvmOverloadsTestMode :
     return file.targetRelativePath.endsWith(SdkConstants.DOT_KT)
   }
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
     }
@@ -115,11 +105,7 @@ class JvmOverloadsTestMode :
             return
           }
 
-          if (
-            method.annotationEntries.any {
-              it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString()
-            }
-          ) {
+          if (method.annotationEntries.any { it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString() }) {
             return
           }
 
@@ -163,18 +149,14 @@ class JvmOverloadsTestMode :
 
             // Last parameter is lambda? Don't add default argument after since
             // caller may have placed lambda outside the argument list
-            if (
-              lastParameter.typeReference?.text?.contains("->") == true &&
-                !lastParameter.hasDefaultValue()
-            ) {
+            if (lastParameter.typeReference?.text?.contains("->") == true && !lastParameter.hasDefaultValue()) {
               return
             }
           }
 
           val constructor = method as? KtPrimaryConstructor
 
-          val startOffset =
-            (method as? KtNamedFunction)?.funKeyword?.startOffset ?: method.startOffset
+          val startOffset = (method as? KtNamedFunction)?.funKeyword?.startOffset ?: method.startOffset
 
           val lineBegin = source.lastIndexOf('\n', startOffset - 1) + 1
           val prefix =
@@ -198,16 +180,10 @@ class JvmOverloadsTestMode :
           if (needDefault) {
             val valueEnd = method.valueParameterList?.endOffset ?: return
             if (source[valueEnd - 1] == ')') {
-              val comma =
-                valueParameters.isNotEmpty() &&
-                  valueParameters.last().nextSibling?.text?.endsWith(",") != true
-              edits.add(
-                insert(valueEnd - 1, "${if (comma) ", " else ""}$DEFAULT_PROPERTY_PARAMETER")
-              )
+              val comma = valueParameters.isNotEmpty() && valueParameters.last().nextSibling?.text?.endsWith(",") != true
+              edits.add(insert(valueEnd - 1, "${if (comma) ", " else ""}$DEFAULT_PROPERTY_PARAMETER"))
             } else {
-              println(
-                "Unexpected missing ) in value parameter list `${method.valueParameterList?.text}`"
-              )
+              println("Unexpected missing ) in value parameter list `${method.valueParameterList?.text}`")
             }
           }
         }

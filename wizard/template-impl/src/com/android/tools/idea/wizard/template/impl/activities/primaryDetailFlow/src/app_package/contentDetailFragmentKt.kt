@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -32,13 +32,16 @@ fun contentDetailFragmentKt(
   objectKind: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
   val layoutName = "fragment_${detailNameLayout}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
       val rootView = binding.root
-  """ else "val rootView = inflater.inflate(R.layout.$layoutName, container, false)"
+  """
+    else "val rootView = inflater.inflate(R.layout.$layoutName, container, false)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -113,12 +116,12 @@ ${renderIf(isViewBindingSupported) {"""
            isViewBindingSupported = isViewBindingSupported,
            id = "toolbar_layout",
            parentView = "rootView",
-           className = "CollapsingToolbarLayout")}
+           className = "CollapsingToolbarLayout",)}
         itemDetailTextView = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = detailNameLayout,
-          parentView = "rootView")}
+          parentView = "rootView",)}
 
         updateContent()
         rootView.setOnDragListener(dragListener)

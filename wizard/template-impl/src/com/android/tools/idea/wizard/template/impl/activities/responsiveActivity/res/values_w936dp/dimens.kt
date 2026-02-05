@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.responsiveActivity.res.values_w936dp
 
-fun dimens() = """
+fun dimens() =
+  """
 <resources>
     <dimen name="item_transform_image_length">160dp</dimen>
 </resources>

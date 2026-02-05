@@ -23,77 +23,67 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-abstract class AnalyticsEnabledVariantBuilder(
-        override val delegate: VariantBuilder,
-        stats: GradleBuildVariant.Builder
-) : AnalyticsEnabledComponentBuilder(delegate, stats),
-    VariantBuilder {
+abstract class AnalyticsEnabledVariantBuilder(override val delegate: VariantBuilder, stats: GradleBuildVariant.Builder) :
+  AnalyticsEnabledComponentBuilder(delegate, stats), VariantBuilder {
 
-    override var minSdk: Int?
-        get() = delegate.minSdk
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.MIN_SDK_VERSION_VALUE_VALUE
-            delegate.minSdk = value
-        }
-
-    override var minSdkPreview: String?
-        get() = delegate.minSdkPreview
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.MIN_SDK_PREVIEW_VALUE
-            delegate.minSdkPreview = value
-        }
-
-    override var maxSdk: Int?
-        get() = delegate.maxSdk
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.MAX_SDK_VERSION_VALUE_VALUE
-            delegate.maxSdk = value
-        }
-
-    override var targetSdk: Int?
-        get() = (delegate as? GeneratesApkBuilder)?.targetSdk
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                    VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
-            (delegate as? GeneratesApkBuilder)?.targetSdk = value
-        }
-
-    override var targetSdkPreview: String?
-        get() = (delegate as? GeneratesApkBuilder)?.targetSdkPreview
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TARGET_SDK_PREVIEW_VALUE
-            (delegate as? GeneratesApkBuilder)?.targetSdkPreview = value
-        }
-
-    override var renderscriptTargetApi: Int
-        get() = delegate.renderscriptTargetApi
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder()
-                .type = VariantMethodType.RENDERSCRIPT_TARGET_API_VALUE
-            delegate.renderscriptTargetApi = value
-        }
-
-    override var unitTestEnabled: Boolean
-        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
-        }
-
-    override var enableUnitTest: Boolean
-        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
-        }
-
-    override fun <T: Any> registerExtension(type: Class<out T>, instance: T) {
-        stats.variantApiAccessBuilder.addVariantAccessBuilder()
-            .type = VariantMethodType.REGISTER_EXTENSION_VALUE
-        delegate.registerExtension(type, instance)
+  override var minSdk: Int?
+    get() = delegate.minSdk
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.MIN_SDK_VERSION_VALUE_VALUE
+      delegate.minSdk = value
     }
+
+  override var minSdkPreview: String?
+    get() = delegate.minSdkPreview
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.MIN_SDK_PREVIEW_VALUE
+      delegate.minSdkPreview = value
+    }
+
+  override var maxSdk: Int?
+    get() = delegate.maxSdk
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.MAX_SDK_VERSION_VALUE_VALUE
+      delegate.maxSdk = value
+    }
+
+  override var targetSdk: Int?
+    get() = (delegate as? GeneratesApkBuilder)?.targetSdk
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
+      (delegate as? GeneratesApkBuilder)?.targetSdk = value
+    }
+
+  override var targetSdkPreview: String?
+    get() = (delegate as? GeneratesApkBuilder)?.targetSdkPreview
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_PREVIEW_VALUE
+      (delegate as? GeneratesApkBuilder)?.targetSdkPreview = value
+    }
+
+  override var renderscriptTargetApi: Int
+    get() = delegate.renderscriptTargetApi
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.RENDERSCRIPT_TARGET_API_VALUE
+      delegate.renderscriptTargetApi = value
+    }
+
+  override var unitTestEnabled: Boolean
+    get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
+      (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
+    }
+
+  override var enableUnitTest: Boolean
+    get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
+      (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
+    }
+
+  override fun <T : Any> registerExtension(type: Class<out T>, instance: T) {
+    stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.REGISTER_EXTENSION_VALUE
+    delegate.registerExtension(type, instance)
+  }
 }

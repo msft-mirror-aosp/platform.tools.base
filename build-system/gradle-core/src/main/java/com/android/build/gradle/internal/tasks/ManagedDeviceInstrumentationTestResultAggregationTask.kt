@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.buildanalyzer.common.TaskCategory
+import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.InputFiles
@@ -31,62 +32,47 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
-/**
- * Aggregates XML test results into one.
- */
+/** Aggregates XML test results into one. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
-abstract class ManagedDeviceInstrumentationTestResultAggregationTask: NonIncrementalTask() {
+abstract class ManagedDeviceInstrumentationTestResultAggregationTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val deviceTestResultDirs: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val deviceTestResultDirs: ConfigurableFileCollection
 
-    @get:OutputDirectory
-    abstract val outputTestReportHtmlDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputTestReportHtmlDir: DirectoryProperty
 
-    override fun doTaskAction() {
-        TestReport(
-            ReportType.SINGLE_FLAVOR,
-            deviceTestResultDirs.files.toList(),
-            outputTestReportHtmlDir.get().asFile
-        ).generateReport()
+  override fun doTaskAction() {
+    TestReport(ReportType.SINGLE_FLAVOR, deviceTestResultDirs.files.toList(), outputTestReportHtmlDir.get().asFile).generateReport()
 
-        val reportUrl = ConsoleRenderer().asClickableFileUrl(
-            File(outputTestReportHtmlDir.get().asFile, "index.html"))
-        logger.lifecycle("Test execution completed. See the report at: $reportUrl")
+    val reportUrl = ConsoleRenderer().asClickableFileUrl(File(outputTestReportHtmlDir.get().asFile, "index.html"))
+    logger.lifecycle("Test execution completed. See the report at: $reportUrl")
+  }
+
+  class CreationAction(
+    creationConfig: InstrumentedTestCreationConfig,
+    private val deviceTestResultDirs: List<File>,
+    private val testReportHtmlOutputDir: File,
+  ) : VariantTaskCreationAction<ManagedDeviceInstrumentationTestResultAggregationTask, InstrumentedTestCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("merge", "TestResultProtos")
+
+    override val type: Class<ManagedDeviceInstrumentationTestResultAggregationTask>
+      get() = ManagedDeviceInstrumentationTestResultAggregationTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ManagedDeviceInstrumentationTestResultAggregationTask>) {
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ManagedDeviceInstrumentationTestResultAggregationTask::outputTestReportHtmlDir)
+        .withName("allDevices")
+        .atLocation(testReportHtmlOutputDir.absolutePath)
+        .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_REPORT)
     }
 
-    class CreationAction(
-        creationConfig: InstrumentedTestCreationConfig,
-        private val deviceTestResultDirs: List<File>,
-        private val testReportHtmlOutputDir: File,
-    ) : VariantTaskCreationAction<
-            ManagedDeviceInstrumentationTestResultAggregationTask,
-            InstrumentedTestCreationConfig>(creationConfig) {
+    override fun configure(task: ManagedDeviceInstrumentationTestResultAggregationTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("merge", "TestResultProtos")
-
-        override val type: Class<ManagedDeviceInstrumentationTestResultAggregationTask>
-            get() = ManagedDeviceInstrumentationTestResultAggregationTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<ManagedDeviceInstrumentationTestResultAggregationTask>) {
-            creationConfig.artifacts
-                .setInitialProvider(
-                    taskProvider,
-                    ManagedDeviceInstrumentationTestResultAggregationTask::outputTestReportHtmlDir)
-                .withName("allDevices")
-                .atLocation(testReportHtmlOutputDir.absolutePath)
-                .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_REPORT)
-        }
-
-        override fun configure(task: ManagedDeviceInstrumentationTestResultAggregationTask) {
-            super.configure(task)
-
-            task.deviceTestResultDirs.from(deviceTestResultDirs).disallowChanges()
-        }
+      task.deviceTestResultDirs.from(deviceTestResultDirs).disallowChanges()
     }
+  }
 }

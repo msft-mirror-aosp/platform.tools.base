@@ -21,18 +21,18 @@ import java.util.Queue
 import java.util.concurrent.LinkedBlockingQueue
 
 class TestValidationLogger : ILogOutput {
-    data class LogOutput(val logLevel: Log.LogLevel, val tag: String, val message: String)
+  data class LogOutput(val logLevel: Log.LogLevel, val tag: String, val message: String)
 
-    private val myLogQueue: Queue<LogOutput> = LinkedBlockingQueue<LogOutput>()
+  private val myLogQueue: Queue<LogOutput> = LinkedBlockingQueue<LogOutput>()
 
-    override fun printLog(logLevel: Log.LogLevel, tag: String, message: String) {
-        myLogQueue.offer(LogOutput(logLevel, tag, message))
-    }
+  override fun printLog(logLevel: Log.LogLevel, tag: String, message: String) {
+    myLogQueue.offer(LogOutput(logLevel, tag, message))
+  }
 
-    override fun printAndPromptLog(logLevel: Log.LogLevel, tag: String, message: String) {
-        myLogQueue.offer(LogOutput(logLevel, tag, message))
-    }
+  override fun printAndPromptLog(logLevel: Log.LogLevel, tag: String, message: String) {
+    myLogQueue.offer(LogOutput(logLevel, tag, message))
+  }
 
-    val nextLogLine: LogOutput?
-        get() = myLogQueue.poll()
+  val nextLogLine: LogOutput?
+    get() = myLogQueue.poll()
 }

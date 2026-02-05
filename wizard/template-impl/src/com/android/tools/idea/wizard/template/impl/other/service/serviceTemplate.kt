@@ -62,20 +62,12 @@ val serviceTemplate
       help = "Whether or not the service can be instantiated by the system"
     }
 
-    widgets(
-      TextFieldWidget(className),
-      CheckBoxWidget(isExported),
-      CheckBoxWidget(isEnabled),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(className), CheckBoxWidget(isExported), CheckBoxWidget(isEnabled), LanguageWidget())
 
     thumb {
       // TODO(b/147126989)
       File("no_activity.png")
     }
 
-    recipe = { data: TemplateData ->
-      serviceRecipe(data as ModuleTemplateData, className.value, isExported.value, isEnabled.value)
-    }
-
+    recipe = { data: TemplateData -> serviceRecipe(data as ModuleTemplateData, className.value, isExported.value, isEnabled.value) }
   }

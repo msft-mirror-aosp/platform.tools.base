@@ -21,19 +21,18 @@ import kotlinx.coroutines.withContext
 /**
  * Implementation of the `STA2` protocol of the `SYNC` command
  *
- * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
+ * See
+ * [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
 internal class SyncStatV2Handler(private val connection: SyncConnection) {
 
-    private val syncRequestId: String = "STA2"
+  private val syncRequestId: String = "STA2"
 
-    /**
-     * Execute a "STA2" sync request
-     */
-    suspend fun statV2(remoteFilePath: String) : FileStatV2 {
-        return withContext(connection.session.ioDispatcher) {
-            connection.startSyncRequest(syncRequestId, remoteFilePath)
-            connection.readFileStatV2(syncRequestId)
-        }
+  /** Execute a "STA2" sync request */
+  suspend fun statV2(remoteFilePath: String): FileStatV2 {
+    return withContext(connection.session.ioDispatcher) {
+      connection.startSyncRequest(syncRequestId, remoteFilePath)
+      connection.readFileStatV2(syncRequestId)
     }
+  }
 }

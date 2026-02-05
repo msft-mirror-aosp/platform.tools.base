@@ -17,13 +17,7 @@ package com.android.tools.idea.wizard.template.impl.activities.aiStarter.src.app
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun mainActivityKt(
-  activityClass: String,
-  defaultPreview: String,
-  greeting: String,
-  packageName: String,
-  themeName: String,
-) =
+fun mainActivityKt(activityClass: String, defaultPreview: String, greeting: String, packageName: String, themeName: String) =
   """
 package ${escapeKotlinIdentifier(packageName)}
 

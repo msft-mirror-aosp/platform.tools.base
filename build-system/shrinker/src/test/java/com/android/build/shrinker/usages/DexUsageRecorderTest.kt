@@ -28,59 +28,57 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class DexUsageRecorderTest {
-    private val PACKAGE_NAME = "com.stub"
+  private val PACKAGE_NAME = "com.stub"
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `mark all resources referenced by value as reachable`() {
-        val model = createModelWithResources()
-        DexUsageRecorder(extractResourceAsDex("resourceShrinker/classes.dex")).recordUsages(model)
+  @Test
+  fun `mark all resources referenced by value as reachable`() {
+    val model = createModelWithResources()
+    DexUsageRecorder(extractResourceAsDex("resourceShrinker/classes.dex")).recordUsages(model)
 
-        assertThat(model.resourceStore.getResource(0x7f030000)?.isReachable).isTrue()
-        assertThat(model.resourceStore.getResource(0x7f080001)?.isReachable).isFalse()
-        assertThat(model.resourceStore.getResource(0x7f080000)?.isReachable).isTrue()
-        assertThat(model.isFoundGetIdentifier).isFalse()
-        assertThat(model.isFoundWebContent).isFalse()
-    }
+    assertThat(model.resourceStore.getResource(0x7f030000)?.isReachable).isTrue()
+    assertThat(model.resourceStore.getResource(0x7f080001)?.isReachable).isFalse()
+    assertThat(model.resourceStore.getResource(0x7f080000)?.isReachable).isTrue()
+    assertThat(model.isFoundGetIdentifier).isFalse()
+    assertThat(model.isFoundWebContent).isFalse()
+  }
 
-    @Test
-    fun `detect Resources_getIdentifier and gather all strings in pool`() {
-        val model = createModelWithResources()
-        DexUsageRecorder(extractResourceAsDex("resourceShrinker/getidentifier.dex"))
-            .recordUsages(model)
+  @Test
+  fun `detect Resources_getIdentifier and gather all strings in pool`() {
+    val model = createModelWithResources()
+    DexUsageRecorder(extractResourceAsDex("resourceShrinker/getidentifier.dex")).recordUsages(model)
 
-        assertThat(model.isFoundGetIdentifier).isTrue()
-        assertThat(model.isFoundWebContent).isFalse()
-        assertThat(model.strings).containsExactly(
-            "com.google.android.samples.dynamicfeatures.ondemand",
-            "com.google.android.samples.dynamicfeatures.ondemand.java",
-            "true",
-            "debug",
-            "layout",
-            "activity_feature_java"
-        )
-    }
+    assertThat(model.isFoundGetIdentifier).isTrue()
+    assertThat(model.isFoundWebContent).isFalse()
+    assertThat(model.strings)
+      .containsExactly(
+        "com.google.android.samples.dynamicfeatures.ondemand",
+        "com.google.android.samples.dynamicfeatures.ondemand.java",
+        "true",
+        "debug",
+        "layout",
+        "activity_feature_java",
+      )
+  }
 
-    @Test
-    fun `detect web content via references to WebView_load methods`() {
-        val model = createModelWithResources()
-        DexUsageRecorder(extractResourceAsDex("resourceShrinker/webcontent.dex"))
-            .recordUsages(model)
-        assertThat(model.isFoundWebContent).isTrue()
-    }
+  @Test
+  fun `detect web content via references to WebView_load methods`() {
+    val model = createModelWithResources()
+    DexUsageRecorder(extractResourceAsDex("resourceShrinker/webcontent.dex")).recordUsages(model)
+    assertThat(model.isFoundWebContent).isTrue()
+  }
 
-    private fun createModelWithResources(): ResourceShrinkerModel {
-        val model = ResourceShrinkerModel(NoDebugReporter, false)
-        model.addResource(ResourceType.LAYOUT, PACKAGE_NAME, "activity_main", "0x7f030000")
-        model.addResource(ResourceType.ID, PACKAGE_NAME, "action_settings", "0x7f080000")
-        model.addResource(ResourceType.ID, PACKAGE_NAME, "action_settings2", "0x7f080001")
-        return model
-    }
+  private fun createModelWithResources(): ResourceShrinkerModel {
+    val model = ResourceShrinkerModel(NoDebugReporter, false)
+    model.addResource(ResourceType.LAYOUT, PACKAGE_NAME, "activity_main", "0x7f030000")
+    model.addResource(ResourceType.ID, PACKAGE_NAME, "action_settings", "0x7f080000")
+    model.addResource(ResourceType.ID, PACKAGE_NAME, "action_settings2", "0x7f080001")
+    return model
+  }
 
-    private fun extractResourceAsDex(resourceName: String): Path {
-        val content = Resources.toByteArray(Resources.getResource(resourceName))
-        return Files.write(temporaryFolder.newFile("classes.dex").toPath(), content)
-    }
+  private fun extractResourceAsDex(resourceName: String): Path {
+    val content = Resources.toByteArray(Resources.getResource(resourceName))
+    return Files.write(temporaryFolder.newFile("classes.dex").toPath(), content)
+  }
 }

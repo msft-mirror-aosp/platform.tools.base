@@ -21,9 +21,9 @@ package com.android.build.gradle.internal
 import org.gradle.api.configuration.BuildFeatures
 
 fun BuildFeatures.projectIsolationActive(): Boolean {
-    return this.isolatedProjects.active.get()
+  return this.isolatedProjects.active.get()
 }
 
 fun BuildFeatures.configurationCacheActive(): Boolean {
-    return this.configurationCache.active.get()
+  return this.configurationCache.active.get()
 }

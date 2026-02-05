@@ -21,9 +21,7 @@ import com.google.common.collect.ImmutableSetMultimap
 
 /** Creates a multimap for the given value pairs. */
 fun <K, V> multimapOf(vararg pairs: Pair<K, V>): ImmutableSetMultimap<K, V> =
-        ImmutableSetMultimap.builder<K, V>()
-            .apply { pairs.forEach { (k, v) -> put(k, v) } }
-            .build()
+  ImmutableSetMultimap.builder<K, V>().apply { pairs.forEach { (k, v) -> put(k, v) } }.build()
 
 /**
  * Creates a multimap for the given value.
@@ -31,6 +29,4 @@ fun <K, V> multimapOf(vararg pairs: Pair<K, V>): ImmutableSetMultimap<K, V> =
  * The first value is the key, and all subsequent values are values associated with the key.
  */
 fun <K, V> multimapWithSingleKeyOf(key: K, vararg values: V): ImmutableSetMultimap<K, V> =
-        ImmutableSetMultimap.builder<K, V>()
-                .apply { putAll(key, values.asIterable()) }
-                .build()
+  ImmutableSetMultimap.builder<K, V>().apply { putAll(key, values.asIterable()) }.build()

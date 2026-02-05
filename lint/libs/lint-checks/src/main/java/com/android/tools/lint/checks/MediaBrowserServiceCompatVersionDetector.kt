@@ -47,16 +47,12 @@ class MediaBrowserServiceCompatVersionDetector : Detector(), SourceCodeScanner {
         priority = 6,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(
-            MediaBrowserServiceCompatVersionDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-          ),
+        implementation = Implementation(MediaBrowserServiceCompatVersionDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
 
     /**
-     * Minimum recommended support library version that has the necessary fixes to ensure that
-     * MediaBrowserServiceCompat is forward compatible with N.
+     * Minimum recommended support library version that has the necessary fixes to ensure that MediaBrowserServiceCompat is forward
+     * compatible with N.
      */
     val MIN_SUPPORT_V4_VERSION = Version.parse("24.0.0")
 
@@ -73,8 +69,7 @@ class MediaBrowserServiceCompatVersionDetector : Detector(), SourceCodeScanner {
     }
 
     val library =
-      context.project.buildVariant?.mainArtifact?.findCompileDependency(SUPPORT_LIB_ARTIFACT)
-        as? LintModelExternalLibrary ?: return
+      context.project.buildVariant?.mainArtifact?.findCompileDependency(SUPPORT_LIB_ARTIFACT) as? LintModelExternalLibrary ?: return
     val mc = library.resolvedCoordinates
     if (mc.version.isNotBlank()) {
       val libVersion = Version.parse(mc.version)

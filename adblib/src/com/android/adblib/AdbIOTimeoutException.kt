@@ -17,10 +17,9 @@ package com.android.adblib
 
 import java.io.IOException
 
-/**
- * Exception that is thrown when operation has exceeded internal timeout.
- */
-class AdbIOTimeoutException: IOException {
-    constructor(message: String) : super(message)
-    constructor(message: String, cause: Throwable) : super(message, cause)
+/** Exception that is thrown when operation has exceeded internal timeout. */
+class AdbIOTimeoutException : IOException {
+  constructor(message: String) : super(message)
+
+  constructor(message: String, cause: Throwable) : super(message, cause)
 }

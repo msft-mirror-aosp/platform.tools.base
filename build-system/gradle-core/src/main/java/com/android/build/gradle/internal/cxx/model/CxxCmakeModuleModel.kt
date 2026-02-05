@@ -20,24 +20,16 @@ import com.android.build.gradle.internal.cxx.configure.CmakeVersionRequirements
 import java.io.File
 
 data class CxxCmakeModuleModel(
-    /**
-     * Path to cmake.exe
-     *   ex, /path/to/cmake/cmake.exe
-     */
-    val cmakeExe: File?,
+  /** Path to cmake.exe ex, /path/to/cmake/cmake.exe */
+  val cmakeExe: File?,
 
-    /**
-     * The CMake version from the DSL.
-     */
-    val cmakeVersionFromDsl: String?,
+  /** The CMake version from the DSL. */
+  val cmakeVersionFromDsl: String?,
 
-    /**
-     * The cmake.dir value from module-level local.properties
-     */
-    val cmakeDirFromPropertiesFile: File?
+  /** The cmake.dir value from module-level local.properties */
+  val cmakeDirFromPropertiesFile: File?,
 )
 
-/**
- * The effective minimum version required.
- */
-val CxxCmakeModuleModel.minimumCmakeVersion get() = CmakeVersionRequirements(cmakeVersionFromDsl).effectiveRequestVersion
+/** The effective minimum version required. */
+val CxxCmakeModuleModel.minimumCmakeVersion
+  get() = CmakeVersionRequirements(cmakeVersionFromDsl).effectiveRequestVersion

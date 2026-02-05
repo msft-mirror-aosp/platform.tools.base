@@ -25,35 +25,24 @@ import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
 /**
- * Injector to inject default implementation for getter method, which returns [java.nio.ByteBuffer]
- * and assume data type has method `getBuffer`.
+ * Injector to inject default implementation for getter method, which returns [java.nio.ByteBuffer] and assume data type has method
+ * `getBuffer`.
  */
 class DefaultGetMethodInjector : MethodInjector() {
-    override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
-        val defaultType = ClassNames.TENSOR_BUFFER
-        val advancedType = getOutputParameterType(tensorInfo)
-        val methodSpecBuilder = MethodSpec.methodBuilder(
-            MlNames.formatGetterName(
-                tensorInfo.identifierName, defaultType.simpleName()
-            )
-        )
-            .addModifiers(Modifier.PUBLIC)
-            .returns(defaultType)
-            .addAnnotation(ClassNames.NON_NULL)
-        if (advancedType == ClassNames.TENSOR_IMAGE) {
-            methodSpecBuilder.addStatement(
-                "return \$L.process(\$L).getTensorBuffer()",
-                getProcessorName(tensorInfo),
-                tensorInfo.identifierName
-            )
-        } else {
-            methodSpecBuilder.addStatement(
-                "return \$L.process(\$L)",
-                getProcessorName(tensorInfo),
-                tensorInfo.identifierName
-            )
-        }
-
-        classBuilder.addMethod(methodSpecBuilder.build())
+  override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
+    val defaultType = ClassNames.TENSOR_BUFFER
+    val advancedType = getOutputParameterType(tensorInfo)
+    val methodSpecBuilder =
+      MethodSpec.methodBuilder(MlNames.formatGetterName(tensorInfo.identifierName, defaultType.simpleName()))
+        .addModifiers(Modifier.PUBLIC)
+        .returns(defaultType)
+        .addAnnotation(ClassNames.NON_NULL)
+    if (advancedType == ClassNames.TENSOR_IMAGE) {
+      methodSpecBuilder.addStatement("return \$L.process(\$L).getTensorBuffer()", getProcessorName(tensorInfo), tensorInfo.identifierName)
+    } else {
+      methodSpecBuilder.addStatement("return \$L.process(\$L)", getProcessorName(tensorInfo), tensorInfo.identifierName)
     }
+
+    classBuilder.addMethod(methodSpecBuilder.build())
+  }
 }

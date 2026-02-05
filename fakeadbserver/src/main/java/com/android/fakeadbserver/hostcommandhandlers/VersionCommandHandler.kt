@@ -19,25 +19,19 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/** host:version returns the internal ADB server version.  */
+/** host:version returns the internal ADB server version. */
 open class VersionCommandHandler : SimpleHostCommandHandler("version") {
 
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    writeOkayResponse(responseSocket.getOutputStream(), versionString)
+    return false
+  }
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        writeOkayResponse(responseSocket.getOutputStream(), versionString)
-        return false
-    }
+  protected open val versionString: String
+    get() = String.format("%04X", ADB_INTERNAL_VERSION)
 
-    protected open val versionString: String
-        get() = String.format("%04X", ADB_INTERNAL_VERSION)
+  companion object {
 
-    companion object {
-
-        const val ADB_INTERNAL_VERSION = 40
-    }
+    const val ADB_INTERNAL_VERSION = 40
+  }
 }

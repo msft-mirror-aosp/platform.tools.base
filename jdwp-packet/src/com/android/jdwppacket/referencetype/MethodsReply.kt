@@ -34,10 +34,7 @@ data class MethodsReply(val methods: List<Method>) : Reply() {
     @JvmStatic
     fun parse(reader: MessageReader): MethodsReply {
       val declared = reader.getInt()
-      val methods =
-        List(declared) {
-          Method(reader.getMethodID(), reader.getString(), reader.getString(), reader.getInt())
-        }
+      val methods = List(declared) { Method(reader.getMethodID(), reader.getString(), reader.getString(), reader.getInt()) }
       return MethodsReply(methods)
     }
   }

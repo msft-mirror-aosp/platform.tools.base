@@ -25,36 +25,31 @@ import com.google.common.collect.ImmutableList
 import org.junit.Rule
 import org.junit.Test
 
-class LocalAarModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(":lib"))
-            }
-        }
-        genericProject(":lib") {
-            wrap(
-                generateAarWithContent(
-                    packageName = "com.example.aar",
-                    mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-                    resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray())
-                ),
-                "lib.aar"
-            )
-
-        }
+class LocalAarModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(project(":lib")) }
+      }
+      genericProject(":lib") {
+        wrap(
+          generateAarWithContent(
+            packageName = "com.example.aar",
+            mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+            resources =
+              mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
+          ),
+          "lib.aar",
+        )
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

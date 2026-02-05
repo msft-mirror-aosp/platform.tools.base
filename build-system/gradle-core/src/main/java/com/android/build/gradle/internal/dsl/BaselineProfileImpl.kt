@@ -20,10 +20,8 @@ import com.android.build.api.dsl.BaselineProfile
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class BaselineProfileImpl@Inject constructor(
-    dslServices: DslServices
-) : BaselineProfile {
+abstract class BaselineProfileImpl @Inject constructor(dslServices: DslServices) : BaselineProfile {
 
-    abstract override val ignoreFrom: MutableSet<String>
-    abstract override var ignoreFromAllExternalDependencies: Boolean
+  abstract override val ignoreFrom: MutableSet<String>
+  abstract override var ignoreFromAllExternalDependencies: Boolean
 }

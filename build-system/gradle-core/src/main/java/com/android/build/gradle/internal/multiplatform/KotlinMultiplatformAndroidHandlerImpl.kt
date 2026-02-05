@@ -52,247 +52,229 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.external.sourcesJarTask
 
 @OptIn(ExternalKotlinTargetApi::class)
 internal class KotlinMultiplatformAndroidHandlerImpl(
-    private val project: Project,
-    private val dslServices: DslServices,
-    private val objectFactory: ObjectFactory
-): KotlinMultiplatformAndroidHandler {
+  private val project: Project,
+  private val dslServices: DslServices,
+  private val objectFactory: ObjectFactory,
+) : KotlinMultiplatformAndroidHandler {
 
-    private lateinit var kotlinExtension: KotlinMultiplatformExtension
-    private lateinit var androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
-    private lateinit var androidTarget: KotlinMultiplatformAndroidLibraryTargetImpl
+  private lateinit var kotlinExtension: KotlinMultiplatformExtension
+  private lateinit var androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
+  private lateinit var androidTarget: KotlinMultiplatformAndroidLibraryTargetImpl
 
-    private lateinit var mainVariant: KmpVariantImpl
+  private lateinit var mainVariant: KmpVariantImpl
 
-    private val sourceSetToCreationConfigMap = mutableMapOf<KotlinSourceSet, KmpComponentCreationConfig>()
+  private val sourceSetToCreationConfigMap = mutableMapOf<KotlinSourceSet, KmpComponentCreationConfig>()
 
-    private val extraSourceSetsToIncludeInResolution = mutableSetOf<KotlinSourceSet>()
+  private val extraSourceSetsToIncludeInResolution = mutableSetOf<KotlinSourceSet>()
 
-    override fun createAndroidExtension(): KotlinMultiplatformAndroidLibraryExtensionImpl {
-        val extensionImplClass = androidPluginDslDecorator
-            .decorate(KotlinMultiplatformAndroidLibraryExtensionImpl::class.java)
+  override fun createAndroidExtension(): KotlinMultiplatformAndroidLibraryExtensionImpl {
+    val extensionImplClass = androidPluginDslDecorator.decorate(KotlinMultiplatformAndroidLibraryExtensionImpl::class.java)
 
-        androidExtension = dslServices.newInstance(
-            extensionImplClass,
-            dslServices,
-            objectFactory,
-            { compilationBuilder: KotlinMultiplatformAndroidCompilationBuilderImpl ->
-                if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) {
-                    createCompilation(
-                        compilationName = compilationBuilder.compilationName,
-                        defaultSourceSetName = compilationBuilder.defaultSourceSetName,
-                        compilationToAssociateWith = listOf(androidTarget.compilations.getByName(
-                            KmpAndroidCompilationType.MAIN.defaultCompilationName
-                        ))
-                    )
-                }
+    androidExtension =
+      dslServices.newInstance(
+        extensionImplClass,
+        dslServices,
+        objectFactory,
+        { compilationBuilder: KotlinMultiplatformAndroidCompilationBuilderImpl ->
+          if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) {
+            createCompilation(
+              compilationName = compilationBuilder.compilationName,
+              defaultSourceSetName = compilationBuilder.defaultSourceSetName,
+              compilationToAssociateWith =
+                listOf(androidTarget.compilations.getByName(KmpAndroidCompilationType.MAIN.defaultCompilationName)),
+            )
+          }
+        },
+      )
+
+    project.pluginManager.withPlugin(KOTLIN_MPP_PLUGIN_ID) {
+      val kotlinPluginVersion =
+        getKotlinPluginVersionFromPlugin(project.plugins.findPlugin(KOTLIN_MPP_PLUGIN_ID)!!)?.let { (Version.parse(it)) }
+
+      kotlinPluginVersion?.let { version ->
+        if (version < MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION) {
+          throw RuntimeException(
+            "The version of the applied kotlin multiplatform plugin " +
+              "`$it` is less than the minimum supported version by the " +
+              "android plugin. Upgrade your kotlin version to at least " +
+              "`$MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION` " +
+              "in order to enable the android target."
+          )
+        }
+        if (version < Version.parse("2.3.0")) {
+          // enable the gradle property that enables the kgp IDE import APIs that we rely on.
+          project.extensions.extraProperties.set("kotlin.mpp.import.enableKgpDependencyResolution", "true")
+        }
+      }
+
+      kotlinExtension = project.extensions.getByName("kotlin") as KotlinMultiplatformExtension
+
+      val kotlinPlatformType =
+        if (dslServices.projectOptions[BooleanOption.KMP_USE_JVM_PLATFORM_TYPE]) {
+          KotlinPlatformType.jvm
+        } else {
+          KotlinPlatformType.androidJvm
+        }
+
+      androidTarget =
+        kotlinExtension.createExternalKotlinTarget {
+          targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
+          platformType = kotlinPlatformType
+          configureAttributes(
+            apiElements,
+            runtimeElements,
+            sourcesElements,
+            apiElementsPublished,
+            runtimeElementsPublished,
+            sourcesElementsPublished,
+          )
+          targetFactory =
+            ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
+              dslServices.newInstance(
+                KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
+                dslServices,
+                delegate,
+                kotlinExtension,
+                androidExtension,
+              )
             }
+          configureIdeImport {
+            KotlinIdeImportConfigurator.configure(
+              project,
+              lazy { androidTarget },
+              androidExtension,
+              this,
+              sourceSetToCreationConfigMap =
+                lazy {
+                  addSourceSetsThatShouldBeResolvedAsAndroid()
+                  sourceSetToCreationConfigMap
+                },
+              extraSourceSetsToIncludeInResolution =
+                lazy {
+                  addSourceSetsThatShouldBeResolvedAsAndroid()
+                  extraSourceSetsToIncludeInResolution
+                },
+              dslServices.projectOptions[BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH],
+            )
+          }
+        }
+
+      registerAndroidTargetExtension(androidTarget)
+
+      val mainCompilation =
+        createCompilation(
+          compilationName = KmpAndroidCompilationType.MAIN.defaultCompilationName,
+          defaultSourceSetName = KmpAndroidCompilationType.MAIN.defaultSourceSetName,
+          compilationToAssociateWith = emptyList(),
         )
 
-        project.pluginManager.withPlugin(KOTLIN_MPP_PLUGIN_ID) {
-            val kotlinPluginVersion = getKotlinPluginVersionFromPlugin(
-                project.plugins.findPlugin(KOTLIN_MPP_PLUGIN_ID)!!
-            )?.let { (Version.parse(it)) }
-
-            kotlinPluginVersion?.let { version ->
-                if (version < MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION) {
-                    throw RuntimeException("The version of the applied kotlin multiplatform plugin " +
-                            "`$it` is less than the minimum supported version by the " +
-                            "android plugin. Upgrade your kotlin version to at least " +
-                            "`$MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION` " +
-                            "in order to enable the android target.")
-                }
-                if (version < Version.parse("2.3.0")) {
-                    // enable the gradle property that enables the kgp IDE import APIs that we rely on.
-                    project.extensions.extraProperties.set(
-                        "kotlin.mpp.import.enableKgpDependencyResolution", "true"
-                    )
-                }
-            }
-
-            kotlinExtension = project.extensions.getByName("kotlin") as KotlinMultiplatformExtension
-
-            val kotlinPlatformType =
-                if(dslServices.projectOptions[BooleanOption.KMP_USE_JVM_PLATFORM_TYPE]) {
-                    KotlinPlatformType.jvm
-                } else {
-                    KotlinPlatformType.androidJvm
-                }
-
-            androidTarget = kotlinExtension.createExternalKotlinTarget {
-                targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
-                platformType = kotlinPlatformType
-                configureAttributes(apiElements, runtimeElements, sourcesElements, apiElementsPublished, runtimeElementsPublished, sourcesElementsPublished)
-                targetFactory = ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
-                    dslServices.newInstance(
-                        KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
-                        dslServices,
-                        delegate,
-                        kotlinExtension,
-                        androidExtension
-                    )
-                }
-                configureIdeImport {
-                    KotlinIdeImportConfigurator.configure(
-                        project,
-                        lazy { androidTarget },
-                        androidExtension,
-                        this,
-                        sourceSetToCreationConfigMap = lazy {
-                            addSourceSetsThatShouldBeResolvedAsAndroid()
-                            sourceSetToCreationConfigMap
-                        },
-                        extraSourceSetsToIncludeInResolution = lazy {
-                            addSourceSetsThatShouldBeResolvedAsAndroid()
-                            extraSourceSetsToIncludeInResolution
-                        },
-                        dslServices.projectOptions[BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH]
-                    )
-                }
-            }
-
-            registerAndroidTargetExtension(androidTarget)
-
-            val mainCompilation = createCompilation(
-                compilationName = KmpAndroidCompilationType.MAIN.defaultCompilationName,
-                defaultSourceSetName = KmpAndroidCompilationType.MAIN.defaultSourceSetName,
-                compilationToAssociateWith = emptyList()
-            )
-
-            androidExtension.androidTestOnJvmBuilder?.let { jvmConfiguration ->
-                createCompilation(
-                    compilationName = jvmConfiguration.compilationName,
-                    defaultSourceSetName = jvmConfiguration.defaultSourceSetName,
-                    compilationToAssociateWith = listOf(mainCompilation)
-                )
-            }
-
-            androidExtension.androidTestOnDeviceBuilder?.let { deviceConfiguration ->
-                createCompilation(
-                    compilationName = deviceConfiguration.compilationName,
-                    defaultSourceSetName = deviceConfiguration.defaultSourceSetName,
-                    compilationToAssociateWith = listOf(mainCompilation)
-                )
-            }
-        }
-
-        return androidExtension
-    }
-
-    private fun configureAttributes(
-        vararg elements: ExternalKotlinTargetConfigurationDescriptorBuilder<KotlinMultiplatformAndroidLibraryTargetImpl>,
-    ) {
-        elements.forEach {
-            it.configure { _, configuration ->
-                configuration.attributes.attribute(
-                    KotlinPlatformType.attribute,
-                    KotlinPlatformType.androidJvm
-                )
-            }
-        }
-    }
-
-    private fun registerAndroidTargetExtension(
-        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
-    ) {
-        // Register the deprecated extension (for backward compatibility during the deprecation period)
-        (kotlinExtension as ExtensionAware).extensions.add(
-            KotlinMultiplatformAndroidLibraryTarget::class.java,
-            KotlinMultiplatformAndroidPlugin.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
-            androidTarget
+      androidExtension.androidTestOnJvmBuilder?.let { jvmConfiguration ->
+        createCompilation(
+          compilationName = jvmConfiguration.compilationName,
+          defaultSourceSetName = jvmConfiguration.defaultSourceSetName,
+          compilationToAssociateWith = listOf(mainCompilation),
         )
+      }
 
-        (kotlinExtension as ExtensionAware).extensions.add(
-            KotlinMultiplatformAndroidLibraryTarget::class.java,
-            KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
-            androidTarget
+      androidExtension.androidTestOnDeviceBuilder?.let { deviceConfiguration ->
+        createCompilation(
+          compilationName = deviceConfiguration.compilationName,
+          defaultSourceSetName = deviceConfiguration.defaultSourceSetName,
+          compilationToAssociateWith = listOf(mainCompilation),
         )
+      }
     }
 
-    override fun getAndroidTarget() = androidTarget
+    return androidExtension
+  }
 
-    override fun finalize(variant: KmpVariantImpl) {
-        if (variant.sources.java != null) {
-            androidTarget.sourcesJarTask(
-                variant.androidKotlinCompilation as DecoratedExternalKotlinCompilation
-            ).configure {
-                it.from(variant.sources.java!!.all) { spec ->
-                    spec.into(
-                        variant.androidKotlinCompilation.defaultSourceSet.name
-                    )
-                    spec.duplicatesStrategy = DuplicatesStrategy.WARN
-                }
-            }
+  private fun configureAttributes(
+    vararg elements: ExternalKotlinTargetConfigurationDescriptorBuilder<KotlinMultiplatformAndroidLibraryTargetImpl>
+  ) {
+    elements.forEach {
+      it.configure { _, configuration -> configuration.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm) }
+    }
+  }
+
+  private fun registerAndroidTargetExtension(androidTarget: KotlinMultiplatformAndroidLibraryTarget) {
+    // Register the deprecated extension (for backward compatibility during the deprecation period)
+    (kotlinExtension as ExtensionAware)
+      .extensions
+      .add(
+        KotlinMultiplatformAndroidLibraryTarget::class.java,
+        KotlinMultiplatformAndroidPlugin.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
+        androidTarget,
+      )
+
+    (kotlinExtension as ExtensionAware)
+      .extensions
+      .add(
+        KotlinMultiplatformAndroidLibraryTarget::class.java,
+        KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
+        androidTarget,
+      )
+  }
+
+  override fun getAndroidTarget() = androidTarget
+
+  override fun finalize(variant: KmpVariantImpl) {
+    if (variant.sources.java != null) {
+      androidTarget.sourcesJarTask(variant.androidKotlinCompilation as DecoratedExternalKotlinCompilation).configure {
+        it.from(variant.sources.java!!.all) { spec ->
+          spec.into(variant.androidKotlinCompilation.defaultSourceSet.name)
+          spec.duplicatesStrategy = DuplicatesStrategy.WARN
         }
-
-        mainVariant = variant
-
-        listOfNotNull(mainVariant, mainVariant.unitTest, mainVariant.androidDeviceTest).forEach {
-            it.androidKotlinCompilation.kotlinSourceSets.forEach { sourceSet ->
-                sourceSetToCreationConfigMap[sourceSet] = it
-            }
-        }
-
-        mainVariant.unitTest?.let {
-            configureKotlinTestDependencyForUnitTestCompilation(
-                project,
-                it,
-                kotlinExtension
-            )
-        }
-
-        mainVariant.androidDeviceTest?.let {
-            configureKotlinTestDependencyForInstrumentedTestCompilation(
-                project,
-                it,
-                kotlinExtension
-            )
-        }
+      }
     }
 
-    private fun createCompilation(
-        compilationName: String,
-        defaultSourceSetName: String,
-        compilationToAssociateWith: List<KotlinMultiplatformAndroidCompilation>
-    ): KotlinMultiplatformAndroidCompilation {
-        kotlinExtension.sourceSets.maybeCreate(
-            defaultSourceSetName
-        ).apply {
-            android = KotlinAndroidSourceSetMarker()
-        }
-        return androidTarget.compilations.maybeCreate(
-            compilationName
-        ).also { main ->
-            compilationToAssociateWith.forEach { other ->
-                main.associateWith(other)
-            }
-        }
+    mainVariant = variant
+
+    listOfNotNull(mainVariant, mainVariant.unitTest, mainVariant.androidDeviceTest).forEach {
+      it.androidKotlinCompilation.kotlinSourceSets.forEach { sourceSet -> sourceSetToCreationConfigMap[sourceSet] = it }
     }
 
-    private fun addSourceSetsThatShouldBeResolvedAsAndroid() {
-        // Here we check if there are sourceSets that are included only in the androidTarget, this
-        // means that the sourceSet should be treated as android sourceSet in IDE Import and its
-        // dependencies should be resolved from the component that maps to the compilation
-        // containing this sourceSet.
-        kotlinExtension.sourceSets.mapNotNull { sourceSet ->
-            val targetsContainingSourceSet = kotlinExtension.targets.filter { target ->
-                target.platformType != KotlinPlatformType.common &&
-                        target.compilations.any { compilation ->
-                            compilation.allKotlinSourceSets.contains(sourceSet)
-                        }
-            }
-            sourceSet.takeIf { targetsContainingSourceSet.singleOrNull() == androidTarget }
-        }.forEach { commonSourceSet ->
-            for (component in listOfNotNull(mainVariant, mainVariant.unitTest, mainVariant.androidDeviceTest)) {
-                if (component.androidKotlinCompilation.allKotlinSourceSets.contains(commonSourceSet)) {
-                    sourceSetToCreationConfigMap[commonSourceSet] = component
-                    extraSourceSetsToIncludeInResolution.add(commonSourceSet)
-                    break
-                }
-            }
-        }
-    }
+    mainVariant.unitTest?.let { configureKotlinTestDependencyForUnitTestCompilation(project, it, kotlinExtension) }
 
-    companion object {
-        private val MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = Version.parse("2.0.0")
+    mainVariant.androidDeviceTest?.let { configureKotlinTestDependencyForInstrumentedTestCompilation(project, it, kotlinExtension) }
+  }
+
+  private fun createCompilation(
+    compilationName: String,
+    defaultSourceSetName: String,
+    compilationToAssociateWith: List<KotlinMultiplatformAndroidCompilation>,
+  ): KotlinMultiplatformAndroidCompilation {
+    kotlinExtension.sourceSets.maybeCreate(defaultSourceSetName).apply { android = KotlinAndroidSourceSetMarker() }
+    return androidTarget.compilations.maybeCreate(compilationName).also { main ->
+      compilationToAssociateWith.forEach { other -> main.associateWith(other) }
     }
+  }
+
+  private fun addSourceSetsThatShouldBeResolvedAsAndroid() {
+    // Here we check if there are sourceSets that are included only in the androidTarget, this
+    // means that the sourceSet should be treated as android sourceSet in IDE Import and its
+    // dependencies should be resolved from the component that maps to the compilation
+    // containing this sourceSet.
+    kotlinExtension.sourceSets
+      .mapNotNull { sourceSet ->
+        val targetsContainingSourceSet =
+          kotlinExtension.targets.filter { target ->
+            target.platformType != KotlinPlatformType.common &&
+              target.compilations.any { compilation -> compilation.allKotlinSourceSets.contains(sourceSet) }
+          }
+        sourceSet.takeIf { targetsContainingSourceSet.singleOrNull() == androidTarget }
+      }
+      .forEach { commonSourceSet ->
+        for (component in listOfNotNull(mainVariant, mainVariant.unitTest, mainVariant.androidDeviceTest)) {
+          if (component.androidKotlinCompilation.allKotlinSourceSets.contains(commonSourceSet)) {
+            sourceSetToCreationConfigMap[commonSourceSet] = component
+            extraSourceSetsToIncludeInResolution.add(commonSourceSet)
+            break
+          }
+        }
+      }
+  }
+
+  companion object {
+    private val MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = Version.parse("2.0.0")
+  }
 }

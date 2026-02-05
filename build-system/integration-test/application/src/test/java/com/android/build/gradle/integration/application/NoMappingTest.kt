@@ -18,22 +18,20 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class NoMappingTest {
 
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder().fromTestProject("minify").create()
+  @Rule @JvmField val project = GradleTestProject.builder().fromTestProject("minify").create()
 
-    @Test
-    fun checkEmptyMapping() {
-        File(project.projectDir, "proguard-rules.pro").appendText("\n-dontobfuscate")
+  @Test
+  fun checkEmptyMapping() {
+    File(project.projectDir, "proguard-rules.pro").appendText("\n-dontobfuscate")
 
-        project.executor().run("assembleMinified")
-        val mappingFile = project.file("build/outputs/mapping/minified/mapping.txt")
-        assertThat(mappingFile).contains("com.android.tests.basic.Main -> com.android.tests.basic.Main")
-    }
+    project.executor().run("assembleMinified")
+    val mappingFile = project.file("build/outputs/mapping/minified/mapping.txt")
+    assertThat(mappingFile).contains("com.android.tests.basic.Main -> com.android.tests.basic.Main")
+  }
 }

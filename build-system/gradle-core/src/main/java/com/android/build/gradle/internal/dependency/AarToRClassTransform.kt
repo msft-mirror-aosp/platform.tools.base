@@ -20,6 +20,9 @@ import com.android.SdkConstants.DOT_JAR
 import com.android.build.gradle.internal.dependency.AarToClassTransform.Companion.copyAllClassesJarsTo
 import com.android.build.gradle.internal.dependency.AarToClassTransform.Companion.generateRClassJarFromRTxt
 import com.android.builder.packaging.JarFlinger
+import java.nio.file.Path
+import java.util.zip.Deflater.NO_COMPRESSION
+import java.util.zip.ZipFile
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -29,36 +32,26 @@ import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import java.nio.file.Path
-import java.util.zip.Deflater.NO_COMPRESSION
-import java.util.zip.ZipFile
 
-/**
- * An Artifact transform which generates R.jar based on the r.txt of an AAR.
- */
+/** An Artifact transform which generates R.jar based on the r.txt of an AAR. */
 @CacheableTransform
 abstract class AarToRClassTransform : TransformAction<TransformParameters.None> {
 
-    @get:InputArtifact
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val inputAarFile: Provider<FileSystemLocation>
+  @get:InputArtifact @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val inputAarFile: Provider<FileSystemLocation>
 
-    override fun transform(outputs: TransformOutputs) {
-        ZipFile(inputAarFile.get().asFile).use { inputAar ->
-            val outputFileName = "${inputAarFile.get().asFile.nameWithoutExtension}-R$DOT_JAR"
-            val outputJar = outputs.file(outputFileName).toPath()
-            generateRClassJar(outputJar, inputAar)
-        }
+  override fun transform(outputs: TransformOutputs) {
+    ZipFile(inputAarFile.get().asFile).use { inputAar ->
+      val outputFileName = "${inputAarFile.get().asFile.nameWithoutExtension}-R$DOT_JAR"
+      val outputJar = outputs.file(outputFileName).toPath()
+      generateRClassJar(outputJar, inputAar)
     }
+  }
 
-    private fun generateRClassJar(
-        outputJar: Path,
-        inputAar: ZipFile
-    ) {
-        JarFlinger(outputJar, JarFlinger.CLASSES_ONLY).use { outputApiJar ->
-            outputApiJar.setCompressionLevel(NO_COMPRESSION)
-            generateRClassJarFromRTxt(outputApiJar, inputAar)
-            inputAar.copyAllClassesJarsTo(outputApiJar)
-        }
+  private fun generateRClassJar(outputJar: Path, inputAar: ZipFile) {
+    JarFlinger(outputJar, JarFlinger.CLASSES_ONLY).use { outputApiJar ->
+      outputApiJar.setCompressionLevel(NO_COMPRESSION)
+      generateRClassJarFromRTxt(outputApiJar, inputAar)
+      inputAar.copyAllClassesJarsTo(outputApiJar)
     }
+  }
 }

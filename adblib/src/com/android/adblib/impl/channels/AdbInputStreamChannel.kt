@@ -18,29 +18,29 @@ const val DEFAULT_CHANNEL_BUFFER_SIZE = DEFAULT_BUFFER_SIZE
 internal class AdbInputStreamChannel(
   private val host: AdbSessionHost,
   private val stream: InputStream,
-  bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
+  bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
 ) : AdbInputChannel {
 
-    private val logger = adbLogger(host)
+  private val logger = adbLogger(host)
 
-    private val bytes = ByteArray(bufferSize)
+  private val bytes = ByteArray(bufferSize)
 
-    @Throws(Exception::class)
-    override fun close() {
-        logger.debug { "Closing" }
-        stream.close()
-    }
+  @Throws(Exception::class)
+  override fun close() {
+    logger.debug { "Closing" }
+    stream.close()
+  }
 
-    override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        host.timeProvider.withErrorTimeout(timeout, unit) {
-            // Note: Since InputStream.read is a blocking I/O operation, we use the IO dispatcher
-            runInterruptibleIO(host.blockingIoDispatcher) {
-                val count = stream.read(bytes, 0, min(bytes.size, buffer.remaining()))
-                logger.debug { "Read $count bytes from input stream" }
-                if (count > 0) {
-                    buffer.put(bytes, 0, count)
-                }
-            }
+  override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    host.timeProvider.withErrorTimeout(timeout, unit) {
+      // Note: Since InputStream.read is a blocking I/O operation, we use the IO dispatcher
+      runInterruptibleIO(host.blockingIoDispatcher) {
+        val count = stream.read(bytes, 0, min(bytes.size, buffer.remaining()))
+        logger.debug { "Read $count bytes from input stream" }
+        if (count > 0) {
+          buffer.put(bytes, 0, count)
         }
+      }
     }
+  }
 }

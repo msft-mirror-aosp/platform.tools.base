@@ -69,13 +69,7 @@ class MissingInflatedIdDetectorTest : AbstractCheckTest() {
                 """,
           )
           .indented(),
-        rClass(
-          "test.pkg",
-          "@layout/activity_main",
-          "@layout/list_item",
-          "@id/image_view",
-          "@id/text_field",
-        ),
+        rClass("test.pkg", "@layout/activity_main", "@layout/list_item", "@id/image_view", "@id/text_field"),
       )
       .run()
       .expect(

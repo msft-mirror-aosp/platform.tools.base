@@ -23,8 +23,7 @@ import org.jetbrains.kotlin.idea.debugger.core.stackFrame.computeKotlinStackFram
 /**
  * A [FrameListener] that builds a string representation of the inline stack frames
  *
- * Inline stack frames are created by `StackFrame.computeKotlinStackFrameInfos()` in
- * `InlineStackTraceCalculator.kt`.
+ * Inline stack frames are created by `StackFrame.computeKotlinStackFrameInfos()` in `InlineStackTraceCalculator.kt`.
  */
 internal class InlineStackFrameFrameListener : Engine.FrameListener {
 
@@ -41,8 +40,7 @@ internal class InlineStackFrameFrameListener : Engine.FrameListener {
    *
    * We emit these fields to text.
    *
-   * Note that some of the data in the variables is not identical between JVM & DEX. The following
-   * have been observed to be different:
+   * Note that some of the data in the variables is not identical between JVM & DEX. The following have been observed to be different:
    * 1. slot
    * 2. scope codeIndex
    * 3. scope lineNumber for spilled variables
@@ -52,8 +50,8 @@ internal class InlineStackFrameFrameListener : Engine.FrameListener {
    *
    * Item #3 might be an issue TODO(aalbert): Investigate
    *
-   * Item #4 Probably not an issue but we do need to address it so that we can perform a diff. We
-   * handle this by sorting the variables by name.
+   * Item #4 Probably not an issue but we do need to address it so that we can perform a diff. We handle this by sorting the variables by
+   * name.
    */
   override fun onFrame(frame: StackFrame) {
     sb.append("Breakpoint: ${frame.location().printToString()}\n")

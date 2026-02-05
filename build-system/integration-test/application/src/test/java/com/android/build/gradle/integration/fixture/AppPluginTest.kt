@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -32,100 +33,84 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
-/**
- * A test that validates injecting custom plugins into a test project via the
- * [GradleRule] fixture.
- */
+/** A test that validates injecting custom plugins into a test project via the [GradleRule] fixture. */
 @RunWith(Parameterized::class)
 class AppPluginTest(private val currentBuildFileType: BuildFileType) {
 
-    companion object {
-        @Suppress("unused") // Used by JUnit via reflection
-        @JvmStatic
-        @get:Parameterized.Parameters(name = "{0}")
-        val modes = listOf(BuildFileType.KTS, BuildFileType.GROOVY)
+  companion object {
+    @Suppress("unused") // Used by JUnit via reflection
+    @JvmStatic
+    @get:Parameterized.Parameters(name = "{0}")
+    val modes = listOf(BuildFileType.KTS, BuildFileType.GROOVY)
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      buildFileType = currentBuildFileType
+      androidApplication {
+        pluginCallbacks += AppCallback::class.java
+
+        files { add("src/main/assets/FileToTransform.txt", "initial content") }
+      }
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        buildFileType = currentBuildFileType
-        androidApplication {
-            pluginCallbacks += AppCallback::class.java
+  @Test
+  fun testReleaseVariantIsDisabled() {
+    val build = rule.build
 
-            files {
-                add("src/main/assets/FileToTransform.txt", "initial content")
-            }
+    build.executor
+      .expectFailure()
+      .run(":app:assembleRelease")
+      .assertErrorContains("Cannot locate tasks that match ':app:assembleRelease' as task 'assembleRelease' not found in project ':app'.")
+  }
+
+  @Test
+  fun testCustomTransform() {
+    val build = rule.build
+
+    build.executor.run(":app:assembleDebug")
+
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      assets().resourceAsText("FileToTransform.txt").isEqualTo("transformed content")
+    }
+  }
+
+  class AppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.apply {
+        beforeVariants(selector().withBuildType("release")) { variant -> variant.enable = false }
+        onVariants { variant ->
+          // only debug should be here now
+          val taskProvider = project.tasks.register("transformAssets", AppPluginTestTransformAssetsTask::class.java)
+
+          // TransformAssetsTask will change the assets directory
+          variant.artifacts
+            .use(taskProvider)
+            .wiredWithDirectories(AppPluginTestTransformAssetsTask::inputDir, AppPluginTestTransformAssetsTask::outputDir)
+            .toTransform(SingleArtifact.ASSETS)
         }
+      }
     }
-
-    @Test
-    fun testReleaseVariantIsDisabled() {
-        val build = rule.build
-
-        build.executor.expectFailure().run(":app:assembleRelease")
-            .assertErrorContains(
-                "Cannot locate tasks that match ':app:assembleRelease' as task 'assembleRelease' not found in project ':app'."
-            )
-    }
-
-    @Test
-    fun testCustomTransform() {
-        val build = rule.build
-
-        build.executor.run(":app:assembleDebug")
-
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            assets().resourceAsText("FileToTransform.txt").isEqualTo("transformed content")
-        }
-    }
-
-    class AppCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.apply {
-                beforeVariants(selector().withBuildType("release")) { variant ->
-                    variant.enable = false
-                }
-                onVariants { variant ->
-                    // only debug should be here now
-                    val taskProvider = project.tasks.register(
-                        "transformAssets",
-                        AppPluginTestTransformAssetsTask::class.java
-                    )
-
-                    // TransformAssetsTask will change the assets directory
-                    variant.artifacts.use(taskProvider)
-                        .wiredWithDirectories(
-                            AppPluginTestTransformAssetsTask::inputDir,
-                            AppPluginTestTransformAssetsTask::outputDir
-                        ).toTransform(SingleArtifact.ASSETS)
-                }
-            }
-        }
-    }
+  }
 }
 
-abstract class AppPluginTestTransformAssetsTask: DefaultTask() {
+abstract class AppPluginTestTransformAssetsTask : DefaultTask() {
 
-    @get:InputDirectory
-    abstract val inputDir: DirectoryProperty
+  @get:InputDirectory abstract val inputDir: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @TaskAction
-    fun taskAction() {
-        // We must copy the contents of the input directory to the output directory before our transformation
-        inputDir.get().asFile.copyRecursively(outputDir.get().asFile)
+  @TaskAction
+  fun taskAction() {
+    // We must copy the contents of the input directory to the output directory before our
+    // transformation
+    inputDir.get().asFile.copyRecursively(outputDir.get().asFile)
 
-        // Transform an existing file by updating its contents
-        val fileToTransform = File(outputDir.get().asFile, "FileToTransform.txt")
-        val transformedContent = fileToTransform.readText()
-            .replace("initial", "transformed")
-        fileToTransform.writeText(transformedContent)
-    }
+    // Transform an existing file by updating its contents
+    val fileToTransform = File(outputDir.get().asFile, "FileToTransform.txt")
+    val transformedContent = fileToTransform.readText().replace("initial", "transformed")
+    fileToTransform.writeText(transformedContent)
+  }
 }

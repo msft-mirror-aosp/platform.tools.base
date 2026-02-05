@@ -18,86 +18,82 @@ package com.android.fakeadbserver
 import java.nio.file.attribute.PosixFilePermission
 
 class DeviceFileState(
-    val path: String,
-    /** UNIX-style permissions bits */
-    val permission: Int,
-    /** a "time_t", i.e. number of seconds since the start of the unix epoch */
-    val modifiedDate: Int,
-    val bytes: ByteArray,
-    val kind: Kind = Kind.File
+  val path: String,
+  /** UNIX-style permissions bits */
+  val permission: Int,
+  /** a "time_t", i.e. number of seconds since the start of the unix epoch */
+  val modifiedDate: Int,
+  val bytes: ByteArray,
+  val kind: Kind = Kind.File,
 ) {
-    constructor(
-        path: String,
-        permissions: Array<out PosixFilePermission>,
-        modifiedDate: Int,
-        bytes: ByteArray,
-        kind: Kind = Kind.File
-    ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes, kind)
+  constructor(
+    path: String,
+    permissions: Array<out PosixFilePermission>,
+    modifiedDate: Int,
+    bytes: ByteArray,
+    kind: Kind = Kind.File,
+  ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes, kind)
 
-    val uid: Int
-        get() = 100
+  val uid: Int
+    get() = 100
 
-    val gid: Int
-        get() = 110
+  val gid: Int
+    get() = 110
 
-    val inode: Long
-        get() = path.hashCode().toLong()
+  val inode: Long
+    get() = path.hashCode().toLong()
 
-    val dev: Long
-        get() = 200
+  val dev: Long
+    get() = 200
 
-    val nlink: Int
-        get() = 0
+  val nlink: Int
+    get() = 0
 
-    fun isOwnerWritable(): Boolean =
-        (permission and (2 shl 6)) > 0
+  fun isOwnerWritable(): Boolean = (permission and (2 shl 6)) > 0
 
-    fun isOwnerReadable(): Boolean =
-        (permission and (4 shl 6)) > 0
+  fun isOwnerReadable(): Boolean = (permission and (4 shl 6)) > 0
 
-    override fun equals(other: Any?): Boolean {
-        return (other is DeviceFileState) && (path == other.path)
+  override fun equals(other: Any?): Boolean {
+    return (other is DeviceFileState) && (path == other.path)
+  }
+
+  override fun hashCode(): Int {
+    return path.hashCode()
+  }
+
+  enum class Kind {
+    File,
+    Directory,
+  }
+
+  internal fun toDotFile(): DeviceFileState {
+    return DeviceFileState(".", permission, modifiedDate, bytes, kind)
+  }
+
+  internal fun toDotDotFile(): DeviceFileState {
+    return DeviceFileState("..", permission, modifiedDate, bytes, kind)
+  }
+
+  companion object {
+    private fun modeBitsFromPosixFilePermissions(posixPermissions: Array<out PosixFilePermission>): Int {
+      var modeBits = 0
+      posixPermissions.forEach { permission -> modeBits = modeBits or modeBitFromPosixFilePermission(permission) }
+      return modeBits
     }
 
-    override fun hashCode(): Int {
-        return path.hashCode()
+    private fun modeBitFromPosixFilePermission(permission: PosixFilePermission): Int {
+      return when (permission) {
+        PosixFilePermission.OWNER_READ -> 256
+        PosixFilePermission.OWNER_WRITE -> 128
+        PosixFilePermission.OWNER_EXECUTE -> 64
+        PosixFilePermission.GROUP_READ -> 32
+        PosixFilePermission.GROUP_WRITE -> 16
+        PosixFilePermission.GROUP_EXECUTE -> 8
+        PosixFilePermission.OTHERS_READ -> 4
+        PosixFilePermission.OTHERS_WRITE -> 2
+        PosixFilePermission.OTHERS_EXECUTE -> 1
+        else -> 0
+      }
     }
-
-    enum class Kind {
-        File,
-        Directory
-    }
-
-    internal fun toDotFile(): DeviceFileState {
-        return DeviceFileState(".", permission, modifiedDate, bytes, kind)
-    }
-
-    internal fun toDotDotFile(): DeviceFileState {
-        return DeviceFileState("..", permission, modifiedDate, bytes, kind)
-    }
-
-    companion object {
-        private fun modeBitsFromPosixFilePermissions(posixPermissions: Array<out PosixFilePermission>): Int {
-            var modeBits = 0
-            posixPermissions.forEach { permission ->
-                modeBits = modeBits or modeBitFromPosixFilePermission(permission)
-            }
-            return modeBits
-        }
-
-        private fun modeBitFromPosixFilePermission(permission: PosixFilePermission): Int {
-            return when (permission) {
-                PosixFilePermission.OWNER_READ -> 256
-                PosixFilePermission.OWNER_WRITE -> 128
-                PosixFilePermission.OWNER_EXECUTE -> 64
-                PosixFilePermission.GROUP_READ -> 32
-                PosixFilePermission.GROUP_WRITE -> 16
-                PosixFilePermission.GROUP_EXECUTE -> 8
-                PosixFilePermission.OTHERS_READ -> 4
-                PosixFilePermission.OTHERS_WRITE -> 2
-                PosixFilePermission.OTHERS_EXECUTE -> 1
-                else -> 0
-            }
-        }
-    }
+  }
 }

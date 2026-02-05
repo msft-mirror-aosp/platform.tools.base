@@ -46,10 +46,9 @@ import org.jetbrains.kotlin.psi.KtProperty
 import org.w3c.dom.Attr
 
 /**
- * A **description** of a quickfix for a lint warning, which provides structured data for use by the
- * IDE to create an actual fix implementation. For example, a [LintFix] can state that it aims to
- * set a given attribute to a given value. When lint is running in the IDE, the quickfix machinery
- * will look at the [LintFix] objects and add an actual implementation which sets the attribute.
+ * A **description** of a quickfix for a lint warning, which provides structured data for use by the IDE to create an actual fix
+ * implementation. For example, a [LintFix] can state that it aims to set a given attribute to a given value. When lint is running in the
+ * IDE, the quickfix machinery will look at the [LintFix] objects and add an actual implementation which sets the attribute.
  *
  * The set of operations is quite limited at the moment; more will be added over time.
  */
@@ -57,9 +56,7 @@ open class LintFix
 protected constructor(
   @field:Nls private var displayName: String? = null,
   @field:Nls private var familyName: String? = null,
-  /**
-   * A location range associated with this fix, if different from the associated incident's range.
-   */
+  /** A location range associated with this fix, if different from the associated incident's range. */
   open var range: Location? = null,
 ) {
   /** The display name, a short user-visible description of the fix */
@@ -69,47 +66,42 @@ protected constructor(
   fun hasDisplayName(): Boolean = displayName != null
 
   /**
-   * The "family" name; the shared name to use to apply *all* fixes of the same family name in a
-   * single go. For example, lint may have registered a quickfix to update library version from
-   * "1.3" to "1.4", and the display name for this quickfix is "Update version from 1.3 to 1.4".
-   * When lint is run on a file, there may be a handful of libraries that all are offered different
-   * version updates. If the lint fix provides a shared family name for all of these, such as
-   * "Update Dependencies", then the IDE will show this as a single action for the whole file and
-   * allow a single click to invoke all the actions in a single go.
+   * The "family" name; the shared name to use to apply *all* fixes of the same family name in a single go. For example, lint may have
+   * registered a quickfix to update library version from "1.3" to "1.4", and the display name for this quickfix is "Update version from 1.3
+   * to 1.4". When lint is run on a file, there may be a handful of libraries that all are offered different version updates. If the lint
+   * fix provides a shared family name for all of these, such as "Update Dependencies", then the IDE will show this as a single action for
+   * the whole file and allow a single click to invoke all the actions in a single go.
    */
   fun getFamilyName(): String? = familyName
 
   /**
-   * Whether this fix can be applied by a robot, e.g. does not require human intervention. These
-   * kinds of fixes can be automatically applied when lint is run in fix-mode where it applies all
-   * the suggested (eligible) fixes.
+   * Whether this fix can be applied by a robot, e.g. does not require human intervention. These kinds of fixes can be automatically applied
+   * when lint is run in fix-mode where it applies all the suggested (eligible) fixes.
    *
    * Examples of fixes which are not auto-fixable:
    *
-   * (1) A fix which introduces a semantic change that may not be desirable. For example, lint may
-   * warn that the use of an API is discouraged and offer a similar but not identical replacement;
-   * in this case the developer needs to consider the implications of the suggestion.
+   * (1) A fix which introduces a semantic change that may not be desirable. For example, lint may warn that the use of an API is
+   * discouraged and offer a similar but not identical replacement; in this case the developer needs to consider the implications of the
+   * suggestion.
    *
-   * (2) A fix for a problem where just a part of the solution is offered as a fix, and there are
-   * many other plausible paths a developer might take, such as lint telling you that you have too
-   * many actions in the toolbar, and a fix is offered to move each action into a menu.
+   * (2) A fix for a problem where just a part of the solution is offered as a fix, and there are many other plausible paths a developer
+   * might take, such as lint telling you that you have too many actions in the toolbar, and a fix is offered to move each action into a
+   * menu.
    */
   @JvmField var robot = false // unless explicitly marked as safe
 
   /**
    * Whether this fix is independent of other fixes getting applied.
    *
-   * Lint can automatically apply all fixes which are independent in a single pass. An example of an
-   * independent fix is removal of an unused import; removing one unused import does not invalidate
-   * a warning (and fix) for another unused import. (Of course, it's possible that another fix will
-   * introduce a new dependency on the formerly unused class, but this is rare.)
+   * Lint can automatically apply all fixes which are independent in a single pass. An example of an independent fix is removal of an unused
+   * import; removing one unused import does not invalidate a warning (and fix) for another unused import. (Of course, it's possible that
+   * another fix will introduce a new dependency on the formerly unused class, but this is rare.)
    *
-   * However, if we have a duplicate declaration warning, we might put a fix on each one of the
-   * duplicates to delete them; if we apply one, we wouldn't want to apply the other. In fix mode,
-   * lint will only apply the first fix in a compilation unit that is not independent; it will then
-   * need to re-analyze the compilation unit a second time, and if there are additional fixes found,
-   * apply just the first such dependent fix, and so on. This means that for N fixes that are not
-   * independent, it will reanalyze the file N times, which is obviously slower.
+   * However, if we have a duplicate declaration warning, we might put a fix on each one of the duplicates to delete them; if we apply one,
+   * we wouldn't want to apply the other. In fix mode, lint will only apply the first fix in a compilation unit that is not independent; it
+   * will then need to re-analyze the compilation unit a second time, and if there are additional fixes found, apply just the first such
+   * dependent fix, and so on. This means that for N fixes that are not independent, it will reanalyze the file N times, which is obviously
+   * slower.
    */
   @JvmField var independent = false // unless explicitly marked as safe
 
@@ -120,8 +112,7 @@ protected constructor(
   }
 
   /**
-   * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-   * mode, in parallel with other fixes.
+   * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
    *
    * @return this
    */
@@ -148,12 +139,10 @@ protected constructor(
     }
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun name(displayName: String, familyName: String): Builder {
@@ -163,12 +152,11 @@ protected constructor(
     }
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param useAsFamilyNameToo if true, use the display name as the family name too; this means
-     *   that the display name is general and does not refer to specifics for a given listed issue
+     * @param useAsFamilyNameToo if true, use the display name as the family name too; this means that the display name is general and does
+     *   not refer to specifics for a given listed issue
      * @return this
      */
     fun name(displayName: String, useAsFamilyNameToo: Boolean): Builder {
@@ -182,8 +170,7 @@ protected constructor(
     /**
      * Sets the family name.
      *
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun sharedName(familyName: String?): Builder {
@@ -192,13 +179,11 @@ protected constructor(
     }
 
     /**
-     * Sets the "family" name; the shared name to use to apply *all* fixes of the same family name
-     * in a single go. For example, lint may have registered a quickfix to update library version
-     * from "1.3" to "1.4", and the display name for this quickfix is "Update version from 1.3 to
-     * 1.4". When lint is run on a file, there may be a handful of libraries that all are offered
-     * different version updates. If the lint fix provides a shared family name for all of these,
-     * such as "Update Dependencies", then the IDE will show this as a single action for the whole
-     * file and allow a single click to invoke all the actions in a single go.
+     * Sets the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go. For example, lint may
+     * have registered a quickfix to update library version from "1.3" to "1.4", and the display name for this quickfix is "Update version
+     * from 1.3 to 1.4". When lint is run on a file, there may be a handful of libraries that all are offered different version updates. If
+     * the lint fix provides a shared family name for all of these, such as "Update Dependencies", then the IDE will show this as a single
+     * action for the whole file and allow a single click to invoke all the actions in a single go.
      *
      * @param familyName the family name
      * @return this
@@ -221,11 +206,9 @@ protected constructor(
     /**
      * Creates a composite fix: multiple lint fixes which will all be applied as a single unit.
      *
-     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as
-     * replace strings.
+     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as replace strings.
      *
-     * Make sure the fixes are not conflicting with each other (in other words, that the resulting
-     * edits are not overlapping).
+     * Make sure the fixes are not conflicting with each other (in other words, that the resulting edits are not overlapping).
      */
     fun composite(): GroupBuilder {
       return GroupBuilder(displayName, familyName).type(GroupType.COMPOSITE)
@@ -234,51 +217,37 @@ protected constructor(
     /**
      * Creates a composite fix: multiple lint fixes which will all be applied as a single unit.
      *
-     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as
-     * replace strings.
+     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as replace strings.
      *
-     * Make sure the fixes are not conflicting with each other (in other words, that the resulting
-     * edits are not overlapping).
+     * Make sure the fixes are not conflicting with each other (in other words, that the resulting edits are not overlapping).
      */
     fun composite(vararg fixes: LintFix?): LintFix {
-      return GroupBuilder(displayName, familyName)
-        .type(GroupType.COMPOSITE)
-        .join(*fixes.filterNotNull().toTypedArray())
-        .build()
+      return GroupBuilder(displayName, familyName).type(GroupType.COMPOSITE).join(*fixes.filterNotNull().toTypedArray()).build()
     }
 
     /**
      * Creates a composite fix: multiple lint fixes which will all be applied as a single unit.
      *
-     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as
-     * replace strings.
+     * **NOTE:** Be careful combining multiple fixes that are potentially overlapping, such as replace strings.
      *
-     * Make sure the fixes are not conflicting with each other (in other words, that the resulting
-     * edits are not overlapping).
+     * Make sure the fixes are not conflicting with each other (in other words, that the resulting edits are not overlapping).
      */
     fun composite(fixes: List<LintFix?>): LintFix {
-      return GroupBuilder(displayName, familyName)
-        .type(GroupType.COMPOSITE)
-        .join(*fixes.filterNotNull().toTypedArray())
-        .build()
+      return GroupBuilder(displayName, familyName).type(GroupType.COMPOSITE).join(*fixes.filterNotNull().toTypedArray()).build()
     }
 
     /**
-     * Creates a fix list from a set of lint fixes. The IDE will show all of these as separate
-     * options.
+     * Creates a fix list from a set of lint fixes. The IDE will show all of these as separate options.
      *
      * @param fixes fixes to combine
      * @return a fix representing the list
      */
     fun group(vararg fixes: LintFix?): LintFix {
-      return GroupBuilder(displayName, familyName)
-        .join(*(fixes.filterNotNull().toTypedArray()))
-        .build()
+      return GroupBuilder(displayName, familyName).join(*(fixes.filterNotNull().toTypedArray())).build()
     }
 
     /**
-     * Creates a fix list from a set of lint fixes. The IDE will show all of these as separate
-     * options.
+     * Creates a fix list from a set of lint fixes. The IDE will show all of these as separate options.
      *
      * Alias for [group]
      *
@@ -344,10 +313,7 @@ protected constructor(
      * @return a set attribute builder
      */
     operator fun set(namespace: String?, attribute: String, value: String?): SetAttributeBuilder {
-      return SetAttributeBuilder(displayName, familyName)
-        .namespace(namespace)
-        .attribute(attribute)
-        .value(value)
+      return SetAttributeBuilder(displayName, familyName).namespace(namespace).attribute(attribute).value(value)
     }
 
     /**
@@ -356,10 +322,7 @@ protected constructor(
      * @return a set attribute builder
      */
     fun unset(namespace: String?, attribute: String): SetAttributeBuilder {
-      return SetAttributeBuilder(displayName, familyName)
-        .namespace(namespace)
-        .attribute(attribute)
-        .value(null)
+      return SetAttributeBuilder(displayName, familyName).namespace(namespace).attribute(attribute).value(null)
     }
 
     /**
@@ -368,28 +331,16 @@ protected constructor(
      * @return a replace string builder
      */
     fun renameTag(current: String, newName: String, range: Location? = null): GroupBuilder {
-      val open =
-        replace()
-          .pattern("<($current)\\b")
-          .with(newName)
-          .apply { if (range != null) this.range(range) }
-          .build()
-      val close =
-        replace()
-          .pattern("</($current)\\s*>")
-          .with(newName)
-          .optional()
-          .apply { if (range != null) this.range(range) }
-          .build()
+      val open = replace().pattern("<($current)\\b").with(newName).apply { if (range != null) this.range(range) }.build()
+      val close = replace().pattern("</($current)\\s*>").with(newName).optional().apply { if (range != null) this.range(range) }.build()
       return name("Replace with `<$newName>`").composite().add(open).add(close)
     }
 
     /**
-     * Given an [attribute], change its namespace to [newNamespace] and/or its attribute name to
-     * [newAttribute] and/or its value to [newValue]. (These all default to their current values, so
-     * you only need to specify what you want to change.) Typically, if you're only changing the
-     * value, use [set] directly; this method is primarily intended for when you want to change the
-     * namespace and/or attribute name (and at the same time unset the old attribute.)
+     * Given an [attribute], change its namespace to [newNamespace] and/or its attribute name to [newAttribute] and/or its value to
+     * [newValue]. (These all default to their current values, so you only need to specify what you want to change.) Typically, if you're
+     * only changing the value, use [set] directly; this method is primarily intended for when you want to change the namespace and/or
+     * attribute name (and at the same time unset the old attribute.)
      */
     fun replaceAttribute(
       attribute: Attr,
@@ -398,10 +349,7 @@ protected constructor(
       newValue: String = attribute.value,
     ): GroupBuilder {
       val prefix =
-        if (newNamespace != null)
-          attribute.lookupPrefix(newNamespace)
-            ?: LintFixPerformer.suggestNamespacePrefix(newNamespace)
-        else null
+        if (newNamespace != null) attribute.lookupPrefix(newNamespace) ?: LintFixPerformer.suggestNamespacePrefix(newNamespace) else null
       return replaceAttribute(
         attribute.namespaceURI.nullize(),
         attribute.localName ?: attribute.name,
@@ -413,12 +361,10 @@ protected constructor(
     }
 
     /**
-     * Given an [attribute] in the given [namespace] (where null means no namespace), change its
-     * value to [newValue], its namespace to [newNamespace] and its attribute name to
-     * [newAttribute]. (These all default to their current values, so you only need to specify what
-     * you want to change.) Typically, if you're only changing the value, use [set] directly; this
-     * method is primarily intended for when you want to change the namespace and/or attribute name
-     * (and at the same time unset the old attribute.)
+     * Given an [attribute] in the given [namespace] (where null means no namespace), change its value to [newValue], its namespace to
+     * [newNamespace] and its attribute name to [newAttribute]. (These all default to their current values, so you only need to specify what
+     * you want to change.) Typically, if you're only changing the value, use [set] directly; this method is primarily intended for when you
+     * want to change the namespace and/or attribute name (and at the same time unset the old attribute.)
      */
     fun replaceAttribute(
       namespace: String?,
@@ -450,10 +396,7 @@ protected constructor(
       return FixMapBuilder(displayName, familyName)
     }
 
-    /**
-     * Provides a map with details for the quickfix implementation, pre-initialized with the given
-     * objects
-     */
+    /** Provides a map with details for the quickfix implementation, pre-initialized with the given objects */
     private fun map(vararg args: Any?): FixMapBuilder {
       val builder = map()
       val map = builder.map
@@ -476,9 +419,8 @@ protected constructor(
     }
 
     /**
-     * Passes one or more pieces of data; this will be transferred as a map behind the scenes. This
-     * is a convenience wrapper around [map] and [FixMapBuilder.build]. Pairs with null values are
-     * skipped.
+     * Passes one or more pieces of data; this will be transferred as a map behind the scenes. This is a convenience wrapper around [map]
+     * and [FixMapBuilder.build]. Pairs with null values are skipped.
      *
      * @return a fix
      */
@@ -505,11 +447,9 @@ protected constructor(
     }
 
     /**
-     * Creates a fix which annotates the given element with the given annotation. The annotation is
-     * provided as fully qualified source code, e.g. `
-     * android.support.annotation.SuppressLint("id")`. If the replace parameter is true, the
-     * annotation will replace an existing annotation with the same class name (should be set to
-     * true unless you're dealing with a repeatable annotation).
+     * Creates a fix which annotates the given element with the given annotation. The annotation is provided as fully qualified source code,
+     * e.g. ` android.support.annotation.SuppressLint("id")`. If the replace parameter is true, the annotation will replace an existing
+     * annotation with the same class name (should be set to true unless you're dealing with a repeatable annotation).
      *
      * @return a fix builder
      */
@@ -520,17 +460,12 @@ protected constructor(
     }
 
     /**
-     * Creates a fix with extra information about the location and context, to more accurately
-     * pinpoint where the annotation should be placed. Sometimes we fail to correctly identify the
-     * location. In this case, the location can be explicitly specified using `.range(location)`.
+     * Creates a fix with extra information about the location and context, to more accurately pinpoint where the annotation should be
+     * placed. Sometimes we fail to correctly identify the location. In this case, the location can be explicitly specified using
+     * `.range(location)`.
      */
     @JvmOverloads
-    fun annotate(
-      source: String,
-      context: Context?,
-      element: PsiElement?,
-      replace: Boolean = true,
-    ): AnnotateBuilder {
+    fun annotate(source: String, context: Context?, element: PsiElement?, replace: Boolean = true): AnnotateBuilder {
       return AnnotateBuilder(displayName, familyName, source, replace, context, element)
     }
   }
@@ -569,17 +504,15 @@ protected constructor(
         }
 
         context.getLocation(anchorElement ?: element).start?.let { start ->
-          context.getLocation(element).end?.let { end ->
-            extractOffsets(Location.create(context.file, start, end))
-          }
+          context.getLocation(element).end?.let { end -> extractOffsets(Location.create(context.file, start, end)) }
         }
       }
     private var robot = false
     private var independent = false
 
     /**
-     * Sets a location range to use for searching for the text or pattern. Useful if you want to
-     * make a replacement that is larger than the error range highlighted as the problem range.
+     * Sets a location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the
+     * error range highlighted as the problem range.
      */
     fun range(range: Location): AnnotateBuilder {
       this.range = extractOffsets(range)
@@ -587,8 +520,7 @@ protected constructor(
     }
 
     /**
-     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-     * mode, in parallel with other fixes.
+     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
      *
      * @return this
      */
@@ -600,10 +532,8 @@ protected constructor(
     /**
      * Sets options related to auto-applying this fix.
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun autoFix(robot: Boolean, independent: Boolean): AnnotateBuilder {
@@ -612,10 +542,7 @@ protected constructor(
       return this
     }
 
-    /**
-     * Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set
-     * the caret, use an empty group.
-     */
+    /** Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set the caret, use an empty group. */
     fun select(@RegExp selectPattern: String?): AnnotateBuilder {
       this.selectPattern = selectPattern
       return this
@@ -628,8 +555,7 @@ protected constructor(
         desc = displayName
       } else {
         val index = annotation.indexOf('(')
-        val last =
-          if (index != -1) annotation.lastIndexOf('.', index) else annotation.lastIndexOf('.')
+        val last = if (index != -1) annotation.lastIndexOf('.', index) else annotation.lastIndexOf('.')
         val simpleName: String =
           if (last != -1) {
             if (index != -1) {
@@ -642,16 +568,7 @@ protected constructor(
           }
         desc = "Annotate with $simpleName"
       }
-      return AnnotateFix(
-        desc,
-        familyName,
-        annotation,
-        replace,
-        range,
-        selectPattern,
-        robot,
-        independent,
-      )
+      return AnnotateFix(desc, familyName, annotation, replace, range, selectPattern, robot, independent)
     }
   }
 
@@ -665,11 +582,7 @@ protected constructor(
   }
 
   /** Builder for constructing a group of fixes */
-  class GroupBuilder
-  internal constructor(
-    @field:Nls private var displayName: String?,
-    @field:Nls private var familyName: String?,
-  ) {
+  class GroupBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var type = GroupType.ALTERNATIVES
     private val list: MutableList<LintFix> = Lists.newArrayListWithExpectedSize(4)
     private var robot = false
@@ -687,12 +600,10 @@ protected constructor(
     }
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun name(displayName: String, familyName: String): GroupBuilder {
@@ -704,8 +615,7 @@ protected constructor(
     /**
      * Sets the family name.
      *
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun sharedName(familyName: String?): GroupBuilder {
@@ -714,13 +624,10 @@ protected constructor(
     }
 
     /**
-     * Sets options related to auto-applying this fix. Convenience method for setting both [robot]
-     * and [independent]
+     * Sets options related to auto-applying this fix. Convenience method for setting both [robot] and [independent]
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun autoFix(robot: Boolean, independent: Boolean): GroupBuilder {
@@ -733,8 +640,7 @@ protected constructor(
     }
 
     /**
-     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-     * mode, in parallel with other fixes.
+     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
      *
      * @return this
      */
@@ -770,8 +676,8 @@ protected constructor(
     }
 
     /**
-     * Sets a location range to use for searching for the text or pattern. Useful if you want to
-     * make a replacement that is larger than the error range highlighted as the problem range.
+     * Sets a location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the
+     * error range highlighted as the problem range.
      */
     fun range(range: Location): GroupBuilder {
       var found = false
@@ -807,11 +713,7 @@ protected constructor(
   }
 
   /** A builder for replacing strings */
-  class ReplaceStringBuilder
-  internal constructor(
-    @field:Nls private var displayName: String?,
-    @field:Nls private var familyName: String?,
-  ) {
+  class ReplaceStringBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var newText: String? = null
     private var oldText: String? = null
     private var selectPattern: String? = null
@@ -840,12 +742,10 @@ protected constructor(
     }
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun name(displayName: String, familyName: String): ReplaceStringBuilder {
@@ -857,8 +757,7 @@ protected constructor(
     /**
      * Sets the family name.
      *
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun sharedName(familyName: String?): ReplaceStringBuilder {
@@ -871,10 +770,7 @@ protected constructor(
       return pattern(oldPattern, 0)
     }
 
-    /**
-     * Replaces the given pattern match (or the first group within it, if any), along with the given
-     * [Pattern] flags.
-     */
+    /** Replaces the given pattern match (or the first group within it, if any), along with the given [Pattern] flags. */
     fun pattern(@RegExp oldPattern: String?, flags: Int): ReplaceStringBuilder {
       if (oldPattern == null) {
         this.oldPattern = null
@@ -904,8 +800,8 @@ protected constructor(
     }
 
     /**
-     * Sets a location range to use for searching for the text or pattern. Useful if you want to
-     * make a replacement that is larger than the error range highlighted as the problem range.
+     * Sets a location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the
+     * error range highlighted as the problem range.
      */
     fun range(range: Location): ReplaceStringBuilder {
       this.range = extractOffsets(range)
@@ -913,12 +809,10 @@ protected constructor(
     }
 
     /**
-     * Sets the sorting priority of this fix. This is *only* relevant when there are multiple
-     * insertions at the same location; in that case, the sorting priority will be used to sort the
-     * items. If no sorting priority is set, it will be the reverse insertion order. In other words,
-     * if you have the fixes "at 0, insert foo", followed by "at 0, insert bar", the result will be
-     * "foobar", since we *first* insert "foo" at 0, and inserting bar at 0 on that result would end
-     * up as "foobar".
+     * Sets the sorting priority of this fix. This is *only* relevant when there are multiple insertions at the same location; in that case,
+     * the sorting priority will be used to sort the items. If no sorting priority is set, it will be the reverse insertion order. In other
+     * words, if you have the fixes "at 0, insert foo", followed by "at 0, insert bar", the result will be "foobar", since we *first* insert
+     * "foo" at 0, and inserting bar at 0 on that result would end up as "foobar".
      */
     fun priority(priority: Int): ReplaceStringBuilder {
       this.sortPriority = priority
@@ -942,18 +836,15 @@ protected constructor(
       return this
     }
 
-    /**
-     * Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set
-     * the caret, use an empty group.
-     */
+    /** Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set the caret, use an empty group. */
     fun select(@RegExp selectPattern: String?): ReplaceStringBuilder {
       this.selectPattern = selectPattern
       return this
     }
 
     /**
-     * The text to replace the old text or pattern with. Note that the special syntax \k<n> can be
-     * used to reference the n-th group, if and only if this replacement is using [pattern]}.
+     * The text to replace the old text or pattern with. Note that the special syntax \k<n> can be used to reference the n-th group, if and
+     * only if this replacement is using [pattern]}.
      */
     fun with(newText: String?): ReplaceStringBuilder {
       assert(this.newText == null)
@@ -962,12 +853,10 @@ protected constructor(
     }
 
     /**
-     * Adds one or more imports to add if necessary when performing the fix. Normally you don't need
-     * to do this; it's better to use fully qualified names in your replacement code snippets; this
-     * ensures that if there is a naming conflict (where the same name is already imported for a
-     * different package) lint will leave the fully qualified name in place. However, in some
-     * scenarios, separately listing the import is necessary, such as for example with using
-     * extension methods.
+     * Adds one or more imports to add if necessary when performing the fix. Normally you don't need to do this; it's better to use fully
+     * qualified names in your replacement code snippets; this ensures that if there is a naming conflict (where the same name is already
+     * imported for a different package) lint will leave the fully qualified name in place. However, in some scenarios, separately listing
+     * the import is necessary, such as for example with using extension methods.
      */
     fun imports(vararg imports: String): ReplaceStringBuilder {
       val existing = this.imports ?: mutableListOf<String>().also { this.imports = it }
@@ -975,19 +864,13 @@ protected constructor(
       return this
     }
 
-    /**
-     * The IDE should simplify fully qualified names in the element after this fix has been run (off
-     * by default)
-     */
+    /** The IDE should simplify fully qualified names in the element after this fix has been run (off by default) */
     fun shortenNames(): ReplaceStringBuilder {
       shortenNames = true
       return this
     }
 
-    /**
-     * Sets whether the IDE should simplify fully qualified names in the element after this fix has
-     * been run (off by default)
-     */
+    /** Sets whether the IDE should simplify fully qualified names in the element after this fix has been run (off by default) */
     fun shortenNames(shorten: Boolean): ReplaceStringBuilder {
       shortenNames = shorten
       return this
@@ -1000,21 +883,18 @@ protected constructor(
     }
 
     /**
-     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention.
-     * These kinds of fixes can be automatically applied when lint is run in fix-mode where it
-     * applies all the suggested (eligible) fixes.
+     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention. These kinds of fixes can be automatically
+     * applied when lint is run in fix-mode where it applies all the suggested (eligible) fixes.
      *
      * Examples of fixes which are not auto-fixable:
-     * 1. A fix which introduces a semantic change that may not be desirable. For example, lint may
-     *    warn that the use of an API is discouraged and offer a similar but not identical
-     *    replacement; in this case the developer needs to consider the implications of the
-     *    suggestion.
-     * 2. A fix for a problem where just a part of the solution is offered as a fix, and there are
-     *    many other plausible paths a developer might take, such as lint telling you that you have
-     *    too many actions in the toolbar, and a fix is offered to move each action into a menu.
+     * 1. A fix which introduces a semantic change that may not be desirable. For example, lint may warn that the use of an API is
+     *    discouraged and offer a similar but not identical replacement; in this case the developer needs to consider the implications of
+     *    the suggestion.
+     * 2. A fix for a problem where just a part of the solution is offered as a fix, and there are many other plausible paths a developer
+     *    might take, such as lint telling you that you have too many actions in the toolbar, and a fix is offered to move each action into
+     *    a menu.
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
      * @return this
      */
     fun robot(robot: Boolean): ReplaceStringBuilder {
@@ -1025,20 +905,17 @@ protected constructor(
     /**
      * Whether this fix is independent of other fixes getting applied.
      *
-     * Lint can automatically apply all fixes which are independent in a single pass. An example of
-     * an independent fix is removal of an unused import; removing one unused import does not
-     * invalidate a warning (and fix) for another unused import. (Of course, it's possible that
-     * another fix will introduce a new dependency on the formerly unused class, but this is rare.)
+     * Lint can automatically apply all fixes which are independent in a single pass. An example of an independent fix is removal of an
+     * unused import; removing one unused import does not invalidate a warning (and fix) for another unused import. (Of course, it's
+     * possible that another fix will introduce a new dependency on the formerly unused class, but this is rare.)
      *
-     * However, if we have a duplicate declaration warning, we might put a fix on each one of the
-     * duplicates to delete them; if we apply one, we wouldn't want to apply the other. In fix mode,
-     * lint will only apply the first fix in a compilation unit that is not independent; it will
-     * then need to re-analyze the compilation unit a second time, and if there are additional fixes
-     * found, apply just the first such dependent fix, and so on. This means that for N fixes that
-     * are not independent, it will reanalyze the file N times, which is obviously slower.
+     * However, if we have a duplicate declaration warning, we might put a fix on each one of the duplicates to delete them; if we apply
+     * one, we wouldn't want to apply the other. In fix mode, lint will only apply the first fix in a compilation unit that is not
+     * independent; it will then need to re-analyze the compilation unit a second time, and if there are additional fixes found, apply just
+     * the first such dependent fix, and so on. This means that for N fixes that are not independent, it will reanalyze the file N times,
+     * which is obviously slower.
      *
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun independent(independent: Boolean): ReplaceStringBuilder {
@@ -1047,13 +924,10 @@ protected constructor(
     }
 
     /**
-     * Sets options related to auto-applying this fix. Convenience method for setting both [robot]
-     * and [independent]
+     * Sets options related to auto-applying this fix. Convenience method for setting both [robot] and [independent]
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun autoFix(robot: Boolean, independent: Boolean): ReplaceStringBuilder {
@@ -1063,8 +937,7 @@ protected constructor(
     }
 
     /**
-     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-     * mode, in parallel with other fixes.
+     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
      *
      * @return this
      */
@@ -1074,9 +947,8 @@ protected constructor(
     }
 
     /**
-     * Normally the replacement happens just once; the first occurrence. But with the `repeatedly`
-     * flag set, it will repeat the search and perform repeated replacements throughout the entire
-     * fix range -- e.g. in the same sense as "/g" in a sed command.
+     * Normally the replacement happens just once; the first occurrence. But with the `repeatedly` flag set, it will repeat the search and
+     * perform repeated replacements throughout the entire fix range -- e.g. in the same sense as "/g" in a sed command.
      */
     fun repeatedly(value: Boolean = true): ReplaceStringBuilder {
       repeatedly = value
@@ -1084,12 +956,10 @@ protected constructor(
     }
 
     /**
-     * Normally the replacement is required to happen exactly once, or at least once (if
-     * [repeatedly] is set). But in some cases the replacement can be optional. This typically
-     * doesn't make sense for a quickfix on its own, but is useful in composite fixes. For example,
-     * when renaming an XML element tag, we also want to rename the closing tag -- but some elements
-     * don't have a closing tag. Instead of having to figure that up front, we'll just mark the
-     * closing edit as optional.
+     * Normally the replacement is required to happen exactly once, or at least once (if [repeatedly] is set). But in some cases the
+     * replacement can be optional. This typically doesn't make sense for a quickfix on its own, but is useful in composite fixes. For
+     * example, when renaming an XML element tag, we also want to rename the closing tag -- but some elements don't have a closing tag.
+     * Instead of having to figure that up front, we'll just mark the closing edit as optional.
      */
     fun optional(value: Boolean = true): ReplaceStringBuilder {
       optional = value
@@ -1120,11 +990,7 @@ protected constructor(
   }
 
   /** A builder for creating (or "un-creating", e.g. deleting) a file */
-  class CreateFileBuilder
-  internal constructor(
-    @field:Nls private var displayName: String?,
-    @field:Nls private var familyName: String?,
-  ) {
+  class CreateFileBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var selectPattern: String? = null
     private var delete: Boolean = false
     private var file: File? = null
@@ -1135,12 +1001,10 @@ protected constructor(
     private var independent = false
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun name(displayName: String? = null, familyName: String? = null): CreateFileBuilder {
@@ -1178,10 +1042,7 @@ protected constructor(
       return this
     }
 
-    /**
-     * Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set
-     * the caret, use an empty group.
-     */
+    /** Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set the caret, use an empty group. */
     fun select(@RegExp selectPattern: String?): CreateFileBuilder {
       this.selectPattern = selectPattern
       return this
@@ -1203,21 +1064,18 @@ protected constructor(
     }
 
     /**
-     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention.
-     * These kinds of fixes can be automatically applied when lint is run in fix-mode where it
-     * applies all the suggested (eligible) fixes.
+     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention. These kinds of fixes can be automatically
+     * applied when lint is run in fix-mode where it applies all the suggested (eligible) fixes.
      *
      * Examples of fixes which are not auto-fixable:
-     * 1. A fix which introduces a semantic change that may not be desirable. For example, lint may
-     *    warn that the use of an API is discouraged and offer a similar but not identical
-     *    replacement; in this case the developer needs to consider the implications of the
-     *    suggestion.
-     * 2. A fix for a problem where just a part of the solution is offered as a fix, and there are
-     *    many other plausible paths a developer might take, such as lint telling you that you have
-     *    too many actions in the toolbar, and a fix is offered to move each action into a menu.
+     * 1. A fix which introduces a semantic change that may not be desirable. For example, lint may warn that the use of an API is
+     *    discouraged and offer a similar but not identical replacement; in this case the developer needs to consider the implications of
+     *    the suggestion.
+     * 2. A fix for a problem where just a part of the solution is offered as a fix, and there are many other plausible paths a developer
+     *    might take, such as lint telling you that you have too many actions in the toolbar, and a fix is offered to move each action into
+     *    a menu.
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
      * @return this
      */
     fun robot(robot: Boolean): CreateFileBuilder {
@@ -1228,20 +1086,17 @@ protected constructor(
     /**
      * Whether this fix is independent of other fixes getting applied.
      *
-     * Lint can automatically apply all fixes which are independent in a single pass. An example of
-     * an independent fix is removal of an unused import; removing one unused import does not
-     * invalidate a warning (and fix) for another unused import. (Of course, it's possible that
-     * another fix will introduce a new dependency on the formerly unused class, but this is rare.)
+     * Lint can automatically apply all fixes which are independent in a single pass. An example of an independent fix is removal of an
+     * unused import; removing one unused import does not invalidate a warning (and fix) for another unused import. (Of course, it's
+     * possible that another fix will introduce a new dependency on the formerly unused class, but this is rare.)
      *
-     * However, if we have a duplicate declaration warning, we might put a fix on each one of the
-     * duplicates to delete them; if we apply one, we wouldn't want to apply the other. In fix mode,
-     * lint will only apply the first fix in a compilation unit that is not independent; it will
-     * then need to re-analyze the compilation unit a second time, and if there are additional fixes
-     * found, apply just the first such dependent fix, and so on. This means that for N fixes that
-     * are not independent, it will reanalyze the file N times, which is obviously slower.
+     * However, if we have a duplicate declaration warning, we might put a fix on each one of the duplicates to delete them; if we apply
+     * one, we wouldn't want to apply the other. In fix mode, lint will only apply the first fix in a compilation unit that is not
+     * independent; it will then need to re-analyze the compilation unit a second time, and if there are additional fixes found, apply just
+     * the first such dependent fix, and so on. This means that for N fixes that are not independent, it will reanalyze the file N times,
+     * which is obviously slower.
      *
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun independent(independent: Boolean): CreateFileBuilder {
@@ -1250,13 +1105,10 @@ protected constructor(
     }
 
     /**
-     * Sets options related to auto-applying this fix. Convenience method for setting both [robot]
-     * and [independent]
+     * Sets options related to auto-applying this fix. Convenience method for setting both [robot] and [independent]
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun autoFix(robot: Boolean, independent: Boolean): CreateFileBuilder {
@@ -1266,8 +1118,7 @@ protected constructor(
     }
 
     /**
-     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-     * mode, in parallel with other fixes.
+     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
      *
      * @return this
      */
@@ -1278,18 +1129,7 @@ protected constructor(
 
     /** Constructs a [LintFix] for this file creation or deletion fix */
     fun build(): LintFix {
-      return CreateFileFix(
-        displayName,
-        familyName,
-        selectPattern,
-        delete,
-        file!!,
-        binary,
-        text,
-        reformat,
-        robot,
-        independent,
-      )
+      return CreateFileFix(displayName, familyName, selectPattern, delete, file!!, binary, text, reformat, robot, independent)
     }
   }
 
@@ -1311,11 +1151,7 @@ protected constructor(
   }
 
   /** Builder for creating a set or clear attribute fix */
-  class SetAttributeBuilder
-  internal constructor(
-    @field:Nls private var displayName: String?,
-    @field:Nls private var familyName: String?,
-  ) {
+  class SetAttributeBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var attribute: String? = null
     private var namespace: String? = null
     private var value: String? = ""
@@ -1337,12 +1173,10 @@ protected constructor(
     }
 
     /**
-     * Sets display name and family name. If not supplied a default will be created based on the
-     * type of quickfix.
+     * Sets display name and family name. If not supplied a default will be created based on the type of quickfix.
      *
      * @param displayName the displayName
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun name(displayName: String, familyName: String): SetAttributeBuilder {
@@ -1354,8 +1188,7 @@ protected constructor(
     /**
      * Sets the family name.
      *
-     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same
-     *   family name in a single go.
+     * @param familyName the "family" name; the shared name to use to apply *all* fixes of the same family name in a single go.
      * @return this
      */
     fun sharedName(familyName: String?): SetAttributeBuilder {
@@ -1363,10 +1196,7 @@ protected constructor(
       return this
     }
 
-    /**
-     * Sets the namespace to the Android namespace (shortcut for [namespace] passing in
-     * [ANDROID_URI]
-     */
+    /** Sets the namespace to the Android namespace (shortcut for [namespace] passing in [ANDROID_URI] */
     fun android(): SetAttributeBuilder {
       assert(namespace == null)
       namespace = ANDROID_URI
@@ -1380,10 +1210,7 @@ protected constructor(
       return this
     }
 
-    /**
-     * Sets the value to the given value. Null means delete (though it's more natural to call
-     * [remove]
-     */
+    /** Sets the value to the given value. Null means delete (though it's more natural to call [remove] */
     fun value(value: String?): SetAttributeBuilder {
       this.value = value
       if (value != null && value.isEmpty()) {
@@ -1417,20 +1244,14 @@ protected constructor(
     }
 
     /**
-     * Sets the value to TＯDＯ meant for values that aren't optional. You can also supply a prefix
-     * and/or a suffix.
+     * Sets the value to TＯDＯ meant for values that aren't optional. You can also supply a prefix and/or a suffix.
      *
      * @param prefix optional prefix to add before the TＯDＯ marker
      * @param suffix optional suffix to add after the TＯDＯ marker
      * @return a builder for TＯDＯ edits
      */
     @JvmOverloads
-    fun todo(
-      namespace: String?,
-      attribute: String,
-      prefix: String? = null,
-      suffix: String? = null,
-    ): SetAttributeBuilder {
+    fun todo(namespace: String?, attribute: String, prefix: String? = null, suffix: String? = null): SetAttributeBuilder {
       namespace(namespace)
       attribute(attribute)
       val sb = StringBuilder()
@@ -1449,8 +1270,8 @@ protected constructor(
     }
 
     /**
-     * Sets a location range to use for searching for the element. Useful if you want to work on
-     * elements outside the element marked as the problem range.
+     * Sets a location range to use for searching for the element. Useful if you want to work on elements outside the element marked as the
+     * problem range.
      */
     fun range(range: Location?): SetAttributeBuilder {
       this.range = if (range != null) extractOffsets(range) else null
@@ -1465,8 +1286,7 @@ protected constructor(
     }
 
     /**
-     * Moves the caret to the given offset (relative to the position of the value text; can be
-     * negative ([means not set][Integer.MIN_VALUE]
+     * Moves the caret to the given offset (relative to the position of the value text; can be negative ([means not set][Integer.MIN_VALUE]
      */
     fun caret(valueStartDelta: Int): SetAttributeBuilder {
       point = valueStartDelta
@@ -1488,22 +1308,20 @@ protected constructor(
     }
 
     /**
-     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention.
-     * These kinds of fixes can be automatically applied when lint is run in fix-mode where it
-     * applies all the suggested (eligible) fixes.
+     * Sets whether this fix can be applied by a robot, e.g. does not require human intervention. These kinds of fixes can be automatically
+     * applied when lint is run in fix-mode where it applies all the suggested (eligible) fixes.
      *
      * Examples of fixes which are not auto-fixable:
      *
-     * (1) A fix which introduces a semantic change that may not be desirable. For example, lint may
-     * warn that the use of an API is discouraged and offer a similar but not identical replacement;
-     * in this case the developer needs to consider the implications of the suggestion.
+     * (1) A fix which introduces a semantic change that may not be desirable. For example, lint may warn that the use of an API is
+     * discouraged and offer a similar but not identical replacement; in this case the developer needs to consider the implications of the
+     * suggestion.
      *
-     * (2) A fix for a problem where just a part of the solution is offered as a fix, and there are
-     * many other plausible paths a developer might take, such as lint telling you that you have too
-     * many actions in the toolbar, and a fix is offered to move each action into a menu.
+     * (2) A fix for a problem where just a part of the solution is offered as a fix, and there are many other plausible paths a developer
+     * might take, such as lint telling you that you have too many actions in the toolbar, and a fix is offered to move each action into a
+     * menu.
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
      * @return this
      */
     fun robot(robot: Boolean): SetAttributeBuilder {
@@ -1514,20 +1332,17 @@ protected constructor(
     /**
      * Whether this fix is independent of other fixes getting applied.
      *
-     * Lint can automatically apply all fixes which are independent in a single pass. An example of
-     * an independent fix is removal of an unused import; removing one unused import does not
-     * invalidate a warning (and fix) for another unused import. (Of course, it's possible that
-     * another fix will introduce a new dependency on the formerly unused class, but this is rare.)
+     * Lint can automatically apply all fixes which are independent in a single pass. An example of an independent fix is removal of an
+     * unused import; removing one unused import does not invalidate a warning (and fix) for another unused import. (Of course, it's
+     * possible that another fix will introduce a new dependency on the formerly unused class, but this is rare.)
      *
-     * However, if we have a duplicate declaration warning, we might put a fix on each one of the
-     * duplicates to delete them; if we apply one, we wouldn't want to apply the other. In fix mode,
-     * lint will only apply the first fix in a compilation unit that is not independent; it will
-     * then need to re-analyze the compilation unit a second time, and if there are additional fixes
-     * found, apply just the first such dependent fix, and so on. This means that for N fixes that
-     * are not independent, it will reanalyze the file N times, which is obviously slower.
+     * However, if we have a duplicate declaration warning, we might put a fix on each one of the duplicates to delete them; if we apply
+     * one, we wouldn't want to apply the other. In fix mode, lint will only apply the first fix in a compilation unit that is not
+     * independent; it will then need to re-analyze the compilation unit a second time, and if there are additional fixes found, apply just
+     * the first such dependent fix, and so on. This means that for N fixes that are not independent, it will reanalyze the file N times,
+     * which is obviously slower.
      *
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun independent(independent: Boolean): SetAttributeBuilder {
@@ -1536,13 +1351,10 @@ protected constructor(
     }
 
     /**
-     * Sets options related to auto-applying this fix. Convenience method for setting both [robot]
-     * and [independent]
+     * Sets options related to auto-applying this fix. Convenience method for setting both [robot] and [independent]
      *
-     * @param robot whether this fix can be applied by a robot, e.g. does not require human
-     *   intervention
-     * @param independent whether it is **not** the case that applying other fixes simultaneously
-     *   can invalidate this fix
+     * @param robot whether this fix can be applied by a robot, e.g. does not require human intervention
+     * @param independent whether it is **not** the case that applying other fixes simultaneously can invalidate this fix
      * @return this
      */
     fun autoFix(robot: Boolean, independent: Boolean): SetAttributeBuilder {
@@ -1552,8 +1364,7 @@ protected constructor(
     }
 
     /**
-     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix
-     * mode, in parallel with other fixes.
+     * Convenience method for [autoFix]: indicates that this fix can safely be applied in auto-fix mode, in parallel with other fixes.
      *
      * @return this
      */
@@ -1564,29 +1375,14 @@ protected constructor(
 
     /** Constructs a [LintFix] for this attribute operation */
     fun build(): LintFix {
-      return SetAttribute(
-        displayName,
-        familyName,
-        namespace,
-        attribute!!,
-        value,
-        range,
-        point,
-        mark,
-        robot,
-        independent,
-      )
+      return SetAttribute(displayName, familyName, namespace, attribute!!, value, range, point, mark, robot, independent)
     }
   }
 
-  class FixMapBuilder
-  internal constructor(
-    @field:Nls private val displayName: String?,
-    @field:Nls private val familyName: String?,
-  ) {
+  class FixMapBuilder internal constructor(@field:Nls private val displayName: String?, @field:Nls private val familyName: String?) {
     /**
-     * Values are limited to strings, files, list of strings, list of files, ints and booleans.
-     * Throwables can also be in there, but those are only allowed within lint unit tests.
+     * Values are limited to strings, files, list of strings, list of files, ints and booleans. Throwables can also be in there, but those
+     * are only allowed within lint unit tests.
      */
     internal val map: MutableMap<String, Any> = Maps.newHashMapWithExpectedSize(4)
 
@@ -1611,8 +1407,8 @@ protected constructor(
     }
 
     /**
-     * Puts the given value into the map using the given key. This is only intended for the lint
-     * test infrastructure; exceptions cannot be persisted.
+     * Puts the given value into the map using the given key. This is only intended for the lint test infrastructure; exceptions cannot be
+     * persisted.
      */
     fun put(key: String, throwable: Throwable?): FixMapBuilder {
       if (throwable == null) {
@@ -1653,11 +1449,9 @@ protected constructor(
   /**
    * General map storage for quickfix data; clients can look up via map keys or types of values
    *
-   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder
-   * class instead - [create].
+   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
-  class DataMap(displayName: String?, familyName: String?, private val map: Map<String, Any>) :
-    LintFix(displayName, familyName) {
+  class DataMap(displayName: String?, familyName: String?, private val map: Map<String, Any>) : LintFix(displayName, familyName) {
     /** Returns true if this map contains a fix with the given key */
     fun hasKey(key: String): Boolean {
       return map.containsKey(key)
@@ -1686,7 +1480,8 @@ protected constructor(
     fun getStringList(key: String): List<String>? {
       val value = map[key]
       if (value is List<*>) {
-        @Suppress("UNCHECKED_CAST") return value as List<String>?
+        @Suppress("UNCHECKED_CAST")
+        return value as List<String>?
       } else if (value is String) {
         // from XML persistence
         return Splitter.on(",").splitToList(value)
@@ -1762,12 +1557,8 @@ protected constructor(
   }
 
   /** A URL to be offered to be shown as a "fix". */
-  class ShowUrl(
-    displayName: String,
-    familyName: String?,
-    val url: String,
-    val onUrlOpen: (() -> Unit)? = null,
-  ) : LintFix(displayName, familyName)
+  class ShowUrl(displayName: String, familyName: String?, val url: String, val onUrlOpen: (() -> Unit)? = null) :
+    LintFix(displayName, familyName)
 
   /** An annotation to add to the element */
   class AnnotateFix
@@ -1777,13 +1568,12 @@ protected constructor(
     /** The annotation source code */
     val annotation: String,
     /**
-     * If true replace the previous occurrence of the same annotation. Should be used unless you're
-     * dealing with a repeatable annotation.
+     * If true replace the previous occurrence of the same annotation. Should be used unless you're dealing with a repeatable annotation.
      */
     val replace: Boolean,
     /**
-     * A location range for the source region where the fix will operate. Useful when the fix is
-     * applying in a wider range than the highlighted problem range.
+     * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
+     * highlighted problem range.
      */
     range: Location?,
     /** Pattern to select; if it contains parentheses, group(1) will be selected */
@@ -1800,8 +1590,7 @@ protected constructor(
   /**
    * A list of quickfixes
    *
-   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder
-   * class instead - [create].
+   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class LintFixGroup(
     displayName: String?,
@@ -1849,11 +1638,9 @@ protected constructor(
   }
 
   /**
-   * Convenience class for the common scenario of suggesting a fix which involves setting an XML
-   * attribute.
+   * Convenience class for the common scenario of suggesting a fix which involves setting an XML attribute.
    *
-   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder
-   * class instead - [create].
+   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class SetAttribute(
     displayName: String?,
@@ -1865,14 +1652,11 @@ protected constructor(
     /** The value (or null to delete the attribute) */
     val value: String?,
     /**
-     * A location range for the source region where the fix will operate. Useful when the fix is
-     * applying in a wider range than the highlighted problem range.
+     * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
+     * highlighted problem range.
      */
     range: Location?,
-    /**
-     * The caret location to show, OR null if not set. If [mark] is set, the end of the selection
-     * too.
-     */
+    /** The caret location to show, OR null if not set. If [mark] is set, the end of the selection too. */
     val point: Int?,
     /** The selection anchor, OR null if not set */
     val mark: Int?,
@@ -1899,24 +1683,20 @@ protected constructor(
   }
 
   /**
-   * Convenience class for the common scenario of suggesting a fix which involves replacing a static
-   * string or regular expression with a replacement string
+   * Convenience class for the common scenario of suggesting a fix which involves replacing a static string or regular expression with a
+   * replacement string
    *
-   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder
-   * class instead - [create].
+   * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class ReplaceString(
     displayName: String?,
     familyName: String?,
     /**
-     * The string literal to replace, or [INSERT_BEGINNING] or [INSERT_END] to leave the old text
-     * alone and insert the "replacement" text at the beginning or the end
+     * The string literal to replace, or [INSERT_BEGINNING] or [INSERT_END] to leave the old text alone and insert the "replacement" text at
+     * the beginning or the end
      */
     val oldString: String?,
-    /**
-     * The regex to replace. Will always have at least one group, which should be the replacement
-     * range.
-     */
+    /** The regex to replace. Will always have at least one group, which should be the replacement range. */
     @RegExp val oldPattern: String?,
     /** [java.util.regex.Pattern] flags to use with [oldPattern], or 0 */
     val patternFlags: Int,
@@ -1929,37 +1709,33 @@ protected constructor(
     /** Whether the modified text range should be reformatted */
     val reformat: Boolean,
     /**
-     * Additional imports to add. Normally, the replacement string should use fully qualified names
-     * and lint will automatically handle replacing these with imported symbols when possible (if
-     * [shortenNames] is true), but for example for extension methods where you cannot use fully
-     * qualified names in place, reference these here.
+     * Additional imports to add. Normally, the replacement string should use fully qualified names and lint will automatically handle
+     * replacing these with imported symbols when possible (if [shortenNames] is true), but for example for extension methods where you
+     * cannot use fully qualified names in place, reference these here.
      */
     val imports: List<String>,
     /**
-     * A location range to use for searching for the text or pattern. Useful if you want to make a
-     * replacement that is larger than the error range highlighted as the problem range.
+     * A location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the error
+     * range highlighted as the problem range.
      */
     range: Location?,
     /**
-     * Normally the replacement happens just once; the first occurrence. But with the global flag
-     * set, it will repeat the search and perform repeated replacements throughout the entire fix
-     * range -- e.g. in the same sense as "/g" in a sed command.
+     * Normally the replacement happens just once; the first occurrence. But with the global flag set, it will repeat the search and perform
+     * repeated replacements throughout the entire fix range -- e.g. in the same sense as "/g" in a sed command.
      */
     val globally: Boolean,
     /**
-     * Normally the replacement is required to happen exactly once, or at least once (if [globally]
-     * is set). But in some cases the replacement can be optional. This typically doesn't make sense
-     * for a quickfix on its own, but is useful in composite fixes. For example, when renaming an
-     * XML element tag, we also want to rename the closing tag -- but some elements don't have a
-     * closing tag. Instead of having to figure that up front, we'll just mark the closing edit as
-     * optional.
+     * Normally the replacement is required to happen exactly once, or at least once (if [globally] is set). But in some cases the
+     * replacement can be optional. This typically doesn't make sense for a quickfix on its own, but is useful in composite fixes. For
+     * example, when renaming an XML element tag, we also want to rename the closing tag -- but some elements don't have a closing tag.
+     * Instead of having to figure that up front, we'll just mark the closing edit as optional.
      */
     val optional: Boolean,
     robot: Boolean,
     independent: Boolean,
     /**
-     * The sorting priority of this fix. This is *only* relevant when there are multiple insertions
-     * at the same location; in that case, the sorting priority will be used to sort the items.
+     * The sorting priority of this fix. This is *only* relevant when there are multiple insertions at the same location; in that case, the
+     * sorting priority will be used to sort the items.
      */
     val sortPriority: Int,
   ) : LintFix(displayName, familyName, range) {
@@ -1989,10 +1765,9 @@ protected constructor(
     }
 
     /**
-     * If this [ReplaceString] specified a regular expression in [oldPattern], and the replacement
-     * string [replacement] specifies one or more "back references" (with `(?<name>)` with the
-     * syntax `\k<name>` then this method will substitute in the matching group). Note that "target"
-     * is a reserved name, used to identify the range that should be completed.
+     * If this [ReplaceString] specified a regular expression in [oldPattern], and the replacement string [replacement] specifies one or
+     * more "back references" (with `(?<name>)` with the syntax `\k<name>` then this method will substitute in the matching group). Note
+     * that "target" is a reserved name, used to identify the range that should be completed.
      */
     fun expandBackReferences(matcher: Matcher): String {
       return expandBackReferences(replacement, matcher)
@@ -2000,20 +1775,20 @@ protected constructor(
 
     companion object {
       /**
-       * Special marker signifying that we don't want to actually replace any text in the element,
-       * just insert the "replacement" at the beginning of the range
+       * Special marker signifying that we don't want to actually replace any text in the element, just insert the "replacement" at the
+       * beginning of the range
        */
       const val INSERT_BEGINNING = "_lint_insert_begin_"
 
       /**
-       * Special marker signifying that we don't want to actually replace any text in the element,
-       * just insert the "replacement" at the end of the range
+       * Special marker signifying that we don't want to actually replace any text in the element, just insert the "replacement" at the end
+       * of the range
        */
       const val INSERT_END = "_lint_insert_end_"
 
       /**
-       * Given a matched regular expression and a back reference expression, this method produces
-       * the expression with back references substituted in.
+       * Given a matched regular expression and a back reference expression, this method produces the expression with back references
+       * substituted in.
        */
       @JvmStatic
       fun expandBackReferences(replacement: String, matcher: Matcher): String {
@@ -2054,8 +1829,8 @@ protected constructor(
   }
 
   /**
-   * Fix descriptor for creating or deleting a file. This class/API is **only** intended for IDE
-   * use. Lint checks should be accessing the builder class instead - [create].
+   * Fix descriptor for creating or deleting a file. This class/API is **only** intended for IDE use. Lint checks should be accessing the
+   * builder class instead - [create].
    */
   class CreateFileFix(
     displayName: String?,
@@ -2095,10 +1870,7 @@ protected constructor(
       return Builder()
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @Contract("_, _, !null -> !null")
     @JvmStatic
     fun getString(fix: LintFix?, key: String, defaultValue: String?): String? {
@@ -2107,10 +1879,7 @@ protected constructor(
       } else defaultValue
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     fun getStringList(fix: LintFix?, key: String): List<String>? {
       return if (fix is DataMap) {
@@ -2125,10 +1894,7 @@ protected constructor(
       } else null
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     fun getInt(fix: LintFix?, key: String, defaultValue: Int): Int {
       return if (fix is DataMap) {
@@ -2136,26 +1902,16 @@ protected constructor(
       } else defaultValue
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     @Contract("_, _, !null -> !null")
-    fun getApiConstraint(
-      fix: LintFix?,
-      key: String,
-      defaultValue: ApiConstraint? = ApiConstraint.UNKNOWN,
-    ): ApiConstraint? {
+    fun getApiConstraint(fix: LintFix?, key: String, defaultValue: ApiConstraint? = ApiConstraint.UNKNOWN): ApiConstraint? {
       return if (fix is DataMap) {
         fix.getApiConstraint(key) ?: defaultValue
       } else defaultValue
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     fun getBoolean(fix: LintFix?, key: String, defaultValue: Boolean): Boolean {
       return if (fix is DataMap) {
@@ -2163,10 +1919,7 @@ protected constructor(
       } else defaultValue
     }
 
-    /**
-     * Convenience wrapper which checks whether the given fix is a map, and if so returns the value
-     * stored by its key
-     */
+    /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     fun getMethod(fix: LintFix?, key: String): PsiMethod? {
       return if (fix is DataMap) {
@@ -2175,18 +1928,14 @@ protected constructor(
     }
 
     /**
-     * Creates a copy of the given location range which only holds on to the starting and ending
-     * offsets, to help reduce active memory usage in the IDE; see b/151240516
+     * Creates a copy of the given location range which only holds on to the starting and ending offsets, to help reduce active memory usage
+     * in the IDE; see b/151240516
      */
     private fun extractOffsets(range: Location): Location {
       val start = range.start
       val end = range.end
       return if (start != null && end != null) {
-        Location.create(
-          range.file,
-          DefaultPosition(-1, -1, start.offset),
-          DefaultPosition(-1, -1, end.offset),
-        )
+        Location.create(range.file, DefaultPosition(-1, -1, start.offset), DefaultPosition(-1, -1, end.offset))
       } else {
         val pos = DefaultPosition(-1, -1, 0)
         Location.create(range.file, pos, pos)

@@ -15,12 +15,8 @@
  */
 package com.android.ide.common.util
 
-/**
- * Interface for something than can be canceled.
- */
+/** Interface for something than can be canceled. */
 interface Cancelable {
-  /**
-   * Cancels this Cancelable if it hasn't been canceled or finished already.
-   */
+  /** Cancels this Cancelable if it hasn't been canceled or finished already. */
   fun cancel()
 }

@@ -21,23 +21,20 @@ import com.google.common.collect.ImmutableList
 import org.w3c.dom.Element
 
 /**
- * Interface responsible for providing a key extraction capability from an element.
- * Some elements store their keys as an attribute, some as a sub-element attribute, some don't
- * have any key.
+ * Interface responsible for providing a key extraction capability from an element. Some elements store their keys as an attribute, some as
+ * a sub-element attribute, some don't have any key.
  */
 @Immutable
 internal interface NodeKeyResolver {
 
-    /**
-     * The attribute(s) used to store the xml element key, or null if element does not have a key.
-     */
-    val keyAttributesNames: ImmutableList<String>
+  /** The attribute(s) used to store the xml element key, or null if element does not have a key. */
+  val keyAttributesNames: ImmutableList<String>
 
-    /**
-     * Returns the key associated with this xml element.
-     * @param element the element to get the key from
-     * @return the key as a string to uniquely identify the element from similarly typed elements
-     * in the document or null if there is no key.
-     */
-    fun getKey(element: Element): String?
+  /**
+   * Returns the key associated with this xml element.
+   *
+   * @param element the element to get the key from
+   * @return the key as a string to uniquely identify the element from similarly typed elements in the document or null if there is no key.
+   */
+  fun getKey(element: Element): String?
 }

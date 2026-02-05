@@ -101,17 +101,9 @@ class JavaEvaluator {
 
   abstract fun extendsClass(cls: PsiClass?, className: String, strict: Boolean = false): Boolean
 
-  abstract fun implementsInterface(
-    cls: PsiClass,
-    interfaceName: String,
-    strict: Boolean = false,
-  ): Boolean
+  abstract fun implementsInterface(cls: PsiClass, interfaceName: String, strict: Boolean = false): Boolean
 
-  open fun isMemberInSubClassOf(
-    member: PsiMember,
-    className: String,
-    strict: Boolean = false,
-  ): Boolean {
+  open fun isMemberInSubClassOf(member: PsiMember, className: String, strict: Boolean = false): Boolean {
     val containingClass = member.containingClass
     return containingClass != null && extendsClass(containingClass, className, strict)
   }
@@ -137,8 +129,8 @@ class JavaEvaluator {
   }
 
   /**
-   * Checks whether the class extends a super class or implements a given interface. Like calling
-   * both [extendsClass] and [implementsInterface].
+   * Checks whether the class extends a super class or implements a given interface. Like calling both [extendsClass] and
+   * [implementsInterface].
    */
   open fun inheritsFrom(cls: PsiClass?, className: String, strict: Boolean = false): Boolean {
     cls ?: return false
@@ -146,23 +138,17 @@ class JavaEvaluator {
   }
 
   /**
-   * Returns true if the given method (which is typically looked up by resolving a method call) is
-   * either a method in the exact given class, or if `allowInherit` is true, a method in a class
-   * possibly extending the given class, and if the parameter types are the exact types specified.
+   * Returns true if the given method (which is typically looked up by resolving a method call) is either a method in the exact given class,
+   * or if `allowInherit` is true, a method in a class possibly extending the given class, and if the parameter types are the exact types
+   * specified.
    *
    * @param method the method in question
-   * @param className the class name the method should be defined in or inherit from (or if null,
-   *   allow any class)
+   * @param className the class name the method should be defined in or inherit from (or if null, allow any class)
    * @param allowInherit whether we allow checking for inheritance
    * @param argumentTypes the names of the types of the parameters
    * @return true if this method is defined in the given class and with the given parameters
    */
-  open fun methodMatches(
-    method: PsiMethod,
-    className: String?,
-    allowInherit: Boolean,
-    vararg argumentTypes: String,
-  ): Boolean {
+  open fun methodMatches(method: PsiMethod, className: String?, allowInherit: Boolean, vararg argumentTypes: String): Boolean {
     val classMatches =
       when {
         className == null -> true
@@ -201,8 +187,7 @@ class JavaEvaluator {
       return false
     }
     val parameterList = method.parameterList
-    return parameterList.parametersCount > parameterIndex &&
-      typeMatches(parameterList.parameters[parameterIndex].type, typeName)
+    return parameterList.parametersCount > parameterIndex && typeMatches(parameterList.parameters[parameterIndex].type, typeName)
   }
 
   /** Returns true if the given type matches the given fully qualified type name. */
@@ -231,8 +216,7 @@ class JavaEvaluator {
     if (owner != null) {
       val modifierList = owner.modifierList ?: return false
       if (modifierList.hasModifierProperty(PsiModifier.PUBLIC)) {
-        return !(modifierList is KtLightElement<*, *> &&
-          hasModifier(owner, KtTokens.INTERNAL_KEYWORD))
+        return !(modifierList is KtLightElement<*, *> && hasModifier(owner, KtTokens.INTERNAL_KEYWORD))
       }
     }
     return false
@@ -436,7 +420,8 @@ class JavaEvaluator {
       if (qualifiedName == null) {
         assert(psiClass is PsiAnonymousClass)
 
-        @Suppress("DEPRECATION") return getInternalName(psiClass.containingClass!!)
+        @Suppress("DEPRECATION")
+        return getInternalName(psiClass.containingClass!!)
       }
     }
     return ClassContext.getInternalName(qualifiedName)
@@ -453,22 +438,16 @@ class JavaEvaluator {
   }
 
   /**
-   * Computes a simplified version of the internal JVM description of the given method. This is in
-   * the same format as the ASM desc fields for methods with an exception that the dot ('.')
-   * character is used instead of slash ('/') and dollar sign ('$') characters. For example, a
-   * method named "foo" that takes an int and a String and returns a void will have description
-   * `foo(ILjava.lang.String;):V`.
+   * Computes a simplified version of the internal JVM description of the given method. This is in the same format as the ASM desc fields
+   * for methods with an exception that the dot ('.') character is used instead of slash ('/') and dollar sign ('$') characters. For
+   * example, a method named "foo" that takes an int and a String and returns a void will have description `foo(ILjava.lang.String;):V`.
    *
    * @param method the method to look up the description for
    * @param includeName whether the name should be included
    * @param includeReturn whether the return type should be included
    * @return a simplified version of the internal JVM description for the method
    */
-  open fun getMethodDescription(
-    method: PsiMethod,
-    includeName: Boolean,
-    includeReturn: Boolean,
-  ): String? {
+  open fun getMethodDescription(method: PsiMethod, includeName: Boolean, includeReturn: Boolean): String? {
     val signature = StringBuilder()
 
     if (includeName) {
@@ -487,9 +466,7 @@ class JavaEvaluator {
       if (containingClass != null) {
         val outerClass = containingClass.containingClass
         if (outerClass != null) {
-          if (
-            method.containingClass?.modifierList?.hasModifierProperty(PsiModifier.STATIC) != true
-          ) {
+          if (method.containingClass?.modifierList?.hasModifierProperty(PsiModifier.STATIC) != true) {
             // If so, we also have an implicit parameter to the outer class instance
             if (!appendJvmEquivalentSignature(signature, getClassType(outerClass))) {
               return null
@@ -540,10 +517,9 @@ class JavaEvaluator {
   }
 
   /**
-   * Constructs a simplified version of the internal JVM description of the given method. This is in
-   * the same format as [getMethodDescription] above, the difference being we don't have the actual
-   * PSI for the method type, we just construct the signature from the [method] name, the list of
-   * [argumentTypes] and optionally include the [returnType].
+   * Constructs a simplified version of the internal JVM description of the given method. This is in the same format as
+   * [getMethodDescription] above, the difference being we don't have the actual PSI for the method type, we just construct the signature
+   * from the [method] name, the list of [argumentTypes] and optionally include the [returnType].
    */
   open fun constructMethodDescription(
     method: String,
@@ -575,11 +551,7 @@ class JavaEvaluator {
       "      descriptions and accept JVM equivalent descriptions that can be obtained by calling the\n" +
       "      {@link #getMethodDescription} method."
   )
-  fun getInternalDescription(
-    method: PsiMethod,
-    includeName: Boolean = false,
-    includeReturn: Boolean = true,
-  ): String? {
+  fun getInternalDescription(method: PsiMethod, includeName: Boolean = false, includeReturn: Boolean = true): String? {
     val signature = StringBuilder()
 
     if (includeName) {
@@ -598,9 +570,7 @@ class JavaEvaluator {
       if (containingClass != null) {
         val outerClass = containingClass.containingClass
         if (outerClass != null) {
-          if (
-            method.containingClass?.modifierList?.hasModifierProperty(PsiModifier.STATIC) != true
-          ) {
+          if (method.containingClass?.modifierList?.hasModifierProperty(PsiModifier.STATIC) != true) {
             // If so, we also have an implicit parameter to the outer class instance
             @Suppress("DEPRECATION")
             if (!appendJvmTypeName(signature, outerClass)) {
@@ -632,8 +602,7 @@ class JavaEvaluator {
   }
 
   /**
-   * The JVM equivalent type name differs from the real JVM name by using dot ('.') instead of slash
-   * ('/') and dollar sign ('$') characters.
+   * The JVM equivalent type name differs from the real JVM name by using dot ('.') instead of slash ('/') and dollar sign ('$') characters.
    */
   private fun appendJvmEquivalentTypeName(signature: StringBuilder, outerClass: PsiClass): Boolean {
     val className = getQualifiedName(outerClass) ?: return false
@@ -642,8 +611,8 @@ class JavaEvaluator {
   }
 
   /**
-   * The JVM equivalent signature differs from the real JVM signature by using dot ('.') instead of
-   * slash ('/') and dollar sign ('$') characters.
+   * The JVM equivalent signature differs from the real JVM signature by using dot ('.') instead of slash ('/') and dollar sign ('$')
+   * characters.
    */
   private fun appendJvmEquivalentSignature(buffer: StringBuilder, type: PsiType?): Boolean {
     if (type == null) {
@@ -753,15 +722,13 @@ class JavaEvaluator {
         override fun visitEllipsisType(ellipsisType: PsiEllipsisType): PsiType? {
           val componentType = ellipsisType.componentType
           val newComponentType = componentType.accept(this)
-          return if (newComponentType === componentType) ellipsisType
-          else newComponentType?.createArrayType()
+          return if (newComponentType === componentType) ellipsisType else newComponentType?.createArrayType()
         }
 
         override fun visitArrayType(arrayType: PsiArrayType): PsiType? {
           val componentType = arrayType.componentType
           val newComponentType = componentType.accept(this)
-          return if (newComponentType === componentType) arrayType
-          else newComponentType?.createArrayType()
+          return if (newComponentType === componentType) arrayType else newComponentType?.createArrayType()
         }
       }
     )
@@ -775,48 +742,23 @@ class JavaEvaluator {
 
   abstract fun getAllAnnotations(owner: UAnnotated, inHierarchy: Boolean = false): List<UAnnotation>
 
-  @Deprecated(
-    "Use getAnnotations() instead; consider providing a parent",
-    replaceWith = ReplaceWith("getAnnotations(owner, inHierarchy)"),
-  )
-  abstract fun getAllAnnotations(
-    owner: PsiModifierListOwner,
-    inHierarchy: Boolean,
-  ): Array<PsiAnnotation>
+  @Deprecated("Use getAnnotations() instead; consider providing a parent", replaceWith = ReplaceWith("getAnnotations(owner, inHierarchy)"))
+  abstract fun getAllAnnotations(owner: PsiModifierListOwner, inHierarchy: Boolean): Array<PsiAnnotation>
 
-  abstract fun getAnnotations(
-    owner: PsiModifierListOwner?,
-    inHierarchy: Boolean = false,
-    parent: UElement? = null,
-  ): List<UAnnotation>
+  abstract fun getAnnotations(owner: PsiModifierListOwner?, inHierarchy: Boolean = false, parent: UElement? = null): List<UAnnotation>
 
   @Deprecated(
     "Use getAnnotationInHierarchy returning a UAnnotation instead",
     replaceWith = ReplaceWith("getAnnotationInHierarchy(listOwner, *annotationNames)"),
   )
-  abstract fun findAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
-  ): PsiAnnotation?
+  abstract fun findAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): PsiAnnotation?
 
-  abstract fun getAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
-  ): UAnnotation?
+  abstract fun getAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): UAnnotation?
 
-  @Deprecated(
-    "Use getAnnotation returning a UAnnotation instead",
-    replaceWith = ReplaceWith("getAnnotation(listOwner, *annotationNames)"),
-  )
-  abstract fun findAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
-  ): PsiAnnotation?
+  @Deprecated("Use getAnnotation returning a UAnnotation instead", replaceWith = ReplaceWith("getAnnotation(listOwner, *annotationNames)"))
+  abstract fun findAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): PsiAnnotation?
 
-  abstract fun getAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
-  ): UAnnotation?
+  abstract fun getAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): UAnnotation?
 
   /** Try to determine the path to the .jar file containing the element, **if** applicable. */
   abstract fun findJarPath(element: PsiElement): String?
@@ -825,8 +767,7 @@ class JavaEvaluator {
   abstract fun findJarPath(element: UElement): String?
 
   /**
-   * Returns true if the given annotation is inherited (instead of being defined directly on the
-   * given modifier list holder
+   * Returns true if the given annotation is inherited (instead of being defined directly on the given modifier list holder
    *
    * @param annotation the annotation to check
    * @param owner the owner potentially declaring the annotation
@@ -843,10 +784,7 @@ class JavaEvaluator {
       val annotationOwner = psi.owner
       return annotationOwner == null || annotationOwner != owner.modifierList
     } else if (psi is KtAnnotationEntry) {
-      val parent =
-        psi.getParentOfType<KtModifierListOwner>(true)?.let {
-          if (it is KtPropertyAccessor) it.property else it
-        }
+      val parent = psi.getParentOfType<KtModifierListOwner>(true)?.let { if (it is KtPropertyAccessor) it.property else it }
       val ownerPsi = if (owner is UElement) owner.sourcePsi else owner
       return parent == null || parent != ownerPsi
     }
@@ -855,8 +793,7 @@ class JavaEvaluator {
   }
 
   /**
-   * Returns true if the given annotation is inherited (instead of being defined directly on the
-   * given modifier list holder
+   * Returns true if the given annotation is inherited (instead of being defined directly on the given modifier list holder
    *
    * @param annotation the annotation to check
    * @param owner the owner potentially declaring the annotation
@@ -883,16 +820,16 @@ class JavaEvaluator {
   }
 
   /**
-   * Return the Gradle group id for the given element, **if** applicable. For example, for a method
-   * in the appcompat library, this would return "com.android.support".
+   * Return the Gradle group id for the given element, **if** applicable. For example, for a method in the appcompat library, this would
+   * return "com.android.support".
    */
   open fun getLibrary(element: PsiElement): LintModelMavenName? {
     return getLibrary(findJarPath(element)) ?: getProject(element)?.mavenCoordinate
   }
 
   /**
-   * Return the Gradle group id for the given element, **if** applicable. For example, for a method
-   * in the appcompat library, this would return "com.android.support".
+   * Return the Gradle group id for the given element, **if** applicable. For example, for a method in the appcompat library, this would
+   * return "com.android.support".
    */
   open fun getLibrary(element: UElement): LintModelMavenName? {
     val lib = getLibrary(findJarPath(element))
@@ -1007,10 +944,7 @@ class JavaEvaluator {
     return null
   }
 
-  private fun findOwnerLibrary(
-    dependencies: Collection<LintModelLibrary>,
-    jarFile: String,
-  ): LintModelLibrary? {
+  private fun findOwnerLibrary(dependencies: Collection<LintModelLibrary>, jarFile: String): LintModelLibrary? {
     for (library in dependencies.asSequence().filterIsInstance<LintModelExternalLibrary>()) {
       for (jar in library.jarFiles) {
         if (jarFile == jar.path) {
@@ -1022,11 +956,7 @@ class JavaEvaluator {
     return null
   }
 
-  private fun findOwnerLibrary(
-    dependencies: Collection<LintModelLibrary>,
-    pathPrefix: String,
-    pathSuffix: String,
-  ): LintModelLibrary? {
+  private fun findOwnerLibrary(dependencies: Collection<LintModelLibrary>, pathPrefix: String, pathSuffix: String): LintModelLibrary? {
     for (library in dependencies.asSequence().filterIsInstance<LintModelExternalLibrary>()) {
       for (jar in library.jarFiles) {
         val path = jar.path
@@ -1040,14 +970,11 @@ class JavaEvaluator {
   }
 
   /**
-   * For a given call, computes the argument to parameter mapping. For Java this is generally one to
-   * one (except for varargs), but in Kotlin it can be quite a bit more complicated due to extension
-   * methods, named parameters, default parameters, and varargs and the spread operator.
+   * For a given call, computes the argument to parameter mapping. For Java this is generally one to one (except for varargs), but in Kotlin
+   * it can be quite a bit more complicated due to extension methods, named parameters, default parameters, and varargs and the spread
+   * operator.
    */
-  open fun computeArgumentMapping(
-    call: UCallExpression,
-    method: PsiMethod,
-  ): Map<UExpression, PsiParameter> {
+  open fun computeArgumentMapping(call: UCallExpression, method: PsiMethod): Map<UExpression, PsiParameter> {
     return emptyMap()
   }
 
@@ -1056,11 +983,10 @@ class JavaEvaluator {
   }
 
   /**
-   * Filters the set of annotations down to those considered by lint (and more importantly, handles
-   * indirection, e.g. a custom annotation annotated with a known annotation will return the known
-   * annotation instead. For example, if you make an annotation named `@Duration` and annotate it
-   * with `@IntDef(a,b,c)`, this method will return the `@IntDef` annotation instead of `@Duration`
-   * for the element annotated with a duration.
+   * Filters the set of annotations down to those considered by lint (and more importantly, handles indirection, e.g. a custom annotation
+   * annotated with a known annotation will return the known annotation instead. For example, if you make an annotation named `@Duration`
+   * and annotate it with `@IntDef(a,b,c)`, this method will return the `@IntDef` annotation instead of `@Duration` for the element
+   * annotated with a duration.
    */
   fun filterRelevantAnnotations(
     annotations: Array<PsiAnnotation>,
@@ -1111,8 +1037,7 @@ class JavaEvaluator {
         annotation.nameReferenceElement?.resolve()
           ?: run {
             val project = annotation.project
-            JavaPsiFacade.getInstance(project)
-              .findClass(signature, GlobalSearchScope.projectScope(project))
+            JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
           }
           ?: continue
       if (cls !is PsiClass || !cls.isAnnotationType) {
@@ -1187,8 +1112,7 @@ class JavaEvaluator {
           ?: run {
             val project = annotation.sourcePsi?.project
             if (project != null) {
-              JavaPsiFacade.getInstance(project)
-                .findClass(signature, GlobalSearchScope.projectScope(project))
+              JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
             } else {
               null
             }
@@ -1219,8 +1143,7 @@ class JavaEvaluator {
   }
 
   /**
-   * Returns true if this method is overriding a method from a super class, or optionally if it is
-   * implementing a method from an interface.
+   * Returns true if this method is overriding a method from a super class, or optionally if it is implementing a method from an interface.
    */
   fun isOverride(method: UMethod, includeInterfaces: Boolean = true): Boolean {
     if (isStatic(method.javaPsi)) {
@@ -1244,8 +1167,7 @@ class JavaEvaluator {
   }
 
   /**
-   * Returns true if this method is overriding a method from a super class, or optionally if it is
-   * implementing a method from an interface.
+   * Returns true if this method is overriding a method from a super class, or optionally if it is implementing a method from an interface.
    */
   fun isOverride(method: PsiMethod, includeInterfaces: Boolean = true): Boolean {
     if (isStatic(method)) {

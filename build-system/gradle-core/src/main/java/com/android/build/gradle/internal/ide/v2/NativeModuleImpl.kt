@@ -24,11 +24,12 @@ import java.io.File
 import java.io.Serializable
 
 data class NativeModuleImpl(
-    override val name: String,
-    override val variants: List<NativeVariant>,
-    override val nativeBuildSystem: NativeBuildSystem,
-    override val ndkVersion: String,
-    override val externalNativeBuildFile: File
+  override val name: String,
+  override val variants: List<NativeVariant>,
+  override val nativeBuildSystem: NativeBuildSystem,
+  override val ndkVersion: String,
+  override val externalNativeBuildFile: File,
 ) : NativeModule, Serializable {
-    override val defaultNdkVersion: String get() = NDK_DEFAULT_VERSION
+  override val defaultNdkVersion: String
+    get() = NDK_DEFAULT_VERSION
 }

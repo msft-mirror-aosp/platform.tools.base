@@ -18,8 +18,8 @@ package com.google
 import com.android.annotations.concurrency.UiThread
 
 class GoogleSample {
-    @UiThread
-    fun method1() {
-        // Do nothing
-    }
+  @UiThread
+  fun method1() {
+    // Do nothing
+  }
 }

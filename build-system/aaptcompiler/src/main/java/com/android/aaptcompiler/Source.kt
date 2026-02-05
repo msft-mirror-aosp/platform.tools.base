@@ -31,11 +31,11 @@ data class Source(val path: String, val line: Int? = null, private val archive: 
 
   fun isNotEmpty() = this != EMPTY
 
-  fun withLine(line: Int?) : Source {
+  fun withLine(line: Int?): Source {
     return Source(path, line, archive)
   }
 
-    companion object {
+  companion object {
     val EMPTY = Source("")
   }
 }

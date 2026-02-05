@@ -16,9 +16,7 @@
 
 package com.android.build.api.dsl
 
-/**
- * Single variant publishing options.
- */
+/** Single variant publishing options. */
 interface SingleVariant : PublishingOptions {
-    val variantName: String
+  val variantName: String
 }

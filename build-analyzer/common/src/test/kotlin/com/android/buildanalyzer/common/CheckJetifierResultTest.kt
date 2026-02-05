@@ -17,151 +17,156 @@
 package com.android.buildanalyzer.common
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class CheckJetifierResultTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var resultFile: File
+  private lateinit var resultFile: File
 
-    @Before
-    fun setUp() {
-        resultFile = temporaryFolder.newFile("result.json")
-    }
+  @Before
+  fun setUp() {
+    resultFile = temporaryFolder.newFile("result.json")
+  }
 
-    private fun createSampleResult(): CheckJetifierResult {
-        return CheckJetifierResult(
-            sortedMapOf(
-                "example:A:1.0" to listOf(
-                    FullDependencyPath(
-                        "myProject1",
-                        "myConfiguration",
-                        DependencyPath(listOf("example:A:1.0", "example:B:1.0"))
-                    ),
-                    FullDependencyPath(
-                        "myProject2",
-                        "myConfiguration",
-                        DependencyPath(listOf("example:A:1.0", "example:B:1.0"))
-                    )
-                )
-            )
-        )
-    }
+  private fun createSampleResult(): CheckJetifierResult {
+    return CheckJetifierResult(
+      sortedMapOf(
+        "example:A:1.0" to
+          listOf(
+            FullDependencyPath("myProject1", "myConfiguration", DependencyPath(listOf("example:A:1.0", "example:B:1.0"))),
+            FullDependencyPath("myProject2", "myConfiguration", DependencyPath(listOf("example:A:1.0", "example:B:1.0"))),
+          )
+      )
+    )
+  }
 
-    @Test
-    fun `test serialization`() {
-        val result = createSampleResult()
-        CheckJetifierResult.save(result, resultFile)
+  @Test
+  fun `test serialization`() {
+    val result = createSampleResult()
+    CheckJetifierResult.save(result, resultFile)
 
-        assertThat(resultFile.readText()).isEqualTo(
-            """
-            {
-              "version": 2.0,
-              "resultData": {
-                "dependenciesDependingOnSupportLibs": {
-                  "example:A:1.0": [
-                    {
-                      "projectPath": "myProject1",
-                      "configuration": "myConfiguration",
-                      "dependencyPath": {
-                        "elements": [
-                          "example:A:1.0",
-                          "example:B:1.0"
-                        ]
-                      }
-                    },
-                    {
-                      "projectPath": "myProject2",
-                      "configuration": "myConfiguration",
-                      "dependencyPath": {
-                        "elements": [
-                          "example:A:1.0",
-                          "example:B:1.0"
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-            """.trimIndent()
-        )
-    }
-
-    @Test
-    fun `test deserialization`() {
-        val result = createSampleResult()
-        CheckJetifierResult.save(result, resultFile)
-
-        val deserializedResult = CheckJetifierResult.load(resultFile)
-        assertThat(deserializedResult.getDisplayString()).isEqualTo(result.getDisplayString())
-    }
-
-    @Test
-    fun `test deserialization of version 1_0`() {
-        resultFile.writeText(
-            """
-            {
-              "version": 1.0,
-              "dependenciesDependingOnSupportLibs": {
-                "example:A:1.0":
-                  {
-                    "projectPath": "myProject1",
-                    "configuration": "myConfiguration",
-                    "dependencyPath": {
-                      "elements": [
-                        "example:A:1.0",
-                        "example:B:1.0"
-                      ]
-                    }
+    assertThat(resultFile.readText())
+      .isEqualTo(
+        """
+        {
+          "version": 2.0,
+          "resultData": {
+            "dependenciesDependingOnSupportLibs": {
+              "example:A:1.0": [
+                {
+                  "projectPath": "myProject1",
+                  "configuration": "myConfiguration",
+                  "dependencyPath": {
+                    "elements": [
+                      "example:A:1.0",
+                      "example:B:1.0"
+                    ]
                   }
+                },
+                {
+                  "projectPath": "myProject2",
+                  "configuration": "myConfiguration",
+                  "dependencyPath": {
+                    "elements": [
+                      "example:A:1.0",
+                      "example:B:1.0"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `test deserialization`() {
+    val result = createSampleResult()
+    CheckJetifierResult.save(result, resultFile)
+
+    val deserializedResult = CheckJetifierResult.load(resultFile)
+    assertThat(deserializedResult.getDisplayString()).isEqualTo(result.getDisplayString())
+  }
+
+  @Test
+  fun `test deserialization of version 1_0`() {
+    resultFile.writeText(
+      """
+      {
+        "version": 1.0,
+        "dependenciesDependingOnSupportLibs": {
+          "example:A:1.0":
+            {
+              "projectPath": "myProject1",
+              "configuration": "myConfiguration",
+              "dependencyPath": {
+                "elements": [
+                  "example:A:1.0",
+                  "example:B:1.0"
+                ]
               }
             }
-            """.trimIndent()
-        )
-
-        val deserializedResult = CheckJetifierResult.load(resultFile)
-        assertThat(deserializedResult.getDisplayString()).isEqualTo("""
-            example:A:1.0
-                Project 'myProject1', configuration 'myConfiguration' -> example:A:1.0 -> example:B:1.0
-                """.trimIndent())
-    }
-
-    @Test
-    fun `test deserialization where an optional field is missing`() {
-        val result = createSampleResult()
-        CheckJetifierResult.save(result, resultFile)
-
-        resultFile.writeText(resultFile.readText().replace("configuration", "configurationName"))
-
-        val deserializedResult = CheckJetifierResult.load(resultFile)
-        assertThat(deserializedResult.getDisplayString())
-            .isEqualTo("""
-                example:A:1.0
-                    Project 'myProject1', configuration 'Unknown' -> example:A:1.0 -> example:B:1.0
-                    Project 'myProject2', configuration 'Unknown' -> example:A:1.0 -> example:B:1.0
-                    """.trimIndent())
-    }
-
-    @Test
-    fun `test deserialization where a required field is missing`() {
-        val result = createSampleResult()
-        CheckJetifierResult.save(result, resultFile)
-
-        resultFile.writeText(resultFile.readText().replace("dependencyPath", "newDependencyPath"))
-
-        try {
-            CheckJetifierResult.load(resultFile)
-            fail("Expected RequiredFieldMissingException")
-        } catch (e: RequiredFieldMissingException) {
-            assertThat(e.message).isEqualTo("Required field 'dependencyPath' was missing when deserializing object of type 'com.android.buildanalyzer.common.DeserializedFullDependencyPath'")
         }
+      }
+      """
+        .trimIndent()
+    )
+
+    val deserializedResult = CheckJetifierResult.load(resultFile)
+    assertThat(deserializedResult.getDisplayString())
+      .isEqualTo(
+        """
+        example:A:1.0
+            Project 'myProject1', configuration 'myConfiguration' -> example:A:1.0 -> example:B:1.0
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `test deserialization where an optional field is missing`() {
+    val result = createSampleResult()
+    CheckJetifierResult.save(result, resultFile)
+
+    resultFile.writeText(resultFile.readText().replace("configuration", "configurationName"))
+
+    val deserializedResult = CheckJetifierResult.load(resultFile)
+    assertThat(deserializedResult.getDisplayString())
+      .isEqualTo(
+        """
+        example:A:1.0
+            Project 'myProject1', configuration 'Unknown' -> example:A:1.0 -> example:B:1.0
+            Project 'myProject2', configuration 'Unknown' -> example:A:1.0 -> example:B:1.0
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `test deserialization where a required field is missing`() {
+    val result = createSampleResult()
+    CheckJetifierResult.save(result, resultFile)
+
+    resultFile.writeText(resultFile.readText().replace("dependencyPath", "newDependencyPath"))
+
+    try {
+      CheckJetifierResult.load(resultFile)
+      fail("Expected RequiredFieldMissingException")
+    } catch (e: RequiredFieldMissingException) {
+      assertThat(e.message)
+        .isEqualTo(
+          "Required field 'dependencyPath' was missing when deserializing object of type 'com.android.buildanalyzer.common.DeserializedFullDependencyPath'"
+        )
     }
+  }
 }

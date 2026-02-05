@@ -18,10 +18,10 @@
 
 package com.android.build.gradle.internal.test
 
-import com.android.build.gradle.internal.profile.AnalyticsUtil
-import com.android.builder.model.TestOptions
 import com.android.Version
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.profile.AnalyticsUtil
+import com.android.builder.model.TestOptions
 import com.android.tools.analytics.CommonMetricsData
 import com.android.tools.analytics.recordTestLibrary
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
@@ -31,120 +31,107 @@ import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 
 fun recordOkInstrumentedTestRun(
-    dependencies: ArtifactCollection,
-    execution: TestOptions.Execution,
-    coverageEnabled: Boolean,
-    testCount: Int,
-    analyticsService: AnalyticsService,
-) =
-    recordOkInstrumentedTestRun(
-        gatherTestLibraries(dependencies),
-        execution,
-        coverageEnabled,
-        testCount,
-        analyticsService,
-    )
+  dependencies: ArtifactCollection,
+  execution: TestOptions.Execution,
+  coverageEnabled: Boolean,
+  testCount: Int,
+  analyticsService: AnalyticsService,
+) = recordOkInstrumentedTestRun(gatherTestLibraries(dependencies), execution, coverageEnabled, testCount, analyticsService)
 
 fun recordOkInstrumentedTestRun(
-    testLibraries: TestLibraries,
-    execution: TestOptions.Execution,
-    coverageEnabled: Boolean,
-    testCount: Int,
-    analyticsService: AnalyticsService,
+  testLibraries: TestLibraries,
+  execution: TestOptions.Execution,
+  coverageEnabled: Boolean,
+  testCount: Int,
+  analyticsService: AnalyticsService,
 ) {
-    recordTestRun(
-        testLibraries = testLibraries,
-        execution = execution,
-        coverageEnabled = coverageEnabled,
-        testCount = testCount,
-        TestRun.TestKind.INSTRUMENTATION_TEST,
-        infrastructureCrashed = false,
-        analyticsService = analyticsService,
-    )
+  recordTestRun(
+    testLibraries = testLibraries,
+    execution = execution,
+    coverageEnabled = coverageEnabled,
+    testCount = testCount,
+    TestRun.TestKind.INSTRUMENTATION_TEST,
+    infrastructureCrashed = false,
+    analyticsService = analyticsService,
+  )
 }
 
 fun recordOkUnitTestRun(
-    dependencies: ArtifactCollection,
-    coverageEnabled: Boolean,
-    testCount: Int,
-    analyticsService: AnalyticsService,
-    isIdeInvocation: Boolean
+  dependencies: ArtifactCollection,
+  coverageEnabled: Boolean,
+  testCount: Int,
+  analyticsService: AnalyticsService,
+  isIdeInvocation: Boolean,
 ) {
-    recordTestRun(
-        testLibraries = gatherTestLibraries(dependencies),
-        execution = null,
-        coverageEnabled = coverageEnabled,
-        testCount = testCount,
-        TestRun.TestKind.UNIT_TEST,
-        infrastructureCrashed = false,
-        analyticsService = analyticsService,
-        invocationType =
-        if (isIdeInvocation) TestRun.TestInvocationType.ANDROID_STUDIO_THROUGH_GRADLE_TEST
-        else TestRun.TestInvocationType.GRADLE_TEST
-    )
+  recordTestRun(
+    testLibraries = gatherTestLibraries(dependencies),
+    execution = null,
+    coverageEnabled = coverageEnabled,
+    testCount = testCount,
+    TestRun.TestKind.UNIT_TEST,
+    infrastructureCrashed = false,
+    analyticsService = analyticsService,
+    invocationType =
+      if (isIdeInvocation) TestRun.TestInvocationType.ANDROID_STUDIO_THROUGH_GRADLE_TEST else TestRun.TestInvocationType.GRADLE_TEST,
+  )
 }
 
 fun recordCrashedInstrumentedTestRun(
-    dependencies: ArtifactCollection,
-    execution: TestOptions.Execution,
-    coverageEnabled: Boolean,
-    analyticsService: AnalyticsService,
-) =
-    recordCrashedInstrumentedTestRun(
-        gatherTestLibraries(dependencies),
-        execution,
-        coverageEnabled,
-        analyticsService,
-    )
+  dependencies: ArtifactCollection,
+  execution: TestOptions.Execution,
+  coverageEnabled: Boolean,
+  analyticsService: AnalyticsService,
+) = recordCrashedInstrumentedTestRun(gatherTestLibraries(dependencies), execution, coverageEnabled, analyticsService)
 
 fun recordCrashedInstrumentedTestRun(
-    testLibraries: TestLibraries,
-    execution: TestOptions.Execution,
-    coverageEnabled: Boolean,
-    analyticsService: AnalyticsService,
+  testLibraries: TestLibraries,
+  execution: TestOptions.Execution,
+  coverageEnabled: Boolean,
+  analyticsService: AnalyticsService,
 ) {
-    recordTestRun(
-        testLibraries = testLibraries,
-        execution = execution,
-        coverageEnabled = coverageEnabled,
-        testCount = 0,
-        TestRun.TestKind.INSTRUMENTATION_TEST,
-        infrastructureCrashed = true,
-        analyticsService = analyticsService,
-    )
+  recordTestRun(
+    testLibraries = testLibraries,
+    execution = execution,
+    coverageEnabled = coverageEnabled,
+    testCount = 0,
+    TestRun.TestKind.INSTRUMENTATION_TEST,
+    infrastructureCrashed = true,
+    analyticsService = analyticsService,
+  )
 }
 
 fun recordCrashedUnitTestRun(
-    dependencies: ArtifactCollection,
-    coverageEnabled: Boolean,
-    analyticsService: AnalyticsService,
-    isIdeInvocation: Boolean
+  dependencies: ArtifactCollection,
+  coverageEnabled: Boolean,
+  analyticsService: AnalyticsService,
+  isIdeInvocation: Boolean,
 ) {
-    recordTestRun(
-        testLibraries = gatherTestLibraries(dependencies),
-        execution = null,
-        coverageEnabled = coverageEnabled,
-        testCount = 0,
-        TestRun.TestKind.UNIT_TEST,
-        infrastructureCrashed = true,
-        analyticsService = analyticsService,
-        invocationType =
-        if (isIdeInvocation) TestRun.TestInvocationType.ANDROID_STUDIO_THROUGH_GRADLE_TEST
-        else TestRun.TestInvocationType.GRADLE_TEST
-    )
+  recordTestRun(
+    testLibraries = gatherTestLibraries(dependencies),
+    execution = null,
+    coverageEnabled = coverageEnabled,
+    testCount = 0,
+    TestRun.TestKind.UNIT_TEST,
+    infrastructureCrashed = true,
+    analyticsService = analyticsService,
+    invocationType =
+      if (isIdeInvocation) TestRun.TestInvocationType.ANDROID_STUDIO_THROUGH_GRADLE_TEST else TestRun.TestInvocationType.GRADLE_TEST,
+  )
 }
 
 private fun recordTestRun(
-    testLibraries: TestLibraries,
-    execution: TestOptions.Execution?,
-    coverageEnabled: Boolean,
-    testCount: Int,
-    testType: TestRun.TestKind,
-    infrastructureCrashed: Boolean,
-    analyticsService: AnalyticsService,
-    invocationType: TestRun.TestInvocationType = TestRun.TestInvocationType.GRADLE_TEST,
+  testLibraries: TestLibraries,
+  execution: TestOptions.Execution?,
+  coverageEnabled: Boolean,
+  testCount: Int,
+  testType: TestRun.TestKind,
+  infrastructureCrashed: Boolean,
+  analyticsService: AnalyticsService,
+  invocationType: TestRun.TestInvocationType = TestRun.TestInvocationType.GRADLE_TEST,
 ) {
-    val run = TestRun.newBuilder().apply {
+  val run =
+    TestRun.newBuilder()
+      .apply {
         testInvocationType = invocationType
         numberOfTestsExecuted = testCount
         testKind = testType
@@ -153,27 +140,30 @@ private fun recordTestRun(
         codeCoverageEnabled = coverageEnabled
         this.testLibraries = testLibraries
         if (execution != null) testExecution = AnalyticsUtil.toProto(execution)
-    }.build()
+      }
+      .build()
 
-    analyticsService.recordEvent(
-        AndroidStudioEvent.newBuilder().apply {
-            category = AndroidStudioEvent.EventCategory.TESTS
-            kind = AndroidStudioEvent.EventKind.TEST_RUN
-            testRun = run
-            javaProcessStats = CommonMetricsData.javaProcessStats
-            jvmDetails = CommonMetricsData.jvmDetails
-            productDetails = AnalyticsUtil.getProductDetails()
-        }
-    )
+  analyticsService.recordEvent(
+    AndroidStudioEvent.newBuilder().apply {
+      category = AndroidStudioEvent.EventCategory.TESTS
+      kind = AndroidStudioEvent.EventKind.TEST_RUN
+      testRun = run
+      javaProcessStats = CommonMetricsData.javaProcessStats
+      jvmDetails = CommonMetricsData.jvmDetails
+      productDetails = AnalyticsUtil.getProductDetails()
+    }
+  )
 }
 
 fun gatherTestLibraries(dependencies: ArtifactCollection): TestLibraries {
-    return TestLibraries.newBuilder().also { testLibraries ->
-        dependencies.artifacts.forEach { resolvedArtifact ->
-            val id = resolvedArtifact.id.componentIdentifier
-            if (id is ModuleComponentIdentifier) {
-                testLibraries.recordTestLibrary(id.group, id.module, id.version)
-            }
+  return TestLibraries.newBuilder()
+    .also { testLibraries ->
+      dependencies.artifacts.forEach { resolvedArtifact ->
+        val id = resolvedArtifact.id.componentIdentifier
+        if (id is ModuleComponentIdentifier) {
+          testLibraries.recordTestLibrary(id.group, id.module, id.version)
         }
-    }.build()
+      }
+    }
+    .build()
 }

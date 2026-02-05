@@ -97,9 +97,8 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.Mockito
 
 /**
- * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom
- * GradleDetector subclass, LintIdeGradleDetector, which customizes some behavior to be based on top
- * of PSI rather than the Groovy parser.
+ * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom GradleDetector subclass, LintIdeGradleDetector,
+ * which customizes some behavior to be based on top of PSI rather than the Groovy parser.
  */
 class GradleDetectorTest : AbstractCheckTest() {
 
@@ -401,18 +400,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
-      .mavenMetadata(
-        "com.squareup.dagger:dagger",
-        "1.0.0",
-        "1.0.1",
-        "1.1.0",
-        "1.2.0",
-        "1.2.1",
-        "1.2.2",
-        "1.2.3",
-        "1.2.4",
-        "1.2.5",
-      )
+      .mavenMetadata("com.squareup.dagger:dagger", "1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3", "1.2.4", "1.2.5")
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(
@@ -2566,44 +2554,40 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testDependenciesWithOtherArtifacts() {
     // Regression test for b/124415929
 
-    listOf("implementation", "testImplementation", "androidTestImplementation").forEach {
-      configuration ->
-      listOf(
-          "com.android.support:appcompat-v7" to ("13.0.0" to "25.3.1"),
-          "com.google.guava:guava" to ("11.0.2" to "17.0"),
-        )
-        .forEach { libraryInfo ->
-          val library = libraryInfo.first
-          val version = libraryInfo.second.first
-          val expectedVersion = libraryInfo.second.second
-          listOf(false, true).forEach {
-            val versionString = if (it) "\$version" else version
-            val dependencyString = "$configuration(\"$library:$versionString\")"
-            val source =
-              gradle(
-                "" +
-                  "ext.version = '$version'\n" +
-                  "\n" +
-                  "buildscript {\n" +
-                  "    repositories {\n" +
-                  "        mavenCentral()\n" +
-                  "    }\n" +
-                  "}\n" +
-                  "dependencies {\n" +
-                  "    $dependencyString\n" +
-                  "}\n"
-              )
-            val expected =
+    listOf("implementation", "testImplementation", "androidTestImplementation").forEach { configuration ->
+      listOf("com.android.support:appcompat-v7" to ("13.0.0" to "25.3.1"), "com.google.guava:guava" to ("11.0.2" to "17.0")).forEach {
+        libraryInfo ->
+        val library = libraryInfo.first
+        val version = libraryInfo.second.first
+        val expectedVersion = libraryInfo.second.second
+        listOf(false, true).forEach {
+          val versionString = if (it) "\$version" else version
+          val dependencyString = "$configuration(\"$library:$versionString\")"
+          val source =
+            gradle(
               "" +
-                "build.gradle:9: Warning: A newer version of $library than $version is available: $expectedVersion [GradleDependency]\n" +
+                "ext.version = '$version'\n" +
+                "\n" +
+                "buildscript {\n" +
+                "    repositories {\n" +
+                "        mavenCentral()\n" +
+                "    }\n" +
+                "}\n" +
+                "dependencies {\n" +
                 "    $dependencyString\n" +
-                "    ${" ".repeat(configuration.length + 1)}" +
-                "${"~".repeat(library.length + versionString.length + 3)}\n" +
-                "0 errors, 1 warnings"
+                "}\n"
+            )
+          val expected =
+            "" +
+              "build.gradle:9: Warning: A newer version of $library than $version is available: $expectedVersion [GradleDependency]\n" +
+              "    $dependencyString\n" +
+              "    ${" ".repeat(configuration.length + 1)}" +
+              "${"~".repeat(library.length + versionString.length + 3)}\n" +
+              "0 errors, 1 warnings"
 
-            lint().files(source).issues(DEPENDENCY).run().expect(expected)
-          }
+          lint().files(source).issues(DEPENDENCY).run().expect(expected)
         }
+      }
     }
   }
 
@@ -2648,7 +2632,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    implementation \"androidx.work:work-multiprocess:2.7.0-alpha05\" // expect 2.7.0-alpha06\n" +
             // Test normal upgrades in 2.7: 2.7.0 alpha05 going up to 2.7.0 alpha6
             "    implementation \"androidx.work:work-rxjava3:2.7.0-alpha05\" // expect 2.7.0-alpha06\n" +
-            // Make sure dynamic versions also work: don't upgrade from < 2.7 to 2.7 previews
+            // Make sure dynamic versions also work: don't upgrade from < 2.7 to 2.7
+            // previews
             "    implementation \"androidx.work:work-rxjava3:2.5.+\" // expect 2.6.0\n" +
             // Don't update from a preview of a previous series
             "    implementation \"androidx.work:work-runtime:2.5.0-alpha05\" // No suggestion\n" +
@@ -2661,28 +2646,28 @@ class GradleDetectorTest : AbstractCheckTest() {
       .networkData(
         "https://maven.google.com/master-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <metadata>
-                  <androidx.core/>
-                  <androidx.work/>
-                </metadata>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <metadata>
+          <androidx.core/>
+          <androidx.work/>
+        </metadata>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/work/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.7.0-alpha06,2.6.0-alpha06"/>
-                  <work-runtime-ktx versions="2.5.0,2.7.0-alpha05,2.6.0-alpha05"/>
-                  <work-rxjava2 versions="2.7.0,2.6.0-alpha06"/>
-                  <work-rxjava3 versions="2.7.0-alpha06"/>
-                  <work-gcm versions="2.7.0-alpha05"/>
-                  <work-testing versions="2.8.0-alpha01,2.7.0"/>
-                  <work-multiprocess versions="2.7.0-alpha06,2.6.0"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.7.0-alpha06,2.6.0-alpha06"/>
+          <work-runtime-ktx versions="2.5.0,2.7.0-alpha05,2.6.0-alpha05"/>
+          <work-rxjava2 versions="2.7.0,2.6.0-alpha06"/>
+          <work-rxjava3 versions="2.7.0-alpha06"/>
+          <work-gcm versions="2.7.0-alpha05"/>
+          <work-testing versions="2.8.0-alpha01,2.7.0"/>
+          <work-multiprocess versions="2.7.0-alpha06,2.6.0"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .run()
@@ -2725,19 +2710,22 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "dependencies {\n" +
 
-            // work-runtime has 2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT -- we don't want to offer
+            // work-runtime has 2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT -- we don't want
+            // to offer
             // updates to 3.0.0-SNAPSHOT even though it's "higher"
             "    implementation \"androidx.test:work-runtime:2.7.0-alpha06\" // no suggestion\n" +
             // But we *can* update to a higher non-SNAPSHOT of the same series
             "    implementation \"androidx.test:work-runtime:2.6.0-alpha06\" // update to 2.6.0-beta05\n" +
-            // For work-runtime-ktx has 2.5.0,2.6.0-alpha05; we don't want to update to SNAPSHOT
+            // For work-runtime-ktx has 2.5.0,2.6.0-alpha05; we don't want to update to
+            // SNAPSHOT
             // versions
             "    implementation \"androidx.test:work-runtime-ktx:2.6.0-SNAPSHOT\" // No suggestion\n" +
             // but from old snapshot versions we can jump to a higher version
             "    implementation \"androidx.test:work-runtime-ktx:2.3.0-SNAPSHOT\" // Update to 2.5.0\n" +
             // From a snapshot version we can jump to a stable version if it's higher
             "    implementation \"androidx.test:work-gcm:2.6.0-SNAPSHOT\" // No suggestion\n" +
-            // Repeat tests for android.work, which has its own special version filtering code
+            // Repeat tests for android.work, which has its own special version filtering
+            // code
             "    implementation \"androidx.work:work-runtime:2.7.0-alpha06\" // no suggestion\n" +
             "    implementation \"androidx.work:work-runtime:2.6.0-alpha06\" // update to 2.6.0-beta05\n" +
             "    implementation \"androidx.work:work-runtime-ktx:2.6.0-SNAPSHOT\" // No suggestion\n" +
@@ -2750,40 +2738,40 @@ class GradleDetectorTest : AbstractCheckTest() {
       .networkData(
         "https://maven.google.com/master-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <metadata>
-                  <androidx.work/>
-                  <androidx.test/>
-                </metadata>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <metadata>
+          <androidx.work/>
+          <androidx.test/>
+        </metadata>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/work/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
-                  <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
-                  <work-gcm versions="2.6.0-SNAPSHOT"/>
-                  <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
-                  <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
+          <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
+          <work-gcm versions="2.6.0-SNAPSHOT"/>
+          <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
+          <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/test/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
-                  <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
-                  <work-gcm versions="2.6.0-SNAPSHOT"/>
-                  <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
-                  <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
+          <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
+          <work-gcm versions="2.6.0-SNAPSHOT"/>
+          <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
+          <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .run()
@@ -3476,9 +3464,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         propertyFile(
           "gradle.properties",
           """
-            # comments
-            android.r8.gradual.support=false
-            android.r8.optimizedResourceShrinking=true"""
+          # comments
+          android.r8.gradual.support=false
+          android.r8.optimizedResourceShrinking=true
+          """
             .trimIndent(),
         ),
         gradle(
@@ -4183,32 +4172,14 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testSuppressLine2() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "//noinspection GradleDeprecated\n" +
-            "apply plugin: 'android'\n" +
-            "\n" +
-            "android {\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "//noinspection GradleDeprecated\n" + "apply plugin: 'android'\n" + "\n" + "android {\n" + "}\n"))
       .run()
       .expectClean()
   }
 
   fun testSuppressWithAnnotation() {
     lint()
-      .files(
-        kts(
-          "" +
-            "@Suppress(\"GradleDeprecated\")\n" +
-            "plugins { id(\"android\") }\n" +
-            "\n" +
-            "android {\n" +
-            "}\n"
-        )
-      )
+      .files(kts("" + "@Suppress(\"GradleDeprecated\")\n" + "plugins { id(\"android\") }\n" + "\n" + "android {\n" + "}\n"))
       .run()
       .expectClean()
   }
@@ -4366,18 +4337,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
-      .mavenMetadata(
-        "com.squareup.dagger:dagger",
-        "1.0.0",
-        "1.0.1",
-        "1.1.0",
-        "1.2.0",
-        "1.2.1",
-        "1.2.2",
-        "1.2.3",
-        "1.2.4",
-        "1.2.5",
-      )
+      .mavenMetadata("com.squareup.dagger:dagger", "1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3", "1.2.4", "1.2.5")
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(expected)
@@ -4898,25 +4858,18 @@ class GradleDetectorTest : AbstractCheckTest() {
       "com.android.support:support-v4:21.0.+",
       getNamedDependency("name:'support-v4', group: \"com.android.support\", version: '21.0.+'"),
     )
-    TestCase.assertEquals(
-      "junit:junit:4.+",
-      getNamedDependency("group: 'junit', name: 'junit', version: '4.+'"),
-    )
+    TestCase.assertEquals("junit:junit:4.+", getNamedDependency("group: 'junit', name: 'junit', version: '4.+'"))
     TestCase.assertEquals(
       "com.android.support:support-v4:19.0.+",
       getNamedDependency("group: 'com.android.support', name: 'support-v4', version: '19.0.+'"),
     )
     TestCase.assertEquals(
       "com.google.guava:guava:11.0.1",
-      getNamedDependency(
-        "group: 'com.google.guava', name: 'guava', version: '11.0.1', transitive: false"
-      ),
+      getNamedDependency("group: 'com.google.guava', name: 'guava', version: '11.0.1', transitive: false"),
     )
     TestCase.assertEquals(
       "com.google.api-client:google-api-client:1.6.0-beta",
-      getNamedDependency(
-        "group: 'com.google.api-client', name: 'google-api-client', version: '1.6.0-beta', transitive: false"
-      ),
+      getNamedDependency("group: 'com.google.api-client', name: 'google-api-client', version: '1.6.0-beta', transitive: false"),
     )
     TestCase.assertEquals(
       "org.robolectric:robolectric:2.3-SNAPSHOT",
@@ -4948,14 +4901,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testBundledGmsDependency() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "dependencies {\n" +
-            "    compile 'com.google.android.gms:play-services:8.5.6'\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "dependencies {\n" + "    compile 'com.google.android.gms:play-services:8.5.6'\n" + "}\n"))
       .issues(BUNDLED_GMS)
       .run()
       .expect(
@@ -4969,14 +4915,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testUnbundledGmsDependency() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "dependencies {\n" +
-            "    compile 'com.google.android.gms:play-services-auth:9.2.1'\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "dependencies {\n" + "    compile 'com.google.android.gms:play-services-auth:9.2.1'\n" + "}\n"))
       .issues(BUNDLED_GMS)
       .run()
       .expectClean()
@@ -5369,9 +5308,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .issues(EDITED_TARGET_SDK_VERSION)
           .incremental(name)
           .clientFactory {
-            com.android.tools.lint.checks.infrastructure
-              .TestLintClient(LintClient.CLIENT_STUDIO)
-              .apply { addCleanupDir(rootDirectory) }
+            com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.CLIENT_STUDIO).apply { addCleanupDir(rootDirectory) }
           }
           .testModes(TestMode.DEFAULT)
       }
@@ -5443,9 +5380,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .issues(EDITED_TARGET_SDK_VERSION)
           .incremental(name)
           .clientFactory {
-            com.android.tools.lint.checks.infrastructure
-              .TestLintClient(LintClient.CLIENT_STUDIO)
-              .apply { addCleanupDir(rootDirectory) }
+            com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.CLIENT_STUDIO).apply { addCleanupDir(rootDirectory) }
           }
           .testModes(TestMode.DEFAULT)
       }
@@ -6423,10 +6358,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  /**
-   * Test that version upgrade quickfix is shown if the suggested version does not have errors or
-   * warnings from SDK Index
-   */
+  /** Test that version upgrade quickfix is shown if the suggested version does not have errors or warnings from SDK Index */
   fun testSdkIndexLibraryUpgradeToVersionWithoutWarningOrError() {
     lint()
       .files(
@@ -6546,10 +6478,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  /**
-   * Test that version upgrade quickfix is not shown if the suggested version has errors or warnings
-   * from SDK Index
-   */
+  /** Test that version upgrade quickfix is not shown if the suggested version has errors or warnings from SDK Index */
   fun testSdkIndexLibraryNoUpgradeToVersionWithWarningOrError() {
     val expectedFixes =
       """
@@ -6641,10 +6570,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(expectedFixes)
   }
 
-  /**
-   * Test that version upgrade quickfix is shown if there is a custom message (even if the current
-   * version has errors or warnings)
-   */
+  /** Test that version upgrade quickfix is shown if there is a custom message (even if the current version has errors or warnings) */
   fun testSdkIndexLibraryUpgradeToVersionWithCustomMessage() {
     val expectedFixes =
       """
@@ -6711,10 +6637,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(expectedFixes)
   }
 
-  /**
-   * Tests that the navigation libraries are not considered as part of androidx even when their name
-   * does start with "androidx."
-   */
+  /** Tests that the navigation libraries are not considered as part of androidx even when their name does start with "androidx." */
   fun testAndroidxMixedDependenciesWithNavigation() {
     lint()
       .files(
@@ -8105,15 +8028,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testJavaLanguageLevelNoDirectives() {
-    val plugins =
-      listOf(
-        "java",
-        "java-library",
-        "application",
-        "org.gradle.java",
-        "org.gradle.java-library",
-        "org.gradle.application",
-      )
+    val plugins = listOf("java", "java-library", "application", "org.gradle.java", "org.gradle.java-library", "org.gradle.application")
     plugins.forEach { plugin ->
       lint()
         .files(
@@ -8180,15 +8095,9 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelCleanKts() {
     val sourceCompatibility =
-      listOf(
-        "java.sourceCompatibility = JavaVersion.VERSION_1_8",
-        "java { sourceCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.sourceCompatibility = JavaVersion.VERSION_1_8", "java { sourceCompatibility = JavaVersion.VERSION_1_8 }")
     val targetCompatibility =
-      listOf(
-        "java.targetCompatibility = JavaVersion.VERSION_1_8",
-        "java { targetCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.targetCompatibility = JavaVersion.VERSION_1_8", "java { targetCompatibility = JavaVersion.VERSION_1_8 }")
     sourceCompatibility.forEach { sc ->
       targetCompatibility.forEach { tc ->
         lint()
@@ -8212,10 +8121,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelNoSourceCompatibilityKts() {
     val targetCompatibility =
-      listOf(
-        "java.targetCompatibility = JavaVersion.VERSION_1_8",
-        "java { targetCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.targetCompatibility = JavaVersion.VERSION_1_8", "java { targetCompatibility = JavaVersion.VERSION_1_8 }")
     targetCompatibility.forEach { tc ->
       lint()
         .files(
@@ -8251,10 +8157,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelNoTargetCompatibilityKts() {
     val sourceCompatibility =
-      listOf(
-        "java.sourceCompatibility = JavaVersion.VERSION_1_8",
-        "java { sourceCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.sourceCompatibility = JavaVersion.VERSION_1_8", "java { sourceCompatibility = JavaVersion.VERSION_1_8 }")
     sourceCompatibility.forEach { sc ->
       lint()
         .files(
@@ -8289,15 +8192,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testJavaLanguageLevelNoDirectivesKts() {
-    val plugins =
-      listOf(
-        "java",
-        "java-library",
-        "application",
-        "org.gradle.java",
-        "org.gradle.java-library",
-        "org.gradle.application",
-      )
+    val plugins = listOf("java", "java-library", "application", "org.gradle.java", "org.gradle.java-library", "org.gradle.application")
     plugins.forEach { plugin ->
       lint()
         .files(
@@ -8677,7 +8572,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       """
          # comments
       some.property = true
-    """
+      """
         .trimIndent()
     assertEquals(ValueOffset(29, 34), findPropertyValue(str, "some.property"))
 
@@ -8688,7 +8583,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         some some.property = true \
         some
       some.property = true
-    """
+      """
         .trimIndent()
     assertEquals(ValueOffset(75, 80), findPropertyValue(str2, "some.property"))
 
@@ -8700,7 +8595,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         some
       some.property = multi \
         line
-    """
+      """
         .trimIndent()
     assertEquals(ValueOffset(75, 90), findPropertyValue(str3, "some.property"))
 
@@ -8712,7 +8607,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         #some some.property = true
       some.property = multi \
         line
-    """
+      """
         .trimIndent()
     assertEquals(ValueOffset(67, 82), findPropertyValue(str4, "some.property"))
   }
@@ -9137,15 +9032,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(DEPENDENCY, REMOTE_VERSION)
-      .mavenMetadata(
-        "org.jetbrains.kotlin.android",
-        "1.7.0",
-        "1.7.10",
-        "1.7.20-Beta",
-        "1.8.0",
-        "1.8.10",
-        "1.9.0",
-      )
+      .mavenMetadata("org.jetbrains.kotlin.android", "1.7.0", "1.7.10", "1.7.20-Beta", "1.8.0", "1.8.10", "1.9.0")
       .run()
       .expect(
         """
@@ -9250,10 +9137,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "1.0",
         "1.5",
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
-        404,
-      )
+      .networkData("https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml", 404)
       .networkData(
         "https://jitpack.io/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
         // language=XML
@@ -9305,10 +9189,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       // No response from maven central for this unknown URL; make sure
       // we don't access jitpack (if we did, this would throw an exception that
       // the test client is accessing a URL without prepared URL results
-      .networkData(
-        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
-        404,
-      )
+      .networkData("https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml", 404)
       .run()
       .expectClean()
   }
@@ -9335,19 +9216,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val group = "this.dependency.does"
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
-    val version =
-      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
+    val version = GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
     GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenVersion(
-      client,
-      group,
-      "other-artifact",
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, "other-artifact", currentVersion, allowCache = true)
     assertEquals(2, networkHitCount)
     tempFolder.delete()
   }
@@ -9378,19 +9252,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val group = "this.dependency.does"
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
-    val version =
-      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
+    val version = GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
     GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenVersion(
-      client,
-      group,
-      "other-artifact",
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, "other-artifact", currentVersion, allowCache = true)
     assertEquals(2, networkHitCount)
     tempFolder.delete()
   }
@@ -9409,13 +9276,9 @@ class GradleDetectorTest : AbstractCheckTest() {
         false,
         gmaven,
       )
-    assertEquals(
-      "2.8.1, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 2.9.6, 2.9.7",
-      versions1?.joinToString() { it.toString() },
-    )
+    assertEquals("2.8.1, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 2.9.6, 2.9.7", versions1?.joinToString() { it.toString() })
 
-    val versions2 =
-      GradleDetector.getAllMavenVersions(client, "org.gradle", "gradle-tooling-api", false, gmaven)
+    val versions2 = GradleDetector.getAllMavenVersions(client, "org.gradle", "gradle-tooling-api", false, gmaven)
     assertEquals(
       "7.0, 7.0.1, 7.0.2, 7.6-rc-4, 7.6, 7.6.1, 7.6.2, 7.6.3, 7.6.4, 8.0-milestone-6, 8.0-rc-1, 8.0-rc-2, 8.0-rc-3, 8.0-rc-4, 8.0-rc-5, 8.0, 8.0.1, 8.0.2, 8.1-rc-1, 8.1-rc-2, 8.1-rc-3, 8.1-rc-4, 8.1, 8.1.1, 8.2-milestone-1, 8.2-milestone-2, 8.2-rc-1, 8.2-rc-1",
       versions2?.joinToString() { it.toString() },
@@ -9605,10 +9468,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       }
     }
 
-    private fun TestLintTask.mavenMetadata(
-      coordinate: String,
-      vararg versions: String,
-    ): TestLintTask {
+    private fun TestLintTask.mavenMetadata(coordinate: String, vararg versions: String): TestLintTask {
       val group: String
       val artifact: String
       if (coordinate.contains(":")) {
@@ -9959,21 +9819,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("log4j")
-                          .setArtifactId("log4j")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("log4j").setArtifactId("log4j").build())
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false))
                   // Critical NON_BLOCKING
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10002,8 +9853,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                       .setVersionString("1.2.14")
                       .setIsLatestVersion(false)
                       .setVersionLabels(
-                        LibraryVersionLabels.newBuilder()
-                          .setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
+                        LibraryVersionLabels.newBuilder().setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
                       )
                   )
                   // Critical BLOCKING
@@ -10026,14 +9876,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder()
-                                  .setLowerBound("1.2.17")
-                                  .setUpperBound("1.2.17")
-                              )
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.2.18")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.2.17").setUpperBound("1.2.17"))
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.2.18"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10049,25 +9893,14 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.ads.third.party")
-                          .setArtifactId("example")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.ads.third.party").setArtifactId("example").build())
                   )
                   // Ok, latest
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false))
                   // Outdated & non compliant (user data) & Critical & Vulnerability
                   // (UNSAFE_TRUST_MANAGER)
                   .addVersions(
@@ -10080,15 +9913,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
                           )
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_TRUST_MANAGER
                               )
                           )
@@ -10103,9 +9933,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10119,10 +9947,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_DEVICE_AND_NETWORK_ABUSE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DEVICE_AND_NETWORK_ABUSE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10136,10 +9961,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_DECEPTIVE_BEHAVIOR
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DECEPTIVE_BEHAVIOR)
                           )
                       )
                   )
@@ -10152,9 +9974,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10168,10 +9988,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10185,10 +10002,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_MOBILE_UNWANTED_SOFTWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MOBILE_UNWANTED_SOFTWARE)
                           )
                       )
                   )
@@ -10201,9 +10015,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10217,16 +10029,9 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10240,12 +10045,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10259,13 +10060,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                       )
                   )
@@ -10279,15 +10075,15 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_HOSTNAME_VERIFIER
                               )
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
                   )
-                  // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL,
+                  // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER,
+                  // ZIP_PATH_TRAVERSAL,
                   // UNSAFE_WEBVIEW_OAUTH, blocking)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10298,18 +10094,15 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_SSL_ERROR_HANDLER
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_ZIP_PATH_TRAVERSAL
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_WEBVIEW_OAUTH
                               )
                           )
@@ -10326,73 +10119,59 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_CIPHER_MODE
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_ENCRYPTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_PENDING_INTENT
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_INTERNAL_INTENT
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_CROSS_APP_SCRIPTING
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_FILE_BASED_XSS
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_SCHEME_HIJACKING
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_JS_INTERFACE_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_REDIRECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_FRAGMENT_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_PATH_TRAVERSAL
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_SQL_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_LEAKED_GCP_KEYS
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_VULNERABLE_LIBS
                               )
                           )
@@ -10412,20 +10191,13 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.google.android.gms")
-                          .setArtifactId("play-services-maps")
-                          .build()
+                        MavenIdentifier.newBuilder().setGroupId("com.google.android.gms").setArtifactId("play-services-maps").build()
                       )
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("18.3.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("18.3.0").setIsLatestVersion(true))
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("18.2.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("18.2.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10435,9 +10207,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("18.3.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("18.3.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10448,16 +10218,11 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("androidx.slidingpanelayout")
-                          .setArtifactId("slidingpanelayout")
-                          .build()
+                        MavenIdentifier.newBuilder().setGroupId("androidx.slidingpanelayout").setArtifactId("slidingpanelayout").build()
                       )
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.0").setIsLatestVersion(true))
                   // Policy issue (error)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10467,10 +10232,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10487,12 +10249,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("issues-on-latest")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("issues-on-latest").build())
                   )
                   // Latest, has blocking issues
                   .addVersions(
@@ -10503,17 +10260,13 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
                   )
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.9.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.9.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10523,9 +10276,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.9.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.9.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10536,17 +10287,10 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("deprecated")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("deprecated").build())
                   )
                   // Latest, has no other issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                   .setLibraryDeprecation(
                     LibraryDeprecation.newBuilder()
                       .setDeprecationTimestampSeconds(
@@ -10555,19 +10299,11 @@ class GradleDetectorTest : AbstractCheckTest() {
                       .addAlternativeLibraries(
                         AlternativeLibrary.newBuilder()
                           .setSdkName("Alternative 1")
-                          .setMavenSdkId(
-                            MavenIdentifier.newBuilder()
-                              .setGroupId("first")
-                              .setArtifactId("alternative")
-                          )
+                          .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("first").setArtifactId("alternative"))
                       )
                       .addAlternativeLibraries(
                         AlternativeLibrary.newBuilder()
-                          .setMavenSdkId(
-                            MavenIdentifier.newBuilder()
-                              .setGroupId("second")
-                              .setArtifactId("alternative")
-                          )
+                          .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("second").setArtifactId("alternative"))
                       )
                   )
               )
@@ -10582,23 +10318,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("latest-is-preview")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("latest-is-preview").build())
                   )
                   // Latest, Ok but is preview version
-                  .addVersions(
-                    LibraryVersion.newBuilder()
-                      .setVersionString("1.2.0-dev")
-                      .setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.0-dev").setIsLatestVersion(true))
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.1.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.1.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10608,9 +10333,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.1.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.1.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10629,10 +10352,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       bos.close()
 
       // Also ensure we don't have a stale cache on disk.
-      val cacheDir =
-        com.android.tools.lint.checks.infrastructure
-          .TestLintClient()
-          .getCacheDir(MAVEN_GOOGLE_CACHE_DIR_KEY, true)
+      val cacheDir = com.android.tools.lint.checks.infrastructure.TestLintClient().getCacheDir(MAVEN_GOOGLE_CACHE_DIR_KEY, true)
       if (cacheDir != null && cacheDir.isDirectory) {
         try {
           FileUtils.deleteDirectoryContents(cacheDir)
@@ -10653,9 +10373,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       })
 
       val cacheDir2 =
-        com.android.tools.lint.checks.infrastructure
-          .TestLintClient()
-          .getCacheDir(GooglePlaySdkIndex.GOOGLE_PLAY_SDK_INDEX_KEY, true)
+        com.android.tools.lint.checks.infrastructure.TestLintClient().getCacheDir(GooglePlaySdkIndex.GOOGLE_PLAY_SDK_INDEX_KEY, true)
       if (cacheDir2 != null && cacheDir2.isDirectory) {
         try {
           FileUtils.deleteDirectoryContents(cacheDir2)
@@ -10667,8 +10385,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       return task
     }
 
-    private val IMPLEMENTATION =
-      Implementation(GroovyGradleDetector::class.java, Scope.GRADLE_SCOPE)
+    private val IMPLEMENTATION = Implementation(GroovyGradleDetector::class.java, Scope.GRADLE_SCOPE)
 
     init {
       LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
@@ -10676,11 +10393,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         if (issue.implementation.detectorClass == GradleDetector::class.java) {
           if (issue.implementation.scope.size > 1) {
             issue.implementation =
-              Implementation(
-                GroovyGradleDetector::class.java,
-                issue.implementation.scope,
-                *issue.implementation.analysisScopes,
-              )
+              Implementation(GroovyGradleDetector::class.java, issue.implementation.scope, *issue.implementation.analysisScopes)
           } else {
             issue.implementation = IMPLEMENTATION
           }
@@ -10699,8 +10412,7 @@ val clientFactoryWithR8FalseProject: TestLintTask.ClientFactory =
             override fun getBuildModule(): LintModelModule {
               val model = Mockito.mock(LintModelModule::class.java)
               Mockito.`when`<Boolean?>(model.highlightGradualR8Api).thenReturn(true)
-              Mockito.`when`<LintModelLintOptions>(model.lintOptions)
-                .thenReturn(DefaultLintModelLintOptions())
+              Mockito.`when`<LintModelLintOptions>(model.lintOptions).thenReturn(DefaultLintModelLintOptions())
               return model
             }
           }

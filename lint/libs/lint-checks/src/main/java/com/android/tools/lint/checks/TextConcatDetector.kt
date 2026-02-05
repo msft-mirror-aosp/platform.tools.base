@@ -50,8 +50,7 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 /** Look for missing spaces in string concatenations */
 class TextConcatDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(TextConcatDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(TextConcatDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -71,8 +70,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UBinaryExpression::class.java, UPolyadicExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UBinaryExpression::class.java, UPolyadicExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
     return object : UElementHandler() {
@@ -101,11 +99,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
       is KtLiteralStringTemplateEntry -> return expression
       is PsiLiteralExpression -> {
         val stringWithQuotes = expression.text
-        if (
-          stringWithQuotes.startsWith('"') &&
-            stringWithQuotes.endsWith('"') &&
-            expression.value is String
-        ) {
+        if (stringWithQuotes.startsWith('"') && stringWithQuotes.endsWith('"') && expression.value is String) {
           return expression.firstChild ?: expression
         }
       }
@@ -145,14 +139,10 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
   private fun findString(expression: UExpression, biasLeft: Boolean): ULiteralExpression? {
     if (expression is ULiteralExpression) {
       return expression
-    } else if (
-      expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS
-    ) {
+    } else if (expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS) {
       val operands = expression.operands
       if (operands.isNotEmpty()) {
-        val element =
-          if (biasLeft) operands.first().skipParenthesizedExprDown()
-          else operands.last().skipParenthesizedExprDown()
+        val element = if (biasLeft) operands.first().skipParenthesizedExprDown() else operands.last().skipParenthesizedExprDown()
         if (element is ULiteralExpression) {
           return element
         }
@@ -208,12 +198,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun check(
-    context: JavaContext,
-    node: UPolyadicExpression,
-    lhs: UExpression,
-    rhs: UExpression,
-  ) {
+  private fun check(context: JavaContext, node: UPolyadicExpression, lhs: UExpression, rhs: UExpression) {
     val leftPsi = findString(lhs.sourcePsi, biasLeft = false) ?: return
     val leftString = leftPsi.getStringText()
     if (leftString.isEmpty() || !leftString.last().isLetter()) {
@@ -254,8 +239,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
     val fix =
       when (rightPsi) {
         is KtLiteralStringTemplateEntry -> fixBuilder.beginning().with(" ").build()
-        is PsiJavaToken ->
-          fixBuilder.text(rightPsi.text).with("\" " + rightPsi.text.substring(1)).build()
+        is PsiJavaToken -> fixBuilder.text(rightPsi.text).with("\" " + rightPsi.text.substring(1)).build()
         else -> null
       }
 
@@ -264,9 +248,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
     context.report(
       ISSUE,
       node,
-      context
-        .getLocation(rightPsi)
-        .withSecondary(context.getLocation(leftPsi), "Previous text here"),
+      context.getLocation(rightPsi).withSecondary(context.getLocation(leftPsi), "Previous text here"),
       "Missing space between \"$lastWord\" on the previous line and \"$firstWord\" here? Resulting string is \"$lastWord$firstWord\".",
       fix,
     )

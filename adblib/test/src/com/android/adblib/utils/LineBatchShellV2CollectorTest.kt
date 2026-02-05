@@ -27,208 +27,192 @@ import org.junit.Test
 
 class LineBatchShellV2CollectorTest {
 
-    @Test
-    fun oneBatch_withoutTrailingNewline_stdout() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
+  @Test
+  fun oneBatch_withoutTrailingNewline_stdout() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
 
-        // Act
-        collectStdout(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                line3
-            """.trimIndent()
-        )
+    // Act
+    collectStdout(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      line3
+      """
+        .trimIndent(),
+    )
 
-        // Assert
-        Assert.assertEquals(
-            listOf(listOf("line1", "line2"), listOf("line3")),
-            flowCollector.getStdouts()
-        )
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2"), listOf("line3")), flowCollector.getStdouts())
+  }
+
+  @Test
+  fun oneBatch_withTrailingNewline_stdout() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
+
+    // Act
+    collectStdout(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      line3
+
+      """
+        .trimIndent(),
+    )
+
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2", "line3"), listOf("")), flowCollector.getStdouts())
+  }
+
+  @Test
+  fun multipleBatches_stdout() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
+
+    // Act
+    collectStdout(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      lin
+      """
+        .trimIndent(),
+      """
+      e3
+      line4
+      line5
+      """
+        .trimIndent(),
+    )
+
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2"), listOf("line3", "line4"), listOf("line5")), flowCollector.getStdouts())
+  }
+
+  @Test
+  fun oneBatch_withoutTrailingNewline_stderr() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
+
+    // Act
+    collectStderr(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      line3
+      """
+        .trimIndent(),
+    )
+
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2"), listOf("line3")), flowCollector.getStderrs())
+  }
+
+  @Test
+  fun oneBatch_withTrailingNewline_stderr() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
+
+    // Act
+    collectStderr(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      line3
+
+      """
+        .trimIndent(),
+    )
+
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2", "line3"), listOf("")), flowCollector.getStderrs())
+  }
+
+  @Test
+  fun multipleBatches_stderr() {
+    // Prepare
+    val linesCollector = LineBatchShellV2Collector()
+    val flowCollector = BatchShellCommandOutputFlowCollector()
+
+    // Act
+    collectStderr(
+      linesCollector,
+      flowCollector,
+      """
+      line1
+      line2
+      lin
+      """
+        .trimIndent(),
+      """
+      e3
+      line4
+      line5
+      """
+        .trimIndent(),
+    )
+
+    // Assert
+    Assert.assertEquals(listOf(listOf("line1", "line2"), listOf("line3", "line4"), listOf("line5")), flowCollector.getStderrs())
+  }
+
+  private fun collectStrings(
+    linesCollector: LineBatchShellV2Collector,
+    flowCollector: FlowCollector<BatchShellCommandOutputElement>,
+    stdout: List<String>,
+    stderr: List<String>,
+  ) {
+    runBlocking {
+      linesCollector.start(flowCollector)
+      stdout.forEach { linesCollector.collectStdout(flowCollector, ByteBufferUtils.stringToByteBuffer(it)) }
+      stderr.forEach { linesCollector.collectStderr(flowCollector, ByteBufferUtils.stringToByteBuffer(it)) }
+      linesCollector.end(flowCollector, 0)
     }
+  }
 
-    @Test
-    fun oneBatch_withTrailingNewline_stdout() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
+  private fun collectStdout(
+    linesCollector: LineBatchShellV2Collector,
+    flowCollector: FlowCollector<BatchShellCommandOutputElement>,
+    vararg value: String,
+  ) {
+    collectStrings(linesCollector, flowCollector, value.toList(), emptyList())
+  }
 
-        // Act
-        collectStdout(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                line3
+  private fun collectStderr(
+    linesCollector: LineBatchShellV2Collector,
+    flowCollector: FlowCollector<BatchShellCommandOutputElement>,
+    vararg value: String,
+  ) {
+    collectStrings(linesCollector, flowCollector, emptyList(), value.toList())
+  }
 
-            """.trimIndent()
-        )
+  private class BatchShellCommandOutputFlowCollector : FlowCollector<BatchShellCommandOutputElement> {
 
-        // Assert
-        Assert.assertEquals(
-            listOf(listOf("line1", "line2", "line3"), listOf("")),
-            flowCollector.getStdouts()
-        )
+    val elements = ArrayList<BatchShellCommandOutputElement>()
+
+    fun getStdouts() = elements.filterIsInstance<StdoutLine>().map { it.lines }
+
+    fun getStderrs() = elements.filterIsInstance<StderrLine>().map { it.lines }
+
+    override suspend fun emit(value: BatchShellCommandOutputElement) {
+      elements.add(value)
     }
-
-    @Test
-    fun multipleBatches_stdout() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
-
-        // Act
-        collectStdout(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                lin
-            """.trimIndent(),
-            """
-                e3
-                line4
-                line5
-            """.trimIndent()
-        )
-
-        // Assert
-        Assert.assertEquals(
-            listOf(
-                listOf("line1", "line2"),
-                listOf("line3", "line4"),
-                listOf("line5"),
-            ),
-            flowCollector.getStdouts()
-        )
-    }
-
-    @Test
-    fun oneBatch_withoutTrailingNewline_stderr() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
-
-        // Act
-        collectStderr(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                line3
-            """.trimIndent()
-        )
-
-        // Assert
-        Assert.assertEquals(
-            listOf(listOf("line1", "line2"), listOf("line3")),
-            flowCollector.getStderrs()
-        )
-    }
-
-    @Test
-    fun oneBatch_withTrailingNewline_stderr() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
-
-        // Act
-        collectStderr(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                line3
-
-            """.trimIndent()
-        )
-
-        // Assert
-        Assert.assertEquals(
-            listOf(listOf("line1", "line2", "line3"), listOf("")),
-            flowCollector.getStderrs()
-        )
-    }
-
-    @Test
-    fun multipleBatches_stderr() {
-        // Prepare
-        val linesCollector = LineBatchShellV2Collector()
-        val flowCollector = BatchShellCommandOutputFlowCollector()
-
-        // Act
-        collectStderr(
-            linesCollector, flowCollector,
-            """
-                line1
-                line2
-                lin
-            """.trimIndent(),
-            """
-                e3
-                line4
-                line5
-            """.trimIndent()
-        )
-
-        // Assert
-        Assert.assertEquals(
-            listOf(
-                listOf("line1", "line2"),
-                listOf("line3", "line4"),
-                listOf("line5"),
-            ),
-            flowCollector.getStderrs()
-        )
-    }
-
-    private fun collectStrings(
-      linesCollector: LineBatchShellV2Collector,
-      flowCollector: FlowCollector<BatchShellCommandOutputElement>,
-      stdout: List<String>,
-      stderr: List<String>,
-    ) {
-        runBlocking {
-            linesCollector.start(flowCollector)
-            stdout.forEach {
-                linesCollector.collectStdout(flowCollector, ByteBufferUtils.stringToByteBuffer(it))
-            }
-            stderr.forEach {
-                linesCollector.collectStderr(flowCollector, ByteBufferUtils.stringToByteBuffer(it))
-            }
-            linesCollector.end(flowCollector, 0)
-        }
-    }
-
-    private fun collectStdout(
-      linesCollector: LineBatchShellV2Collector,
-      flowCollector: FlowCollector<BatchShellCommandOutputElement>,
-      vararg value: String
-    ) {
-        collectStrings(linesCollector, flowCollector, value.toList(), emptyList())
-    }
-
-    private fun collectStderr(
-      linesCollector: LineBatchShellV2Collector,
-      flowCollector: FlowCollector<BatchShellCommandOutputElement>,
-      vararg value: String
-    ) {
-        collectStrings(linesCollector, flowCollector, emptyList(), value.toList())
-    }
-
-    private class BatchShellCommandOutputFlowCollector : FlowCollector<BatchShellCommandOutputElement> {
-
-        val elements = ArrayList<BatchShellCommandOutputElement>()
-
-        fun getStdouts() = elements.filterIsInstance<StdoutLine>().map { it.lines }
-
-        fun getStderrs() = elements.filterIsInstance<StderrLine>().map { it.lines }
-
-        override suspend fun emit(value: BatchShellCommandOutputElement) {
-            elements.add(value)
-        }
-    }
+  }
 }

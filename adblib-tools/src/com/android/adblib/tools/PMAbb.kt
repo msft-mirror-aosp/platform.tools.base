@@ -25,56 +25,62 @@ import kotlinx.coroutines.flow.map
 
 internal class PMAbb(deviceServices: AdbDeviceServices) : PM(deviceServices) {
 
-    private val CMD = "package"
+  private val CMD = "package"
 
-    // Adb client reference implementation uses abb_exec. We use the same service even though
-    // it has edge cases (like necessity to shutdownOutput=false).
-    // TODO: Investigate moving to `abb` service instead of `abb_exec`.
-    private val useAbbExecService = true
+  // Adb client reference implementation uses abb_exec. We use the same service even though
+  // it has edge cases (like necessity to shutdownOutput=false).
+  // TODO: Investigate moving to `abb` service instead of `abb_exec`.
+  private val useAbbExecService = true
 
-    override suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long) : Flow<String> {
-        val cmd = mutableListOf(CMD, "install-create")
-        cmd += options
-        cmd += "-S"
-        cmd += size.toString()
+  override suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long): Flow<String> {
+    val cmd = mutableListOf(CMD, "install-create")
+    cmd += options
+    cmd += "-S"
+    cmd += size.toString()
 
-        return if (useAbbExecService) {
-            deviceService.abb_exec(device, cmd, TextShellCollector())
-        } else {
-            deviceService.abb(device, cmd, TextShellV2Collector()).map{ it.stdout + it.stderr }
-        }
+    return if (useAbbExecService) {
+      deviceService.abb_exec(device, cmd, TextShellCollector())
+    } else {
+      deviceService.abb(device, cmd, TextShellV2Collector()).map { it.stdout + it.stderr }
     }
+  }
 
-    override suspend fun streamApk(device: DeviceSelector, sessionID: String, apk: AdbInputChannel, filename: String, size: Long) : Flow<String> {
-        // There is no need to escape apk names here since we never hit the shell and abb uses \0
-        // separator instead of space.
-        val cmd = listOf(CMD, "install-write", "-S", size.toString(), sessionID, filename, "-")
-        return if (useAbbExecService) {
-            deviceService.abb_exec(device, cmd, TextShellCollector(), apk, shutdownOutput = false)
-        } else {
-            deviceService.abb(device, cmd, TextShellV2Collector(), apk).map{ it.stdout + it.stderr}
-        }
+  override suspend fun streamApk(
+    device: DeviceSelector,
+    sessionID: String,
+    apk: AdbInputChannel,
+    filename: String,
+    size: Long,
+  ): Flow<String> {
+    // There is no need to escape apk names here since we never hit the shell and abb uses \0
+    // separator instead of space.
+    val cmd = listOf(CMD, "install-write", "-S", size.toString(), sessionID, filename, "-")
+    return if (useAbbExecService) {
+      deviceService.abb_exec(device, cmd, TextShellCollector(), apk, shutdownOutput = false)
+    } else {
+      deviceService.abb(device, cmd, TextShellV2Collector(), apk).map { it.stdout + it.stderr }
     }
+  }
 
-    override suspend fun commit(device: DeviceSelector, sessionID: String) : Flow<String> {
-        val cmd = listOf(CMD, "install-commit", sessionID)
-        return if (useAbbExecService) {
-            deviceService.abb_exec(device, cmd, TextShellCollector())
-        } else {
-            deviceService.abb(device, cmd, TextShellV2Collector()) .map { it.stdout + it.stderr }
-        }
+  override suspend fun commit(device: DeviceSelector, sessionID: String): Flow<String> {
+    val cmd = listOf(CMD, "install-commit", sessionID)
+    return if (useAbbExecService) {
+      deviceService.abb_exec(device, cmd, TextShellCollector())
+    } else {
+      deviceService.abb(device, cmd, TextShellV2Collector()).map { it.stdout + it.stderr }
     }
+  }
 
-    override suspend fun abandon(device: DeviceSelector, sessionID: String) : Flow<String>{
-        val cmd = listOf(CMD, "install-abandon", sessionID)
-        return if (useAbbExecService) {
-            deviceService.abb_exec(device, cmd, TextShellCollector())
-        } else {
-            deviceService.abb(device, cmd, TextShellV2Collector()) .map { it.stdout + it.stderr }
-        }
+  override suspend fun abandon(device: DeviceSelector, sessionID: String): Flow<String> {
+    val cmd = listOf(CMD, "install-abandon", sessionID)
+    return if (useAbbExecService) {
+      deviceService.abb_exec(device, cmd, TextShellCollector())
+    } else {
+      deviceService.abb(device, cmd, TextShellV2Collector()).map { it.stdout + it.stderr }
     }
+  }
 
-    override suspend fun getStrategy(): String {
-        return "abb"
-    }
+  override suspend fun getStrategy(): String {
+    return "abb"
+  }
 }

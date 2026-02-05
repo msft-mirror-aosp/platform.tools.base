@@ -15,13 +15,9 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
-fun cppGameActivityJava(
-    packageName: String,
-    activityClass: String,
-    libraryName: String
-): String {
+fun cppGameActivityJava(packageName: String, activityClass: String, libraryName: String): String {
 
-    return """
+  return """
 package $packageName;
 
 import android.view.View;

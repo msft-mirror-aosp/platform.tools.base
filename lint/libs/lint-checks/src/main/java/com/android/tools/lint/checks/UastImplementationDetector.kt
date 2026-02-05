@@ -40,8 +40,7 @@ import org.jetbrains.uast.UTypeReferenceExpression
 /** A special check that detects uses of UAST implementations */
 class UastImplementationDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(UastImplementationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(UastImplementationDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Use UAST interface, in lieu of UAST implementation */
     @JvmField
@@ -92,11 +91,7 @@ class UastImplementationDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(
-      UClassLiteralExpression::class.java,
-      UImportStatement::class.java,
-      UTypeReferenceExpression::class.java,
-    )
+    listOf(UClassLiteralExpression::class.java, UImportStatement::class.java, UTypeReferenceExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
     object : UElementHandler() {
@@ -141,8 +136,7 @@ class UastImplementationDetector : Detector(), SourceCodeScanner {
       }
 
       private fun reportUastImplementation(node: UElement, fqName: String, psiClass: PsiClass?) {
-        val superClasses: Set<PsiClass> =
-          psiClass?.let { InheritanceUtil.getSuperClasses(it) } ?: emptySet<PsiClass>()
+        val superClasses: Set<PsiClass> = psiClass?.let { InheritanceUtil.getSuperClasses(it) } ?: emptySet<PsiClass>()
         val filtered =
           superClasses
             .filter { it.isInterface }

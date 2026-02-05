@@ -20,6 +20,7 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
 import com.android.testutils.TestUtils.resolvePlatformPath
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,143 +28,126 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.objectweb.asm.Type
-import java.io.File
 
 @RunWith(Parameterized::class)
 class ClassesHierarchyResolverTest(private val testMode: TestMode) {
 
-    enum class TestMode {
-        DIR,
-        JAR
+  enum class TestMode {
+    DIR,
+    JAR,
+  }
+
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "testMode_{0}")
+    fun modes(): List<TestMode> {
+      return listOf(TestMode.DIR, TestMode.JAR)
+    }
+  }
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
+
+  private val androidJar = resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
+
+  private lateinit var classesHierarchyResolver: ClassesHierarchyResolver
+
+  @Before
+  fun setUp() {
+    val inputDir = temporaryFolder.newFolder()
+
+    val srcClasses =
+      listOf(
+        I::class.java,
+        InterfaceExtendsI::class.java,
+        ClassImplementsI::class.java,
+        ClassWithNoInterfacesOrSuperclasses::class.java,
+        ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
+        ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java,
+      )
+
+    val builder = ClassesHierarchyResolver.Builder(ClassesDataCache()).addDependenciesSources(androidJar)
+
+    if (testMode == TestMode.DIR) {
+      TestInputsGenerator.pathWithClasses(inputDir.toPath(), srcClasses)
+      builder.addProjectSources(inputDir)
+    } else {
+      val inputJar = File(inputDir, "classes.jar")
+      TestInputsGenerator.pathWithClasses(inputJar.toPath(), srcClasses)
+      builder.addProjectSources(inputJar)
     }
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "testMode_{0}")
-        fun modes(): List<TestMode> {
-            return listOf(TestMode.DIR, TestMode.JAR)
-        }
-    }
+    classesHierarchyResolver = builder.build()
+  }
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @Test
+  fun testClassesHierarchyData() {
+    assertClassDataIsCorrect(
+      clazz = Object::class.java,
+      expectedAnnotations = emptyList(),
+      expectedSuperclasses = emptyList(),
+      expectedInterfaces = emptyList(),
+    )
+    assertClassDataIsCorrect(
+      clazz = I::class.java,
+      expectedAnnotations = emptyList(),
+      expectedSuperclasses = listOf(Object::class.java),
+      expectedInterfaces = emptyList(),
+    )
+    assertClassDataIsCorrect(
+      clazz = InterfaceExtendsI::class.java,
+      expectedAnnotations = listOf(Instrument::class.java),
+      expectedSuperclasses = listOf(Object::class.java),
+      expectedInterfaces = listOf(I::class.java),
+    )
+    assertClassDataIsCorrect(
+      clazz = ClassImplementsI::class.java,
+      expectedAnnotations = listOf(Instrument::class.java),
+      expectedSuperclasses = listOf(Object::class.java),
+      expectedInterfaces = listOf(I::class.java),
+    )
+    assertClassDataIsCorrect(
+      clazz = ClassWithNoInterfacesOrSuperclasses::class.java,
+      expectedAnnotations = emptyList(),
+      expectedSuperclasses = listOf(Object::class.java),
+      expectedInterfaces = emptyList(),
+    )
+    assertClassDataIsCorrect(
+      clazz = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
+      expectedAnnotations = emptyList(),
+      expectedSuperclasses = listOf(ClassWithNoInterfacesOrSuperclasses::class.java, Object::class.java),
+      expectedInterfaces = listOf(I::class.java, InterfaceExtendsI::class.java),
+    )
+    assertClassDataIsCorrect(
+      clazz = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java,
+      expectedAnnotations = listOf(Instrument::class.java),
+      expectedSuperclasses =
+        listOf(
+          ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
+          ClassWithNoInterfacesOrSuperclasses::class.java,
+          Object::class.java,
+        ),
+      expectedInterfaces = listOf(I::class.java, InterfaceExtendsI::class.java),
+    )
+  }
 
-    private val androidJar = resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
+  private fun assertClassDataIsCorrect(
+    clazz: Class<*>,
+    expectedAnnotations: List<Class<*>>,
+    expectedSuperclasses: List<Class<*>>,
+    expectedInterfaces: List<Class<*>>,
+  ) {
+    val classData = classesHierarchyResolver.maybeLoadClassDataForClass(clazz.name)!!
 
-    private lateinit var classesHierarchyResolver: ClassesHierarchyResolver
+    assertThat(classData.className).isEqualTo(clazz.name)
 
-    @Before
-    fun setUp() {
-        val inputDir = temporaryFolder.newFolder()
+    assertThat(classesHierarchyResolver.getAnnotations(Type.getInternalName(clazz))).isEqualTo(expectedAnnotations.map(Class<*>::getName))
+    assertThat(classData.classAnnotations).isEqualTo(expectedAnnotations.map(Class<*>::getName))
 
-        val srcClasses = listOf(
-            I::class.java,
-            InterfaceExtendsI::class.java,
-            ClassImplementsI::class.java,
-            ClassWithNoInterfacesOrSuperclasses::class.java,
-            ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
-            ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java
-        )
+    assertThat(classesHierarchyResolver.getAllSuperClasses(Type.getInternalName(clazz)))
+      .isEqualTo(expectedSuperclasses.map(Class<*>::getName))
+    assertThat(classData.superClasses).isEqualTo(expectedSuperclasses.map(Class<*>::getName))
 
-        val builder =
-            ClassesHierarchyResolver.Builder(ClassesDataCache())
-            .addDependenciesSources(androidJar)
-
-        if (testMode == TestMode.DIR) {
-            TestInputsGenerator.pathWithClasses(inputDir.toPath(), srcClasses)
-            builder.addProjectSources(inputDir)
-        } else {
-            val inputJar = File(inputDir, "classes.jar")
-            TestInputsGenerator.pathWithClasses(inputJar.toPath(), srcClasses)
-            builder.addProjectSources(inputJar)
-        }
-
-        classesHierarchyResolver = builder.build()
-    }
-
-    @Test
-    fun testClassesHierarchyData() {
-        assertClassDataIsCorrect(
-            clazz = Object::class.java,
-            expectedAnnotations = emptyList(),
-            expectedSuperclasses = emptyList(),
-            expectedInterfaces = emptyList()
-        )
-        assertClassDataIsCorrect(
-            clazz = I::class.java,
-            expectedAnnotations = emptyList(),
-            expectedSuperclasses = listOf(Object::class.java),
-            expectedInterfaces = emptyList()
-        )
-        assertClassDataIsCorrect(
-            clazz = InterfaceExtendsI::class.java,
-            expectedAnnotations = listOf(Instrument::class.java),
-            expectedSuperclasses = listOf(Object::class.java),
-            expectedInterfaces = listOf(I::class.java)
-        )
-        assertClassDataIsCorrect(
-            clazz = ClassImplementsI::class.java,
-            expectedAnnotations = listOf(Instrument::class.java),
-            expectedSuperclasses = listOf(Object::class.java),
-            expectedInterfaces = listOf(I::class.java)
-        )
-        assertClassDataIsCorrect(
-            clazz = ClassWithNoInterfacesOrSuperclasses::class.java,
-            expectedAnnotations = emptyList(),
-            expectedSuperclasses = listOf(Object::class.java),
-            expectedInterfaces = emptyList()
-        )
-        assertClassDataIsCorrect(
-            clazz = ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
-            expectedAnnotations = emptyList(),
-            expectedSuperclasses = listOf(
-                ClassWithNoInterfacesOrSuperclasses::class.java,
-                Object::class.java
-            ),
-            expectedInterfaces = listOf(I::class.java, InterfaceExtendsI::class.java)
-        )
-        assertClassDataIsCorrect(
-            clazz = ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces::class.java,
-            expectedAnnotations = listOf(Instrument::class.java),
-            expectedSuperclasses = listOf(
-                ClassExtendsOneClassAndImplementsTwoInterfaces::class.java,
-                ClassWithNoInterfacesOrSuperclasses::class.java,
-                Object::class.java
-            ),
-            expectedInterfaces = listOf(I::class.java, InterfaceExtendsI::class.java)
-        )
-    }
-
-    private fun assertClassDataIsCorrect(
-        clazz: Class<*>,
-        expectedAnnotations: List<Class<*>>,
-        expectedSuperclasses: List<Class<*>>,
-        expectedInterfaces: List<Class<*>>
-    ) {
-        val classData =
-                classesHierarchyResolver.maybeLoadClassDataForClass(clazz.name)!!
-
-        assertThat(classData.className).isEqualTo(clazz.name)
-
-        assertThat(classesHierarchyResolver.getAnnotations(Type.getInternalName(clazz))).isEqualTo(
-            expectedAnnotations.map(Class<*>::getName)
-        )
-        assertThat(classData.classAnnotations).isEqualTo(
-            expectedAnnotations.map(Class<*>::getName)
-        )
-
-        assertThat(classesHierarchyResolver.getAllSuperClasses(Type.getInternalName(clazz))).isEqualTo(
-            expectedSuperclasses.map(Class<*>::getName)
-        )
-        assertThat(classData.superClasses).isEqualTo(
-            expectedSuperclasses.map(Class<*>::getName)
-        )
-
-        assertThat(classesHierarchyResolver.getAllInterfaces(Type.getInternalName(clazz))).isEqualTo(
-            expectedInterfaces.map(Class<*>::getName)
-        )
-        assertThat(classData.interfaces).isEqualTo(
-            expectedInterfaces.map(Class<*>::getName)
-        )
-    }
+    assertThat(classesHierarchyResolver.getAllInterfaces(Type.getInternalName(clazz))).isEqualTo(expectedInterfaces.map(Class<*>::getName))
+    assertThat(classData.interfaces).isEqualTo(expectedInterfaces.map(Class<*>::getName))
+  }
 }

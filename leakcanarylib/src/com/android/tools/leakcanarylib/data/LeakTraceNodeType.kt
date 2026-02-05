@@ -17,7 +17,7 @@
 package com.android.tools.leakcanarylib.data
 
 enum class LeakTraceNodeType {
-    INSTANCE,
-    CLASS,
-    ARRAY
+  INSTANCE,
+  CLASS,
+  ARRAY,
 }

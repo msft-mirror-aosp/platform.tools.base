@@ -38,71 +38,66 @@ import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 
-@DisableCachingByDefault(because = "The Setup Task is expected to get values external to " +
-        "the Gradle Project. As such, it can never be considered up-to-date.")
+@DisableCachingByDefault(
+  because = "The Setup Task is expected to get values external to " + "the Gradle Project. As such, it can never be considered up-to-date."
+)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
-abstract class ManagedDeviceSetupTask : UnsafeOutputsGlobalTask(
-    "The Setup Task is expected to get values external to the Gradle Project. " +
-            "As such, it can never be considered up-to-date.") {
+abstract class ManagedDeviceSetupTask :
+  UnsafeOutputsGlobalTask(
+    "The Setup Task is expected to get values external to the Gradle Project. " + "As such, it can never be considered up-to-date."
+  ) {
 
-    @get:Inject
-    abstract val objectFactory: ObjectFactory
+  @get:Inject abstract val objectFactory: ObjectFactory
 
-    @get:Internal
-    abstract val setupAction: Property<Class<out DeviceSetupTaskAction<out DeviceSetupInput>>>
+  @get:Internal abstract val setupAction: Property<Class<out DeviceSetupTaskAction<out DeviceSetupInput>>>
 
-    @get:Nested
-    abstract val deviceInput: Property<DeviceSetupInput>
+  @get:Nested abstract val deviceInput: Property<DeviceSetupInput>
 
-    @get:OutputDirectory
-    abstract val setupResultDir: DirectoryProperty
+  @get:OutputDirectory abstract val setupResultDir: DirectoryProperty
 
-    public override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(SetupTaskWorkAction::class.java) { params ->
-            params.setupAction.setDisallowChanges(
-                objectFactory.newInstance(
-                    setupAction.get()) as DeviceSetupTaskAction<DeviceSetupInput>)
-            params.deviceInput.setDisallowChanges(deviceInput)
-            params.setupResultDir.setDisallowChanges(setupResultDir)
-        }
+  public override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(SetupTaskWorkAction::class.java) { params ->
+      params.setupAction.setDisallowChanges(objectFactory.newInstance(setupAction.get()) as DeviceSetupTaskAction<DeviceSetupInput>)
+      params.deviceInput.setDisallowChanges(deviceInput)
+      params.setupResultDir.setDisallowChanges(setupResultDir)
     }
+  }
 
-    interface SetupTaskWorkParameters : WorkParameters {
-        val setupAction: Property<DeviceSetupTaskAction<DeviceSetupInput>>
-        val deviceInput: Property<DeviceSetupInput>
-        val setupResultDir: DirectoryProperty
+  interface SetupTaskWorkParameters : WorkParameters {
+    val setupAction: Property<DeviceSetupTaskAction<DeviceSetupInput>>
+    val deviceInput: Property<DeviceSetupInput>
+    val setupResultDir: DirectoryProperty
+  }
+
+  abstract class SetupTaskWorkAction : WorkAction<SetupTaskWorkParameters> {
+    override fun execute() {
+      val setupAction = parameters.setupAction.get()
+      val deviceInput = parameters.deviceInput.get()
+      val setupResultDir = parameters.setupResultDir.get()
+      setupAction.setup(deviceInput, setupResultDir)
     }
+  }
 
-    abstract class SetupTaskWorkAction : WorkAction<SetupTaskWorkParameters> {
-        override fun execute() {
-            val setupAction = parameters.setupAction.get()
-            val deviceInput = parameters.deviceInput.get()
-            val setupResultDir = parameters.setupResultDir.get()
-            setupAction.setup(deviceInput, setupResultDir)
-        }
+  class CreationAction<DeviceT : Device>(
+    private val setupTaskResultOutputDir: Provider<Directory>,
+    private val setupConfigAction: Class<out DeviceSetupConfigureAction<DeviceT, *>>,
+    private val setupTaskAction: Class<out DeviceSetupTaskAction<*>>,
+    private val dslDevice: DeviceT,
+    creationConfig: GlobalTaskCreationConfig,
+  ) : GlobalTaskCreationAction<ManagedDeviceSetupTask>() {
+
+    override val name: String
+      get() = setupTaskName(dslDevice)
+
+    override val type: Class<ManagedDeviceSetupTask>
+      get() = ManagedDeviceSetupTask::class.java
+
+    override fun configure(task: ManagedDeviceSetupTask) {
+      super.configure(task)
+
+      task.deviceInput.setDisallowChanges(task.objectFactory.newInstance(setupConfigAction).configureTaskInput(dslDevice))
+      task.setupAction.setDisallowChanges(setupTaskAction)
+      task.setupResultDir.set(setupTaskResultOutputDir)
     }
-
-    class CreationAction<DeviceT: Device>(
-        private val setupTaskResultOutputDir: Provider<Directory>,
-        private val setupConfigAction : Class<out DeviceSetupConfigureAction<DeviceT, *>>,
-        private val setupTaskAction: Class<out DeviceSetupTaskAction<*>>,
-        private val dslDevice: DeviceT,
-        creationConfig: GlobalTaskCreationConfig
-    ): GlobalTaskCreationAction<ManagedDeviceSetupTask>() {
-
-        override val name: String
-            get() = setupTaskName(dslDevice)
-
-        override val type: Class<ManagedDeviceSetupTask>
-            get() = ManagedDeviceSetupTask::class.java
-
-        override fun configure(task: ManagedDeviceSetupTask) {
-            super.configure(task)
-
-            task.deviceInput.setDisallowChanges(
-                task.objectFactory.newInstance(setupConfigAction).configureTaskInput(dslDevice))
-            task.setupAction.setDisallowChanges(setupTaskAction)
-            task.setupResultDir.set(setupTaskResultOutputDir)
-        }
-    }
+  }
 }

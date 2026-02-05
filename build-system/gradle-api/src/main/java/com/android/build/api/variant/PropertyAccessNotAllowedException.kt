@@ -21,24 +21,22 @@ import org.gradle.api.Incubating
 /**
  * Exception thrown when users are trying to access [VariantBuilder] properties.
  *
- * [VariantBuilder] properties are defined as kotlin properties so users can use simple
- * assignment rather than calling a set function. However, those properties can only be
- * set.
+ * [VariantBuilder] properties are defined as kotlin properties so users can use simple assignment rather than calling a set function.
+ * However, those properties can only be set.
  *
- * It is not safe to read the property value as other registered
- * [AndroidComponentsExtension.beforeVariants] callbacks can run later and change the value.
+ * It is not safe to read the property value as other registered [AndroidComponentsExtension.beforeVariants] callbacks can run later and
+ * change the value.
  *
- * If you need the final value of a property, it is most likely available in the [Variant]
- * hierarchy accessible through the [AndroidComponentsExtension.onVariants] callbacks.
+ * If you need the final value of a property, it is most likely available in the [Variant] hierarchy accessible through the
+ * [AndroidComponentsExtension.onVariants] callbacks.
  */
 @Incubating
-class PropertyAccessNotAllowedException(
-        val propertyName: String,
-        val location: String
-): RuntimeException(
-        """
+class PropertyAccessNotAllowedException(val propertyName: String, val location: String) :
+  RuntimeException(
+    """
             You cannot access '$propertyName' on $location in the [AndroidComponentsExtension.beforeVariants]
             callbacks. Other plugins applied later can still change this value, it is not safe
             to read at this stage.
-        """.trimIndent()
-)
+        """
+      .trimIndent()
+  )

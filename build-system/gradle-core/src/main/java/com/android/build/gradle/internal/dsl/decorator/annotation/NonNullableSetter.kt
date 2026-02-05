@@ -16,5 +16,4 @@
 
 package com.android.build.gradle.internal.dsl.decorator.annotation
 
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_SETTER)
-annotation class NonNullableSetter
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_SETTER) annotation class NonNullableSetter

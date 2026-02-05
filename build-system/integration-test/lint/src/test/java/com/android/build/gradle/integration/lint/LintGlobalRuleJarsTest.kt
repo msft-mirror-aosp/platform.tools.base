@@ -26,39 +26,34 @@ import org.junit.rules.TemporaryFolder
 
 class LintGlobalRuleJarsTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-            GradleTestProject.builder()
-                    .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-                    .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @get:Rule
-    val temporaryFolder: TemporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `Jars set via environment variable affect up-to-date checking`() {
-        val lintJar = temporaryFolder.newFolder().resolve("abcdefg.jar")
+  @Test
+  fun `Jars set via environment variable affect up-to-date checking`() {
+    val lintJar = temporaryFolder.newFolder().resolve("abcdefg.jar")
 
-        val absolutePath = lintJar.absolutePath
-        assertThat(absolutePath).isNotEmpty()
-        val executor =
-                project.executor()
-                        .withEnvironmentVariables(mapOf("ANDROID_LINT_JARS" to absolutePath))
+    val absolutePath = lintJar.absolutePath
+    assertThat(absolutePath).isNotEmpty()
+    val executor = project.executor().withEnvironmentVariables(mapOf("ANDROID_LINT_JARS" to absolutePath))
 
-        val lintTaskName = ":lintDebug"
-        val lintReportTaskName = ":lintReportDebug"
-        val lintAnalyzeTaskName = ":lintAnalyzeDebug"
-        executor.run(lintTaskName)
-        executor.run(lintTaskName).apply {
-            assertTask(lintReportTaskName).wasUpToDate()
-            assertTask(lintAnalyzeTaskName).wasUpToDate()
-        }
-
-        FileUtils.createFile(lintJar, "FOO_BAR")
-        executor.run(lintTaskName).apply {
-            assertTask(lintReportTaskName).didWork()
-            assertTask(lintAnalyzeTaskName).didWork()
-            assertOutputDoesNotContain("this will stop working soon.")
-        }
+    val lintTaskName = ":lintDebug"
+    val lintReportTaskName = ":lintReportDebug"
+    val lintAnalyzeTaskName = ":lintAnalyzeDebug"
+    executor.run(lintTaskName)
+    executor.run(lintTaskName).apply {
+      assertTask(lintReportTaskName).wasUpToDate()
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
     }
+
+    FileUtils.createFile(lintJar, "FOO_BAR")
+    executor.run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
+      assertOutputDoesNotContain("this will stop working soon.")
+    }
+  }
 }

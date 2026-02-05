@@ -46,38 +46,22 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class InvalidationTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
   private val closeablesRule = CloseablesRule()
 
   @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule())
-      .around(closeablesRule)
-      .around(testEnvironment)
-      .around(LogPrinterRule())
+  val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(closeablesRule).around(testEnvironment).around(LogPrinterRule())
 
-  @Test
-  fun test_execute_hook_methods() =
-    test_simple_hook_methods("execute()V", SQLiteStatement::class.java)
+  @Test fun test_execute_hook_methods() = test_simple_hook_methods("execute()V", SQLiteStatement::class.java)
 
-  @Test
-  fun test_executeInsert_hook_methods() =
-    test_simple_hook_methods("executeInsert()J", SQLiteStatement::class.java)
+  @Test fun test_executeInsert_hook_methods() = test_simple_hook_methods("executeInsert()J", SQLiteStatement::class.java)
 
-  @Test
-  fun test_executeUpdateDelete_hook_methods() =
-    test_simple_hook_methods("executeUpdateDelete()I", SQLiteStatement::class.java)
+  @Test fun test_executeUpdateDelete_hook_methods() = test_simple_hook_methods("executeUpdateDelete()I", SQLiteStatement::class.java)
 
-  @Test
-  fun test_end_transaction_hook_method() =
-    test_simple_hook_methods("endTransaction()V", SQLiteDatabase::class.java)
+  @Test fun test_end_transaction_hook_method() = test_simple_hook_methods("endTransaction()V", SQLiteDatabase::class.java)
 
   private fun test_simple_hook_methods(method: String, clazz: Class<*>) = runBlocking {
     // Starting to track databases makes the inspector register hooks
@@ -92,8 +76,7 @@ class InvalidationTest {
       hook.first().asExitHook.onExit(null)
       testEnvironment.receiveEvent().let { event ->
         assertThat(event.oneOfCase).isEqualTo(DATABASE_POSSIBLY_CHANGED)
-        assertThat(event.databasePossiblyChanged)
-          .isEqualTo(SqliteInspectorProtocol.DatabasePossiblyChangedEvent.getDefaultInstance())
+        assertThat(event.databasePossiblyChanged).isEqualTo(SqliteInspectorProtocol.DatabasePossiblyChangedEvent.getDefaultInstance())
       }
       testEnvironment.assertNoQueuedEvents()
     }
@@ -103,20 +86,13 @@ class InvalidationTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun test_throttling() = runTest {
-    val testEnvironment =
-      closeablesRule.register(
-        SqliteInspectorTestEnvironment(ioCoroutineContextOverride = coroutineContext)
-      )
+    val testEnvironment = closeablesRule.register(SqliteInspectorTestEnvironment(ioCoroutineContextOverride = coroutineContext))
     val events = mutableListOf<Event>()
     // Starting to track databases makes the inspector register hooks
     testEnvironment.sendCommand(MessageFactory.createTrackDatabasesCommand())
 
     // Any hook that triggers invalidation
-    val hook =
-      testEnvironment
-        .consumeRegisteredHooks()
-        .first { it.originMethod == "executeInsert()J" }
-        .asExitHook
+    val hook = testEnvironment.consumeRegisteredHooks().first { it.originMethod == "executeInsert()J" }.asExitHook
 
     testEnvironment.assertNoQueuedEvents()
 
@@ -143,10 +119,7 @@ class InvalidationTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun test_cursor_methods(): Unit = runTest {
-    val testEnvironment =
-      closeablesRule.register(
-        SqliteInspectorTestEnvironment(ioCoroutineContextOverride = coroutineContext)
-      )
+    val testEnvironment = closeablesRule.register(SqliteInspectorTestEnvironment(ioCoroutineContextOverride = coroutineContext))
     // Starting to track databases makes the inspector register hooks
     testEnvironment.sendCommand(MessageFactory.createTrackDatabasesCommand())
 
@@ -165,10 +138,7 @@ class InvalidationTest {
 
     // Check for hooks being registered
     val hooksByClass = hooks.groupBy { it.originClass }
-    val rawQueryHooks =
-      hooksByClass[SQLiteDatabase::class.java]!!
-        .filter { it.originMethod == rawQueryMethodSignature }
-        .map { it::class }
+    val rawQueryHooks = hooksByClass[SQLiteDatabase::class.java]!!.filter { it.originMethod == rawQueryMethodSignature }.map { it::class }
 
     assertThat(rawQueryHooks).containsExactly(Hook.EntryHook::class, Hook.ExitHook::class)
     val hook = hooksByClass[SQLiteCursor::class.java]!!.single()
@@ -178,8 +148,7 @@ class InvalidationTest {
     fun wrap(cursor: Cursor): Cursor = object : CursorWrapper(cursor) {}
     fun noOp(c: Cursor): Cursor = c
     listOf(::wrap, ::noOp).forEach { wrap ->
-      listOf("insert into t1 values (1)" to true, "select * from sqlite_master" to false).forEach {
-        (query, shouldCauseInvalidation) ->
+      listOf("insert into t1 values (1)" to true, "select * from sqlite_master" to false).forEach { (query, shouldCauseInvalidation) ->
         testEnvironment.assertNoQueuedEvents()
 
         val cursor = cursorForQuery(query)
@@ -201,8 +170,7 @@ class InvalidationTest {
   }
 
   private fun cursorForQuery(query: String): SQLiteCursor {
-    val db =
-      testEnvironment.openDatabase(DatabaseModel("ignored", Table("t1", Column("c1", "int"))))
+    val db = testEnvironment.openDatabase(DatabaseModel("ignored", Table("t1", Column("c1", "int"))))
     val cursor = closeablesRule.register(db.rawQuery(query, null))
     val context = RuntimeEnvironment.getApplication()
     context.deleteDatabase(db.path)
@@ -214,8 +182,7 @@ class InvalidationTest {
 
   @Suppress("UNCHECKED_CAST")
   private fun List<Hook>.exitHookFor(m: String): ArtTooling.ExitHook<Any> =
-    this.first { it.originMethod == m && it is Hook.ExitHook }.asExitHook
-      as ArtTooling.ExitHook<Any>
+    this.first { it.originMethod == m && it is Hook.ExitHook }.asExitHook as ArtTooling.ExitHook<Any>
 
   private class UnsupportedCursorType : AbstractCursor() {
     override fun getLong(column: Int): Long = 0

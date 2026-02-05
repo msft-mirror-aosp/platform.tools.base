@@ -17,37 +17,31 @@ package com.android.fakeadbserver.devicecommandhandlers
 
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
-import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
+import kotlinx.coroutines.CoroutineScope
 
 class UnRootCommandHandler : DeviceCommandHandler("unroot") {
 
-    override fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        val outputStream = socket.getOutputStream()
-        if (!device.isRoot) {
-            writeOkay(outputStream)
-            // Note: Response is not a length prefixed string, unlike most OKAY responses
-            writeString(outputStream, ADBD_NOT_ROOT)
-        } else {
-            writeOkay(outputStream)
-            // Note: Response is not a length prefixed string, unlike most OKAY responses
-            writeString(outputStream, ADBD_RESTARTING_UNROOT)
-            RootCommandHandler.restartDeviceAsRoot(server, device, isRoot = false)
-        }
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
+    val outputStream = socket.getOutputStream()
+    if (!device.isRoot) {
+      writeOkay(outputStream)
+      // Note: Response is not a length prefixed string, unlike most OKAY responses
+      writeString(outputStream, ADBD_NOT_ROOT)
+    } else {
+      writeOkay(outputStream)
+      // Note: Response is not a length prefixed string, unlike most OKAY responses
+      writeString(outputStream, ADBD_RESTARTING_UNROOT)
+      RootCommandHandler.restartDeviceAsRoot(server, device, isRoot = false)
     }
+  }
 
-    companion object {
+  companion object {
 
-        // The strings below come from the ADB Daemon code:
-        // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/restart_service.cpp;l=46
+    // The strings below come from the ADB Daemon code:
+    // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/restart_service.cpp;l=46
 
-        private const val ADBD_NOT_ROOT = "adbd not running as root\n"
-        private const val ADBD_RESTARTING_UNROOT = "restarting adbd as non root\n"
-    }
+    private const val ADBD_NOT_ROOT = "adbd not running as root\n"
+    private const val ADBD_RESTARTING_UNROOT = "restarting adbd as non root\n"
+  }
 }

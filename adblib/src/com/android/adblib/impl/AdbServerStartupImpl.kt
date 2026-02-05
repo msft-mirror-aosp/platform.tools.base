@@ -31,54 +31,39 @@ import kotlinx.coroutines.withContext
 
 internal class AdbServerStartupImpl(private val host: AdbSessionHost) : AdbServerStartup {
 
-    private val adbServerConfiguration =
-        MutableStateFlow(
-            AdbServerConfiguration(
-                adbPath = null,
-                serverPort = null,
-                isUserManaged = false,
-                isUnitTest = false,
-                envVars = emptyMap(),
-            )
-        )
+  private val adbServerConfiguration =
+    MutableStateFlow(
+      AdbServerConfiguration(adbPath = null, serverPort = null, isUserManaged = false, isUnitTest = false, envVars = emptyMap())
+    )
 
-    private val serverController =
-        AdbServerController.createServerController(host, adbServerConfiguration)
+  private val serverController = AdbServerController.createServerController(host, adbServerConfiguration)
 
-    override suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int {
-        host.logger.debug { "Starting ADB server on port $port." }
-        host.timeProvider.withErrorTimeout(timeout, unit) {
-            val adbPath = withContext(host.blockingIoDispatcher) { getAdbFile() }
-            adbServerConfiguration.update { configuration ->
-                configuration.copy(
-                    adbPath = adbPath,
-                    serverPort = port
-                )
-            }
-            serverController.start()
-        }
-        // We only attempt to spin up the Adb Server on the requested port
-        return port
+  override suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int {
+    host.logger.debug { "Starting ADB server on port $port." }
+    host.timeProvider.withErrorTimeout(timeout, unit) {
+      val adbPath = withContext(host.blockingIoDispatcher) { getAdbFile() }
+      adbServerConfiguration.update { configuration -> configuration.copy(adbPath = adbPath, serverPort = port) }
+      serverController.start()
     }
+    // We only attempt to spin up the Adb Server on the requested port
+    return port
+  }
 
-    private fun getAdbFile(): Path {
-        val os = System.getProperty("os.name")
-        val adbExecutableName = if (os.startsWith("Windows")) "adb.exe" else "adb"
-        return findOnPath(adbExecutableName)
-            ?: throw IOException("Couldn't locate '$adbExecutableName' on PATH")
-    }
+  private fun getAdbFile(): Path {
+    val os = System.getProperty("os.name")
+    val adbExecutableName = if (os.startsWith("Windows")) "adb.exe" else "adb"
+    return findOnPath(adbExecutableName) ?: throw IOException("Couldn't locate '$adbExecutableName' on PATH")
+  }
 
-    private fun findOnPath(executableName: String): Path? {
-        val pathEnvVariable =
-            System.getenv("PATH")
-                ?: throw IOException("No PATH environmental variable is defined")
-        for (binDir in pathEnvVariable.split(File.pathSeparator)) {
-            val file = Paths.get(binDir).resolve(executableName)
-            if (Files.isRegularFile(file)) {
-                return file
-            }
-        }
-        host.logger.debug { "$executableName could not be located in any of the $pathEnvVariable folders" }
-        return null
+  private fun findOnPath(executableName: String): Path? {
+    val pathEnvVariable = System.getenv("PATH") ?: throw IOException("No PATH environmental variable is defined")
+    for (binDir in pathEnvVariable.split(File.pathSeparator)) {
+      val file = Paths.get(binDir).resolve(executableName)
+      if (Files.isRegularFile(file)) {
+        return file
+      }
     }
+    host.logger.debug { "$executableName could not be located in any of the $pathEnvVariable folders" }
+    return null
+  }
 }

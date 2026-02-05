@@ -28,137 +28,127 @@ import java.io.File
 import kotlin.math.max
 
 internal fun writeMergedMetadata(
-    metadataFiles: Collection<File>,
-    outputFile: File,
-    overrideMinAgp: String?,
-    overrideMinCompileSdk: Int?,
-    overrideMinCompileSdkExt: Int?
+  metadataFiles: Collection<File>,
+  outputFile: File,
+  overrideMinAgp: String?,
+  overrideMinCompileSdk: Int?,
+  overrideMinCompileSdkExt: Int?,
 ) {
-    val parsedAarsMetadata = metadataFiles.map { AarMetadataReader.load(it) }
+  val parsedAarsMetadata = metadataFiles.map { AarMetadataReader.load(it) }
 
-    val mergedMetadata = object {
-        var minCompileSdk: Int = DEFAULT_MIN_COMPILE_SDK_VERSION
-        var minCompileSdkExtension: Int = DEFAULT_MIN_COMPILE_SDK_EXTENSION
-        var minAgpVersion: String = DEFAULT_MIN_AGP_VERSION
-        var forceCompileSdkPreview: String? = null
-        var coreLibraryDesugaringEnabled: Boolean = false
-        var desugarJdkLib: String? = null
+  val mergedMetadata =
+    object {
+      var minCompileSdk: Int = DEFAULT_MIN_COMPILE_SDK_VERSION
+      var minCompileSdkExtension: Int = DEFAULT_MIN_COMPILE_SDK_EXTENSION
+      var minAgpVersion: String = DEFAULT_MIN_AGP_VERSION
+      var forceCompileSdkPreview: String? = null
+      var coreLibraryDesugaringEnabled: Boolean = false
+      var desugarJdkLib: String? = null
     }
 
-    for (metadataFile in parsedAarsMetadata) {
-        val minCompileSdk = metadataFile.minCompileSdk?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-        val minSdkExtension =
-            metadataFile.minCompileSdkExtension?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
-        val minAgpVersion = metadataFile.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
+  for (metadataFile in parsedAarsMetadata) {
+    val minCompileSdk = metadataFile.minCompileSdk?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_VERSION
+    val minSdkExtension = metadataFile.minCompileSdkExtension?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
+    val minAgpVersion = metadataFile.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
 
-        when {
-            minCompileSdk > mergedMetadata.minCompileSdk -> {
-                mergedMetadata.minCompileSdk = minCompileSdk
-                mergedMetadata.minCompileSdkExtension = minSdkExtension
-            }
+    when {
+      minCompileSdk > mergedMetadata.minCompileSdk -> {
+        mergedMetadata.minCompileSdk = minCompileSdk
+        mergedMetadata.minCompileSdkExtension = minSdkExtension
+      }
 
-            minCompileSdk == mergedMetadata.minCompileSdk -> {
-                mergedMetadata.minCompileSdkExtension =
-                    max(mergedMetadata.minCompileSdkExtension, minSdkExtension)
-            }
-        }
-        mergedMetadata.minAgpVersion =
-            if (AgpVersion.parse(minAgpVersion) >
-                AgpVersion.parse(mergedMetadata.minAgpVersion)
-            ) {
-                minAgpVersion
-            } else {
-                mergedMetadata.minAgpVersion
-            }
-
-        mergedMetadata.forceCompileSdkPreview = metadataFile.forceCompileSdkPreview ?: mergedMetadata.forceCompileSdkPreview
-
-        mergedMetadata.coreLibraryDesugaringEnabled = mergedMetadata.coreLibraryDesugaringEnabled.or(
-            metadataFile.coreLibraryDesugaringEnabled?.toBooleanStrictOrNull() ?: mergedMetadata.coreLibraryDesugaringEnabled)
+      minCompileSdk == mergedMetadata.minCompileSdk -> {
+        mergedMetadata.minCompileSdkExtension = max(mergedMetadata.minCompileSdkExtension, minSdkExtension)
+      }
     }
+    mergedMetadata.minAgpVersion =
+      if (AgpVersion.parse(minAgpVersion) > AgpVersion.parse(mergedMetadata.minAgpVersion)) {
+        minAgpVersion
+      } else {
+        mergedMetadata.minAgpVersion
+      }
 
-    mergedMetadata.desugarJdkLib =
-        buildDesugaredJdkLibCoordinate(
-            parsedAarsMetadata.mapNotNull { it.desugarJdkLibId }
-        )
+    mergedMetadata.forceCompileSdkPreview = metadataFile.forceCompileSdkPreview ?: mergedMetadata.forceCompileSdkPreview
 
-    overrideMinAgp?.let {
-        mergedMetadata.minAgpVersion = it
-    }
-    overrideMinCompileSdk?.let {
-        mergedMetadata.minCompileSdk = it
-        mergedMetadata.minCompileSdkExtension = overrideMinCompileSdkExt
-            ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
-    }
+    mergedMetadata.coreLibraryDesugaringEnabled =
+      mergedMetadata.coreLibraryDesugaringEnabled.or(
+        metadataFile.coreLibraryDesugaringEnabled?.toBooleanStrictOrNull() ?: mergedMetadata.coreLibraryDesugaringEnabled
+      )
+  }
 
-    writeAarMetadataFile(
-        outputFile,
-        AarMetadataTask.AAR_FORMAT_VERSION,
-        AarMetadataTask.AAR_METADATA_VERSION,
-        mergedMetadata.minCompileSdk,
-        mergedMetadata.minCompileSdkExtension,
-        mergedMetadata.minAgpVersion,
-        mergedMetadata.forceCompileSdkPreview,
-        mergedMetadata.coreLibraryDesugaringEnabled,
-        mergedMetadata.desugarJdkLib
-    )
+  mergedMetadata.desugarJdkLib = buildDesugaredJdkLibCoordinate(parsedAarsMetadata.mapNotNull { it.desugarJdkLibId })
+
+  overrideMinAgp?.let { mergedMetadata.minAgpVersion = it }
+  overrideMinCompileSdk?.let {
+    mergedMetadata.minCompileSdk = it
+    mergedMetadata.minCompileSdkExtension = overrideMinCompileSdkExt ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
+  }
+
+  writeAarMetadataFile(
+    outputFile,
+    AarMetadataTask.AAR_FORMAT_VERSION,
+    AarMetadataTask.AAR_METADATA_VERSION,
+    mergedMetadata.minCompileSdk,
+    mergedMetadata.minCompileSdkExtension,
+    mergedMetadata.minAgpVersion,
+    mergedMetadata.forceCompileSdkPreview,
+    mergedMetadata.coreLibraryDesugaringEnabled,
+    mergedMetadata.desugarJdkLib,
+  )
 }
 
 /**
  * Builds a coordinate for the desugared jdk lib from a list of maven coordinates.
  *
- * Based on https://issuetracker.google.com/203113147#comment20, the coordinate with the highest
- * priority is chosen. The priority is determined
+ * Based on https://issuetracker.google.com/203113147#comment20, the coordinate with the highest priority is chosen. The priority is
+ * determined
  */
 internal fun buildDesugaredJdkLibCoordinate(mavenCoordinates: List<String>): String? {
-    if (mavenCoordinates.isEmpty()) return null
-    var preferredArtifactId: String? = null
-    val latestArtifact = mavenCoordinates
-        .onEach {
-            val (_, artifactId, _) = it.split(':')
-            if (preferredArtifactId == null) {
-                preferredArtifactId = artifactId
-            } else if (parseDesugarJdkVariant(artifactId).priority >
-                parseDesugarJdkVariant(preferredArtifactId).priority
-            ) {
-                preferredArtifactId = artifactId
-            }
+  if (mavenCoordinates.isEmpty()) return null
+  var preferredArtifactId: String? = null
+  val latestArtifact =
+    mavenCoordinates
+      .onEach {
+        val (_, artifactId, _) = it.split(':')
+        if (preferredArtifactId == null) {
+          preferredArtifactId = artifactId
+        } else if (parseDesugarJdkVariant(artifactId).priority > parseDesugarJdkVariant(preferredArtifactId).priority) {
+          preferredArtifactId = artifactId
         }
-        .maxOf { ComparableMavenCoordinate(it) }
-        .coordinate
+      }
+      .maxOf { ComparableMavenCoordinate(it) }
+      .coordinate
 
-    return if (preferredArtifactId != null) {
-        val splitLatestArtifact = latestArtifact.split(':')
-        if (splitLatestArtifact.size == 3) {
-            "${splitLatestArtifact[0]}:$preferredArtifactId:${splitLatestArtifact[2]}"
-        } else {
-            null
-        }
+  return if (preferredArtifactId != null) {
+    val splitLatestArtifact = latestArtifact.split(':')
+    if (splitLatestArtifact.size == 3) {
+      "${splitLatestArtifact[0]}:$preferredArtifactId:${splitLatestArtifact[2]}"
     } else {
-        latestArtifact
+      null
     }
+  } else {
+    latestArtifact
+  }
 }
 
 private data class ComparableMavenCoordinate(val coordinate: String) : Comparable<ComparableMavenCoordinate> {
 
-    override fun compareTo(other: ComparableMavenCoordinate): Int {
-        val thisVersionParts = extractVersionParts(getVersion(coordinate) ?: "")
-        val otherVersionParts = extractVersionParts(getVersion(other.coordinate) ?: "")
-        val maxLen = maxOf(thisVersionParts.size, otherVersionParts.size)
+  override fun compareTo(other: ComparableMavenCoordinate): Int {
+    val thisVersionParts = extractVersionParts(getVersion(coordinate) ?: "")
+    val otherVersionParts = extractVersionParts(getVersion(other.coordinate) ?: "")
+    val maxLen = maxOf(thisVersionParts.size, otherVersionParts.size)
 
-        for (i in 0 until maxLen) {
-            val thisVersionPart = thisVersionParts.getOrNull(i) ?: 0
-            val otherVersionPart = otherVersionParts.getOrNull(i) ?: 0
-            if (thisVersionPart != otherVersionPart) {
-                return thisVersionPart.compareTo(otherVersionPart)
-            }
-        }
-        return 0
+    for (i in 0 until maxLen) {
+      val thisVersionPart = thisVersionParts.getOrNull(i) ?: 0
+      val otherVersionPart = otherVersionParts.getOrNull(i) ?: 0
+      if (thisVersionPart != otherVersionPart) {
+        return thisVersionPart.compareTo(otherVersionPart)
+      }
     }
+    return 0
+  }
 
-    private fun getVersion(mavenCoordinate: String): String? =
-        mavenCoordinate.split(":").getOrNull(2)
-    private fun extractVersionParts(mavenVersion: String): List<Int> =
-        mavenVersion.split('.', '-')
-            .mapNotNull { it.toIntOrNull() }
+  private fun getVersion(mavenCoordinate: String): String? = mavenCoordinate.split(":").getOrNull(2)
+
+  private fun extractVersionParts(mavenVersion: String): List<Int> = mavenVersion.split('.', '-').mapNotNull { it.toIntOrNull() }
 }

@@ -23,39 +23,39 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.google.wireless.android.sdk.stats.GradleBuildProject
+import javax.inject.Inject
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
-import javax.inject.Inject
 
-/** Gradle plugin class for 'application' projects.  */
+/** Gradle plugin class for 'application' projects. */
 abstract class AbstractAppPlugin<
-        AndroidT: CommonExtension,
-        AndroidComponentsT : AndroidComponentsExtension<
-                in AndroidT,
-                in VariantBuilderT,
-                in VariantT>,
-        VariantBuilderT : VariantBuilder,
-        VariantDslInfoT: VariantDslInfo,
-        CreationConfigT: VariantCreationConfig,
-        VariantT : Variant>
-@Inject constructor(
-        registry: ToolingModelBuilderRegistry?,
-        componentFactory: SoftwareComponentFactory?,
-        listenerRegistry: BuildEventsListenerRegistry?,
-        buildFeatures: org.gradle.api.configuration.BuildFeatures
-) : BasePlugin<AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
-        registry!!,
-        componentFactory!!,
-        listenerRegistry!!,
-        buildFeatures,
-) {
+  AndroidT : CommonExtension,
+  AndroidComponentsT : AndroidComponentsExtension<in AndroidT, in VariantBuilderT, in VariantT>,
+  VariantBuilderT : VariantBuilder,
+  VariantDslInfoT : VariantDslInfo,
+  CreationConfigT : VariantCreationConfig,
+  VariantT : Variant,
+>
+@Inject
+constructor(
+  registry: ToolingModelBuilderRegistry?,
+  componentFactory: SoftwareComponentFactory?,
+  listenerRegistry: BuildEventsListenerRegistry?,
+  buildFeatures: org.gradle.api.configuration.BuildFeatures,
+) :
+  BasePlugin<AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
+    registry!!,
+    componentFactory!!,
+    listenerRegistry!!,
+    buildFeatures,
+  ) {
 
-    override fun getProjectType(): Int {
-        return AndroidProjectTypes.PROJECT_TYPE_APP
-    }
+  override fun getProjectType(): Int {
+    return AndroidProjectTypes.PROJECT_TYPE_APP
+  }
 
-    override fun getAnalyticsPluginType(): GradleBuildProject.PluginType {
-        return GradleBuildProject.PluginType.APPLICATION
-    }
+  override fun getAnalyticsPluginType(): GradleBuildProject.PluginType {
+    return GradleBuildProject.PluginType.APPLICATION
+  }
 }

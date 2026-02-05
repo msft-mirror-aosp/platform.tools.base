@@ -79,13 +79,12 @@ val googleWalletActivityTemplate
       TextFieldWidget(layoutName),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("google-wallet-activity").resolve("template_wallet_activity.png") }
 
     recipe = { data: TemplateData ->
-      googleWalletActivityRecipe(data as ModuleTemplateData, activityClass.value, layoutName.value,
-                                 isLauncher.value, packageName.value)
+      googleWalletActivityRecipe(data as ModuleTemplateData, activityClass.value, layoutName.value, isLauncher.value, packageName.value)
     }
   }

@@ -19,6 +19,5 @@ import com.android.repository.api.RepoPackage
 
 fun getRepoPackagePrefix(pathOrPrefix: String): String = pathOrPrefix.substringBeforeLast(RepoPackage.PATH_SEPARATOR)
 
-fun getAllRepoPackagePrefixes(path: String): List<String> = generateSequence(path) {
-  it.substringBeforeLast(RepoPackage.PATH_SEPARATOR, "").takeIf { it.isNotEmpty() }
-}.toList()
+fun getAllRepoPackagePrefixes(path: String): List<String> =
+  generateSequence(path) { it.substringBeforeLast(RepoPackage.PATH_SEPARATOR, "").takeIf { it.isNotEmpty() } }.toList()

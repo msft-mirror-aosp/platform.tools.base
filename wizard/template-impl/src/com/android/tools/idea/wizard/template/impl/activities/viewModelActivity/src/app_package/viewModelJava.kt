@@ -18,12 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.viewModelActivity
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun viewModelJava(
-  fragmentPackage: String,
-  packageName: String,
-  useAndroidX: Boolean,
-  viewModelClass: String) =
-
+fun viewModelJava(fragmentPackage: String, packageName: String, useAndroidX: Boolean, viewModelClass: String) =
   """package ${packageName}.${fragmentPackage};
 
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModel", useAndroidX)};

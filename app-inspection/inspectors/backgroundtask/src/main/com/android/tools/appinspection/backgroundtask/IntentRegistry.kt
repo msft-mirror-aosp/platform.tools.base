@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap
 class IntentRegistry {
 
   /**
-   * A mapping from [Intent] to [PendingIntent] so when an Intent is sent we can trace back to its
-   * PendingIntent (if any) for event tracking.
+   * A mapping from [Intent] to [PendingIntent] so when an Intent is sent we can trace back to its PendingIntent (if any) for event
+   * tracking.
    */
   private val intentToPendingIntentMap = ConcurrentHashMap<IntentWrapper, PendingIntent>()
 
@@ -55,8 +55,8 @@ class IntentRegistry {
   }
 
   /**
-   * Wraps an [Intent] and overrides its `equals` and `hashCode` methods, so we can use it as a
-   * HashMap key. Two intents are considered equal iff [Intent.filterEquals] returns true.
+   * Wraps an [Intent] and overrides its `equals` and `hashCode` methods, so we can use it as a HashMap key. Two intents are considered
+   * equal iff [Intent.filterEquals] returns true.
    */
   class IntentWrapper private constructor(private val intent: Intent) {
 

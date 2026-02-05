@@ -15,9 +15,7 @@
  */
 package com.android.ide.common.resources
 
-/**
- * A Wrapper class which contains the value of "ANDROID_AAPT_IGNORE" environment variable.
- */
+/** A Wrapper class which contains the value of "ANDROID_AAPT_IGNORE" environment variable. */
 class AndroidAaptIgnore(val aaptIgnoreValue: String?)
 
 const val ANDROID_AAPT_IGNORE: String = "ANDROID_AAPT_IGNORE"

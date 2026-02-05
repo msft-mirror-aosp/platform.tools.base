@@ -42,23 +42,19 @@ import org.jetbrains.uast.UCallExpression
 /**
  * Reports the <application> element of the merged manifest if all the following hold:
  * 1. There is an <activity> element in the merged manifest with supportsPictureInPicture=true.
- * 2. There is some Java/Kotlin code that indicates PiP implementation (calls to
- *    setPictureInPictureParams or enterPictureInPictureMode).
- * 3. The Java/Kotlin code does NOT use the new approach (no calls to setAutoEnterEnabled or no
- *    calls to setSourceRectHint; both must be called when using the new approach, so missing either
- *    of these results in a warning).
+ * 2. There is some Java/Kotlin code that indicates PiP implementation (calls to setPictureInPictureParams or enterPictureInPictureMode).
+ * 3. The Java/Kotlin code does NOT use the new approach (no calls to setAutoEnterEnabled or no calls to setSourceRectHint; both must be
+ *    called when using the new approach, so missing either of these results in a warning).
  * 4. The targetSdkVersion is Android 12 or above.
  *
- * Requirement (2) ensures we don't incorrectly report a warning when a prebuilt dependency provides
- * a PiP activity; the activity would end up in the merged manifest, but we won't see ANY PiP code
- * for it. Thus, we only report a warning if we can see PiP implementation code AND we cannot see
- * the new approach.
+ * Requirement (2) ensures we don't incorrectly report a warning when a prebuilt dependency provides a PiP activity; the activity would end
+ * up in the merged manifest, but we won't see ANY PiP code for it. Thus, we only report a warning if we can see PiP implementation code AND
+ * we cannot see the new approach.
  */
 class PictureInPictureDetector : Detector(), SourceCodeScanner {
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(PictureInPictureDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
+    private val IMPLEMENTATION = Implementation(PictureInPictureDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     @JvmField
     val ISSUE =
@@ -72,8 +68,7 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
           will be of poor quality compared to other apps. The new approach requires calling \
           `setAutoEnterEnabled(true)` and `setSourceRectHint(...)`.
         """,
-        moreInfo =
-          "https://developer.android.com/develop/ui/views/picture-in-picture#smoother-transition",
+        moreInfo = "https://developer.android.com/develop/ui/views/picture-in-picture#smoother-transition",
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,
@@ -104,9 +99,7 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
     val containingClassFqn = containingClass.qualifiedName ?: return
 
     fun isMethod(methodName: String, classFqn: String): Boolean =
-      method.name == methodName &&
-        (containingClassFqn == classFqn ||
-          context.evaluator.extendsClass(containingClass, classFqn, false))
+      method.name == methodName && (containingClassFqn == classFqn || context.evaluator.extendsClass(containingClass, classFqn, false))
 
     when {
       isMethod("setAutoEnterEnabled", "android.app.PictureInPictureParams.Builder") -> {
@@ -143,8 +136,7 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    val application =
-      context.mainProject.mergedManifest?.documentElement?.subtag(TAG_APPLICATION) ?: return
+    val application = context.mainProject.mergedManifest?.documentElement?.subtag(TAG_APPLICATION) ?: return
     var activity = application.subtag(TAG_ACTIVITY)
 
     var isFoundPipActivity = false
@@ -165,18 +157,12 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
     partialResults.maps().forEach { combinedMap.putAll(it) }
 
     // Return early if it seems like there is no PiP implementation code.
-    if (
-      !combinedMap.containsKey(FOUND_SET_PIP_PARAMS_USAGE) &&
-        !combinedMap.containsKey(FOUND_ENTER_PIP_MODE_USAGE)
-    ) {
+    if (!combinedMap.containsKey(FOUND_SET_PIP_PARAMS_USAGE) && !combinedMap.containsKey(FOUND_ENTER_PIP_MODE_USAGE)) {
       return
     }
 
     // Return early if BOTH new approach functions are called.
-    if (
-      combinedMap.containsKey(FOUND_AUTO_ENTER_USAGE) &&
-        combinedMap.containsKey(FOUND_SRC_RECT_HINT_USAGE)
-    ) {
+    if (combinedMap.containsKey(FOUND_AUTO_ENTER_USAGE) && combinedMap.containsKey(FOUND_SRC_RECT_HINT_USAGE)) {
       return
     }
 

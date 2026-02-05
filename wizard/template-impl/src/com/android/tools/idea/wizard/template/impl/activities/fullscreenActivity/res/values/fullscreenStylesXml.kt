@@ -31,4 +31,5 @@ fun fullscreenStyles(themesData: ThemesData) =
 """
 
 fun getFullscreenActionBarStyle(themeName: String) = "Widget.${themeName}.ActionBar.Fullscreen"
+
 fun getFullscreenButtonBarStyle(themeName: String) = "Widget.${themeName}.ButtonBar.Fullscreen"

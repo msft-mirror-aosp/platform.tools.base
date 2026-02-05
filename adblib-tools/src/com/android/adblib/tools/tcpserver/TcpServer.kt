@@ -18,15 +18,12 @@ package com.android.adblib.tools.tcpserver
 import com.android.adblib.AdbServerSocket
 import kotlinx.coroutines.Job
 
-/**
- * A TCP server that can be launched on given [AdbServerSocket]
- */
+/** A TCP server that can be launched on given [AdbServerSocket] */
 internal interface TcpServer : AutoCloseable {
 
-    /**
-     * Starts a new instance of this [TcpServer] on the given [AdbServerSocket].
-     * Returns the [Job] associated to the server, which can be cancelled to shut the
-     * server down.
-     */
-    fun launch(serverSocket: AdbServerSocket): Job
+  /**
+   * Starts a new instance of this [TcpServer] on the given [AdbServerSocket]. Returns the [Job] associated to the server, which can be
+   * cancelled to shut the server down.
+   */
+  fun launch(serverSocket: AdbServerSocket): Job
 }

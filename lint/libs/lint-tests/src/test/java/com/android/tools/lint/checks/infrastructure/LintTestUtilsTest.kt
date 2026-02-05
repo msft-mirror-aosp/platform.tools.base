@@ -81,10 +81,7 @@ class LintTestUtilsTest {
       "This is a path separator:\nsrc/java/main:src/java/test\n",
       "This is a path separator:\nsrc\\java\\main;src\\java\\test\r\n".dos2unix(),
     )
-    assertEquals(
-      "This is &quot;XML&QUOT; &lt; and &#9029;.",
-      "This is &quot;XML&QUOT; &lt; and &#9029;.".dos2unix(),
-    )
+    assertEquals("This is &quot;XML&QUOT; &lt; and &#9029;.", "This is &quot;XML&QUOT; &lt; and &#9029;.".dos2unix())
     assertEquals("First, a test; ", "First, a test; ".dos2unix())
     assertEquals("style=\"display: block;\"", "style=\"display: block;\"".dos2unix())
   }
@@ -104,19 +101,19 @@ class LintTestUtilsTest {
         lint().allowMissingSdk().issues(SdCardDetector.ISSUE)
       }, // small, but just making sure we're actually slicing up the data in sorted order above
       """
-            src/some/sub/dir/kotlin1.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
-            const val path = "/sdcard/test"
-                              ~~~~~~~~~~~~
-            src/some/sub/dir/kotlin2.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
-            const val path = "/sdcard/test"
-                              ~~~~~~~~~~~~
-            0 errors, 2 warnings
+      src/some/sub/dir/kotlin1.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+      const val path = "/sdcard/test"
+                        ~~~~~~~~~~~~
+      src/some/sub/dir/kotlin2.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+      const val path = "/sdcard/test"
+                        ~~~~~~~~~~~~
+      0 errors, 2 warnings
 
-            src/some/sub/dir/kotlin3.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
-            const val path = "/sdcard/test"
-                              ~~~~~~~~~~~~
-            0 errors, 1 warning
-            """
+      src/some/sub/dir/kotlin3.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+      const val path = "/sdcard/test"
+                        ~~~~~~~~~~~~
+      0 errors, 1 warning
+      """
         .trimIndent(),
       bucketSize = 2,
       absolutePaths = false,

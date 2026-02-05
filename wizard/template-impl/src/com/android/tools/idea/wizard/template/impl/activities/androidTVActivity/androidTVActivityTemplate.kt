@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity
 
-
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.CheckBoxWidget
 import com.android.tools.idea.wizard.template.Constraint.CLASS
@@ -123,14 +122,21 @@ val androidTVActivityTemplate
       TextFieldWidget(detailsFragment),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("androidtv-activity").resolve("template-leanback-TV.png") }
 
     recipe = { data: TemplateData ->
       androidTVActivityRecipe(
-        data as ModuleTemplateData, activityClass.value, layoutName.value, mainFragment.value, detailsActivity.value,
-        detailsLayoutName.value, detailsFragment.value, packageName.value)
+        data as ModuleTemplateData,
+        activityClass.value,
+        layoutName.value,
+        mainFragment.value,
+        detailsActivity.value,
+        detailsLayoutName.value,
+        detailsFragment.value,
+        packageName.value,
+      )
     }
   }

@@ -24,98 +24,83 @@ import com.android.build.gradle.internal.coverage.renderer.data.VariantCoverage
 import com.android.build.gradle.internal.coverage.renderer.data.VariantCoverageDetails
 
 /**
- * Mutable builders for constructing the coverage report of a single source file.
- * The build method now takes the source code lines as a parameter, separating the
- * builder from file I/O operations.
+ * Mutable builders for constructing the coverage report of a single source file. The build method now takes the source code lines as a
+ * parameter, separating the builder from file I/O operations.
  */
-
 class SourceFileReportsBuilder {
-    val sourceFileBuilders: MutableMap<String, SourceFileReportBuilder> = mutableMapOf()
+  val sourceFileBuilders: MutableMap<String, SourceFileReportBuilder> = mutableMapOf()
 }
 
 class SourceFileReportBuilder(val packageFlattenedPath: String) {
-    val variantFileCoverageBuilders: MutableMap<String, VariantFileCoverageBuilder> = mutableMapOf()
+  val variantFileCoverageBuilders: MutableMap<String, VariantFileCoverageBuilder> = mutableMapOf()
 
-    fun build(sourceCodeLines: List<String>): SourceFileCoverageReport {
-        val variantCoverageSummary = variantFileCoverageBuilders.map { (variantName, variantBuilder) ->
-            variantBuilder.buildVariantCoverageDetails(variantName)
-        }
+  fun build(sourceCodeLines: List<String>): SourceFileCoverageReport {
+    val variantCoverageSummary =
+      variantFileCoverageBuilders.map { (variantName, variantBuilder) -> variantBuilder.buildVariantCoverageDetails(variantName) }
 
-        val lineCoverageDetails = sourceCodeLines.mapIndexed { index, lineText ->
-            val lineNumber = index + 1
-            val variantDetails = variantFileCoverageBuilders.map { (variantName, variantBuilder) ->
-                variantBuilder.buildLineCoverageDetails(variantName, lineNumber)
-            }
-            LineCoverage(
-                lineNumber = lineNumber,
-                lineText = lineText,
-                variantCoverageDetails = variantDetails
-            )
-        }
+    val lineCoverageDetails =
+      sourceCodeLines.mapIndexed { index, lineText ->
+        val lineNumber = index + 1
+        val variantDetails =
+          variantFileCoverageBuilders.map { (variantName, variantBuilder) ->
+            variantBuilder.buildLineCoverageDetails(variantName, lineNumber)
+          }
+        LineCoverage(lineNumber = lineNumber, lineText = lineText, variantCoverageDetails = variantDetails)
+      }
 
-        return SourceFileCoverageReport(
-            variantCoverageSummary = variantCoverageSummary,
-            linesCoverages = lineCoverageDetails
-        )
-    }
+    return SourceFileCoverageReport(variantCoverageSummary = variantCoverageSummary, linesCoverages = lineCoverageDetails)
+  }
 }
 
 class VariantFileCoverageBuilder {
-    val testSuiteFileCoverageBuilders: MutableMap<String, TestSuiteFileCoverageBuilder> = mutableMapOf()
+  val testSuiteFileCoverageBuilders: MutableMap<String, TestSuiteFileCoverageBuilder> = mutableMapOf()
 
-    fun buildVariantCoverageDetails(variantName: String): VariantCoverageDetails {
-        val coveragesForTestSuites = testSuiteFileCoverageBuilders.map { (testSuiteName, testSuiteBuilder) ->
-            testSuiteBuilder.buildSummary(testSuiteName, variantName)
-        }
-        return VariantCoverageDetails(
-            variantName = variantName,
-            testSuiteCoverages = coveragesForTestSuites
-        )
-    }
+  fun buildVariantCoverageDetails(variantName: String): VariantCoverageDetails {
+    val coveragesForTestSuites =
+      testSuiteFileCoverageBuilders.map { (testSuiteName, testSuiteBuilder) -> testSuiteBuilder.buildSummary(testSuiteName, variantName) }
+    return VariantCoverageDetails(variantName = variantName, testSuiteCoverages = coveragesForTestSuites)
+  }
 
-    fun buildLineCoverageDetails(variantName: String, lineNumber: Int): VariantCoverageDetails {
-        val coveragesForTestSuites = testSuiteFileCoverageBuilders.mapNotNull { (testSuiteName, testSuiteBuilder) ->
-            testSuiteBuilder.buildLineCoverage(testSuiteName, variantName, lineNumber)
-        }
-        return VariantCoverageDetails(
-            variantName = variantName,
-            testSuiteCoverages = coveragesForTestSuites
-        )
-    }
+  fun buildLineCoverageDetails(variantName: String, lineNumber: Int): VariantCoverageDetails {
+    val coveragesForTestSuites =
+      testSuiteFileCoverageBuilders.mapNotNull { (testSuiteName, testSuiteBuilder) ->
+        testSuiteBuilder.buildLineCoverage(testSuiteName, variantName, lineNumber)
+      }
+    return VariantCoverageDetails(variantName = variantName, testSuiteCoverages = coveragesForTestSuites)
+  }
 }
 
 data class TestSuiteFileCoverageBuilder(
-    var fileCoverage: CoverageInfo,
-    val lineCoverageBuilders: MutableMap<Int, LineCoverageBuilder> = mutableMapOf()
+  var fileCoverage: CoverageInfo,
+  val lineCoverageBuilders: MutableMap<Int, LineCoverageBuilder> = mutableMapOf(),
 ) {
-    fun buildSummary(testSuiteName: String, variantName: String): TestSuiteCoverage {
-        return TestSuiteCoverage(
-            testSuiteName = testSuiteName,
-            variantCoverage = VariantCoverage(
-                name = variantName,
-                instruction = fileCoverage,
-                // The source file report from JaCoCo doesn't provide aggregated branch
-                // coverage, only line-by-line.
-                branch = CoverageInfo(0, 0, 0)
-            )
-        )
-    }
+  fun buildSummary(testSuiteName: String, variantName: String): TestSuiteCoverage {
+    return TestSuiteCoverage(
+      testSuiteName = testSuiteName,
+      variantCoverage =
+        VariantCoverage(
+          name = variantName,
+          instruction = fileCoverage,
+          // The source file report from JaCoCo doesn't provide aggregated branch
+          // coverage, only line-by-line.
+          branch = CoverageInfo(0, 0, 0),
+        ),
+    )
+  }
 
-    fun buildLineCoverage(testSuiteName: String, variantName: String, lineNumber: Int): TestSuiteCoverage? {
-        return lineCoverageBuilders[lineNumber]?.let { lineReportBuilder ->
-            TestSuiteCoverage(
-                testSuiteName = testSuiteName,
-                variantCoverage = VariantCoverage(
-                    name = variantName,
-                    instruction = lineReportBuilder.instructionCoverageInfo,
-                    branch = lineReportBuilder.branchCoverageInfo
-                )
-            )
-        }
+  fun buildLineCoverage(testSuiteName: String, variantName: String, lineNumber: Int): TestSuiteCoverage? {
+    return lineCoverageBuilders[lineNumber]?.let { lineReportBuilder ->
+      TestSuiteCoverage(
+        testSuiteName = testSuiteName,
+        variantCoverage =
+          VariantCoverage(
+            name = variantName,
+            instruction = lineReportBuilder.instructionCoverageInfo,
+            branch = lineReportBuilder.branchCoverageInfo,
+          ),
+      )
     }
+  }
 }
 
-data class LineCoverageBuilder(
-    val instructionCoverageInfo: CoverageInfo,
-    val branchCoverageInfo: CoverageInfo
-)
+data class LineCoverageBuilder(val instructionCoverageInfo: CoverageInfo, val branchCoverageInfo: CoverageInfo)

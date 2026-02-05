@@ -21,37 +21,27 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarWithDependenciesBuilder
 import com.android.testutils.MavenRepoGenerator.Library
 
-/**
- * Allows configuring a custom repository with test libraries.
- */
+/** Allows configuring a custom repository with test libraries. */
 @GradleDefinitionDsl
 interface MavenRepository {
-    /**
-     * Adds a manually created library
-     */
-    fun library(library: Library)
+  /** Adds a manually created library */
+  fun library(library: Library)
 
-    /**
-     * Creates a JAR with the provided coordinates.
-     *
-     * This returns an [JarBuilder] which can be used to configure the Jar.
-     */
-    fun jar(
-        mavenCoordinate: String,
-    ): JarWithDependenciesBuilder
+  /**
+   * Creates a JAR with the provided coordinates.
+   *
+   * This returns an [JarBuilder] which can be used to configure the Jar.
+   */
+  fun jar(mavenCoordinate: String): JarWithDependenciesBuilder
 
-    /**
-     * Creates an AAR.
-     *
-     * This returns an [AarBuilder] which can be used to configure the AAR.
-     *
-     * @param groupId the groupId of the artifact and is used for the library namespace
-     * @param artifactId the artifactId. If null, the last segment of groupId is used
-     * @param version the version. Defaults to 1.0
-     */
-    fun aar(
-        groupId: String,
-        artifactId: String? = null,
-        version: String = "1.0",
-    ): AarBuilder
+  /**
+   * Creates an AAR.
+   *
+   * This returns an [AarBuilder] which can be used to configure the AAR.
+   *
+   * @param groupId the groupId of the artifact and is used for the library namespace
+   * @param artifactId the artifactId. If null, the last segment of groupId is used
+   * @param version the version. Defaults to 1.0
+   */
+  fun aar(groupId: String, artifactId: String? = null, version: String = "1.0"): AarBuilder
 }

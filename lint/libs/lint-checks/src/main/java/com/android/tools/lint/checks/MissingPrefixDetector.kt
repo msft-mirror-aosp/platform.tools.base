@@ -55,10 +55,7 @@ import org.w3c.dom.Attr
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
-/**
- * Detects layout attributes on builtin Android widgets that do not specify a prefix but probably
- * should.
- */
+/** Detects layout attributes on builtin Android widgets that do not specify a prefix but probably should. */
 class MissingPrefixDetector : LayoutDetector() {
   companion object Issues {
     /** Attributes missing the android: prefix. */
@@ -146,12 +143,7 @@ class MissingPrefixDetector : LayoutDetector() {
         return
       }
 
-      context.report(
-        MISSING_NAMESPACE,
-        attribute,
-        context.getLocation(attribute),
-        "Attribute is missing the Android namespace prefix",
-      )
+      context.report(MISSING_NAMESPACE, attribute, context.getLocation(attribute), "Attribute is missing the Android namespace prefix")
     } else if (
       ANDROID_URI != uri &&
         TOOLS_URI != uri &&
@@ -177,10 +169,7 @@ class MissingPrefixDetector : LayoutDetector() {
               NamespaceDetector.UNUSED,
               attribute,
               context.getLocation(attribute),
-              String.format(
-                "Unused namespace declaration %1\$s; already " + "declared on the root element",
-                name,
-              ),
+              String.format("Unused namespace declaration %1\$s; already " + "declared on the root element", name),
             )
           }
           i++
@@ -226,8 +215,6 @@ class MissingPrefixDetector : LayoutDetector() {
     }
 
     return tag.indexOf('.') != -1 &&
-      (!tag.startsWith(ANDROID_PKG_PREFIX) ||
-        tag.startsWith(ANDROID_SUPPORT_PKG_PREFIX) ||
-        tag.startsWith(ANDROIDX_PKG_PREFIX))
+      (!tag.startsWith(ANDROID_PKG_PREFIX) || tag.startsWith(ANDROID_SUPPORT_PKG_PREFIX) || tag.startsWith(ANDROIDX_PKG_PREFIX))
   }
 }

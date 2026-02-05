@@ -23,73 +23,54 @@ import com.android.build.api.variant.impl.SingleOutputHandler
 import com.android.build.api.variant.impl.VariantOutputImpl
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
-import java.io.File
 
 /**
- * An abstraction of all operations that apply to multi output artifacts, including finding the main
- * artifact, getting the output of a specific split, ...
+ * An abstraction of all operations that apply to multi output artifacts, including finding the main artifact, getting the output of a
+ * specific split, ...
  *
- * This interface has two different implementations for application variants and the rest of the
- * components that don't have splits, since we currently use the same tasks and artifact types for
- * all types of components.
+ * This interface has two different implementations for application variants and the rest of the components that don't have splits, since we
+ * currently use the same tasks and artifact types for all types of components.
  *
- * Use [MultiOutputHandler.create] to create an object for a component and the implementation should
- * handle both splits and non-splits cases internally.
+ * Use [MultiOutputHandler.create] to create an object for a component and the implementation should handle both splits and non-splits cases
+ * internally.
  */
 interface MultiOutputHandler {
 
-    companion object {
-        fun create(creationConfig: ComponentCreationConfig): MultiOutputHandler {
-            return if (creationConfig is ApplicationCreationConfig) {
-                ApplicationMultiOutputHandler(creationConfig)
-            } else {
-                SingleOutputHandler(creationConfig)
-            }
-        }
+  companion object {
+    fun create(creationConfig: ComponentCreationConfig): MultiOutputHandler {
+      return if (creationConfig is ApplicationCreationConfig) {
+        ApplicationMultiOutputHandler(creationConfig)
+      } else {
+        SingleOutputHandler(creationConfig)
+      }
     }
+  }
 
-    @get:Internal
-    val mainVersionCode: Int?
-    @get:Internal
-    val mainVersionName: String?
+  @get:Internal val mainVersionCode: Int?
+  @get:Internal val mainVersionName: String?
 
-    fun getMainSplitArtifact(
-        artifactsDirectory: Provider<Directory>
-    ): BuiltArtifactImpl?
+  fun getMainSplitArtifact(artifactsDirectory: Provider<Directory>): BuiltArtifactImpl?
 
-    fun extractArtifactForSplit(
-        artifacts: BuiltArtifactsImpl,
-        config: VariantOutputConfiguration
-    ): BuiltArtifactImpl?
+  fun extractArtifactForSplit(artifacts: BuiltArtifactsImpl, config: VariantOutputConfiguration): BuiltArtifactImpl?
 
-    fun getOutputs(
-        configFilter: (VariantOutputConfiguration) -> Boolean
-    ): Collection<VariantOutputImpl.SerializedForm>
+  fun getOutputs(configFilter: (VariantOutputConfiguration) -> Boolean): Collection<VariantOutputImpl.SerializedForm>
 
-    fun getOutput(
-        config: VariantOutputConfiguration
-    ): VariantOutputImpl.SerializedForm?
+  fun getOutput(config: VariantOutputConfiguration): VariantOutputImpl.SerializedForm?
 
-    fun computeBuildOutputFile(
-        dir: File,
-        output: VariantOutputImpl.SerializedForm,
-    ): File
+  fun computeBuildOutputFile(dir: File, output: VariantOutputImpl.SerializedForm): File
 
-    fun computeUniqueDirForSplit(
-        dir: File,
-        output: VariantOutputImpl.SerializedForm,
-        variantName: String
-    ): File
+  fun computeUniqueDirForSplit(dir: File, output: VariantOutputImpl.SerializedForm, variantName: String): File
 
-    fun getOutputNameForSplit(
-        prefix: String,
-        suffix: String,
-        outputType: VariantOutputConfiguration.OutputType,
-        filters: Collection<FilterConfiguration>
-    ): String
+  fun getOutputNameForSplit(
+    prefix: String,
+    suffix: String,
+    outputType: VariantOutputConfiguration.OutputType,
+    filters: Collection<FilterConfiguration>,
+  ): String
 
-    fun toSerializable(): MultiOutputHandler
+  fun toSerializable(): MultiOutputHandler
 }

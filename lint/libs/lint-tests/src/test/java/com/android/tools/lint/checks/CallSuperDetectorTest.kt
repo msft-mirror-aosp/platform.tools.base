@@ -407,7 +407,7 @@ class CallSuperDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         kotlin(
-          """
+            """
           import androidx.annotation.CallSuper
 
           open class Bar {
@@ -424,7 +424,8 @@ class CallSuperDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ).indented(),
+          )
+          .indented(),
         SUPPORT_ANNOTATIONS_JAR,
       )
       .run()

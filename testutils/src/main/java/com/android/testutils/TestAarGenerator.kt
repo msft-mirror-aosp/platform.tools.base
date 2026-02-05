@@ -23,38 +23,33 @@ import com.android.testutils.TestInputsGenerator.jarWithEmptyEntries
 /**
  * Returns the bytes of an AAR with the given content.
  *
- * Designed for use with [TestInputsGenerator] to generate jars to put in the AAR and with
- * [MavenRepoGenerator] to put the AAR in a test maven repo.
+ * Designed for use with [TestInputsGenerator] to generate jars to put in the AAR and with [MavenRepoGenerator] to put the AAR in a test
+ * maven repo.
  *
  * @param packageName The package name to put in the AAR manifest.
  * @param mainJar the contents of the main classes.jar. Defaults to an empty jar.
- * @param secondaryJars a map of name (without extension) to contents of jars
- *                      to be stored as `libs/{name}.jar`. Defaults to empty.
+ * @param secondaryJars a map of name (without extension) to contents of jars to be stored as `libs/{name}.jar`. Defaults to empty.
  */
 @JvmOverloads
 fun generateAarWithContent(
-    packageName: String,
-    mainJar: ByteArray = jarWithEmptyEntries(listOf()),
-    secondaryJars: Map<String, ByteArray> = mapOf(),
-    resources: Map<String, ByteArray> = mapOf(),
-    apiJar: ByteArray? = null,
-    lintJar: ByteArray? = null,
-    manifest: String = """<manifest package="$packageName"></manifest>""",
-    proguardTxt: String? = null,
-    extraFiles: Map<String, ByteArray> = mapOf()
+  packageName: String,
+  mainJar: ByteArray = jarWithEmptyEntries(listOf()),
+  secondaryJars: Map<String, ByteArray> = mapOf(),
+  resources: Map<String, ByteArray> = mapOf(),
+  apiJar: ByteArray? = null,
+  lintJar: ByteArray? = null,
+  manifest: String = """<manifest package="$packageName"></manifest>""",
+  proguardTxt: String? = null,
+  extraFiles: Map<String, ByteArray> = mapOf(),
 ): ByteArray {
-    val entries = mutableMapOf<String, ByteArray>()
-    entries[SdkConstants.FN_ANDROID_MANIFEST_XML] = manifest.toByteArray()
-    entries["classes.jar"] = mainJar
-    secondaryJars.forEach {
-        entries["libs/${it.key}.jar"] = it.value
-    }
-    resources.forEach {
-        entries["res/${it.key}"] = it.value
-    }
-    apiJar?.let { entries["api.jar"] = it }
-    lintJar?.let { entries["lint.jar"] = it }
-    proguardTxt?.let { entries[SdkConstants.FN_PROGUARD_TXT] = it.toByteArray() }
-    entries.putAll(extraFiles)
-    return ZipContents(entries).toByteArray()
+  val entries = mutableMapOf<String, ByteArray>()
+  entries[SdkConstants.FN_ANDROID_MANIFEST_XML] = manifest.toByteArray()
+  entries["classes.jar"] = mainJar
+  secondaryJars.forEach { entries["libs/${it.key}.jar"] = it.value }
+  resources.forEach { entries["res/${it.key}"] = it.value }
+  apiJar?.let { entries["api.jar"] = it }
+  lintJar?.let { entries["lint.jar"] = it }
+  proguardTxt?.let { entries[SdkConstants.FN_PROGUARD_TXT] = it.toByteArray() }
+  entries.putAll(extraFiles)
+  return ZipContents(entries).toByteArray()
 }

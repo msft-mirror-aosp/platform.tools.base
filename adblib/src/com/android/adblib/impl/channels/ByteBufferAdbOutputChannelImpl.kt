@@ -21,20 +21,18 @@ import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
-internal class ByteBufferAdbOutputChannelImpl(
-    private val workBuffer: ResizableBuffer
-) : AdbOutputChannel {
+internal class ByteBufferAdbOutputChannelImpl(private val workBuffer: ResizableBuffer) : AdbOutputChannel {
 
-    private var closed = false
+  private var closed = false
 
-    override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        if (closed) {
-            throw ClosedChannelException()
-        }
-        workBuffer.appendBytes(buffer)
+  override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    if (closed) {
+      throw ClosedChannelException()
     }
+    workBuffer.appendBytes(buffer)
+  }
 
-    override fun close() {
-        closed = true
-    }
+  override fun close() {
+    closed = true
+  }
 }

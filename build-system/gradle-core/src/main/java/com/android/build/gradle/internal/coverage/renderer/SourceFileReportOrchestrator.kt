@@ -23,43 +23,38 @@ import java.io.File
 /**
  * Orchestrates the creation and serialization of individual source file coverage reports.
  *
- * This object iterates through a map of source file builders, delegates the creation
- * of each report to the `createSourceFileReport` function, and writes the resulting report to
- * a unique JavaScript-wrapped JSON file.
+ * This object iterates through a map of source file builders, delegates the creation of each report to the `createSourceFileReport`
+ * function, and writes the resulting report to a unique JavaScript-wrapped JSON file.
  */
 object SourceFileReportOrchestrator {
 
-    private val gson = GsonBuilder().create()
+  private val gson = GsonBuilder().create()
 
-    /**
-     * Processes the raw coverage data for all source files and generates individual report files.
-     *
-     * @param sourceFileReportsBuilder The top-level builder containing all source file builders.
-     * @param projectBaseDir The base directory of the project.
-     * @param baseOutputDir The directory where the final `.json.js` report files will be written.
-     */
-    fun orchestrate(
-        sourceFileReportsBuilder: SourceFileReportsBuilder,
-        projectBaseDir: File,
-        baseOutputDir: File
-    ) {
-        baseOutputDir.mkdirs()
+  /**
+   * Processes the raw coverage data for all source files and generates individual report files.
+   *
+   * @param sourceFileReportsBuilder The top-level builder containing all source file builders.
+   * @param projectBaseDir The base directory of the project.
+   * @param baseOutputDir The directory where the final `.json.js` report files will be written.
+   */
+  fun orchestrate(sourceFileReportsBuilder: SourceFileReportsBuilder, projectBaseDir: File, baseOutputDir: File) {
+    baseOutputDir.mkdirs()
 
-        sourceFileReportsBuilder.sourceFileBuilders.entries.parallelStream().forEach { (path, builder) ->
-            // Delegate the report creation, including file I/O, to the creator function.
-            // Any file I/O exception during this call will propagate and fail the build task,
-            // which is the desired behavior for ensuring a correct and complete report.
-            val aggregatedReport = createSourceFileReport(path, projectBaseDir, builder)
+    sourceFileReportsBuilder.sourceFileBuilders.entries.parallelStream().forEach { (path, builder) ->
+      // Delegate the report creation, including file I/O, to the creator function.
+      // Any file I/O exception during this call will propagate and fail the build task,
+      // which is the desired behavior for ensuring a correct and complete report.
+      val aggregatedReport = createSourceFileReport(path, projectBaseDir, builder)
 
-            val jsonReport = gson.toJson(aggregatedReport)
+      val jsonReport = gson.toJson(aggregatedReport)
 
-            val pathAsJsonKey = gson.toJson(builder.packageFlattenedPath)
-            val jsContent = "window.coverageData = window.coverageData || {};\nwindow.coverageData[$pathAsJsonKey] = $jsonReport;"
+      val pathAsJsonKey = gson.toJson(builder.packageFlattenedPath)
+      val jsContent = "window.coverageData = window.coverageData || {};\nwindow.coverageData[$pathAsJsonKey] = $jsonReport;"
 
-            val outputFile = File(baseOutputDir, "${builder.packageFlattenedPath}.json.js")
+      val outputFile = File(baseOutputDir, "${builder.packageFlattenedPath}.json.js")
 
-            outputFile.parentFile.mkdirs()
-            outputFile.writeText(jsContent, Charsets.UTF_8)
-        }
+      outputFile.parentFile.mkdirs()
+      outputFile.writeText(jsContent, Charsets.UTF_8)
     }
+  }
 }

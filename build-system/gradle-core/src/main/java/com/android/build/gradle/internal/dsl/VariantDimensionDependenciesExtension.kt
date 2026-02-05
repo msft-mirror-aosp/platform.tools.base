@@ -21,16 +21,14 @@ import org.gradle.api.artifacts.dsl.GradleDependencies
 import org.gradle.declarative.dsl.model.annotations.Restricted
 
 interface VariantDimensionDependenciesExtension {
-    val api: DependencyCollector
-    val implementation: DependencyCollector
-    val compileOnly: DependencyCollector
-    val compileOnlyApi: DependencyCollector
-    val runtimeOnly: DependencyCollector
-    val annotationProcessor: DependencyCollector
+  val api: DependencyCollector
+  val implementation: DependencyCollector
+  val compileOnly: DependencyCollector
+  val compileOnlyApi: DependencyCollector
+  val runtimeOnly: DependencyCollector
+  val annotationProcessor: DependencyCollector
 }
 
-@Restricted
-interface BuildTypeDependenciesExtension : VariantDimensionDependenciesExtension, GradleDependencies
+@Restricted interface BuildTypeDependenciesExtension : VariantDimensionDependenciesExtension, GradleDependencies
 
-@Restricted
-interface ProductFlavorDependenciesExtension : VariantDimensionDependenciesExtension, GradleDependencies
+@Restricted interface ProductFlavorDependenciesExtension : VariantDimensionDependenciesExtension, GradleDependencies

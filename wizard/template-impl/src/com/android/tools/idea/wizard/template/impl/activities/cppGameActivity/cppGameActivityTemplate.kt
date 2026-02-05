@@ -66,11 +66,12 @@ val cppGameActivityTemplate
       default = false
       help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
-    val cppStandard = enumParameter<CppStandardType> {
-      name = "C++ Standard"
-      default = CppStandardType.`Toolchain Default`
-      help = "C++ Standard version"
-    }
+    val cppStandard =
+      enumParameter<CppStandardType> {
+        name = "C++ Standard"
+        default = CppStandardType.`Toolchain Default`
+        help = "C++ Standard version"
+      }
     val packageName = defaultPackageNameParameter
 
     widgets(
@@ -80,16 +81,18 @@ val cppGameActivityTemplate
       LanguageWidget(),
       EnumWidget(cppStandard),
       LabelWidget("C++ feature support depends on Android NDK version."),
-      UrlLinkWidget("See documentation", DOCUMENTATION_URL)
+      UrlLinkWidget("See documentation", DOCUMENTATION_URL),
     )
 
-    thumb {
-      File("cpp-game-activity").resolve("template_game_activity.png")
-    }
+    thumb { File("cpp-game-activity").resolve("template_game_activity.png") }
 
     recipe = { data ->
       generateCppGameActivity(
-        data as ModuleTemplateData, activityClass.value, isLauncher.value, packageName.value, cppStandard.value.toString()
+        data as ModuleTemplateData,
+        activityClass.value,
+        isLauncher.value,
+        packageName.value,
+        cppStandard.value.toString(),
       )
     }
   }

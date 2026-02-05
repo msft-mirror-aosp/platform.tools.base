@@ -18,11 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.res
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun simpleXml(
-  fragmentClass: String,
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun simpleXml(fragmentClass: String, packageName: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.v4.widget.NestedScrollView", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

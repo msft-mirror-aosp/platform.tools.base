@@ -18,13 +18,8 @@ package com.android.tools.idea.wizard.template
 
 import java.net.URL
 
-/**
- * Stores information about a thumb which should be displayed in galleries such as New Activity Gallery.
- */
+/** Stores information about a thumb which should be displayed in galleries such as New Activity Gallery. */
 open class Thumb(val path: () -> URL) {
-  /**
-   * Represents absence of thumb (null object pattern).
-   */
-  companion object NoThumb: Thumb({ URL("file://noThumb") })
+  /** Represents absence of thumb (null object pattern). */
+  companion object NoThumb : Thumb({ URL("file://noThumb") })
 }
-

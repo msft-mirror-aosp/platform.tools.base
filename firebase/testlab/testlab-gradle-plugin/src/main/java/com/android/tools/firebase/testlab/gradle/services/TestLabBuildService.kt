@@ -58,9 +58,7 @@ import org.gradle.api.services.BuildServiceParameters
 /** A Gradle Build service that provides APIs to talk to the Firebase Test Lab backend server. */
 abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters> {
 
-  @get:VisibleForTesting
-  internal val apiClientLogger =
-    Logger.getLogger("com.google.api.client").apply { level = Level.WARNING }
+  @get:VisibleForTesting internal val apiClientLogger = Logger.getLogger("com.google.api.client").apply { level = Level.WARNING }
 
   companion object {
     const val CLIENT_APPLICATION_NAME: String = "Firebase TestLab Gradle Plugin"
@@ -74,8 +72,8 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   }
 
   /**
-   * This class is created for only testing purposes. We need a way to inject fake HTTP handlers
-   * while avoid exposing too much implementation details.
+   * This class is created for only testing purposes. We need a way to inject fake HTTP handlers while avoid exposing too much
+   * implementation details.
    */
   @VisibleForTesting
   open class HttpHandler : Serializable {
@@ -106,9 +104,7 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   }
 
   internal open val credential: GoogleCredential by
-    lazy(LazyThreadSafetyMode.PUBLICATION) {
-      parameters.httpHandler.get().createCredential(parameters.credentialFile.asFile.get())
-    }
+    lazy(LazyThreadSafetyMode.PUBLICATION) { parameters.httpHandler.get().createCredential(parameters.credentialFile.asFile.get()) }
 
   private val httpRequestInitializer: HttpRequestInitializer = HttpRequestInitializer { request ->
     credential.initialize(request)
@@ -142,9 +138,7 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
     get() = parameters.targetedShardDurationMinutes.get()
 
   private val testResultProcessor: TestResultProcessor by
-    lazy(LazyThreadSafetyMode.PUBLICATION) {
-      TestResultProcessor(parameters.directoriesToPull.get())
-    }
+    lazy(LazyThreadSafetyMode.PUBLICATION) { TestResultProcessor(parameters.directoriesToPull.get()) }
 
   private val toolResultsManager: ToolResultsManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -159,18 +153,14 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   private val testingManager: TestingManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
       TestingManager(
-        Testing.Builder(httpTransport, jacksonFactory, httpRequestInitializer)
-          .apply { applicationName = CLIENT_APPLICATION_NAME }
-          .build()
+        Testing.Builder(httpTransport, jacksonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
       )
     }
 
   private val storageManager: StorageManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
       StorageManager(
-        Storage.Builder(httpTransport, jacksonFactory, httpRequestInitializer)
-          .apply { applicationName = CLIENT_APPLICATION_NAME }
-          .build()
+        Storage.Builder(httpTransport, jacksonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
       )
     }
 
@@ -214,17 +204,12 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
       )
     }
 
-  private val quotaProjectName by lazy {
-    getQuotaProjectName(parameters.credentialFile.get().asFile)
-  }
+  private val quotaProjectName by lazy { getQuotaProjectName(parameters.credentialFile.get().asFile) }
 
-  fun getStorageObject(fileUri: String) =
-    requireOnline("Download file from storage") { storageManager.retrieveFile(fileUri) }
+  fun getStorageObject(fileUri: String) = requireOnline("Download file from storage") { storageManager.retrieveFile(fileUri) }
 
   fun uploadSharedFile(projectPath: String, file: File, uploadFileName: String = file.name) =
-    requireOnline("Upload file to storage") {
-      storageManager.retrieveOrUploadSharedFile(file, bucketName, projectPath, uploadFileName)
-    }
+    requireOnline("Upload file to storage") { storageManager.retrieveOrUploadSharedFile(file, bucketName, projectPath, uploadFileName) }
 
   fun runTestsOnDevice(
     deviceName: String,
@@ -260,8 +245,7 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
       testRunner.runTests(deviceData, testData, resultsOutDir, projectPath, variantName)
     }
 
-  fun catalog(): AndroidDeviceCatalog =
-    requireOnline("Access Firebase device catalog") { testingManager.catalog(quotaProjectName) }
+  fun catalog(): AndroidDeviceCatalog = requireOnline("Access Firebase device catalog") { testingManager.catalog(quotaProjectName) }
 
   private fun <T> requireOnline(actionName: String, action: () -> T): T =
     if (parameters.offlineMode.get()) {
@@ -277,8 +261,7 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
     val quotaProjectName =
       credentialFile.inputStream().use {
         val parser = JsonObjectParser(Utils.getDefaultJsonFactory())
-        val fileContents =
-          parser.parseAndClose<GenericJson>(it, StandardCharsets.UTF_8, GenericJson::class.java)
+        val fileContents = parser.parseAndClose<GenericJson>(it, StandardCharsets.UTF_8, GenericJson::class.java)
 
         val quota = fileContents["quota_project_id"] as? String
         if (!quota.isNullOrBlank()) {
@@ -297,14 +280,14 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   private fun throwCredentialNotFoundError(): Nothing {
     error(
       """
-            Unable to find the application-default credentials to send a request to
-            Firebase TestLab. Please initialize your credentials using gcloud CLI.
-            Examples:
-              gcloud config set project ${"$"}YOUR_PROJECT_ID
-              gcloud auth application-default login
-              gcloud auth application-default set-quota-project ${"$"}YOUR_PROJECT_ID
-            Please read https://cloud.google.com/sdk/gcloud for details.
-        """
+      Unable to find the application-default credentials to send a request to
+      Firebase TestLab. Please initialize your credentials using gcloud CLI.
+      Examples:
+        gcloud config set project ${"$"}YOUR_PROJECT_ID
+        gcloud auth application-default login
+        gcloud auth application-default set-quota-project ${"$"}YOUR_PROJECT_ID
+      Please read https://cloud.google.com/sdk/gcloud for details.
+      """
         .trimIndent()
     )
   }
@@ -312,23 +295,19 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   /** An action to register TestLabBuildService to a project. */
   class RegistrationAction(private val project: Project) {
 
-    private val testLabExtension: TestLabGradlePluginExtension =
-      project.extensions.getByType(TestLabGradlePluginExtension::class.java)
-    private val androidExtension: CommonExtension =
-      project.extensions.getByType(CommonExtension::class.java)
+    private val testLabExtension: TestLabGradlePluginExtension = project.extensions.getByType(TestLabGradlePluginExtension::class.java)
+    private val androidExtension: CommonExtension = project.extensions.getByType(CommonExtension::class.java)
     private val providerFactory: ProviderFactory = project.providers
     private val configurationContainer: ConfigurationContainer = project.configurations
 
     companion object {
       /**
-       * Get build service name that works even if build service types come from different class
-       * loaders. If the service name is the same, and some type T is defined in two class loaders
-       * L1 and L2. E.g. this is true for composite builds and other project setups (see
+       * Get build service name that works even if build service types come from different class loaders. If the service name is the same,
+       * and some type T is defined in two class loaders L1 and L2. E.g. this is true for composite builds and other project setups (see
        * b/154388196).
        *
-       * Registration of service may register (T from L1) or (T from L2). This means that querying
-       * it with T from other class loader will fail at runtime. This method makes sure both T from
-       * L1 and T from L2 will successfully register build services.
+       * Registration of service may register (T from L1) or (T from L2). This means that querying it with T from other class loader will
+       * fail at runtime. This method makes sure both T from L1 and T from L2 will successfully register build services.
        *
        * Copied from com.android.build.gradle.internal.services.BuildServicesKt.getBuildServiceName.
        */
@@ -339,17 +318,12 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
 
       fun getBuildService(project: Project): Provider<TestLabBuildService> {
         val serviceName = getBuildServiceName(TestLabBuildService::class.java, project)
-        return project.gradle.sharedServices.registerIfAbsent(
-          serviceName,
-          TestLabBuildService::class.java,
-        ) {
+        return project.gradle.sharedServices.registerIfAbsent(serviceName, TestLabBuildService::class.java) {
           throw IllegalStateException("Service $serviceName is not registered.")
         }
       }
 
-      /**
-       * Used to get unique build service name. Each class loader will initialize its own version.
-       */
+      /** Used to get unique build service name. Each class loader will initialize its own version. */
       private val perClassLoaderConstant = UUID.randomUUID().toString()
 
       private const val WELL_KNOWN_CREDENTIALS_FILE = "application_default_credentials.json"
@@ -394,43 +368,21 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
           }
         }
       )
-      params.cloudStorageBucket.set(
-        providerFactory.provider { testLabExtension.testOptions.results.cloudStorageBucket }
-      )
+      params.cloudStorageBucket.set(providerFactory.provider { testLabExtension.testOptions.results.cloudStorageBucket })
 
-      params.timeoutMinutes.set(
-        providerFactory.provider { testLabExtension.testOptions.execution.timeoutMinutes }
-      )
-      params.maxTestReruns.set(
-        providerFactory.provider { testLabExtension.testOptions.execution.maxTestReruns }
-      )
-      params.failFast.set(
-        providerFactory.provider { testLabExtension.testOptions.execution.failFast }
-      )
-      params.numUniformShards.set(
-        providerFactory.provider { testLabExtension.testOptions.execution.numUniformShards }
-      )
+      params.timeoutMinutes.set(providerFactory.provider { testLabExtension.testOptions.execution.timeoutMinutes })
+      params.maxTestReruns.set(providerFactory.provider { testLabExtension.testOptions.execution.maxTestReruns })
+      params.failFast.set(providerFactory.provider { testLabExtension.testOptions.execution.failFast })
+      params.numUniformShards.set(providerFactory.provider { testLabExtension.testOptions.execution.numUniformShards })
       params.targetedShardDurationMinutes.set(
-        providerFactory.provider {
-          testLabExtension.testOptions.execution.targetedShardDurationMinutes
-        }
+        providerFactory.provider { testLabExtension.testOptions.execution.targetedShardDurationMinutes }
       )
-      params.grantedPermissions.set(
-        providerFactory.provider { testLabExtension.testOptions.fixture.grantedPermissions }
-      )
-      params.networkProfile.set(
-        providerFactory.provider { testLabExtension.testOptions.fixture.networkProfile }
-      )
-      params.resultsHistoryName.set(
-        providerFactory.provider { testLabExtension.testOptions.results.resultsHistoryName }
-      )
+      params.grantedPermissions.set(providerFactory.provider { testLabExtension.testOptions.fixture.grantedPermissions })
+      params.networkProfile.set(providerFactory.provider { testLabExtension.testOptions.fixture.networkProfile })
+      params.resultsHistoryName.set(providerFactory.provider { testLabExtension.testOptions.results.resultsHistoryName })
       params.directoriesToPull.set(testLabExtension.testOptions.results.directoriesToPull)
-      params.recordVideo.set(
-        providerFactory.provider { testLabExtension.testOptions.results.recordVideo }
-      )
-      params.performanceMetrics.set(
-        providerFactory.provider { testLabExtension.testOptions.results.performanceMetrics }
-      )
+      params.recordVideo.set(providerFactory.provider { testLabExtension.testOptions.results.recordVideo })
+      params.performanceMetrics.set(providerFactory.provider { testLabExtension.testOptions.results.performanceMetrics })
       params.useOrchestrator.set(
         providerFactory.provider {
           when (androidExtension.testOptions.execution.uppercase()) {
@@ -449,7 +401,6 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
  * Encapsulates result of a FTL test run.
  *
  * @property testPassed true when all test cases in the test suite is passed.
- * @property resultsProto test suite result protobuf message. This can be null if the test runner
- *   exits unexpectedly.
+ * @property resultsProto test suite result protobuf message. This can be null if the test runner exits unexpectedly.
  */
 data class FtlTestRunResult(val testPassed: Boolean, val resultsProto: TestSuiteResult?)

@@ -34,7 +34,7 @@ fun RecipeExecutor.saveFragmentAndViewModel(
   applicationPackage: String?,
   fragmentPrefix: String,
   useAndroidX: Boolean = true,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ) {
   val firstFragmentClass = "${underscoreToCamelCase(fragmentPrefix)}Fragment"
   val viewModelClass = "${underscoreToCamelCase(fragmentPrefix)}ViewModel"
@@ -42,7 +42,7 @@ fun RecipeExecutor.saveFragmentAndViewModel(
 
   save(
     fragmentFirstXml(packageName, fragmentPrefix, firstFragmentClass, useAndroidX),
-    resOut.resolve("layout/fragment_${fragmentPrefix}.xml")
+    resOut.resolve("layout/fragment_${fragmentPrefix}.xml"),
   )
   save(
     if (generateKotlin)
@@ -53,7 +53,8 @@ fun RecipeExecutor.saveFragmentAndViewModel(
         navFragmentPrefix = fragmentPrefix,
         navViewModelClass = viewModelClass,
         useAndroidX = useAndroidX,
-        isViewBindingSupported = isViewBindingSupported)
+        isViewBindingSupported = isViewBindingSupported,
+      )
     else
       firstFragmentJava(
         packageName = packageName,
@@ -62,23 +63,18 @@ fun RecipeExecutor.saveFragmentAndViewModel(
         navFragmentPrefix = fragmentPrefix,
         navViewModelClass = viewModelClass,
         useAndroidX = useAndroidX,
-        isViewBindingSupported = isViewBindingSupported),
-    srcOut.resolve("ui/${fragmentPrefix}/${underscoreToCamelCase(fragmentPrefix)}Fragment.${language.extension}")
+        isViewBindingSupported = isViewBindingSupported,
+      ),
+    srcOut.resolve("ui/${fragmentPrefix}/${underscoreToCamelCase(fragmentPrefix)}Fragment.${language.extension}"),
   )
   save(
-    if (generateKotlin)
-      viewModelKt(packageName, fragmentPrefix, viewModelClass, useAndroidX)
-    else
-      viewModelJava(packageName, fragmentPrefix, viewModelClass, useAndroidX),
-    srcOut.resolve("ui/${fragmentPrefix}/${underscoreToCamelCase(fragmentPrefix)}ViewModel.${language.extension}")
+    if (generateKotlin) viewModelKt(packageName, fragmentPrefix, viewModelClass, useAndroidX)
+    else viewModelJava(packageName, fragmentPrefix, viewModelClass, useAndroidX),
+    srcOut.resolve("ui/${fragmentPrefix}/${underscoreToCamelCase(fragmentPrefix)}ViewModel.${language.extension}"),
   )
 }
 
-fun RecipeExecutor.navigationDependencies(
-  generateKotlin: Boolean,
-  useAndroidX: Boolean,
-  appCompatVersion: Int
-) {
+fun RecipeExecutor.navigationDependencies(generateKotlin: Boolean, useAndroidX: Boolean, appCompatVersion: Int) {
   addLifecycleDependencies(useAndroidX)
   if (generateKotlin) {
     addDependency("android.arch.navigation:navigation-fragment-ktx:+")

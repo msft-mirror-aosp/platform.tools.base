@@ -22,29 +22,25 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.file.RegularFile
 import javax.inject.Inject
+import org.gradle.api.file.RegularFile
 
-open class AnalyticsEnabledInAndOutFileOperationRequest @Inject constructor(
-    val delegate: InAndOutFileOperationRequest,
-    val stats: GradleBuildVariant.Builder
-): InAndOutFileOperationRequest {
-    override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
-            where ArtifactTypeT : Artifact.Single<RegularFile>,
-                  ArtifactTypeT : Artifact.Transformable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_TRANSFORM_FILE_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.TRANSFORM
-        }
-        delegate.toTransform(type)
+open class AnalyticsEnabledInAndOutFileOperationRequest
+@Inject
+constructor(val delegate: InAndOutFileOperationRequest, val stats: GradleBuildVariant.Builder) : InAndOutFileOperationRequest {
+  override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
+    where ArtifactTypeT : Artifact.Single<RegularFile>, ArtifactTypeT : Artifact.Transformable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_TRANSFORM_FILE_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.TRANSFORM
     }
+    delegate.toTransform(type)
+  }
 
-    override fun withName(name: String): InAndOutFileOperationRequest {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TRANSFORM_WITH_NAME_VALUE
-        delegate.withName(name)
-        return this
-    }
+  override fun withName(name: String): InAndOutFileOperationRequest {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TRANSFORM_WITH_NAME_VALUE
+    delegate.withName(name)
+    return this
+  }
 }

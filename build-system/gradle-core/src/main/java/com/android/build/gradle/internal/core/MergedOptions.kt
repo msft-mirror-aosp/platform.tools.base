@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.core
 
 interface MergedOptions<T> {
 
-    fun reset()
+  fun reset()
 
-    fun append(option: T)
+  fun append(option: T)
 }

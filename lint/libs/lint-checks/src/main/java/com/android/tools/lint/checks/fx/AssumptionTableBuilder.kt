@@ -39,8 +39,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 
-open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
-  Lattice<FX> by lattice, TypeBounds<Nothing> by persistentMapOf() {
+open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lattice, TypeBounds<Nothing> by persistentMapOf() {
   private var results: AssumptionTable<FX> = persistentMapOf()
 
   /** Adds an assumption that [this] has signature [result] */
@@ -56,9 +55,7 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
     results += klass to (results[klass] ?: persistentMapOf()).put(method, result)
   }
 
-  infix fun Iterable<MethodRef>.assumedAs(result: ResultTemplate<FX>) = forEach {
-    it.assumedAs(result)
-  }
+  infix fun Iterable<MethodRef>.assumedAs(result: ResultTemplate<FX>) = forEach { it.assumedAs(result) }
 
   infix fun Pair<ClassId, String>.assumedVirtual(result: ResultTemplate<FX>) {
     val domains = result.domains
@@ -96,48 +93,32 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
               else -> sig.paramTags[it - 1]?.let(Type<Nothing>::Application) ?: Type.WildCard
             }
           }
-        else ->
-          Array(sig.paramTags.size) {
-            sig.paramTags[it]?.let(Type<Nothing>::Application) ?: Type.WildCard
-          }
+        else -> Array(sig.paramTags.size) { sig.paramTags[it]?.let(Type<Nothing>::Application) ?: Type.WildCard }
       }
     this assumedAs given(domains = domains, setUp)
   }
 
   /** Creates a monomorphic signature, [setUp]-ing the type and effect given [domains] */
-  fun TypeBounds<Nothing>.given(
-    vararg domains: Type<Nothing>,
-    setUp: ResultTemplateBuilder<FX>.() -> Unit,
-  ): ResultTemplate<FX> =
+  fun TypeBounds<Nothing>.given(vararg domains: Type<Nothing>, setUp: ResultTemplateBuilder<FX>.() -> Unit): ResultTemplate<FX> =
     with(ResultTemplateBuilder(this@AssumptionTableBuilder).apply(setUp)) {
-      ResultTemplate(
-        this@given,
-        domains.asList(),
-        range,
-        Effect(concreteEffect, symbolicInvocations, constraint),
-      )
+      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint))
     }
 
   /** Creates a polymorphic signature, introducing unbounded type parameter */
-  fun TypeBounds<Nothing>.forAll(
-    make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>
-  ) = uncheckedForAll(persistentSetOf()) { (x) -> make(x) }
+  fun TypeBounds<Nothing>.forAll(make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
+    uncheckedForAll(persistentSetOf()) { (x) -> make(x) }
 
-  fun TypeBounds<Nothing>.forAll(
-    make: TypeBounds<Nothing>.(Type.Sym<Nothing>, Type.Sym<Nothing>) -> ResultTemplate<FX>
-  ) = uncheckedForAll(persistentSetOf(), persistentSetOf()) { (x0, x1) -> make(x0, x1) }
+  fun TypeBounds<Nothing>.forAll(make: TypeBounds<Nothing>.(Type.Sym<Nothing>, Type.Sym<Nothing>) -> ResultTemplate<FX>) =
+    uncheckedForAll(persistentSetOf(), persistentSetOf()) { (x0, x1) -> make(x0, x1) }
 
   /** Creates a polymorphic signature, introducing type parameter bounded by [X] */
   @JvmName("forAllReified")
-  inline fun <reified X : Any> TypeBounds<Nothing>.forAll(
-    noinline make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>
-  ) = forAll(X::class(), make)
+  inline fun <reified X : Any> TypeBounds<Nothing>.forAll(noinline make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
+    forAll(X::class(), make)
 
   /** Creates a polymorphic signature, introducing type parameter bounded by [bound] */
-  fun TypeBounds<Nothing>.forAll(
-    bound: Type<Nothing>,
-    make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>,
-  ) = uncheckedForAll(persistentSetOf(bound)) { (x) -> make(x) }
+  fun TypeBounds<Nothing>.forAll(bound: Type<Nothing>, make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
+    uncheckedForAll(persistentSetOf(bound)) { (x) -> make(x) }
 
   /** Creates a polymorphic signature introducing type parameter bounded by [boundList] */
   private fun TypeBounds<Nothing>.uncheckedForAll(
@@ -186,8 +167,7 @@ class ResultTemplateBuilder<FX>(lattice: Lattice<FX>) {
 }
 
 /** Build symbolic invocation with receiver [this] and no other argument */
-operator fun <FX> Type.Sym<FX>.get(method: KFunction1<*, *>) =
-  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf())
+operator fun <FX> Type.Sym<FX>.get(method: KFunction1<*, *>) = Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf())
 
 /** Build symbolic invocation with receiver [this] and 1 other argument [x0] */
 operator fun <FX> Type.Sym<FX>.get(method: KFunction2<*, *, *>, x0: Type<FX>) =
@@ -198,25 +178,16 @@ operator fun <FX> Type.Sym<FX>.get(method: KFunction3<*, *, *, *>, x0: Type<FX>,
   Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1))
 
 /** Build symbolic invocation with receiver [this] and 3 other arguments [x0], [x1], [x2] */
-operator fun <FX> Type.Sym<FX>.get(
-  method: KFunction4<*, *, *, *, *>,
-  x0: Type<FX>,
-  x1: Type<FX>,
-  x2: Type<FX>,
-) = Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2))
+operator fun <FX> Type.Sym<FX>.get(method: KFunction4<*, *, *, *, *>, x0: Type<FX>, x1: Type<FX>, x2: Type<FX>) =
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2))
 
 /** Build symbolic invocation with receiver [this] and 4 other arguments [x0], [x1], [x2], [x3] */
-operator fun <FX> Type.Sym<FX>.get(
-  method: KFunction5<*, *, *, *, *, *>,
-  x0: Type<FX>,
-  x1: Type<FX>,
-  x2: Type<FX>,
-  x3: Type<FX>,
-) = Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2, x3))
+operator fun <FX> Type.Sym<FX>.get(method: KFunction5<*, *, *, *, *, *>, x0: Type<FX>, x1: Type<FX>, x2: Type<FX>, x3: Type<FX>) =
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2, x3))
 
 /**
- * Build symbolic invocation with receiver [this] and some other arguments [xs]. Because the method
- * reference [method] is dynamically constructed, the arity check is at runtime.
+ * Build symbolic invocation with receiver [this] and some other arguments [xs]. Because the method reference [method] is dynamically
+ * constructed, the arity check is at runtime.
  */
 operator fun <FX> Type.Sym<FX>.get(method: MethodId, vararg xs: Type<FX>): Type.Sym.Invoke<FX> {
   require(method.paramTags.size == xs.size) {
@@ -225,10 +196,7 @@ operator fun <FX> Type.Sym<FX>.get(method: MethodId, vararg xs: Type<FX>): Type.
   return Type.Sym.Invoke(this, method, xs.asList())
 }
 
-/**
- * Use the metalanguage's class tag as the object language's type constructor, with a run-time arity
- * check.
- */
+/** Use the metalanguage's class tag as the object language's type constructor, with a run-time arity check. */
 operator fun <FX, C : Any> KClass<C>.invoke(vararg ts: Type<FX>): Type.Application<FX> {
   require(typeParameters.size == ts.size) {
     "Type constructor `$simpleName` takes ${typeParameters.size} parameters, given ${ts.size}: ${ts.asList()}"
@@ -236,5 +204,4 @@ operator fun <FX, C : Any> KClass<C>.invoke(vararg ts: Type<FX>): Type.Applicati
   return Type.Application(ClassId.of(this), ts.asList())
 }
 
-operator fun <FX> ClassId.invoke(vararg ts: Type<FX>): Type.Application<FX> =
-  Type.Application(this, ts.asList())
+operator fun <FX> ClassId.invoke(vararg ts: Type<FX>): Type.Application<FX> = Type.Application(this, ts.asList())

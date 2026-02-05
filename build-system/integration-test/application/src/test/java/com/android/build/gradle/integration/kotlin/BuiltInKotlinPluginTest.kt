@@ -29,70 +29,53 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "useLatestKgpVersion_{0}")
-        @JvmStatic
-        fun parameters() = listOf(false, true)
+    @Parameterized.Parameters(name = "useLatestKgpVersion_{0}") @JvmStatic fun parameters() = listOf(false, true)
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        @Suppress("DEPRECATION") applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+
+        HelloWorldAndroid.setupKotlin(files)
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
+      useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            @Suppress("DEPRECATION")
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  @Test
+  fun `test compile Kotlin sources`() {
+    val build = rule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().build
+    build.executor.run(":app:compileDebugKotlin")
+  }
 
-            HelloWorldAndroid.setupKotlin(files)
-        }
-        gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
-            add(BooleanOption.USE_NEW_DSL, false)
-        }
-        useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
+  @Test
+  fun `fail when built-in Kotlin plugin is applied before kotlin-android plugin`() {
+    val build = rule.build { androidApplication { @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID) } }
+
+    val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
+
+    result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+  }
+
+  @Test
+  fun `fail when built-in Kotlin plugin is applied after kotlin-android plugin`() {
+    val build = rule.build { androidApplication { @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true) } }
+
+    val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
+
+    if (useLatestKgpVersion) {
+      result.assertErrorContains(
+        "The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0."
+      )
+    } else {
+      result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
     }
-
-    @Test
-    fun `test compile Kotlin sources`() {
-        val build = rule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().build
-        build.executor.run(":app:compileDebugKotlin")
-    }
-
-    @Test
-    fun `fail when built-in Kotlin plugin is applied before kotlin-android plugin`() {
-        val build = rule.build {
-            androidApplication {
-                @Suppress("DEPRECATION")
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-            }
-        }
-
-        val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
-
-        result.assertErrorContains(
-            "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
-        )
-    }
-
-    @Test
-    fun `fail when built-in Kotlin plugin is applied after kotlin-android plugin`() {
-        val build = rule.build {
-            androidApplication {
-                @Suppress("DEPRECATION")
-                applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
-            }
-        }
-
-        val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
-
-        if (useLatestKgpVersion) {
-            result.assertErrorContains(
-                "The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0."
-            )
-        } else {
-            result.assertErrorContains(
-                "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
-            )
-        }
-    }
-
+  }
 }

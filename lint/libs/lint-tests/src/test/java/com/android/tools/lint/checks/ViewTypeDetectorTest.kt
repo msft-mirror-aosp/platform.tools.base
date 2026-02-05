@@ -1003,8 +1003,10 @@ class ViewTypeDetectorTest : AbstractCheckTest() {
         testMode = TestMode.DEFAULT,
       )
       .expect(
-        // Supporting this test mode across module boundaries is going to require more effort (and
-        // overhead). This is testing that we gracefully don't crash when the resource isn't found
+        // Supporting this test mode across module boundaries is going to require more effort
+        // (and
+        // overhead). This is testing that we gracefully don't crash when the resource isn't
+        // found
         // locally.
         "No warnings.",
         testMode = TestMode.PARTIAL,

@@ -21,193 +21,186 @@ import java.nio.file.Path
 
 class MavenRepoGenerator constructor(val libraries: List<Library>) {
 
-    companion object {
-        fun libraryWithFixtures(
-            mavenCoordinate: String,
-            packaging: String,
-            mainLibrary: LibraryBuilder.() -> Unit,
-            fixtureLibrary: (LibraryBuilder.() -> Unit)? = null,
-        ): Library {
-            val mainLibraryBuilder = LibraryBuilderImpl().also {
-                mainLibrary(it)
-            }
+  companion object {
+    fun libraryWithFixtures(
+      mavenCoordinate: String,
+      packaging: String,
+      mainLibrary: LibraryBuilder.() -> Unit,
+      fixtureLibrary: (LibraryBuilder.() -> Unit)? = null,
+    ): Library {
+      val mainLibraryBuilder = LibraryBuilderImpl().also { mainLibrary(it) }
 
-            val fixtureLibraryBuilder = fixtureLibrary?.let { action ->
-                LibraryBuilderImpl().also { action(it) }
-            }
+      val fixtureLibraryBuilder = fixtureLibrary?.let { action -> LibraryBuilderImpl().also { action(it) } }
 
-            return Library(
-                mavenCoordinate,
-                packaging,
-                mainLibraryBuilder.toData(),
-                fixtureArtifact = fixtureLibraryBuilder?.toData()
-            )
-        }
+      return Library(mavenCoordinate, packaging, mainLibraryBuilder.toData(), fixtureArtifact = fixtureLibraryBuilder?.toData())
     }
+  }
 
-    interface LibraryBuilder {
-        var artifact: ByteArray?
-        val dependencies: MutableList<String>
-        val dependencyManagementDependencies: MutableList<String>
-    }
+  interface LibraryBuilder {
+    var artifact: ByteArray?
+    val dependencies: MutableList<String>
+    val dependencyManagementDependencies: MutableList<String>
+  }
 
-    internal interface LibraryData {
-        val artifact: ByteArray
-        val dependencies: List<MavenCoordinate>
-        val dependencyManagementDependencies: List<MavenCoordinate>
-    }
+  internal interface LibraryData {
+    val artifact: ByteArray
+    val dependencies: List<MavenCoordinate>
+    val dependencyManagementDependencies: List<MavenCoordinate>
+  }
 
-    class Library internal constructor(
-        mavenCoordinate: String,
-        internal val packaging: String,
-        internal val mainArtifact: LibraryData,
-        internal val additionalArtifact: LibraryData? = null,
-        internal val fixtureArtifact: LibraryData? = null
-    ) {
+  class Library
+  internal constructor(
+    mavenCoordinate: String,
+    internal val packaging: String,
+    internal val mainArtifact: LibraryData,
+    internal val additionalArtifact: LibraryData? = null,
+    internal val fixtureArtifact: LibraryData? = null,
+  ) {
 
-        constructor(
-            mavenCoordinate: String,
-            packaging: String,
-            artifact: ByteArray,
-            dependencies: List<String>,
-            dependencyManagementDependencies: List<String>
-        ) : this(
-            mavenCoordinate,
-            packaging,
-            LibraryBuilderImpl(
-                artifact,
-                dependencies.toMutableList(),
-                dependencyManagementDependencies.toMutableList()
-            ).toData()
+    constructor(
+      mavenCoordinate: String,
+      packaging: String,
+      artifact: ByteArray,
+      dependencies: List<String>,
+      dependencyManagementDependencies: List<String>,
+    ) : this(
+      mavenCoordinate,
+      packaging,
+      LibraryBuilderImpl(artifact, dependencies.toMutableList(), dependencyManagementDependencies.toMutableList()).toData(),
+    )
+
+    constructor(
+      mavenCoordinate: String,
+      packaging: String,
+      artifact: ByteArray,
+      vararg dependencies: String,
+    ) : this(mavenCoordinate, packaging, LibraryBuilderImpl(artifact, *dependencies).toData())
+
+    constructor(mavenCoordinate: String, jar: ByteArray, vararg dependencies: String) : this(mavenCoordinate, "jar", jar, *dependencies)
+
+    constructor(
+      mavenCoordinate: String,
+      vararg dependencies: String,
+    ) : this(mavenCoordinate, TestInputsGenerator.jarWithEmptyClasses(listOf()), *dependencies)
+
+    constructor(
+      mavenCoordinate: String,
+      mainArtifact: ByteArray,
+      additionalArtifact: ByteArray,
+    ) : this(
+      mavenCoordinate,
+      "jar",
+      LibraryBuilderImpl(mainArtifact).toData(),
+      additionalArtifact = LibraryBuilderImpl(additionalArtifact).toData(),
+    )
+
+    val mavenCoordinate = MavenCoordinate.parse(mavenCoordinate)
+
+    fun generatePom(): String {
+      val sb =
+        StringBuilder(
+          """
+          |<?xml version="1.0" encoding="UTF-8"?>
+          |<project
+          |    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+          |    xmlns="http://maven.apache.org/POM/4.0.0"
+          |    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          |"""
+            .trimMargin()
         )
-
-        constructor(
-            mavenCoordinate: String,
-            packaging: String,
-            artifact: ByteArray,
-            vararg dependencies: String
-        ): this(mavenCoordinate, packaging, LibraryBuilderImpl(artifact, *dependencies).toData())
-
-        constructor(
-            mavenCoordinate: String,
-            jar: ByteArray,
-            vararg dependencies: String
-        ) : this(mavenCoordinate, "jar", jar, *dependencies)
-
-        constructor(
-            mavenCoordinate: String,
-            vararg dependencies: String
-        ) : this(mavenCoordinate, TestInputsGenerator.jarWithEmptyClasses(listOf()), *dependencies)
-
-        constructor(
-            mavenCoordinate: String,
-            mainArtifact: ByteArray,
-            additionalArtifact: ByteArray
-        ) : this(
-            mavenCoordinate,
-            "jar",
-            LibraryBuilderImpl(mainArtifact).toData(),
-            additionalArtifact = LibraryBuilderImpl(additionalArtifact).toData()
+      if (fixtureArtifact != null || additionalArtifact != null) {
+        // this is required for Gradle to look for a .module file
+        sb.append(
+          """
+          |  <!-- This module was also published with a richer model, Gradle metadata,  -->
+          |  <!-- which should be used instead. Do not delete the following line which  -->
+          |  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+          |  <!-- that they should prefer consuming it instead. -->
+          |  <!-- do_not_remove: published-with-gradle-metadata -->
+          |"""
+            .trimMargin()
         )
-
-        val mavenCoordinate = MavenCoordinate.parse(mavenCoordinate)
-
-        fun generatePom(): String {
-            val sb = StringBuilder(
-                """
-                |<?xml version="1.0" encoding="UTF-8"?>
-                |<project
-                |    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-                |    xmlns="http://maven.apache.org/POM/4.0.0"
-                |    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                |""".trimMargin())
-            if (fixtureArtifact != null || additionalArtifact != null) {
-                // this is required for Gradle to look for a .module file
-                sb.append( """
-                |  <!-- This module was also published with a richer model, Gradle metadata,  -->
-                |  <!-- which should be used instead. Do not delete the following line which  -->
-                |  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
-                |  <!-- that they should prefer consuming it instead. -->
-                |  <!-- do_not_remove: published-with-gradle-metadata -->
-                |""".trimMargin())
-            }
-            sb.append("""
+      }
+      sb.append(
+        """
                 |  <modelVersion>4.0.0</modelVersion>
                 |  <groupId>${mavenCoordinate.groupId}</groupId>
                 |  <artifactId>${mavenCoordinate.artifactId}</artifactId>
                 |  <version>${mavenCoordinate.version}</version>
-                |""".trimMargin())
-            if (packaging != "jar") {
-                sb.append( "  <packaging>$packaging</packaging>\n")
-            }
+                |"""
+          .trimMargin()
+      )
+      if (packaging != "jar") {
+        sb.append("  <packaging>$packaging</packaging>\n")
+      }
 
-            sb.append("  <dependencyManagement>\n")
-            if (mainArtifact.dependencyManagementDependencies.any()) {
-                sb.append("    <dependencies>\n")
-                for (dependency in mainArtifact.dependencyManagementDependencies) {
-                    sb.append(
-                        """
+      sb.append("  <dependencyManagement>\n")
+      if (mainArtifact.dependencyManagementDependencies.any()) {
+        sb.append("    <dependencies>\n")
+        for (dependency in mainArtifact.dependencyManagementDependencies) {
+          sb.append(
+            """
                     |      <dependency>
                     |        <groupId>${dependency.groupId}</groupId>
                     |        <artifactId>${dependency.artifactId}</artifactId>
                     |        <version>${dependency.version}</version>
                     |      </dependency>
-                    |""".trimMargin()
-                    )
-                }
-                sb.append("    </dependencies>\n")
-            }
-            sb.append("  </dependencyManagement>\n")
+                    |"""
+              .trimMargin()
+          )
+        }
+        sb.append("    </dependencies>\n")
+      }
+      sb.append("  </dependencyManagement>\n")
 
-            sb.append("  <dependencies>\n")
-            for (dependency in mainArtifact.dependencies) {
-                sb.append(
-                    """
+      sb.append("  <dependencies>\n")
+      for (dependency in mainArtifact.dependencies) {
+        sb.append(
+          """
                     |    <dependency>
                     |      <groupId>${dependency.groupId}</groupId>
                     |      <artifactId>${dependency.artifactId}</artifactId>
                     |      <version>${dependency.version}</version>
                     |      <scope>compile</scope>
                     |    </dependency>
-                    |""".trimMargin()
-                )
-            }
+                    |"""
+            .trimMargin()
+        )
+      }
 
-            sb.append(
-                """
-                    |  </dependencies>
-                    |</project>
-                    |""".trimMargin()
-            )
+      sb.append(
+        """
+        |  </dependencies>
+        |</project>
+        |"""
+          .trimMargin()
+      )
 
-            return sb.toString()
-        }
+      return sb.toString()
+    }
 
-        fun generateModule(
-            mainArtifactPath: Path,
-            fixtureArtifactPath: Path? = null,
-            additionalArtifactPath: Path? = null
-        ): String {
+    fun generateModule(mainArtifactPath: Path, fixtureArtifactPath: Path? = null, additionalArtifactPath: Path? = null): String {
 
-            val mainArtifactFile = mainArtifactPath.toFile()
-            val mainArtifactName = mainArtifactFile.name
-            val mainArtifactSize = mainArtifactFile.length()
-            val mainArtifactBytes = mainArtifactFile.readBytes()
-            val mainArtifactSha512 = Hashing.sha512().hashBytes(mainArtifactBytes).toString()
-            val mainArtifactSha256 = Hashing.sha256().hashBytes(mainArtifactBytes).toString()
-            val mainArtifactSha1 = Hashing.sha1().hashBytes(mainArtifactBytes).toString()
-            val mainArtifactMd5 = Hashing.md5().hashBytes(mainArtifactBytes).toString()
+      val mainArtifactFile = mainArtifactPath.toFile()
+      val mainArtifactName = mainArtifactFile.name
+      val mainArtifactSize = mainArtifactFile.length()
+      val mainArtifactBytes = mainArtifactFile.readBytes()
+      val mainArtifactSha512 = Hashing.sha512().hashBytes(mainArtifactBytes).toString()
+      val mainArtifactSha256 = Hashing.sha256().hashBytes(mainArtifactBytes).toString()
+      val mainArtifactSha1 = Hashing.sha1().hashBytes(mainArtifactBytes).toString()
+      val mainArtifactMd5 = Hashing.md5().hashBytes(mainArtifactBytes).toString()
 
-            val fixtureVariantsData = if (fixtureArtifactPath != null) {
-                val fixtureArtifactFile = fixtureArtifactPath.toFile()
-                val fixtureArtifactName = fixtureArtifactFile.name
-                val fixtureArtifactSize = fixtureArtifactFile.length()
-                val fixtureArtifactBytes = fixtureArtifactFile.readBytes()
-                val fixtureArtifactSha512 = Hashing.sha512().hashBytes(fixtureArtifactBytes).toString()
-                val fixtureArtifactSha256 = Hashing.sha256().hashBytes(fixtureArtifactBytes).toString()
-                val fixtureArtifactSha1 = Hashing.sha1().hashBytes(fixtureArtifactBytes).toString()
-                val fixtureArtifactMd5 = Hashing.md5().hashBytes(fixtureArtifactBytes).toString()
-                """,
+      val fixtureVariantsData =
+        if (fixtureArtifactPath != null) {
+          val fixtureArtifactFile = fixtureArtifactPath.toFile()
+          val fixtureArtifactName = fixtureArtifactFile.name
+          val fixtureArtifactSize = fixtureArtifactFile.length()
+          val fixtureArtifactBytes = fixtureArtifactFile.readBytes()
+          val fixtureArtifactSha512 = Hashing.sha512().hashBytes(fixtureArtifactBytes).toString()
+          val fixtureArtifactSha256 = Hashing.sha256().hashBytes(fixtureArtifactBytes).toString()
+          val fixtureArtifactSha1 = Hashing.sha1().hashBytes(fixtureArtifactBytes).toString()
+          val fixtureArtifactMd5 = Hashing.md5().hashBytes(fixtureArtifactBytes).toString()
+          """,
     {
       "name": "releaseTestFixturesApiPublication",
       "attributes": {
@@ -280,21 +273,23 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
         }
       ]
     }
-                """.trimIndent()
-            } else {
-                ""
-            }
-
-            val additionalArtifactData = if (additionalArtifactPath != null) {
-                val additionalArtifactFile = additionalArtifactPath.toFile()
-                val additionalArtifactName = additionalArtifactFile.name
-                val additionalArtifactSize = additionalArtifactFile.length()
-                val additionalArtifactBytes = additionalArtifactFile.readBytes()
-                val additionalArtifactSha512 = Hashing.sha512().hashBytes(additionalArtifactBytes).toString()
-                val additionalArtifactSha256 = Hashing.sha256().hashBytes(additionalArtifactBytes).toString()
-                val additionalArtifactSha1 = Hashing.sha1().hashBytes(additionalArtifactBytes).toString()
-                val additionalArtifactMd5 = Hashing.md5().hashBytes(additionalArtifactBytes).toString()
                 """
+            .trimIndent()
+        } else {
+          ""
+        }
+
+      val additionalArtifactData =
+        if (additionalArtifactPath != null) {
+          val additionalArtifactFile = additionalArtifactPath.toFile()
+          val additionalArtifactName = additionalArtifactFile.name
+          val additionalArtifactSize = additionalArtifactFile.length()
+          val additionalArtifactBytes = additionalArtifactFile.readBytes()
+          val additionalArtifactSha512 = Hashing.sha512().hashBytes(additionalArtifactBytes).toString()
+          val additionalArtifactSha256 = Hashing.sha256().hashBytes(additionalArtifactBytes).toString()
+          val additionalArtifactSha1 = Hashing.sha1().hashBytes(additionalArtifactBytes).toString()
+          val additionalArtifactMd5 = Hashing.md5().hashBytes(additionalArtifactBytes).toString()
+          """
                     ,
                             {
                               "name": "$additionalArtifactName",
@@ -305,12 +300,13 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
                               "sha1": "$additionalArtifactSha1",
                               "md5": "$additionalArtifactMd5"
                             }
-                """.trimIndent()
-            } else {
-                ""
-            }
+                """
+            .trimIndent()
+        } else {
+          ""
+        }
 
-            return """
+      return """
 {
   "formatVersion": "1.1",
   "component": {
@@ -371,112 +367,92 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
     }$fixtureVariantsData
   ]
 }
-""".trimIndent()
-        }
+"""
+        .trimIndent()
     }
+  }
 
-    data class MavenCoordinate(
-        val groupId: String,
-        val artifactId: String,
-        val version: String
-    ) {
+  data class MavenCoordinate(val groupId: String, val artifactId: String, val version: String) {
 
-        fun getDirName(): String = "${groupId.replace('.', '/')}/$artifactId/$version/"
-        fun getFileName(
-            ext: String,
-            isFixture: Boolean = false
-        ): String = if (isFixture) {
-            "$artifactId-$version-test-fixtures.$ext"
+    fun getDirName(): String = "${groupId.replace('.', '/')}/$artifactId/$version/"
+
+    fun getFileName(ext: String, isFixture: Boolean = false): String =
+      if (isFixture) {
+        "$artifactId-$version-test-fixtures.$ext"
+      } else {
+        "$artifactId-$version.$ext"
+      }
+
+    override fun toString(): String = "$groupId:$artifactId:$version"
+
+    companion object {
+      fun parse(mavenCoordinate: String): MavenCoordinate {
+        val split = mavenCoordinate.split(':')
+        if (split.size != 3) {
+          throw IllegalArgumentException("Maven co-ordinate should be group:artifact:version")
+        }
+        return MavenCoordinate(groupId = split[0], artifactId = split[1], version = split[2])
+      }
+    }
+  }
+
+  fun generate(rootDir: Path) {
+    libraries.forEach { library ->
+      val dir = rootDir.resolve(library.mavenCoordinate.getDirName())
+      Files.createDirectories(dir)
+
+      val mainArtifactFile = dir.resolve(library.mavenCoordinate.getFileName(library.packaging))
+      Files.write(mainArtifactFile, library.mainArtifact.artifact)
+
+      Files.write(dir.resolve(library.mavenCoordinate.getFileName("pom")), library.generatePom().toByteArray())
+
+      val additionalArtifactFile =
+        if (library.additionalArtifact != null) {
+          val file = dir.resolve("additional.${library.packaging}")
+          Files.write(file, library.additionalArtifact.artifact)
+          file
         } else {
-            "$artifactId-$version.$ext"
-        }
-        override fun toString(): String = "$groupId:$artifactId:$version"
-
-        companion object {
-            fun parse(mavenCoordinate: String): MavenCoordinate {
-                val split = mavenCoordinate.split(':')
-                if (split.size != 3) {
-                    throw IllegalArgumentException("Maven co-ordinate should be group:artifact:version")
-                }
-                return MavenCoordinate(
-                    groupId = split[0],
-                    artifactId = split[1],
-                    version = split[2]
-                )
-            }
+          null
         }
 
+      val fixtureArtifactFile =
+        if (library.fixtureArtifact != null) {
+          val file = dir.resolve(library.mavenCoordinate.getFileName(library.packaging, isFixture = true))
+          Files.write(file, library.fixtureArtifact.artifact)
+          file
+        } else {
+          null
+        }
+
+      if (fixtureArtifactFile != null || additionalArtifactFile != null) {
+        Files.write(
+          dir.resolve(library.mavenCoordinate.getFileName("module")),
+          library.generateModule(mainArtifactFile, fixtureArtifactFile, additionalArtifactFile).toByteArray(),
+        )
+      }
     }
+  }
 
-    fun generate(rootDir: Path) {
-        libraries.forEach { library ->
-            val dir = rootDir.resolve(library.mavenCoordinate.getDirName())
-            Files.createDirectories(dir)
+  class LibraryBuilderImpl(
+    override var artifact: ByteArray? = null,
+    override val dependencies: MutableList<String> = mutableListOf(),
+    override val dependencyManagementDependencies: MutableList<String> = mutableListOf(),
+  ) : LibraryBuilder {
 
-            val mainArtifactFile = dir.resolve(library.mavenCoordinate.getFileName(library.packaging))
-            Files.write(mainArtifactFile, library.mainArtifact.artifact)
+    constructor(artifact: ByteArray, vararg dependencies: String) : this(artifact, dependencies.toMutableList())
 
-            Files.write(
-                dir.resolve(library.mavenCoordinate.getFileName("pom")),
-                library.generatePom().toByteArray()
-            )
-
-            val additionalArtifactFile = if (library.additionalArtifact != null) {
-                val file = dir.resolve("additional.${library.packaging}")
-                Files.write(file, library.additionalArtifact.artifact)
-                file
-            } else {
-                null
-            }
-
-            val fixtureArtifactFile = if (library.fixtureArtifact != null) {
-                val file = dir.resolve(
-                    library.mavenCoordinate.getFileName(
-                        library.packaging,
-                        isFixture = true
-                    )
-                )
-                Files.write(file, library.fixtureArtifact.artifact)
-                file
-            } else {
-                null
-            }
-
-            if (fixtureArtifactFile != null || additionalArtifactFile != null) {
-                Files.write(
-                    dir.resolve(library.mavenCoordinate.getFileName("module")),
-                    library.generateModule(
-                        mainArtifactFile,
-                        fixtureArtifactFile,
-                        additionalArtifactFile
-                    ).toByteArray()
-                )
-            }
-        }
+    internal fun toData(): LibraryData {
+      return LibraryDataImpl(
+        artifact!!,
+        dependencies.map { MavenCoordinate.parse(it) },
+        dependencyManagementDependencies.map { MavenCoordinate.parse(it) },
+      )
     }
+  }
 
-    class LibraryBuilderImpl(
-        override var artifact: ByteArray? = null,
-        override val dependencies: MutableList<String> = mutableListOf(),
-        override val dependencyManagementDependencies: MutableList<String> = mutableListOf()
-    ): LibraryBuilder {
-
-        constructor(
-            artifact: ByteArray,
-            vararg dependencies: String
-        ): this(artifact, dependencies.toMutableList())
-
-        internal fun toData(): LibraryData {
-            return LibraryDataImpl(
-                artifact!!,
-                dependencies.map { MavenCoordinate.parse(it) },
-                dependencyManagementDependencies.map { MavenCoordinate.parse(it) })
-        }
-    }
-
-    class LibraryDataImpl(
-        override val artifact: ByteArray,
-        override val dependencies: List<MavenCoordinate>,
-        override val dependencyManagementDependencies: List<MavenCoordinate>
-    ): LibraryData
+  class LibraryDataImpl(
+    override val artifact: ByteArray,
+    override val dependencies: List<MavenCoordinate>,
+    override val dependencyManagementDependencies: List<MavenCoordinate>,
+  ) : LibraryData
 }

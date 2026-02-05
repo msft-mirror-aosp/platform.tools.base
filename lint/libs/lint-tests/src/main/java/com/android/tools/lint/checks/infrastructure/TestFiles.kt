@@ -248,12 +248,7 @@ object TestFiles {
   }
 
   @JvmStatic
-  fun toBase64gzipJava(
-    bytes: ByteArray,
-    indent: Int,
-    indentStart: Boolean,
-    includeEmptyPrefix: Boolean,
-  ): String {
+  fun toBase64gzipJava(bytes: ByteArray, indent: Int, indentStart: Boolean, includeEmptyPrefix: Boolean): String {
     val base64 = toBase64gzipString(bytes)
     val indentString = StringBuilder()
     for (i in 0 until indent) {
@@ -276,12 +271,7 @@ object TestFiles {
   }
 
   @JvmStatic
-  fun toBase64gzipKotlin(
-    bytes: ByteArray,
-    indent: Int,
-    indentStart: Boolean,
-    includeQuotes: Boolean,
-  ): String {
+  fun toBase64gzipKotlin(bytes: ByteArray, indent: Int, indentStart: Boolean, includeQuotes: Boolean): String {
     val base64 = toBase64gzipString(bytes).replace('$', '＄')
     val indentString = StringBuilder()
     for (i in 0 until indent) {
@@ -351,8 +341,7 @@ object TestFiles {
   }
 
   /**
-   * Creates a test file from the given base64 data. To create this data, use [ ][.toBase64] or
-   * [.toBase64], for example via
+   * Creates a test file from the given base64 data. To create this data, use [ ][.toBase64] or [.toBase64], for example via
    *
    * ```
    * `assertEquals("", toBase64(new File("path/to/your.class")));`
@@ -378,8 +367,8 @@ object TestFiles {
   }
 
   /**
-   * Decodes base64 strings into gzip data, then decodes that into a data file. To create this data,
-   * use [.toBase64gzip] or [.toBase64gzip], for example via
+   * Decodes base64 strings into gzip data, then decodes that into a data file. To create this data, use [.toBase64gzip] or [.toBase64gzip],
+   * for example via
    *
    * ```
    * `assertEquals("", toBase64gzip(new File("path/to/your.class")));`
@@ -390,10 +379,7 @@ object TestFiles {
     return BinaryTestFile(to, getByteProducerForBase64gzip(encoded))
   }
 
-  /**
-   * Creates a bytecode producer which takes an encoded base64gzip string and returns the
-   * uncompressed de-base64'ed byte array.
-   */
+  /** Creates a bytecode producer which takes an encoded base64gzip string and returns the uncompressed de-base64'ed byte array. */
   @JvmStatic
   fun getByteProducerForBase64gzip(encoded: String): ByteProducer {
     val escaped =
@@ -422,27 +408,22 @@ object TestFiles {
   }
 
   /**
-   * Decodes hex byte strings into the original byte array. To create this data, use
-   * [ ][.toHexBytes] or [.toHexBytes], for example via
+   * Decodes hex byte strings into the original byte array. To create this data, use [ ][.toHexBytes] or [.toHexBytes], for example via
    *
    * ```
    * `assertEquals("", toHexBytes(new File("path/to/your.class")));`
    * ```
    *
-   * Normally you'll be using [.base64gzip] test files, since these are much more compact. The main
-   * use case for hex byte files is very clearly seeing the binary contents in the test description,
-   * and perhaps modifying these slightly (for example, to deliberately change a field in a file
-   * format like a class file.)
+   * Normally you'll be using [.base64gzip] test files, since these are much more compact. The main use case for hex byte files is very
+   * clearly seeing the binary contents in the test description, and perhaps modifying these slightly (for example, to deliberately change a
+   * field in a file format like a class file.)
    */
   @JvmStatic
   fun hexBytes(to: String, encoded: String): BinaryTestFile {
     return BinaryTestFile(to, getByteProducerForHexBytes(encoded))
   }
 
-  /**
-   * Creates a bytecode producer which takes an encoded hex bytes string and returns the decoded
-   * byte array.
-   */
+  /** Creates a bytecode producer which takes an encoded hex bytes string and returns the decoded byte array. */
   @JvmStatic
   fun getByteProducerForHexBytes(encoded: String): ByteProducer {
     val escaped = encoded.replace(" ", "").replace("\n", "").replace("\t", "")
@@ -483,24 +464,18 @@ object TestFiles {
 
   @Deprecated("") // Use the method with the checksum instead
   @JvmStatic
-  fun metadataKlib(to: String, vararg files: TestFile): MetadataKlibTestFile =
-    metadataKlib(to, files, null, null)
+  fun metadataKlib(to: String, vararg files: TestFile): MetadataKlibTestFile = metadataKlib(to, files, null, null)
 
   @JvmStatic
-  fun metadataKlib(
-    to: String,
-    files: Array<out TestFile>,
-    checksum: Long?,
-    encoded: String?,
-  ): MetadataKlibTestFile = MetadataKlibTestFile(to, files, checksum, encoded)
+  fun metadataKlib(to: String, files: Array<out TestFile>, checksum: Long?, encoded: String?): MetadataKlibTestFile =
+    MetadataKlibTestFile(to, files, checksum, encoded)
 
   @Deprecated("") // Use the method with the checksum instead
   @JvmStatic
   fun klib(to: String, vararg files: TestFile): KlibTestFile = klib(to, null, null, *files)
 
   @JvmStatic
-  fun klib(to: String, encoded: String?, checksum: Int?, vararg files: TestFile): KlibTestFile =
-    KlibTestFile(to, encoded, checksum, *files)
+  fun klib(to: String, encoded: String?, checksum: Int?, vararg files: TestFile): KlibTestFile = KlibTestFile(to, encoded, checksum, *files)
 
   @JvmStatic
   fun jar(to: String): JarTestFile {
@@ -513,16 +488,13 @@ object TestFiles {
   }
 
   /**
-   * Creates a **class file** from a simple stub source file which gets interpreted by lint's test
-   * infrastructure and "compiled" into an actual class file. This lets unit tests more accurately
-   * test what happens at runtime (for example, parameter names are available when you resolve calls
-   * into source, but not into class files), without having to actually compile and maintain binary
-   * test files.
+   * Creates a **class file** from a simple stub source file which gets interpreted by lint's test infrastructure and "compiled" into an
+   * actual class file. This lets unit tests more accurately test what happens at runtime (for example, parameter names are available when
+   * you resolve calls into source, but not into class files), without having to actually compile and maintain binary test files.
    *
-   * The [stubSources] are the source files to be used for the library. The [compileOnly] sources
-   * are ones that may define APIs referenced by the [stubSources], but which should not be packaged
-   * in the jar. If [byteOnly] is false, it will run this test both with the source code available,
-   * and without.
+   * The [stubSources] are the source files to be used for the library. The [compileOnly] sources are ones that may define APIs referenced
+   * by the [stubSources], but which should not be packaged in the jar. If [byteOnly] is false, it will run this test both with the source
+   * code available, and without.
    */
   @JvmStatic
   fun binaryStub(
@@ -533,23 +505,19 @@ object TestFiles {
     compileOnly: List<TestFile> = emptyList(),
     byteOnly: Boolean = true,
   ): TestFile {
-    val default =
-      if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY
-      else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
+    val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *stubSources.toTypedArray())
     return StubClassFile(into, type, stubSources, compileOnly)
   }
 
   /**
-   * Creates a simple binary "Maven jar library artifact". Given some simple Java stubs for the APIs
-   * the library should contain, and an artifact address, this will perform simple "compilation" of
-   * the stub APIs into a binary jar, and will locate this jar file in the right place for lint to
-   * discover it and associate it (via [JavaEvaluator.findOwnerLibrary]) with the right artifact.
+   * Creates a simple binary "Maven jar library artifact". Given some simple Java stubs for the APIs the library should contain, and an
+   * artifact address, this will perform simple "compilation" of the stub APIs into a binary jar, and will locate this jar file in the right
+   * place for lint to discover it and associate it (via [JavaEvaluator.findOwnerLibrary]) with the right artifact.
    *
-   * The [stubSources] are the source files to be used for the library. The [compileOnly] sources
-   * are ones that may define APIs referenced by the [stubSources], but which should not be packaged
-   * in the jar. If [byteOnly] is false, it will run this test both with the source code available,
-   * and without.
+   * The [stubSources] are the source files to be used for the library. The [compileOnly] sources are ones that may define APIs referenced
+   * by the [stubSources], but which should not be packaged in the jar. If [byteOnly] is false, it will run this test both with the source
+   * code available, and without.
    */
   @JvmStatic
   fun mavenLibrary(
@@ -563,18 +531,15 @@ object TestFiles {
     // all exploded-aar files are accounted for in the dependency graph!
     // Maybe even build dependency graph here with a PomBuilder?
   ): TestFile {
-    val default =
-      if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY
-      else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
+    val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *stubSources.toTypedArray())
     return MavenLibrary(artifact, type, stubSources, compileOnly)
   }
 
   /**
-   * Creates a simple binary "Maven jar library artifact". Given some simple Java stubs for the APIs
-   * the library should contain, and an artifact address, this will perform simple "compilation" of
-   * the stub APIs into a binary jar, and will locate this jar file in the right place for lint to
-   * discover it and associate it (via [JavaEvaluator.findOwnerLibrary]) with the right artifact.
+   * Creates a simple binary "Maven jar library artifact". Given some simple Java stubs for the APIs the library should contain, and an
+   * artifact address, this will perform simple "compilation" of the stub APIs into a binary jar, and will locate this jar file in the right
+   * place for lint to discover it and associate it (via [JavaEvaluator.findOwnerLibrary]) with the right artifact.
    */
   @JvmStatic
   fun mavenLibrary(
@@ -583,9 +548,7 @@ object TestFiles {
     vararg files: TestFile,
     byteOnly: Boolean = true,
   ): TestFile {
-    val default =
-      if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY
-      else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
+    val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *files)
     return MavenLibrary(artifact, type, listOf(*files), emptyList())
   }
@@ -616,10 +579,7 @@ object TestFiles {
     return CompiledSourceFile(into, type, source, checksum, encoded)
   }
 
-  private fun getCompileType(
-    default: BytecodeTestFile.Type,
-    vararg sources: TestFile,
-  ): BytecodeTestFile.Type {
+  private fun getCompileType(default: BytecodeTestFile.Type, vararg sources: TestFile): BytecodeTestFile.Type {
     for (source in sources) {
       val targetRelativePath = source.targetRelativePath
       if (targetRelativePath.endsWith(DOT_JAVA) || targetRelativePath.endsWith(DOT_KT)) {
@@ -631,9 +591,7 @@ object TestFiles {
 
   @JvmStatic
   fun jar(to: String, vararg files: TestFile): JarTestFile {
-    require(to.endsWith(DOT_JAR) || to.endsWith(DOT_ZIP)) {
-      "Expected .jar/.zip suffix for jar test file"
-    }
+    require(to.endsWith(DOT_JAR) || to.endsWith(DOT_ZIP)) { "Expected .jar/.zip suffix for jar test file" }
     val jar = JarTestFile(to)
     jar.files(*files)
     return jar
@@ -690,10 +648,7 @@ object TestFiles {
     }
   }
 
-  /**
-   * Computes a hash of the source file and the binary contents (SHA256 with source as UTF8 plus
-   * bytecode in order)
-   */
+  /** Computes a hash of the source file and the binary contents (SHA256 with source as UTF8 plus bytecode in order) */
   @Suppress("UnstableApiUsage")
   internal fun computeCheckSum(source: String, binaries: List<ByteArray>): Int {
     val hashFunction = Hashing.sha256()

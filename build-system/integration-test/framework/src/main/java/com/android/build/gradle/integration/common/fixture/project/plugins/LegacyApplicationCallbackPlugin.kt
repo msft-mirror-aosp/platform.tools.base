@@ -24,43 +24,35 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [LegacyApplicationCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [LegacyApplicationCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [LegacyApplicationCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [LegacyApplicationCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class LegacyApplicationCallbackPlugin: Plugin<Project> {
-    override fun apply(target: Project) {
-        target.plugins.withType(AppPlugin::class.java) {
-            val androidExtension = target.extensions.getByType(ApplicationExtension::class.java)
+abstract class LegacyApplicationCallbackPlugin : Plugin<Project> {
+  override fun apply(target: Project) {
+    target.plugins.withType(AppPlugin::class.java) {
+      val androidExtension = target.extensions.getByType(ApplicationExtension::class.java)
 
-            // cast it to the implementation because we can
-            val androidExtensionImpl = androidExtension as BaseAppModuleExtension
-            handleExtension(target, androidExtensionImpl)
-        }
+      // cast it to the implementation because we can
+      val androidExtensionImpl = androidExtension as BaseAppModuleExtension
+      handleExtension(target, androidExtensionImpl)
     }
+  }
 
-    abstract fun handleExtension(
-        project: Project,
-        extension: BaseAppModuleExtension
-    )
+  abstract fun handleExtension(project: Project, extension: BaseAppModuleExtension)
 }
 
 /**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Application.
+ * interface to implement to provide custom plugin logic to a [GradleRule] project of type Android Application.
  *
  * This allows using the legacy DSL using internal types rather than the public extension
  */
-interface LegacyApplicationCallback: PluginCallback {
-    fun handleExtension(
-        project: Project,
-        extension: BaseAppModuleExtension
-    )
+interface LegacyApplicationCallback : PluginCallback {
+  fun handleExtension(project: Project, extension: BaseAppModuleExtension)
 
-    override val requiresOldVariantApi: Boolean
-        get() = true
+  override val requiresOldVariantApi: Boolean
+    get() = true
 }

@@ -27,54 +27,49 @@ import org.junit.Test
 
 class AppWithProvidedAarAsJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    compileOnly project(path: ":library", configuration: "fakeJar")
-                }
-            """.trimIndent())
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          compileOnly project(path: ":library", configuration: "fakeJar")
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                configurations {
-                    create("fakeJar")
-                }
-                task makeFakeJar(type: Jar) {
-                    from "src/main/java"
-                }
-                artifacts {
-                    fakeJar makeFakeJar
-                }
-            """.trimIndent())
-    }
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      configurations {
+          create("fakeJar")
+      }
+      task makeFakeJar(type: Jar) {
+          from "src/main/java"
+      }
+      artifacts {
+          fakeJar makeFakeJar
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun `check provided jar is not packaged`() {
-        project.executor().run("clean", ":app:assembleDebug")
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/library/PersonView;")
-    }
+  @Test
+  fun `check provided jar is not packaged`() {
+    project.executor().run("clean", ":app:assembleDebug")
+    val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
+    TruthHelper.assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/library/PersonView;")
+  }
 }

@@ -19,15 +19,16 @@ package com.android.build.shrinker.usages
 import com.android.build.shrinker.obfuscation.ObfuscatedClasses
 
 internal object AppCompat {
-    // Known AppCompat classes which use Resources.getIdentifier but should not trigger mode that
-    // tries to find used resources based on collected strings.
-    internal val APP_COMPAT_CLASSES_ALLOWED_FOR_GET_IDENTIFIER = setOf(
-        "android.support.v7.widget.SuggestionsAdapter",
-        "android.support.v7.internal.widget.ResourcesWrapper",
-        "android.support.v7.widget.ResourcesWrapper",
-        "android.support.v7.widget.TintContextWrapper\$TintResources"
+  // Known AppCompat classes which use Resources.getIdentifier but should not trigger mode that
+  // tries to find used resources based on collected strings.
+  internal val APP_COMPAT_CLASSES_ALLOWED_FOR_GET_IDENTIFIER =
+    setOf(
+      "android.support.v7.widget.SuggestionsAdapter",
+      "android.support.v7.internal.widget.ResourcesWrapper",
+      "android.support.v7.widget.ResourcesWrapper",
+      "android.support.v7.widget.TintContextWrapper\$TintResources",
     )
 
-    internal fun isAppCompatClass(name: String, obfuscation: ObfuscatedClasses): Boolean =
-        APP_COMPAT_CLASSES_ALLOWED_FOR_GET_IDENTIFIER.contains(obfuscation.resolveOriginalClass(name))
+  internal fun isAppCompatClass(name: String, obfuscation: ObfuscatedClasses): Boolean =
+    APP_COMPAT_CLASSES_ALLOWED_FOR_GET_IDENTIFIER.contains(obfuscation.resolveOriginalClass(name))
 }

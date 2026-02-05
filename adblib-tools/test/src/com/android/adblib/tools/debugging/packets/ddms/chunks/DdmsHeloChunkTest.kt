@@ -16,278 +16,244 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
-import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.EphemeralDdmsChunk
+import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.utils.ResizableBuffer
 import org.junit.Assert
 import org.junit.Test
 
 class DdmsHeloChunkTest {
 
-    @Test
-    fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-                abi = "x86",
-                jvmFlags = "flags",
-                isNativeDebuggable = false,
-                packageName = "bar"
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
-
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
-
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals("x86", heloChunk.abi)
-        Assert.assertEquals("flags", heloChunk.jvmFlags)
-        Assert.assertEquals(false, heloChunk.isNativeDebuggable)
-        Assert.assertEquals("bar", heloChunk.packageName)
+  @Test
+  fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(
+        buffer,
+        protocolVersion = 1,
+        pid = 101,
+        vmIdentifier = "myVm",
+        processName = "foo",
+        userId = 10,
+        abi = "x86",
+        jvmFlags = "flags",
+        isNativeDebuggable = false,
+        packageName = "bar",
+      )
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingWithMissingUserIdWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals("x86", heloChunk.abi)
+    Assert.assertEquals("flags", heloChunk.jvmFlags)
+    Assert.assertEquals(false, heloChunk.isNativeDebuggable)
+    Assert.assertEquals("bar", heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(null, heloChunk.userId)
-        Assert.assertEquals(null, heloChunk.abi)
-        Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
-        Assert.assertEquals(null, heloChunk.packageName)
+  @Test
+  fun testParsingWithMissingUserIdWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(buffer, protocolVersion = 1, pid = 101, vmIdentifier = "myVm", processName = "foo")
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingWithMissingAbiWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(null, heloChunk.userId)
+    Assert.assertEquals(null, heloChunk.abi)
+    Assert.assertEquals(null, heloChunk.jvmFlags)
+    Assert.assertEquals(null, heloChunk.isNativeDebuggable)
+    Assert.assertEquals(null, heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals(null, heloChunk.abi)
-        Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
-        Assert.assertEquals(null, heloChunk.packageName)
+  @Test
+  fun testParsingWithMissingAbiWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(buffer, protocolVersion = 1, pid = 101, vmIdentifier = "myVm", processName = "foo", userId = 10)
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingWithMissingJvmFlagsWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-                abi = "x64",
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals(null, heloChunk.abi)
+    Assert.assertEquals(null, heloChunk.jvmFlags)
+    Assert.assertEquals(null, heloChunk.isNativeDebuggable)
+    Assert.assertEquals(null, heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals("x64", heloChunk.abi)
-        Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
-        Assert.assertEquals(null, heloChunk.packageName)
+  @Test
+  fun testParsingWithMissingJvmFlagsWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(
+        buffer,
+        protocolVersion = 1,
+        pid = 101,
+        vmIdentifier = "myVm",
+        processName = "foo",
+        userId = 10,
+        abi = "x64",
+      )
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingWithMissingNativeDebuggableWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-                abi = "x64",
-                jvmFlags = "blah"
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals("x64", heloChunk.abi)
+    Assert.assertEquals(null, heloChunk.jvmFlags)
+    Assert.assertEquals(null, heloChunk.isNativeDebuggable)
+    Assert.assertEquals(null, heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals("x64", heloChunk.abi)
-        Assert.assertEquals("blah", heloChunk.jvmFlags)
-        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
-        Assert.assertEquals(null, heloChunk.packageName)
+  @Test
+  fun testParsingWithMissingNativeDebuggableWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(
+        buffer,
+        protocolVersion = 1,
+        pid = 101,
+        vmIdentifier = "myVm",
+        processName = "foo",
+        userId = 10,
+        abi = "x64",
+        jvmFlags = "blah",
+      )
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingWithMissingPackageNameWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-                abi = "x64",
-                jvmFlags = "blah",
-                isNativeDebuggable = true
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals("x64", heloChunk.abi)
+    Assert.assertEquals("blah", heloChunk.jvmFlags)
+    Assert.assertEquals(null, heloChunk.isNativeDebuggable)
+    Assert.assertEquals(null, heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals("x64", heloChunk.abi)
-        Assert.assertEquals("blah", heloChunk.jvmFlags)
-        Assert.assertEquals(true, heloChunk.isNativeDebuggable)
-        Assert.assertEquals(null, heloChunk.packageName)
+  @Test
+  fun testParsingWithMissingPackageNameWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(
+        buffer,
+        protocolVersion = 1,
+        pid = 101,
+        vmIdentifier = "myVm",
+        processName = "foo",
+        userId = 10,
+        abi = "x64",
+        jvmFlags = "blah",
+        isNativeDebuggable = true,
+      )
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-    @Test
-    fun testParsingIgnoresDeprecatedStage() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsHeloChunk.writePayload(
-                buffer,
-                protocolVersion = 1,
-                pid = 101,
-                vmIdentifier = "myVm",
-                processName = "foo",
-                userId = 10,
-                abi = "x64",
-                jvmFlags = "blah",
-                isNativeDebuggable = true,
-                packageName = "bar",
-                deprecatedStage = 732
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
 
-        // Act
-        val heloChunk = DdmsHeloChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals("x64", heloChunk.abi)
+    Assert.assertEquals("blah", heloChunk.jvmFlags)
+    Assert.assertEquals(true, heloChunk.isNativeDebuggable)
+    Assert.assertEquals(null, heloChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals(1, heloChunk.protocolVersion)
-        Assert.assertEquals(101, heloChunk.pid)
-        Assert.assertEquals("myVm", heloChunk.vmIdentifier)
-        Assert.assertEquals("foo", heloChunk.processName)
-        Assert.assertEquals(10, heloChunk.userId)
-        Assert.assertEquals("x64", heloChunk.abi)
-        Assert.assertEquals("blah", heloChunk.jvmFlags)
-        Assert.assertEquals(true, heloChunk.isNativeDebuggable)
-        Assert.assertEquals("bar", heloChunk.packageName)
+  @Test
+  fun testParsingIgnoresDeprecatedStage() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsHeloChunk.writePayload(
+        buffer,
+        protocolVersion = 1,
+        pid = 101,
+        vmIdentifier = "myVm",
+        processName = "foo",
+        userId = 10,
+        abi = "x64",
+        jvmFlags = "blah",
+        isNativeDebuggable = true,
+        packageName = "bar",
+        deprecatedStage = 732,
+      )
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
+
+    // Act
+    val heloChunk = DdmsHeloChunk.parse(chunk)
+
+    // Assert
+    Assert.assertEquals(1, heloChunk.protocolVersion)
+    Assert.assertEquals(101, heloChunk.pid)
+    Assert.assertEquals("myVm", heloChunk.vmIdentifier)
+    Assert.assertEquals("foo", heloChunk.processName)
+    Assert.assertEquals(10, heloChunk.userId)
+    Assert.assertEquals("x64", heloChunk.abi)
+    Assert.assertEquals("blah", heloChunk.jvmFlags)
+    Assert.assertEquals(true, heloChunk.isNativeDebuggable)
+    Assert.assertEquals("bar", heloChunk.packageName)
+  }
 }

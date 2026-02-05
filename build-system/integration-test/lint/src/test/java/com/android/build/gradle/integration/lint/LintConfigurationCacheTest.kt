@@ -24,51 +24,52 @@ import org.junit.Test
 
 class LintConfigurationCacheTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.lib("com.example.lib")
-                    .appendToBuild(
-                        """
-                            android {
-                                libraryVariants.all { variant ->
-                                    if (variant.name == "debug") {
-                                        FileTree cTree =
-                                            project.fileTree(
-                                                new File(
-                                                    project.buildDir,
-                                                    "generated/source/kapt/debug"
-                                                )
-                                            )
-                                        cTree.builtBy(tasks.findByName("generateSrcs"))
-                                        cTree.include("**/*.java")
-                                        registerExternalAptJavaOutput(cTree)
-                                    }
-                                }
-                            }
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.lib("com.example.lib")
+          .appendToBuild(
+            """
+            android {
+                libraryVariants.all { variant ->
+                    if (variant.name == "debug") {
+                        FileTree cTree =
+                            project.fileTree(
+                                new File(
+                                    project.buildDir,
+                                    "generated/source/kapt/debug"
+                                )
+                            )
+                        cTree.builtBy(tasks.findByName("generateSrcs"))
+                        cTree.include("**/*.java")
+                        registerExternalAptJavaOutput(cTree)
+                    }
+                }
+            }
 
-                            tasks.register("generateSrcs") {
-                                File myOutputDir =
-                                    new File(project.buildDir, "generated/source/kapt/debug")
-                                doFirst {
-                                    myOutputDir.deleteDir()
-                                    myOutputDir.mkdirs()
-                                    new File(myOutputDir, "Foo.java").text = "public class Foo {}"
-                                }
-                            }
+            tasks.register("generateSrcs") {
+                File myOutputDir =
+                    new File(project.buildDir, "generated/source/kapt/debug")
+                doFirst {
+                    myOutputDir.deleteDir()
+                    myOutputDir.mkdirs()
+                    new File(myOutputDir, "Foo.java").text = "public class Foo {}"
+                }
+            }
 
-                        """.trimIndent()
-                    )
-            )
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-            .create()
+            """
+              .trimIndent()
+          )
+      )
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
 
-    /** Regression test for b/285320724. */
-    @Test
-    fun testLintConfigurationCache() {
-        project.executor().run("generateDebugLintModel")
-        project.executor().run("generateDebugLintModel")
-        project.buildResult.assertConfigurationCacheHit()
-    }
+  /** Regression test for b/285320724. */
+  @Test
+  fun testLintConfigurationCache() {
+    project.executor().run("generateDebugLintModel")
+    project.executor().run("generateDebugLintModel")
+    project.buildResult.assertConfigurationCacheHit()
+  }
 }

@@ -570,15 +570,7 @@ class MissingClassDetectorTest : AbstractCheckTest() {
     // Checks resolving with source code
     lint()
       .issues(MISSING, INSTANTIATABLE, INNERCLASS)
-      .files(
-        androidManifestRegs,
-        classpath(),
-        onClickActivity,
-        testService,
-        testProvider,
-        testProvider2,
-        testReceiver,
-      )
+      .files(androidManifestRegs, classpath(), onClickActivity, testService, testProvider, testProvider2, testReceiver)
       .run()
       .expectClean()
   }

@@ -28,12 +28,7 @@ data class Location(val typeTag: Byte, val classID: Long, val methodID: Long, va
 
     @JvmStatic
     fun parse(reader: MessageReader): Location {
-      return Location(
-        reader.getTypeTag(),
-        reader.getClassID(),
-        reader.getMethodID(),
-        reader.getLong(),
-      )
+      return Location(reader.getTypeTag(), reader.getClassID(), reader.getMethodID(), reader.getLong())
     }
   }
 }

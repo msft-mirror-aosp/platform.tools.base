@@ -28,6 +28,10 @@ import com.google.testing.platform.api.device.CommandHandle
 import com.google.testing.platform.core.error.UtpException
 import com.google.testing.platform.proto.api.core.PathProto
 import com.google.testing.platform.proto.api.core.TestArtifactProto
+import java.io.File
+import java.time.Duration
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -49,468 +53,381 @@ import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
-import java.io.File
-import java.time.Duration
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
-/**
- * Unit tests for [DdmlibAndroidDeviceController].
- */
+/** Unit tests for [DdmlibAndroidDeviceController]. */
 class DdmlibAndroidDeviceControllerTest {
 
-    companion object {
-        private const val EXPECTED_DESTINATION_PATH = "expected/destination"
-        private const val EXPECTED_SOURCE_PATH = "expected/source"
-        private const val EXIT_CODE_REPORT_TAG = "utp_shell_exit_code"
-        private const val EXIT_CODE_REPORT = "; echo ${EXIT_CODE_REPORT_TAG}=$?"
+  companion object {
+    private const val EXPECTED_DESTINATION_PATH = "expected/destination"
+    private const val EXPECTED_SOURCE_PATH = "expected/source"
+    private const val EXIT_CODE_REPORT_TAG = "utp_shell_exit_code"
+    private const val EXIT_CODE_REPORT = "; echo ${EXIT_CODE_REPORT_TAG}=$?"
+  }
+
+  @get:Rule val mockitoJUnitRule = MockitoJUnit.rule()
+
+  @Mock private lateinit var mockDevice: IDevice
+  @Mock private lateinit var mockAvdData: AvdData
+  @Mock private lateinit var mockApkPackageNameResolver: ApkPackageNameResolver
+
+  private lateinit var artifactNonAndroidApk: TestArtifactProto.Artifact
+  private lateinit var artifactNoSourcePath: TestArtifactProto.Artifact
+  private lateinit var artifactNoDestinationPath: TestArtifactProto.Artifact
+  private lateinit var properArtifact: TestArtifactProto.Artifact
+
+  private var uninstallIncompatibleApks: Boolean = false
+  private val SPLIT_APK_INSTALL_ARG = listOf("install-multiple", "-r", "-t", "base.apk", "feature1.apk")
+
+  private val testDispatcher = newSingleThreadContext("MyTestThread")
+  private val testScope = CoroutineScope(testDispatcher)
+
+  private val controller: DdmlibAndroidDeviceController by lazy {
+    DdmlibAndroidDeviceController(mockApkPackageNameResolver, uninstallIncompatibleApks, testScope).apply {
+      setDevice(DdmlibAndroidDevice(mockDevice))
     }
+  }
 
-    @get:Rule val mockitoJUnitRule = MockitoJUnit.rule()
+  @Before
+  fun setUp() {
+    `when`(mockDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
+    `when`(mockAvdData.name).thenReturn("mockAvdName")
+    `when`(mockDevice.serialNumber).thenReturn("serial-1234")
+    `when`(mockDevice.version).thenReturn(AndroidVersion(22))
+    `when`(mockApkPackageNameResolver.getPackageNameFromApk(anyString())).thenReturn("packageName")
+  }
 
-    @Mock
-    private lateinit var mockDevice: IDevice
-    @Mock
-    private lateinit var mockAvdData: AvdData
-    @Mock
-    private lateinit var mockApkPackageNameResolver: ApkPackageNameResolver
+  @Before
+  fun initializeArtifacts() {
+    val destinationPathProto = PathProto.Path.newBuilder().apply { path = EXPECTED_DESTINATION_PATH }.build()
 
-    private lateinit var artifactNonAndroidApk: TestArtifactProto.Artifact
-    private lateinit var artifactNoSourcePath: TestArtifactProto.Artifact
-    private lateinit var artifactNoDestinationPath: TestArtifactProto.Artifact
-    private lateinit var properArtifact: TestArtifactProto.Artifact
+    val sourcePathProto = PathProto.Path.newBuilder().apply { path = EXPECTED_SOURCE_PATH }.build()
 
-    private var uninstallIncompatibleApks: Boolean = false
-    private val SPLIT_APK_INSTALL_ARG =
-            listOf("install-multiple", "-r", "-t", "base.apk", "feature1.apk")
-
-    private val testDispatcher = newSingleThreadContext("MyTestThread")
-    private val testScope = CoroutineScope(testDispatcher)
-
-    private val controller: DdmlibAndroidDeviceController by lazy {
-        DdmlibAndroidDeviceController(
-            mockApkPackageNameResolver,
-            uninstallIncompatibleApks,
-            testScope,
-        ).apply {
-            setDevice(DdmlibAndroidDevice(mockDevice))
+    artifactNonAndroidApk =
+      TestArtifactProto.Artifact.newBuilder()
+        .apply {
+          sourcePath = sourcePathProto
+          destinationPath = destinationPathProto
+          type = TestArtifactProto.ArtifactType.ARTIFACT_TYPE_UNSPECIFIED
         }
-    }
+        .build()
 
-    @Before
-    fun setUp() {
-        `when`(mockDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
-        `when`(mockAvdData.name).thenReturn("mockAvdName")
-        `when`(mockDevice.serialNumber).thenReturn("serial-1234")
-        `when`(mockDevice.version).thenReturn(AndroidVersion(22))
-        `when`(mockApkPackageNameResolver.getPackageNameFromApk(anyString()))
-            .thenReturn("packageName")
-    }
-
-    @Before
-    fun initializeArtifacts() {
-        val destinationPathProto = PathProto.Path.newBuilder().apply {
-            path = EXPECTED_DESTINATION_PATH
-        }.build()
-
-        val sourcePathProto = PathProto.Path.newBuilder().apply {
-            path = EXPECTED_SOURCE_PATH
-        }.build()
-
-        artifactNonAndroidApk = TestArtifactProto.Artifact.newBuilder().apply {
-            sourcePath = sourcePathProto
-            destinationPath = destinationPathProto
-            type = TestArtifactProto.ArtifactType.ARTIFACT_TYPE_UNSPECIFIED
-        }.build()
-
-        artifactNoSourcePath = TestArtifactProto.Artifact.newBuilder().apply {
-            destinationPath = destinationPathProto
-            type = TestArtifactProto.ArtifactType.ANDROID_APK
-        }.build()
-
-        artifactNoDestinationPath = TestArtifactProto.Artifact.newBuilder().apply {
-            sourcePath = sourcePathProto
-            type = TestArtifactProto.ArtifactType.ANDROID_APK
-        }.build()
-
-        properArtifact = TestArtifactProto.Artifact.newBuilder().apply {
-            sourcePath = sourcePathProto
-            destinationPath = destinationPathProto
-            type = TestArtifactProto.ArtifactType.ANDROID_APK
-        }.build()
-    }
-
-    @After
-    fun tearDown() {
-        testScope.cancel()
-        testDispatcher.close()
-    }
-
-    @Test
-    fun installRequiresAndroidApk() {
-        assertThrows(
-                "#install should not allow artifacts that are not Android APKs.",
-                IllegalArgumentException::class.java
-        ) {
-            controller.install(artifactNonAndroidApk)
+    artifactNoSourcePath =
+      TestArtifactProto.Artifact.newBuilder()
+        .apply {
+          destinationPath = destinationPathProto
+          type = TestArtifactProto.ArtifactType.ANDROID_APK
         }
-    }
+        .build()
 
-    @Test
-    fun installRequiresArtifactWithSourcePath() {
-        assertThrows(
-                "#install artifacts should be required to have a source path.",
-                IllegalArgumentException::class.java
-        ) {
-            controller.install(artifactNoSourcePath)
+    artifactNoDestinationPath =
+      TestArtifactProto.Artifact.newBuilder()
+        .apply {
+          sourcePath = sourcePathProto
+          type = TestArtifactProto.ArtifactType.ANDROID_APK
         }
-    }
+        .build()
 
-    @Test
-    fun installPassesCorrectArgsToCommand() {
-        controller.install(properArtifact)
-        verify(mockDevice).installPackage(EXPECTED_SOURCE_PATH, true, "-t")
-    }
-
-    @Test
-    fun installGrantsPermissionOnApiGreater23() {
-        `when`(mockDevice.version).thenReturn(AndroidVersion(23))
-
-        controller.install(properArtifact)
-        verify(mockDevice).installPackage(EXPECTED_SOURCE_PATH, true, "-t", "-g")
-    }
-
-    @Test
-    fun executeShellCommand() {
-        val ret = controller.execute(listOf("shell", "am", "instrument"))
-        assertThat(ret.statusCode).isEqualTo(0)
-        verify(mockDevice).executeShellCommand(
-            eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
-    }
-
-    @Test
-    fun executeShellCommandAndCommandFailedRemotely() {
-        `when`(mockDevice.executeShellCommand(
-            eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
-        ).then {
-            val outputMessage = "${EXIT_CODE_REPORT_TAG}=-2\n".toByteArray()
-            it.getArgument<MultiLineReceiver>(1).addOutput(outputMessage, 0, outputMessage.size)
+    properArtifact =
+      TestArtifactProto.Artifact.newBuilder()
+        .apply {
+          sourcePath = sourcePathProto
+          destinationPath = destinationPathProto
+          type = TestArtifactProto.ArtifactType.ANDROID_APK
         }
+        .build()
+  }
 
-        val ret = controller.execute(listOf("shell", "am", "instrument"))
+  @After
+  fun tearDown() {
+    testScope.cancel()
+    testDispatcher.close()
+  }
 
-        assertThat(ret.statusCode).isEqualTo(-2)
-        verify(mockDevice).executeShellCommand(
-            eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
+  @Test
+  fun installRequiresAndroidApk() {
+    assertThrows("#install should not allow artifacts that are not Android APKs.", IllegalArgumentException::class.java) {
+      controller.install(artifactNonAndroidApk)
+    }
+  }
+
+  @Test
+  fun installRequiresArtifactWithSourcePath() {
+    assertThrows("#install artifacts should be required to have a source path.", IllegalArgumentException::class.java) {
+      controller.install(artifactNoSourcePath)
+    }
+  }
+
+  @Test
+  fun installPassesCorrectArgsToCommand() {
+    controller.install(properArtifact)
+    verify(mockDevice).installPackage(EXPECTED_SOURCE_PATH, true, "-t")
+  }
+
+  @Test
+  fun installGrantsPermissionOnApiGreater23() {
+    `when`(mockDevice.version).thenReturn(AndroidVersion(23))
+
+    controller.install(properArtifact)
+    verify(mockDevice).installPackage(EXPECTED_SOURCE_PATH, true, "-t", "-g")
+  }
+
+  @Test
+  fun executeShellCommand() {
+    val ret = controller.execute(listOf("shell", "am", "instrument"))
+    assertThat(ret.statusCode).isEqualTo(0)
+    verify(mockDevice).executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
+  }
+
+  @Test
+  fun executeShellCommandAndCommandFailedRemotely() {
+    `when`(mockDevice.executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())).then {
+      val outputMessage = "${EXIT_CODE_REPORT_TAG}=-2\n".toByteArray()
+      it.getArgument<MultiLineReceiver>(1).addOutput(outputMessage, 0, outputMessage.size)
     }
 
-    @Test
-    fun executeShellCommandFailedByTimeout() {
-        val ret =
-                controller.execute(listOf("shell", "am", "instrument"),
-                        timeout = Duration.ofSeconds(0))
-        assertThat(ret.statusCode).isEqualTo(-1)
+    val ret = controller.execute(listOf("shell", "am", "instrument"))
+
+    assertThat(ret.statusCode).isEqualTo(-2)
+    verify(mockDevice).executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
+  }
+
+  @Test
+  fun executeShellCommandFailedByTimeout() {
+    val ret = controller.execute(listOf("shell", "am", "instrument"), timeout = Duration.ofSeconds(0))
+    assertThat(ret.statusCode).isEqualTo(-1)
+  }
+
+  @Test
+  fun executeInstallCommand() {
+    val ret = controller.execute(listOf("install", "apk.apk"))
+    assertThat(ret.statusCode).isEqualTo(0)
+    verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+  }
+
+  @Test
+  fun executeInstallCommandFailed() {
+    `when`(mockDevice.installPackage(anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
+      throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
     }
 
-    @Test
-    fun executeInstallCommand() {
-        val ret = controller.execute(listOf("install", "apk.apk"))
-        assertThat(ret.statusCode).isEqualTo(0)
-        verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+    val exception = assertThrows(UtpException::class.java) { controller.execute(listOf("install", "apk.apk")) }
+
+    assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
+    assertThat(exception.errorSummary.errorName).isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  }
+
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleApks() {
+    uninstallIncompatibleApks = true
+
+    var installAttempt = 0
+    `when`(mockDevice.installPackage(anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
+      installAttempt++
+      if (installAttempt == 1) {
+        throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+      }
     }
 
-    @Test
-    fun executeInstallCommandFailed() {
-        `when`(mockDevice.installPackage(
-            anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
-            throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        }
+    val ret = controller.execute(listOf("install", "apk.apk"))
 
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(listOf("install", "apk.apk"))
-        }
+    assertThat(ret.statusCode).isEqualTo(0)
+    inOrder(mockDevice).apply {
+      verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+      verify(mockDevice).uninstallPackage(eq("packageName"))
+      verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+    }
+  }
 
-        assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleApks_retryFailedAfterUninstall() {
+    uninstallIncompatibleApks = true
+
+    `when`(mockDevice.installPackage(anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
+      throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
     }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleApks() {
-        uninstallIncompatibleApks = true
+    val exception = assertThrows(UtpException::class.java) { controller.execute(listOf("install", "apk.apk")) }
 
-        var installAttempt = 0
-        `when`(mockDevice.installPackage(
-            anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
-            installAttempt++
-            if (installAttempt == 1) {
-                throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-            }
-        }
+    assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
+    assertThat(exception.errorSummary.errorName).isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
 
-        val ret = controller.execute(listOf("install", "apk.apk"))
+    inOrder(mockDevice).apply {
+      verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+      verify(mockDevice).uninstallPackage(eq("packageName"))
+      verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
+    }
+  }
 
-        assertThat(ret.statusCode).isEqualTo(0)
-        inOrder(mockDevice).apply {
-            verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
-            verify(mockDevice).uninstallPackage(eq("packageName"))
-            verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
-        }
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleApksFailedByUnsupportedErrorName() {
+    uninstallIncompatibleApks = true
+
+    var installAttempt = 0
+    `when`(mockDevice.installPackage(anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
+      installAttempt++
+      if (installAttempt == 1) {
+        throw InstallException("error", "UNKNOWN")
+      }
     }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleApks_retryFailedAfterUninstall() {
-        uninstallIncompatibleApks = true
+    val exception = assertThrows(UtpException::class.java) { controller.execute(listOf("install", "apk.apk")) }
 
-        `when`(mockDevice.installPackage(
-            anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
-            throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        }
+    assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
+    assertThat(exception.errorSummary.errorName).isEqualTo("UNKNOWN")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  }
 
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(listOf("install", "apk.apk"))
-        }
+  @Test
+  fun executeInstallSplitCommandSuccess() {
+    doNothing().`when`(mockDevice).installPackages(anyList(), anyBoolean(), anyList())
+    val ret = controller.execute(SPLIT_APK_INSTALL_ARG)
+    assertThat(ret.statusCode).isEqualTo(0)
 
-        assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+    verify(mockDevice).installPackages(eq(listOf("base.apk", "feature1.apk").map { File(it) }), eq(true), eq(listOf("-r", "-t")))
+  }
 
-        inOrder(mockDevice).apply {
-            verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
-            verify(mockDevice).uninstallPackage(eq("packageName"))
-            verify(mockDevice).installPackage(eq("apk.apk"), eq(true), any(), eq(0L), eq(0L), any())
-        }
+  @Test
+  fun executeInstallSplitCommandFailed() {
+    `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList()))
+      .thenThrow(InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE"))
+    val exception = assertThrows(UtpException::class.java) { controller.execute(SPLIT_APK_INSTALL_ARG) }
+    assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
+    assertThat(exception.errorSummary.errorName).isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  }
+
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleSplitApks() {
+    uninstallIncompatibleApks = true
+    var installAttempt = 0
+    `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList())).then {
+      installAttempt++
+      if (installAttempt == 1) {
+        throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+      }
     }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleApksFailedByUnsupportedErrorName() {
-        uninstallIncompatibleApks = true
+    val ret = controller.execute(SPLIT_APK_INSTALL_ARG)
+    assertThat(ret.statusCode).isEqualTo(0)
+    inOrder(mockDevice).apply {
+      verify(mockDevice).installPackages(eq(listOf("base.apk", "feature1.apk").map { File(it) }), eq(true), eq(listOf("-r", "-t")))
+      verify(mockDevice).uninstallPackage(eq("packageName"))
+      verify(mockDevice).installPackages(eq(listOf("base.apk", "feature1.apk").map { File(it) }), eq(true), eq(listOf("-r", "-t")))
+    }
+  }
 
-        var installAttempt = 0
-        `when`(mockDevice.installPackage(
-            anyString(), anyBoolean(), any(), anyLong(), anyLong(), any())).then {
-            installAttempt++
-            if (installAttempt == 1) {
-                throw InstallException("error", "UNKNOWN")
-            }
-        }
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleSplitApks_retryFailedAfterUninstall() {
+    uninstallIncompatibleApks = true
 
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(listOf("install", "apk.apk"))
-        }
+    `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList()))
+      .thenThrow(InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE"))
 
-        assertThat(exception.message).contains("Failed to install APK(s): apk.apk")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("UNKNOWN")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+    val exception = assertThrows(UtpException::class.java) { controller.execute(SPLIT_APK_INSTALL_ARG) }
+    assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
+    assertThat(exception.errorSummary.errorName).isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+
+    inOrder(mockDevice).apply {
+      verify(mockDevice).installPackages(eq(listOf("base.apk", "feature1.apk").map { File(it) }), eq(true), eq(listOf("-r", "-t")))
+      verify(mockDevice).uninstallPackage(eq("packageName"))
+      verify(mockDevice).installPackages(eq(listOf("base.apk", "feature1.apk").map { File(it) }), eq(true), eq(listOf("-r", "-t")))
+    }
+  }
+
+  @Test
+  fun executeInstallCommandWithUninstallIncompatibleSplitApksFailedByUnsupportedErrorName() {
+    uninstallIncompatibleApks = true
+
+    var installAttempt = 0
+    `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList())).then {
+      installAttempt++
+      if (installAttempt == 1) {
+        throw InstallException("error", "UNKNOWN")
+      }
     }
 
-    @Test
-    fun executeInstallSplitCommandSuccess() {
-        doNothing().`when`(mockDevice).installPackages(anyList(), anyBoolean(), anyList())
-        val ret = controller.execute(SPLIT_APK_INSTALL_ARG)
-        assertThat(ret.statusCode).isEqualTo(0)
+    val exception = assertThrows(UtpException::class.java) { controller.execute(SPLIT_APK_INSTALL_ARG) }
+    assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
+    assertThat(exception.errorSummary.errorName).isEqualTo("UNKNOWN")
+    assertThat(exception.errorSummary.errorCode).isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  }
 
-        verify(mockDevice).installPackages(
-            eq(listOf("base.apk", "feature1.apk").map { File(it) }),
-            eq(true),
-            eq(listOf("-r", "-t")))
+  @Test(expected = UnsupportedOperationException::class)
+  fun executeUnsupportedCommand() {
+    controller.execute(listOf("unknownCommand"))
+  }
+
+  @Test
+  fun executeAsyncCancelled() {
+    val handlerInitialized = CountDownLatch(1)
+    lateinit var handler: CommandHandle
+    `when`(mockDevice.executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())).then {
+      handlerInitialized.await(1, TimeUnit.MINUTES)
+      handler.stop()
     }
+    handler = controller.executeAsync(listOf("shell", "am", "instrument")) {}
+    try {
+      handlerInitialized.countDown()
+      handler.waitFor()
+    } catch (_: CancellationException) {}
+    assertThat(handler.exitCode()).isEqualTo(-1)
+    verify(mockDevice).executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
+  }
 
-    @Test
-    fun executeInstallSplitCommandFailed() {
-        `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList()))
-            .thenThrow(InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE"))
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(SPLIT_APK_INSTALL_ARG)
-        }
-        assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  @Test
+  fun executeAsyncOutputShouldBeProcessed() {
+    `when`(mockDevice.executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())).then {
+      val outputMessage = "This is test output message.\n".toByteArray()
+      it.getArgument<MultiLineReceiver>(1).addOutput(outputMessage, 0, outputMessage.size)
     }
+    lateinit var processedOutputMessage: String
+    val handler = controller.executeAsync(listOf("shell", "am", "instrument")) { processedOutputMessage = it }
+    handler.waitFor()
+    assertThat(handler.exitCode()).isEqualTo(0)
+    assertThat(processedOutputMessage).isEqualTo("This is test output message.")
+    verify(mockDevice).executeShellCommand(eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
+  }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleSplitApks() {
-        uninstallIncompatibleApks = true
-        var installAttempt = 0
-        `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList())).then {
-            installAttempt++
-            if (installAttempt == 1) {
-                throw InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-            }
-        }
-
-        val ret = controller.execute(SPLIT_APK_INSTALL_ARG)
-        assertThat(ret.statusCode).isEqualTo(0)
-        inOrder(mockDevice).apply {
-            verify(mockDevice).installPackages(
-                eq(listOf("base.apk", "feature1.apk").map { File(it) }),
-                eq(true),
-                eq(listOf("-r", "-t")))
-            verify(mockDevice).uninstallPackage(eq("packageName"))
-            verify(mockDevice).installPackages(
-                eq(listOf("base.apk", "feature1.apk").map { File(it) }),
-                eq(true),
-                eq(listOf("-r", "-t")))
-        }
+  @Test
+  fun pushRequiresSourcePath() {
+    assertThrows("#push should require artifacts to have source paths.", IllegalArgumentException::class.java) {
+      controller.push(artifactNoSourcePath)
     }
+  }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleSplitApks_retryFailedAfterUninstall() {
-        uninstallIncompatibleApks = true
-
-        `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList()))
-            .thenThrow(InstallException("error", "INSTALL_FAILED_UPDATE_INCOMPATIBLE"))
-
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(SPLIT_APK_INSTALL_ARG)
-        }
-        assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
-
-        inOrder(mockDevice).apply {
-            verify(mockDevice).installPackages(
-                eq(listOf("base.apk", "feature1.apk").map { File(it) }),
-                eq(true),
-                eq(listOf("-r", "-t")))
-            verify(mockDevice).uninstallPackage(eq("packageName"))
-            verify(mockDevice).installPackages(
-                eq(listOf("base.apk", "feature1.apk").map { File(it) }),
-                eq(true),
-                eq(listOf("-r", "-t")))
-        }
+  @Test
+  fun pushRequiresDestinationPath() {
+    assertThrows("#push should require artifacts to have destination paths", IllegalArgumentException::class.java) {
+      controller.push(artifactNoDestinationPath)
     }
+  }
 
-    @Test
-    fun executeInstallCommandWithUninstallIncompatibleSplitApksFailedByUnsupportedErrorName() {
-        uninstallIncompatibleApks = true
+  @Test
+  fun pushPassesCorrectArgsToCommand() {
+    controller.push(properArtifact)
+    verify(mockDevice).pushFile(EXPECTED_SOURCE_PATH, EXPECTED_DESTINATION_PATH)
+  }
 
-        var installAttempt = 0
-        `when`(mockDevice.installPackages(anyList(), anyBoolean(), anyList())).then {
-            installAttempt++
-            if (installAttempt == 1) {
-                throw InstallException("error", "UNKNOWN")
-            }
-        }
-
-        val exception = assertThrows(UtpException::class.java) {
-            controller.execute(SPLIT_APK_INSTALL_ARG)
-        }
-        assertThat(exception.message).contains("Failed to install split APK(s): [base.apk, feature1.apk]")
-        assertThat(exception.errorSummary.errorName)
-            .isEqualTo("UNKNOWN")
-        assertThat(exception.errorSummary.errorCode)
-            .isEqualTo(DdmlibAndroidDeviceControllerErrorCode.ERROR_APK_INSTALL.errorCode)
+  @Test
+  fun pullRequiresSourcePath() {
+    assertThrows("#pull should require artifacts to have source paths.", IllegalArgumentException::class.java) {
+      controller.pull(artifactNoSourcePath)
     }
+  }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun executeUnsupportedCommand() {
-        controller.execute(listOf("unknownCommand"))
+  @Test
+  fun pullRequiresDestinationPath() {
+    assertThrows("#pull should require artifacts to have destination paths", IllegalArgumentException::class.java) {
+      controller.pull(artifactNoDestinationPath)
     }
+  }
 
-    @Test
-    fun executeAsyncCancelled() {
-        val handlerInitialized = CountDownLatch(1)
-        lateinit var handler: CommandHandle
-        `when`(mockDevice.executeShellCommand(
-                eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
-        ).then {
-            handlerInitialized.await(1, TimeUnit.MINUTES)
-            handler.stop()
-        }
-        handler = controller.executeAsync(listOf("shell", "am", "instrument")) {}
-        try {
-            handlerInitialized.countDown()
-            handler.waitFor()
-        } catch (_: CancellationException) {}
-        assertThat(handler.exitCode()).isEqualTo(-1)
-        verify(mockDevice).executeShellCommand(
-                eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
-    }
-
-    @Test
-    fun executeAsyncOutputShouldBeProcessed() {
-        `when`(mockDevice.executeShellCommand(
-                eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())).then {
-            val outputMessage = "This is test output message.\n".toByteArray()
-            it.getArgument<MultiLineReceiver>(1).addOutput(outputMessage, 0, outputMessage.size)
-        }
-        lateinit var processedOutputMessage: String
-        val handler = controller.executeAsync(listOf("shell", "am", "instrument")) {
-            processedOutputMessage = it
-        }
-        handler.waitFor()
-        assertThat(handler.exitCode()).isEqualTo(0)
-        assertThat(processedOutputMessage).isEqualTo("This is test output message.")
-        verify(mockDevice).executeShellCommand(
-                eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())
-    }
-
-    @Test
-    fun pushRequiresSourcePath() {
-        assertThrows(
-                "#push should require artifacts to have source paths.",
-                IllegalArgumentException::class.java
-        ) {
-            controller.push(artifactNoSourcePath)
-        }
-    }
-
-    @Test
-    fun pushRequiresDestinationPath() {
-        assertThrows(
-                "#push should require artifacts to have destination paths",
-                IllegalArgumentException::class.java
-        ) {
-            controller.push(artifactNoDestinationPath)
-        }
-    }
-
-    @Test
-    fun pushPassesCorrectArgsToCommand() {
-        controller.push(properArtifact)
-        verify(mockDevice).pushFile(
-                EXPECTED_SOURCE_PATH,
-                EXPECTED_DESTINATION_PATH
-        )
-    }
-
-    @Test
-    fun pullRequiresSourcePath() {
-        assertThrows(
-                "#pull should require artifacts to have source paths.",
-                IllegalArgumentException::class.java
-        ) {
-            controller.pull(artifactNoSourcePath)
-        }
-    }
-
-    @Test
-    fun pullRequiresDestinationPath() {
-        assertThrows(
-                "#pull should require artifacts to have destination paths",
-                IllegalArgumentException::class.java
-        ) {
-            controller.pull(artifactNoDestinationPath)
-        }
-    }
-
-    @Test
-    fun pullPassesCorrectArgsToCommand() {
-        controller.pull(properArtifact)
-        verify(mockDevice).pullFile(
-                EXPECTED_DESTINATION_PATH,
-                EXPECTED_SOURCE_PATH
-        )
-    }
+  @Test
+  fun pullPassesCorrectArgsToCommand() {
+    controller.pull(properArtifact)
+    verify(mockDevice).pullFile(EXPECTED_DESTINATION_PATH, EXPECTED_SOURCE_PATH)
+  }
 }

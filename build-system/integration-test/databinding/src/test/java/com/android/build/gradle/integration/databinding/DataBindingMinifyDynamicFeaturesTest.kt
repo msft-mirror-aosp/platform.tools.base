@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.databinding
 
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.options.BooleanOption
@@ -47,194 +46,192 @@ import org.junit.Test
  * </pre>
  * This test is based on [DataBindingWithDynamicFeaturesTest] and modified for code shrinking.
  */
-
 class DataBindingMinifyDynamicFeaturesTest {
 
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("databindingWithDynamicFeatures")
-        .withDependencyChecker(false)
-        .create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder().fromTestProject("databindingWithDynamicFeatures").withDependencyChecker(false).create()
 
-    @Before
-    fun setup() {
-        val minifyEnable =
-            """
-            android {
-                buildTypes {
-                    create("minified") { initWith(buildTypes.debug) }
-                    minified {
-                        proguardFiles "proguard-rules.pro"
-                    }
-                }
-            }
-            """.trimIndent()
+  @Before
+  fun setup() {
+    val minifyEnable =
+      """
+      android {
+          buildTypes {
+              create("minified") { initWith(buildTypes.debug) }
+              minified {
+                  proguardFiles "proguard-rules.pro"
+              }
+          }
+      }
+      """
+        .trimIndent()
 
-        val minifyBase =
-            """
-            android {
-                buildTypes {
-                    create("minified") { initWith(buildTypes.debug) }
-                    minified {
-                        minifyEnabled true
-                        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
-                        "proguard-rules.pro"
-                    }
-                }
-            }
-            """.trimIndent()
+    val minifyBase =
+      """
+      android {
+          buildTypes {
+              create("minified") { initWith(buildTypes.debug) }
+              minified {
+                  minifyEnabled true
+                  proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                  "proguard-rules.pro"
+              }
+          }
+      }
+      """
+        .trimIndent()
 
-
-        val emptyClassKeep = { module: String ->
-            """
+    val emptyClassKeep = { module: String ->
+      """
                 package $PROJECT_PACKAGE.$module;
                 public class $EMPTY_CLASS_TO_KEEP {}
-            """.trimIndent()
-        }
-
-        val emptyClassRemove = { module: String ->
             """
+        .trimIndent()
+    }
+
+    val emptyClassRemove = { module: String ->
+      """
                 package $PROJECT_PACKAGE.$module;
                 public class $EMPTY_CLASS_TO_REMOVE {}
-            """.trimIndent()
-        }
-        val proguardFile = { module: String ->
-            """-keep public class $PROJECT_PACKAGE.$module.$EMPTY_CLASS_TO_KEEP"""
-        }
+            """
+        .trimIndent()
+    }
+    val proguardFile = { module: String -> """-keep public class $PROJECT_PACKAGE.$module.$EMPTY_CLASS_TO_KEEP""" }
 
-        // Append minify setup to build files
-        project.getSubproject("app").buildFile.appendText(minifyBase)
-        project.getSubproject("featureA").buildFile.appendText(minifyEnable)
-        project.getSubproject("featureB").buildFile.appendText(minifyEnable)
-        project.getSubproject("libraryModule").buildFile.appendText(minifyEnable)
+    // Append minify setup to build files
+    project.getSubproject("app").buildFile.appendText(minifyBase)
+    project.getSubproject("featureA").buildFile.appendText(minifyEnable)
+    project.getSubproject("featureB").buildFile.appendText(minifyEnable)
+    project.getSubproject("libraryModule").buildFile.appendText(minifyEnable)
 
-        // Create empty classes in each sub-project
-        val subProjects = listOf("app", "featureA", "featureB", "libraryModule")
+    // Create empty classes in each sub-project
+    val subProjects = listOf("app", "featureA", "featureB", "libraryModule")
 
-        for (subProject in subProjects) {
-            project.getSubproject(subProject).mainSrcDir
-                .resolve("${packageToDir(PROJECT_PACKAGE)}/$subProject/$EMPTY_CLASS_TO_KEEP.java")
-                .also { it.parentFile.mkdirs() }
-                .writeText(emptyClassKeep(subProject))
-            project.getSubproject(subProject).mainSrcDir
-                .resolve("${packageToDir(PROJECT_PACKAGE)}/$subProject/$EMPTY_CLASS_TO_REMOVE.java")
-                .writeText(emptyClassRemove(subProject))
-            project.getSubproject(subProject).file("proguard-rules.pro")
-                .writeText(proguardFile(subProject))
-        }
-
-        // Declaring rules file to also be consumer rules so it also gets kept in dependencies.
-        project.getSubproject("libraryModule").buildFile
-            .appendText("\nandroid.buildTypes.minified.consumerProguardFiles \"proguard-rules.pro\"")
+    for (subProject in subProjects) {
+      project
+        .getSubproject(subProject)
+        .mainSrcDir
+        .resolve("${packageToDir(PROJECT_PACKAGE)}/$subProject/$EMPTY_CLASS_TO_KEEP.java")
+        .also { it.parentFile.mkdirs() }
+        .writeText(emptyClassKeep(subProject))
+      project
+        .getSubproject(subProject)
+        .mainSrcDir
+        .resolve("${packageToDir(PROJECT_PACKAGE)}/$subProject/$EMPTY_CLASS_TO_REMOVE.java")
+        .writeText(emptyClassRemove(subProject))
+      project.getSubproject(subProject).file("proguard-rules.pro").writeText(proguardFile(subProject))
     }
 
-    @Test
-    fun assembleMinified() {
-        project.executor()
-            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-            .run("assembleMinified")
+    // Declaring rules file to also be consumer rules so it also gets kept in dependencies.
+    project
+      .getSubproject("libraryModule")
+      .buildFile
+      .appendText("\nandroid.buildTypes.minified.consumerProguardFiles \"proguard-rules.pro\"")
+  }
 
-        val minifiedApk = "minified"
+  @Test
+  fun assembleMinified() {
+    project
+      .executor()
+      // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+      .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+      .run("assembleMinified")
 
-        val aApk: Apk = project.getSubproject("featureA")
-            .getApk(minifiedApk)
-        val bApk: Apk = project.getSubproject("featureB")
-            .getApk(minifiedApk)
+    val minifiedApk = "minified"
 
-        TruthHelper.assertThat(aApk).exists()
-        TruthHelper.assertThat(bApk).exists()
+    val aApk: Apk = project.getSubproject("featureA").getApk(minifiedApk)
+    val bApk: Apk = project.getSubproject("featureB").getApk(minifiedApk)
 
-        val baseApk: Apk = project.getSubproject("app")
-            .getApk(minifiedApk)
-        TruthHelper.assertThat(baseApk).exists()
+    TruthHelper.assertThat(aApk).exists()
+    TruthHelper.assertThat(bApk).exists()
 
-        val featureAClasses = listOf(
-            regularClass(LIBRARY_MODULE, EMPTY_CLASS_TO_KEEP),
-            regularClass(FEATURE_A, EMPTY_CLASS_TO_KEEP))
+    val baseApk: Apk = project.getSubproject("app").getApk(minifiedApk)
+    TruthHelper.assertThat(baseApk).exists()
 
-        val featureBClasses = listOf(
-            regularClass(FEATURE_B, EMPTY_CLASS_TO_KEEP))
+    val featureAClasses = listOf(regularClass(LIBRARY_MODULE, EMPTY_CLASS_TO_KEEP), regularClass(FEATURE_A, EMPTY_CLASS_TO_KEEP))
 
-        val baseClasses = listOf(
-            regularClass(BASE, EMPTY_CLASS_TO_KEEP),
-            MERGED_MAPPER)
+    val featureBClasses = listOf(regularClass(FEATURE_B, EMPTY_CLASS_TO_KEEP))
 
-        val shrunkClasses = listOf(
-            brClass(LIBRARY_MODULE),
-            bindingClass(FEATURE_A, FEATURE_A_ACTIVITY),
-            bindingClass(FEATURE_A, FEATURE_A_ACTIVITY_IMPL),
-            regularClass(FEATURE_A, EMPTY_CLASS_TO_REMOVE),
-            brClass(FEATURE_A),
-            bindingClass(FEATURE_B, FEATURE_B_ACTIVITY),
-            bindingClass(FEATURE_B, FEATURE_B_ACTIVITY_IMPL),
-            regularClass(FEATURE_B, EMPTY_CLASS_TO_REMOVE),
-            brClass(FEATURE_B),
-            bindingClass(BASE, BASE_ACTIVITY),
-            bindingClass(BASE, BASE_ACTIVITY_IMPL),
-            regularClass(BASE, EMPTY_CLASS_TO_REMOVE),
-            brClass(BASE_ADAPTERS),
-            brClass(BASE),
-            brClass(BASE_ADAPTERS),
-            DATA_BINDING_COMPONENT,
-            regularClass(LIBRARY_MODULE, EMPTY_CLASS_TO_REMOVE))
+    val baseClasses = listOf(regularClass(BASE, EMPTY_CLASS_TO_KEEP), MERGED_MAPPER)
 
-        featureAClasses.forEach {
-            TruthHelper.assertThat(aApk).containsClass(it)
-            TruthHelper.assertThat(baseApk).doesNotContainClass(it)
-            TruthHelper.assertThat(bApk).doesNotContainClass(it)
-        }
+    val shrunkClasses =
+      listOf(
+        brClass(LIBRARY_MODULE),
+        bindingClass(FEATURE_A, FEATURE_A_ACTIVITY),
+        bindingClass(FEATURE_A, FEATURE_A_ACTIVITY_IMPL),
+        regularClass(FEATURE_A, EMPTY_CLASS_TO_REMOVE),
+        brClass(FEATURE_A),
+        bindingClass(FEATURE_B, FEATURE_B_ACTIVITY),
+        bindingClass(FEATURE_B, FEATURE_B_ACTIVITY_IMPL),
+        regularClass(FEATURE_B, EMPTY_CLASS_TO_REMOVE),
+        brClass(FEATURE_B),
+        bindingClass(BASE, BASE_ACTIVITY),
+        bindingClass(BASE, BASE_ACTIVITY_IMPL),
+        regularClass(BASE, EMPTY_CLASS_TO_REMOVE),
+        brClass(BASE_ADAPTERS),
+        brClass(BASE),
+        brClass(BASE_ADAPTERS),
+        DATA_BINDING_COMPONENT,
+        regularClass(LIBRARY_MODULE, EMPTY_CLASS_TO_REMOVE),
+      )
 
-        featureBClasses.forEach {
-            TruthHelper.assertThat(bApk).containsClass(it)
-            TruthHelper.assertThat(baseApk).doesNotContainClass(it)
-            TruthHelper.assertThat(aApk).doesNotContainClass(it)
-        }
-
-        baseClasses.forEach {
-            TruthHelper.assertThat(baseApk).containsClass(it)
-            TruthHelper.assertThat(aApk).doesNotContainClass(it)
-            TruthHelper.assertThat(bApk).doesNotContainClass(it)
-        }
-
-        shrunkClasses.forEach {
-            TruthHelper.assertThat(aApk).doesNotContainClass(it)
-            TruthHelper.assertThat(bApk).doesNotContainClass(it)
-            TruthHelper.assertThat(baseApk).doesNotContainClass(it)
-        }
+    featureAClasses.forEach {
+      TruthHelper.assertThat(aApk).containsClass(it)
+      TruthHelper.assertThat(baseApk).doesNotContainClass(it)
+      TruthHelper.assertThat(bApk).doesNotContainClass(it)
     }
 
-    private fun brClass(pkg: String): String {
-        return "L${packageToDir(pkg)}/BR;"
+    featureBClasses.forEach {
+      TruthHelper.assertThat(bApk).containsClass(it)
+      TruthHelper.assertThat(baseApk).doesNotContainClass(it)
+      TruthHelper.assertThat(aApk).doesNotContainClass(it)
     }
 
-    private fun bindingClass(pkg: String, klass: String): String {
-        return "L${packageToDir(pkg)}/databinding/$klass;"
+    baseClasses.forEach {
+      TruthHelper.assertThat(baseApk).containsClass(it)
+      TruthHelper.assertThat(aApk).doesNotContainClass(it)
+      TruthHelper.assertThat(bApk).doesNotContainClass(it)
     }
 
-    private fun regularClass(pkg: String, klass: String): String {
-        return "L${packageToDir(pkg)}/$klass;"
+    shrunkClasses.forEach {
+      TruthHelper.assertThat(aApk).doesNotContainClass(it)
+      TruthHelper.assertThat(bApk).doesNotContainClass(it)
+      TruthHelper.assertThat(baseApk).doesNotContainClass(it)
     }
+  }
 
-    private fun packageToDir(pkg: String): String {
-        return pkg.split(".").joinToString("/")
-    }
+  private fun brClass(pkg: String): String {
+    return "L${packageToDir(pkg)}/BR;"
+  }
 
-    private val PROJECT_PACKAGE = "com.example"
-    private val BASE = "$PROJECT_PACKAGE.app"
-    private val FEATURE_A = "$PROJECT_PACKAGE.featureA"
-    private val FEATURE_B = "$PROJECT_PACKAGE.featureB"
-    private val MERGED_MAPPER = "Landroidx/databinding/DataBinderMapperImpl;"
-    private val DATA_BINDING_COMPONENT = "Landroidx/databinding/DataBindingComponent;"
-    private val LIBRARY_MODULE = "$PROJECT_PACKAGE.libraryModule"
-    private val FEATURE_A_ACTIVITY = "ActivityMainBinding"
-    private val FEATURE_A_ACTIVITY_IMPL = "ActivityMainBindingImpl"
-    private val FEATURE_B_ACTIVITY = "FeatureBMainBinding"
-    private val FEATURE_B_ACTIVITY_IMPL = "FeatureBMainBindingImpl"
-    private val BASE_ACTIVITY = "AppLayoutBinding"
-    private val BASE_ACTIVITY_IMPL = "AppLayoutBindingImpl"
-    private val BASE_ADAPTERS = "com.android.databinding.library.baseAdapters"
-    private val EMPTY_CLASS_TO_KEEP = "EmptyClassToKeep"
-    private val EMPTY_CLASS_TO_REMOVE = "EmptyClassToRemove"
+  private fun bindingClass(pkg: String, klass: String): String {
+    return "L${packageToDir(pkg)}/databinding/$klass;"
+  }
+
+  private fun regularClass(pkg: String, klass: String): String {
+    return "L${packageToDir(pkg)}/$klass;"
+  }
+
+  private fun packageToDir(pkg: String): String {
+    return pkg.split(".").joinToString("/")
+  }
+
+  private val PROJECT_PACKAGE = "com.example"
+  private val BASE = "$PROJECT_PACKAGE.app"
+  private val FEATURE_A = "$PROJECT_PACKAGE.featureA"
+  private val FEATURE_B = "$PROJECT_PACKAGE.featureB"
+  private val MERGED_MAPPER = "Landroidx/databinding/DataBinderMapperImpl;"
+  private val DATA_BINDING_COMPONENT = "Landroidx/databinding/DataBindingComponent;"
+  private val LIBRARY_MODULE = "$PROJECT_PACKAGE.libraryModule"
+  private val FEATURE_A_ACTIVITY = "ActivityMainBinding"
+  private val FEATURE_A_ACTIVITY_IMPL = "ActivityMainBindingImpl"
+  private val FEATURE_B_ACTIVITY = "FeatureBMainBinding"
+  private val FEATURE_B_ACTIVITY_IMPL = "FeatureBMainBindingImpl"
+  private val BASE_ACTIVITY = "AppLayoutBinding"
+  private val BASE_ACTIVITY_IMPL = "AppLayoutBindingImpl"
+  private val BASE_ADAPTERS = "com.android.databinding.library.baseAdapters"
+  private val EMPTY_CLASS_TO_KEEP = "EmptyClassToKeep"
+  private val EMPTY_CLASS_TO_REMOVE = "EmptyClassToRemove"
 }

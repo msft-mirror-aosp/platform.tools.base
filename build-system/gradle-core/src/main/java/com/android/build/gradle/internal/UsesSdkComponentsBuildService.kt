@@ -28,17 +28,20 @@ import org.gradle.api.tasks.Internal
 /** Common interface for tasks/task inputs that use [SdkComponentsBuildService]. */
 interface UsesSdkComponentsBuildService {
 
-    @get:Internal
-    val sdkComponentsBuildService: Property<SdkComponentsBuildService>
+  @get:Internal val sdkComponentsBuildService: Property<SdkComponentsBuildService>
 
-    fun initializeSdkComponentsBuildService(task: Task) {
-        getBuildService<SdkComponentsBuildService, SdkComponentsBuildService.Parameters>(task.project.gradle.sharedServices).let {
-            sdkComponentsBuildService.setDisallowChanges(it)
-            task.usesService(it)
-            // SdkComponentsBuildService uses GlobalSyncIssueService and
-            // AndroidLocationsBuildService, so we also need to set the following
-            task.usesService(getBuildService<SyncIssueReporterImpl.GlobalSyncIssueService, SyncIssueReporterImpl.GlobalSyncIssueService.Parameters>(task.project.gradle.sharedServices))
-            task.usesService(getBuildService<AndroidLocationsBuildService, BuildServiceParameters.None>(task.project.gradle.sharedServices))
-        }
+  fun initializeSdkComponentsBuildService(task: Task) {
+    getBuildService<SdkComponentsBuildService, SdkComponentsBuildService.Parameters>(task.project.gradle.sharedServices).let {
+      sdkComponentsBuildService.setDisallowChanges(it)
+      task.usesService(it)
+      // SdkComponentsBuildService uses GlobalSyncIssueService and
+      // AndroidLocationsBuildService, so we also need to set the following
+      task.usesService(
+        getBuildService<SyncIssueReporterImpl.GlobalSyncIssueService, SyncIssueReporterImpl.GlobalSyncIssueService.Parameters>(
+          task.project.gradle.sharedServices
+        )
+      )
+      task.usesService(getBuildService<AndroidLocationsBuildService, BuildServiceParameters.None>(task.project.gradle.sharedServices))
     }
+  }
 }

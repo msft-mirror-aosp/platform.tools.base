@@ -72,21 +72,14 @@ class DevicePropertiesTest {
 
   @Test
   fun readAbiList() {
-    val props =
-      props(
-        "ro.product.cpu.abilist" to "${SdkConstants.ABI_ARM64_V8A},${SdkConstants.ABI_ARMEABI_V7A}"
-      )
+    val props = props("ro.product.cpu.abilist" to "${SdkConstants.ABI_ARM64_V8A},${SdkConstants.ABI_ARMEABI_V7A}")
     assertThat(props.primaryAbi).isEqualTo(Abi.ARM64_V8A)
     assertThat(props.abiList).containsExactly(Abi.ARM64_V8A, Abi.ARMEABI_V7A)
   }
 
   @Test
   fun readAbi2() {
-    val props =
-      props(
-        "ro.product.cpu.abi" to SdkConstants.ABI_ARMEABI_V7A,
-        "ro.product.cpu.abi2" to SdkConstants.ABI_ARMEABI,
-      )
+    val props = props("ro.product.cpu.abi" to SdkConstants.ABI_ARMEABI_V7A, "ro.product.cpu.abi2" to SdkConstants.ABI_ARMEABI)
     assertThat(props.primaryAbi).isEqualTo(Abi.ARMEABI_V7A)
     assertThat(props.abiList).containsExactly(Abi.ARMEABI_V7A, Abi.ARMEABI)
   }
@@ -111,21 +104,16 @@ class DevicePropertiesTest {
   fun parseMdnsConnectionType_clear() {
     SerialNumberAndMdnsConnectionType.fromAdbSerialNumber("adb-435DT06WH-vWgJpq._adb._tcp.").apply {
       assertThat(serialNumber).isEqualTo("435DT06WH")
-      assertThat(mdnsConnectionType)
-        .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_UNENCRYPTED)
+      assertThat(mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_UNENCRYPTED)
     }
   }
 
   @Test
   fun parseMdnsConnectionType_tls() {
-    SerialNumberAndMdnsConnectionType.fromAdbSerialNumber(
-        "adb-435DT06WH-vWgJpq._adb-tls-connect._tcp."
-      )
-      .apply {
-        assertThat(serialNumber).isEqualTo("435DT06WH")
-        assertThat(mdnsConnectionType)
-          .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
-      }
+    SerialNumberAndMdnsConnectionType.fromAdbSerialNumber("adb-435DT06WH-vWgJpq._adb-tls-connect._tcp.").apply {
+      assertThat(serialNumber).isEqualTo("435DT06WH")
+      assertThat(mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
+    }
   }
 
   @Test
@@ -138,8 +126,7 @@ class DevicePropertiesTest {
 
   @Test
   fun testMicroxrNotIdentifiedAsWatch() {
-    val props =
-      props("ro.build.characteristics" to "watch", "vendor.microxr.mcu.firmware.name" to "microxr")
+    val props = props("ro.build.characteristics" to "watch", "vendor.microxr.mcu.firmware.name" to "microxr")
     assertThat(props.deviceType).isEqualTo(DeviceType.AI_GLASSES)
   }
 

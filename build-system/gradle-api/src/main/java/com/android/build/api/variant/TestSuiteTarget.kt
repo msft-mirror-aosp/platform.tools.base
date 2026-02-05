@@ -19,19 +19,12 @@ package com.android.build.api.variant
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 
-/**
- * Model for running a [TestSuite] in a context (local attached devices, gmd, etc...)
- */
+/** Model for running a [TestSuite] in a context (local attached devices, gmd, etc...) */
 @Incubating
-interface TestSuiteTarget: Named {
+interface TestSuiteTarget : Named {
 
-    @get:Incubating
-    val enabled: Boolean
+  @get:Incubating val enabled: Boolean
 
-    /**
-     * GMD identifier to deploy APKs to. The identifier must be defined in the
-     * [com.android.build.api.dsl.ManagedDevices] for this module.
-     */
-    @get:Incubating
-    val targetDevices: Collection<String>
+  /** GMD identifier to deploy APKs to. The identifier must be defined in the [com.android.build.api.dsl.ManagedDevices] for this module. */
+  @get:Incubating val targetDevices: Collection<String>
 }

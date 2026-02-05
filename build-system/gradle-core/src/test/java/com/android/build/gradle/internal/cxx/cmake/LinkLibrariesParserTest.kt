@@ -16,80 +16,48 @@
 
 package com.android.build.gradle.internal.cxx.cmake
 
-import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.junit.Test
 
 class LinkLibrariesParserTest {
-    @Test
-    fun `can parse trivial list`() {
-        assertEquals(listOf("foo"), parseLinkLibraries(
-            "foo"
-        ))
-        assertEquals(listOf("foo"), parseLinkLibraries(
-            "   foo    "
-        ))
-        assertEquals(listOf("foo", "bar", "baz"), parseLinkLibraries(
-            "foo bar    baz"
-        ))
-    }
+  @Test
+  fun `can parse trivial list`() {
+    assertEquals(listOf("foo"), parseLinkLibraries("foo"))
+    assertEquals(listOf("foo"), parseLinkLibraries("   foo    "))
+    assertEquals(listOf("foo", "bar", "baz"), parseLinkLibraries("foo bar    baz"))
+  }
 
-    @Test
-    fun `can parse empty list`() {
-        assertEquals(emptyList(), parseLinkLibraries(
-            ""
-        ))
-        assertEquals(emptyList(), parseLinkLibraries(
-            "    "
-        ))
-    }
+  @Test
+  fun `can parse empty list`() {
+    assertEquals(emptyList(), parseLinkLibraries(""))
+    assertEquals(emptyList(), parseLinkLibraries("    "))
+  }
 
-    @Test
-    fun `can parse list with quoted strings`() {
-        assertEquals(listOf("foo"), parseLinkLibraries(
-            "\"foo\""
-        ))
-        assertEquals(listOf("  foo  "), parseLinkLibraries(
-            "\"  foo  \""
-        ))
-        assertEquals(listOf("foo bar"), parseLinkLibraries(
-            "\"foo bar\""
-        ))
-        assertEquals(listOf("foo   bar"), parseLinkLibraries(
-            "\"foo   bar\""
-        ))
-        assertEquals(listOf("foo", "bar", "baz"), parseLinkLibraries(
-            "foo \"bar\" baz"
-        ))
-    }
+  @Test
+  fun `can parse list with quoted strings`() {
+    assertEquals(listOf("foo"), parseLinkLibraries("\"foo\""))
+    assertEquals(listOf("  foo  "), parseLinkLibraries("\"  foo  \""))
+    assertEquals(listOf("foo bar"), parseLinkLibraries("\"foo bar\""))
+    assertEquals(listOf("foo   bar"), parseLinkLibraries("\"foo   bar\""))
+    assertEquals(listOf("foo", "bar", "baz"), parseLinkLibraries("foo \"bar\" baz"))
+  }
 
-    @Test
-    fun `can parse windows paths`() {
-        assertEquals(listOf("foo\\bar"), parseLinkLibraries(
-            "foo\\bar"
-        ))
-        assertEquals(listOf("foo\\", "bar"), parseLinkLibraries(
-            "foo\\ bar"
-        ))
-        assertEquals(listOf("foo\\\\bar"), parseLinkLibraries(
-            "foo\\\\bar"
-        ))
-        assertEquals(listOf("C:\\foo\\bar", "C:\\foo bar\\"), parseLinkLibraries(
-            "C:\\foo\\bar \"C:\\foo bar\\\""
-        ))
-    }
+  @Test
+  fun `can parse windows paths`() {
+    assertEquals(listOf("foo\\bar"), parseLinkLibraries("foo\\bar"))
+    assertEquals(listOf("foo\\", "bar"), parseLinkLibraries("foo\\ bar"))
+    assertEquals(listOf("foo\\\\bar"), parseLinkLibraries("foo\\\\bar"))
+    assertEquals(listOf("C:\\foo\\bar", "C:\\foo bar\\"), parseLinkLibraries("C:\\foo\\bar \"C:\\foo bar\\\""))
+  }
 
-    @Test
-    fun `unexpected start of quoted string causes an error`() {
-        assertFailsWith(IllegalArgumentException::class) {
-            parseLinkLibraries("foo\"bar\"")
-        }
-    }
+  @Test
+  fun `unexpected start of quoted string causes an error`() {
+    assertFailsWith(IllegalArgumentException::class) { parseLinkLibraries("foo\"bar\"") }
+  }
 
-    @Test
-    fun `unterminated quoted string causes an error`() {
-        assertFailsWith(IllegalArgumentException::class) {
-            parseLinkLibraries("\"foo")
-        }
-    }
+  @Test
+  fun `unterminated quoted string causes an error`() {
+    assertFailsWith(IllegalArgumentException::class) { parseLinkLibraries("\"foo") }
+  }
 }

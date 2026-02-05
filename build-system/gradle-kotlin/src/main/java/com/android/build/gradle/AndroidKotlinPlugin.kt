@@ -22,12 +22,11 @@ import org.gradle.api.Project
 @Suppress("unused")
 class AndroidKotlinPlugin : Plugin<Project> {
 
-    override fun apply(project: Project) {
-        // Nothing to do here.
-        // This plugin only serves as an indication of whether the user wants to have built-in
-        // Kotlin support.
-        // The handling of built-in Kotlin support is done in the main Android Gradle plugin
-        // (see BuiltInKotlinServicesKt.initBuiltInKotlinSupportIfRequired).
-    }
+  override fun apply(project: Project) {
+    // Nothing to do here.
+    // This plugin only serves as an indication of whether the user wants to have built-in
+    // Kotlin support.
+    // The handling of built-in Kotlin support is done in the main Android Gradle plugin
+    // (see BuiltInKotlinServicesKt.initBuiltInKotlinSupportIfRequired).
+  }
 }
-

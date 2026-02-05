@@ -23,19 +23,19 @@ import java.io.File
 /** Comparator that compares dex file paths, placing classes.dex always in front. */
 object DexFileComparator : Comparator<File> {
 
-    override fun compare(file1: File, file2: File): Int {
-        return when {
-            file1.name == FN_APK_CLASSES_DEX && file2.name != FN_APK_CLASSES_DEX -> -1
-            file1.name != FN_APK_CLASSES_DEX && file2.name == FN_APK_CLASSES_DEX -> 1
-            else -> file1.absolutePath.compareTo(file2.absolutePath)
-        }
+  override fun compare(file1: File, file2: File): Int {
+    return when {
+      file1.name == FN_APK_CLASSES_DEX && file2.name != FN_APK_CLASSES_DEX -> -1
+      file1.name != FN_APK_CLASSES_DEX && file2.name == FN_APK_CLASSES_DEX -> 1
+      else -> file1.absolutePath.compareTo(file2.absolutePath)
     }
+  }
 }
 
 /** Comparator that compares dex file paths, placing classes.dex always in front. */
 object DexRelativeFileComparator : Comparator<RelativeFile> {
 
-    override fun compare(file1: RelativeFile, file2: RelativeFile): Int {
-        return DexFileComparator.compare(file1.getFile(), file2.getFile());
-    }
+  override fun compare(file1: RelativeFile, file2: RelativeFile): Int {
+    return DexFileComparator.compare(file1.getFile(), file2.getFile())
+  }
 }

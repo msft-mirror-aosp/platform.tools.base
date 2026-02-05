@@ -22,139 +22,107 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupp
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
-/**
- * A factory for [OptionalValue] related to [JdwpProcessProperties]
- */
+/** A factory for [OptionalValue] related to [JdwpProcessProperties] */
 internal class OptionalValueFactory(val device: ConnectedDevice) {
 
-    private val lastVmIdentifier = LatestValueContainer<String>()
-    private val lastJvmFlags = LatestValueContainer<String>()
-    private val lastFeatures = LatestValueContainer<List<String>>()
+  private val lastVmIdentifier = LatestValueContainer<String>()
+  private val lastJvmFlags = LatestValueContainer<String>()
+  private val lastFeatures = LatestValueContainer<List<String>>()
 
-    fun ofInstructionSet(value: InstructionSet): OptionalValue<InstructionSet> {
-        return when (value) {
-            is InstructionSet.Arm -> InstructionSetsSingletons.arm
-            is InstructionSet.Arm64 -> InstructionSetsSingletons.arm64
-            is InstructionSet.Riscv64 -> InstructionSetsSingletons.riscv64
-            is InstructionSet.X86 -> InstructionSetsSingletons.x86
-            is InstructionSet.X86_64 -> InstructionSetsSingletons.x86_64
-            else -> OptionalValue.of(value)
-        }
+  fun ofInstructionSet(value: InstructionSet): OptionalValue<InstructionSet> {
+    return when (value) {
+      is InstructionSet.Arm -> InstructionSetsSingletons.arm
+      is InstructionSet.Arm64 -> InstructionSetsSingletons.arm64
+      is InstructionSet.Riscv64 -> InstructionSetsSingletons.riscv64
+      is InstructionSet.X86 -> InstructionSetsSingletons.x86
+      is InstructionSet.X86_64 -> InstructionSetsSingletons.x86_64
+      else -> OptionalValue.of(value)
     }
+  }
 
-    fun ofVmIdentifier(value: String): OptionalValue<String> {
-        return lastVmIdentifier.of(value)
+  fun ofVmIdentifier(value: String): OptionalValue<String> {
+    return lastVmIdentifier.of(value)
+  }
+
+  fun ofJvmFlags(value: String): OptionalValue<String> {
+    return lastJvmFlags.of(value)
+  }
+
+  fun ofFeatures(value: List<String>): OptionalValue<List<String>> {
+    return lastFeatures.of(value)
+  }
+
+  /** See [OptionalValue.ofNullable] */
+  fun <T> ofNullable(value: T): OptionalValue<T & Any> {
+    return OptionalValue.ofNullable(value)
+  }
+
+  /** See [OptionalValue.of] */
+  fun <T : Any> of(value: T): OptionalValue<T> {
+    return OptionalValue.of(value)
+  }
+
+  /** See [OptionalValue.ofError] */
+  fun <T : Any> ofError(message: String): OptionalValue<T> {
+    return OptionalValue.ofError(message)
+  }
+
+  /** Returns an [OptionalValue] for a process or package name, which may contain "fake" names (see [filterFakeName]). */
+  fun ofFilteredFakeName(name: String?): OptionalValue<String> {
+    return when (name) {
+      null -> OptionalValue.empty()
+      else -> filterFakeName(name)?.let { OptionalValue.of(it) } ?: OptionalValue.empty()
     }
+  }
 
-    fun ofJvmFlags(value: String): OptionalValue<String> {
-        return lastJvmFlags.of(value)
+  /** Returns an [OptionalValue] for a process or package name, which may contain "fake" names (see [filterFakeName]). */
+  fun ofFilteredFakeNames(names: List<String>?): OptionalValue<List<String>> {
+    val goodNames = names?.mapNotNull { filterFakeName(it) } ?: return OptionalValue.empty()
+    return if (goodNames.isEmpty()) {
+      OptionalValue.empty()
+    } else {
+      OptionalValue.of(goodNames)
     }
+  }
 
-    fun ofFeatures(value: List<String>): OptionalValue<List<String>> {
-        return lastFeatures.of(value)
+  /** If `value` is `null` returns `OptionalValue.unsupportedByOlderApi()`. Otherwise, returns [OptionalValue] produced by `block(value)` */
+  inline fun <T : Any, R : Any> optionalOrErrorIfNull(value: T?, block: (T) -> OptionalValue<R>): OptionalValue<R> {
+
+    if (value == null) {
+      return OptionalValue.unsupportedByOlderApi()
     }
+    return block(value)
+  }
 
-    /**
-     * See [OptionalValue.ofNullable]
-     */
-    fun <T> ofNullable(value: T): OptionalValue<T & Any> {
-        return OptionalValue.ofNullable(value)
-    }
+  /** Keeps a reference to a single [OptionalValue] so it can be shared across consumers. */
+  private class LatestValueContainer<T : Any> {
 
-    /**
-     * See [OptionalValue.of]
-     */
-    fun <T : Any> of(value: T): OptionalValue<T> {
-        return OptionalValue.of(value)
-    }
+    @Volatile private var _lastValue: OptionalValue<T>? = null
 
-    /**
-     * See [OptionalValue.ofError]
-     */
-    fun <T : Any> ofError(message: String): OptionalValue<T> {
-        return OptionalValue.ofError(message)
-    }
-
-    /**
-     * Returns an [OptionalValue] for a process or package name, which may contain "fake" names
-     * (see [filterFakeName]).
-     */
-    fun ofFilteredFakeName(name: String?): OptionalValue<String> {
-        return when (name) {
-            null -> OptionalValue.empty()
-            else -> filterFakeName(name)?.let { OptionalValue.of(it) } ?: OptionalValue.empty()
-        }
-    }
-
-    /**
-     * Returns an [OptionalValue] for a process or package name, which may contain "fake" names
-     * (see [filterFakeName]).
-     */
-    fun ofFilteredFakeNames(names: List<String>?): OptionalValue<List<String>> {
-        val goodNames = names?.mapNotNull { filterFakeName(it) } ?: return OptionalValue.empty()
-        return if (goodNames.isEmpty()) {
-            OptionalValue.empty()
+    fun of(value: T): OptionalValue<T> {
+      return _lastValue.let {
+        if (it !== null && it.hasValue && it.getOrThrow() == value) {
+          it
         } else {
-            OptionalValue.of(goodNames)
+          OptionalValue.of(value).also { newOptionalValue -> _lastValue = newOptionalValue }
         }
+      }
     }
+  }
 
-    /**
-     * If `value` is `null` returns `OptionalValue.unsupportedByOlderApi()`. Otherwise, returns
-     * [OptionalValue] produced by `block(value)`
-     */
-    inline fun <T : Any, R : Any> optionalOrErrorIfNull(
-        value: T?,
-        block: (T) -> OptionalValue<R>
-    ): OptionalValue<R> {
+  /** Singleton container for all known values of [InstructionSet] */
+  object InstructionSetsSingletons {
 
-        if (value == null) {
-            return OptionalValue.unsupportedByOlderApi()
-        }
-        return block(value)
-    }
-
-    /**
-     * Keeps a reference to a single [OptionalValue] so it can be shared across consumers.
-     */
-    private class LatestValueContainer<T : Any> {
-
-        @Volatile
-        private var _lastValue: OptionalValue<T>? = null
-
-        fun of(value: T): OptionalValue<T> {
-            return _lastValue.let {
-                if (it !== null && it.hasValue && it.getOrThrow() == value) {
-                    it
-                } else {
-                    OptionalValue.of(value).also { newOptionalValue ->
-                        _lastValue = newOptionalValue
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Singleton container for all known values of [InstructionSet]
-     */
-    object InstructionSetsSingletons {
-
-        val arm = OptionalValue.of<InstructionSet>(InstructionSet.Arm)
-        val arm64 = OptionalValue.of<InstructionSet>(InstructionSet.Arm64)
-        val riscv64 = OptionalValue.of<InstructionSet>(InstructionSet.Riscv64)
-        val x86 = OptionalValue.of<InstructionSet>(InstructionSet.X86)
-        val x86_64 = OptionalValue.of<InstructionSet>(InstructionSet.X86_64)
-    }
+    val arm = OptionalValue.of<InstructionSet>(InstructionSet.Arm)
+    val arm64 = OptionalValue.of<InstructionSet>(InstructionSet.Arm64)
+    val riscv64 = OptionalValue.of<InstructionSet>(InstructionSet.Riscv64)
+    val x86 = OptionalValue.of<InstructionSet>(InstructionSet.X86)
+    val x86_64 = OptionalValue.of<InstructionSet>(InstructionSet.X86_64)
+  }
 }
 
-private val optionalValueFactoryKey =
-    CoroutineScopeCache.Key<OptionalValueFactory>("OptionalValueFactory")
+private val optionalValueFactoryKey = CoroutineScopeCache.Key<OptionalValueFactory>("OptionalValueFactory")
 
-/**
- * The [OptionalValueFactory] for this device
- */
+/** The [OptionalValueFactory] for this device */
 internal val ConnectedDevice.optionalValueFactory: OptionalValueFactory
-    get() = this.cache.getOrPut(optionalValueFactoryKey) {
-        OptionalValueFactory(this)
-    }
+  get() = this.cache.getOrPut(optionalValueFactoryKey) { OptionalValueFactory(this) }

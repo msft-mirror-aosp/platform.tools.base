@@ -31,7 +31,7 @@ fun itemListDialogFragmentJava(
   objectKind: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
   val layoutManagerImport =
     if (columnCount == 1) "import ${getMaterialComponentName("android.support.v7.widget.LinearLayoutManager", useAndroidX)};"
@@ -41,17 +41,24 @@ fun itemListDialogFragmentJava(
     if (columnCount == 1) "recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));"
     else "recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ${columnCount}));"
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(listLayout)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$listLayout, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$listLayout, container, false);"
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     ViewHolder(${layoutToViewBindingClass(itemLayout)} binding) {
       super(binding.getRoot());
       text = binding.text;
     }
-  """ else """
+  """
+    else
+      """
     ViewHolder(LayoutInflater inflater, ViewGroup parent) {
       // TODO: Customize the item layout
       super(inflater.inflate(R.layout.${itemLayout}, parent, false));
@@ -59,9 +66,13 @@ fun itemListDialogFragmentJava(
     }
   """
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     return new ViewHolder(${layoutToViewBindingClass(itemLayout)}.inflate(LayoutInflater.from(parent.getContext()), parent, false));
-  """ else """
+  """
+    else
+      """
     return new ViewHolder(LayoutInflater.from(parent.getContext()), parent);
   """
 

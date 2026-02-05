@@ -40,8 +40,7 @@ import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
 import org.jetbrains.uast.toUElementOfType
 
 /**
- * Resolve [KtElement] to function call, constructor call, or annotation call and return
- * function-like symbol if any.
+ * Resolve [KtElement] to function call, constructor call, or annotation call and return function-like symbol if any.
  *
  * Please use UAST/PSI `resolve` first, which provides a general output (of [PsiMethod]).
  *
@@ -57,36 +56,26 @@ internal fun KaSession.getFunctionLikeSymbol(ktElement: KtElement): KaFunctionSy
 /**
  * Returns true if [ktElement] is a call of an extension function.
  *
- * Unlike [org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration], which only works if you have
- * the Kotlin source PSI of a function declaration (it will not work if you have a call that
- * resolves to a compiled function), this analysis API-based function can identify calls to
- * extensions functions, regardless of whether the function declaration is in source or binary.
+ * Unlike [org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration], which only works if you have the Kotlin source PSI of a function
+ * declaration (it will not work if you have a call that resolves to a compiled function), this analysis API-based function can identify
+ * calls to extensions functions, regardless of whether the function declaration is in source or binary.
  */
-internal fun KaSession.isExtensionFunctionCall(ktElement: KtElement): Boolean =
-  getFunctionLikeSymbol(ktElement)?.isExtension == true
+internal fun KaSession.isExtensionFunctionCall(ktElement: KtElement): Boolean = getFunctionLikeSymbol(ktElement)?.isExtension == true
 
 /** Returns the `<this>` UParameter of [this] ULambdaExpression, if it exists. */
 @Suppress("UnstableApiUsage")
-internal fun ULambdaExpression.getThisParameter(
-  resolveProviderService: BaseKotlinUastResolveProviderService
-): UParameter? {
+internal fun ULambdaExpression.getThisParameter(resolveProviderService: BaseKotlinUastResolveProviderService): UParameter? {
   val ktLambdaExpression = this.sourcePsi as? KtLambdaExpression ?: return null
   // Note: includeExplicitParameters seems to currently do the opposite of what you might expect; it
   // must be true to be able to find the implicit <this> parameter.
   val parameters =
-    resolveProviderService.getImplicitParameters(
-      ktLambdaExpression,
-      this,
-      includeExplicitParameters = true,
-    ) as List<UParameter>
-  return parameters.firstOrNull {
-    (it.javaPsi as? PsiParameter)?.name == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
-  }
+    resolveProviderService.getImplicitParameters(ktLambdaExpression, this, includeExplicitParameters = true) as List<UParameter>
+  return parameters.firstOrNull { (it.javaPsi as? PsiParameter)?.name == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME }
 }
 
 /**
- * Returns the implicit receiver of the call-like expression [ktExpression] if the implicit receiver
- * resolves to a `<this>` UParameter of a lambda expression, otherwise null.
+ * Returns the implicit receiver of the call-like expression [ktExpression] if the implicit receiver resolves to a `<this>` UParameter of a
+ * lambda expression, otherwise null.
  */
 internal fun KaSession.getImplicitReceiverIfFromLambdaExpr(
   ktExpression: KtExpression,
@@ -97,9 +86,7 @@ internal fun KaSession.getImplicitReceiverIfFromLambdaExpr(
     ?.toUElementOfType<ULambdaExpression>()
     ?.getThisParameter(resolveProviderService)
 
-/**
- * Returns the PSI for [this], which will be the owning lambda expression or the surrounding class.
- */
+/** Returns the PSI for [this], which will be the owning lambda expression or the surrounding class. */
 internal fun KaImplicitReceiverValue.getImplicitReceiverPsi(): PsiElement? {
   return when (val receiverParameterSymbol = this.symbol) {
     // the owning lambda expression
@@ -110,16 +97,12 @@ internal fun KaImplicitReceiverValue.getImplicitReceiverPsi(): PsiElement? {
   }
 }
 
-/**
- * Returns the implicit receiver value of the call-like expression [ktExpression] (can include
- * property accesses, for example).
- */
-internal fun KaSession.getImplicitReceiverValue(
-  ktExpression: KtExpression
-): KaImplicitReceiverValue? {
+/** Returns the implicit receiver value of the call-like expression [ktExpression] (can include property accesses, for example). */
+internal fun KaSession.getImplicitReceiverValue(ktExpression: KtExpression): KaImplicitReceiverValue? {
   val partiallyAppliedSymbol =
     when (val call = ktExpression.resolveToCall()?.singleCallOrNull<KaCall>()) {
-      // Note: Calls that are a `KaCompoundAccessCall` (especially, `KaCompoundArrayAccessCall`) are
+      // Note: Calls that are a `KaCompoundAccessCall` (especially, `KaCompoundArrayAccessCall`)
+      // are
       // quite complex, as such a call essentially contains multiple calls. For example, in:
       //
       // m["a"] += "b"

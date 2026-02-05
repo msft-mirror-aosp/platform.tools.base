@@ -65,28 +65,23 @@ class LocalEmulatorDeviceHandleTest {
 
     handle.stateFlow.takeWhile { it.isTransitioning }.collect()
 
-    assertThat(activateJob.getCompletionExceptionOrNull())
-      .isInstanceOf(DeviceActionException::class.java)
+    assertThat(activateJob.getCompletionExceptionOrNull()).isInstanceOf(DeviceActionException::class.java)
 
     handle.scope.cancel()
   }
 
-  /**
-   * updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated.
-   */
+  /** updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated. */
   @Test
   fun updatePairedDevices(): Unit =
     runBlockingWithTimeout(Duration.ofSeconds(5)) {
       with(SdkFixture()) {
         avdManager.createAvd(
-          avdManager.createAvdBuilder(deviceManager.getDevice("pixel_9", "Google")!!).apply {
-            systemImage = testSystemImages.api36.image
-          }
+          avdManager.createAvdBuilder(deviceManager.getDevice("pixel_9", "Google")!!).apply { systemImage = testSystemImages.api36.image }
         )
         avdManager.createAvd(
-          avdManager
-            .createAvdBuilder(deviceManager.getDevice("ai_glasses_device", "Google")!!)
-            .apply { systemImage = testSystemImages.aiGlasses.image }
+          avdManager.createAvdBuilder(deviceManager.getDevice("ai_glasses_device", "Google")!!).apply {
+            systemImage = testSystemImages.aiGlasses.image
+          }
         )
 
         val session = FakeAdbSession()
@@ -126,14 +121,7 @@ class LocalEmulatorDeviceHandleTest {
 fun testContext(testScope: TestScope) =
   LocalEmulatorContext(
     FakeAdbLoggerFactory().createClassLogger(LocalEmulatorProvisionerPlugin::class.java),
-    DeviceIcons(
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-    ),
+    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT),
     clock =
       object : Clock {
         override fun now() = Instant.fromEpochMilliseconds(testScope.currentTime)

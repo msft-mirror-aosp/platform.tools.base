@@ -21,42 +21,34 @@ import com.android.adblib.AdbSession
 import java.net.InetSocketAddress
 
 /**
- * Creates an [AdbSession] to use with Console/Command Line Interface tools,
- * using standard Kotlin dispatchers and JVM stdout/stderr streams for I/O.
+ * Creates an [AdbSession] to use with Console/Command Line Interface tools, using standard Kotlin dispatchers and JVM stdout/stderr streams
+ * for I/O.
  *
- * **Note:** This session acts as a smart client. If an ADB server is not currently
- * running on the localhost, this session will attempt to locate the `adb` executable
- * on the system PATH and start the server automatically.
+ * **Note:** This session acts as a smart client. If an ADB server is not currently running on the localhost, this session will attempt to
+ * locate the `adb` executable on the system PATH and start the server automatically.
  *
- * ** WARNING **. Use this function with care. The philosophy of adblib is to have a
- * single AdbSession and a single AdbHost per VM. This is currently used in adblib CLI and
- * deployerlib CLI.
- * Anywhere else, it is very likely you should obtain the Session from where it was already
- * created.
+ * ** WARNING **. Use this function with care. The philosophy of adblib is to have a single AdbSession and a single AdbHost per VM. This is
+ * currently used in adblib CLI and deployerlib CLI. Anywhere else, it is very likely you should obtain the Session from where it was
+ * already created.
  */
-
 @JvmOverloads
-fun createStandaloneSession(factory : AdbLoggerFactory = StdLoggerFactory()) : AdbSession {
-    val host = StandaloneHost(factory)
-    val session =
-        AdbSession.create(
-            host = host,
-            channelProvider = AdbServerChannelProvider.createConnectAddressesWithServerStartup(host))
-    return session
+fun createStandaloneSession(factory: AdbLoggerFactory = StdLoggerFactory()): AdbSession {
+  val host = StandaloneHost(factory)
+  val session = AdbSession.create(host = host, channelProvider = AdbServerChannelProvider.createConnectAddressesWithServerStartup(host))
+  return session
 }
 
 // Convenience method used by CLI DeployerRunner. Delete once we support custom server port
 // e.g.: env variable ANDROID_ADB_SERVER_PORT
 @JvmOverloads
-fun createSocketConnectSession(socketAddressProvider: () -> InetSocketAddress, factory : AdbLoggerFactory = StdLoggerFactory()) : AdbSession {
-    // TODO Move to an AdbChannelProvider that knows how to spawn and ADB server.
-    // This one assume it is already up and running which is fine for our current needs.
-    val host = StandaloneHost(factory)
-    val session =
-        AdbSession.create(
-            host = host,
-            channelProvider = AdbServerChannelProvider.createConnectAddresses(host) {
-                listOf(socketAddressProvider())
-            })
-    return session
+fun createSocketConnectSession(socketAddressProvider: () -> InetSocketAddress, factory: AdbLoggerFactory = StdLoggerFactory()): AdbSession {
+  // TODO Move to an AdbChannelProvider that knows how to spawn and ADB server.
+  // This one assume it is already up and running which is fine for our current needs.
+  val host = StandaloneHost(factory)
+  val session =
+    AdbSession.create(
+      host = host,
+      channelProvider = AdbServerChannelProvider.createConnectAddresses(host) { listOf(socketAddressProvider()) },
+    )
+  return session
 }

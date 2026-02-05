@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.res.values
 
-
-fun stringsXml() = """
+fun stringsXml() =
+  """
 <resources>
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

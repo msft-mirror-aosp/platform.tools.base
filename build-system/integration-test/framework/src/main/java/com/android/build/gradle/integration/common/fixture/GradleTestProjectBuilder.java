@@ -175,7 +175,6 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
                 cmakeVersion,
                 withCmakeDirInLocalProp,
                 ndkSymlinkPath,
-                GradleTestProject.APPLY_DEVICEPOOL_PLUGIN,
                 withSdk,
                 withAndroidGradlePlugin,
                 withKotlinGradlePlugin,

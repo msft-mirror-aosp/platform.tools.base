@@ -18,16 +18,5 @@ package com.android.tools.screenshot
 
 import org.junit.platform.commons.annotation.Testable
 
-/**
- * Annotation to identify previews that can be tested through the
- * screenshot test feature.
- */
-
-@MustBeDocumented
-@Retention(AnnotationRetention.RUNTIME)
-@Target(
-    AnnotationTarget.FUNCTION
-)
-@Testable
-annotation class PreviewTest {
-}
+/** Annotation to identify previews that can be tested through the screenshot test feature. */
+@MustBeDocumented @Retention(AnnotationRetention.RUNTIME) @Target(AnnotationTarget.FUNCTION) @Testable annotation class PreviewTest {}

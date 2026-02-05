@@ -22,44 +22,35 @@ import org.junit.Test
 
 class DslExtensionTest {
 
-    interface DslExtensionType
+  interface DslExtensionType
 
-    @Test
-    fun testBuildTypeExtension() {
-        val dslExtension = DslExtension.Builder("extension")
-            .extendBuildTypeWith(DslExtensionType::class.java)
-            .build()
+  @Test
+  fun testBuildTypeExtension() {
+    val dslExtension = DslExtension.Builder("extension").extendBuildTypeWith(DslExtensionType::class.java).build()
 
-        Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
-        Truth.assertThat(dslExtension.buildTypeExtensionType)
-            .isEqualTo(DslExtensionType::class.java)
-        Truth.assertThat(dslExtension.productFlavorExtensionType).isNull()
-        Truth.assertThat(dslExtension.projectExtensionType).isNull()
-    }
+    Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
+    Truth.assertThat(dslExtension.buildTypeExtensionType).isEqualTo(DslExtensionType::class.java)
+    Truth.assertThat(dslExtension.productFlavorExtensionType).isNull()
+    Truth.assertThat(dslExtension.projectExtensionType).isNull()
+  }
 
-    @Test
-    fun testModuleExtension() {
-        val dslExtension = DslExtension.Builder("extension")
-            .extendProjectWith(DslExtensionType::class.java)
-            .build()
+  @Test
+  fun testModuleExtension() {
+    val dslExtension = DslExtension.Builder("extension").extendProjectWith(DslExtensionType::class.java).build()
 
-        Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
-        Truth.assertThat(dslExtension.projectExtensionType)
-            .isEqualTo(DslExtensionType::class.java)
-        Truth.assertThat(dslExtension.productFlavorExtensionType).isNull()
-        Truth.assertThat(dslExtension.buildTypeExtensionType).isNull()
-    }
+    Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
+    Truth.assertThat(dslExtension.projectExtensionType).isEqualTo(DslExtensionType::class.java)
+    Truth.assertThat(dslExtension.productFlavorExtensionType).isNull()
+    Truth.assertThat(dslExtension.buildTypeExtensionType).isNull()
+  }
 
-    @Test
-    fun testProductFlavorExtension() {
-        val dslExtension = DslExtension.Builder("extension")
-            .extendProductFlavorWith(DslExtensionType::class.java)
-            .build()
+  @Test
+  fun testProductFlavorExtension() {
+    val dslExtension = DslExtension.Builder("extension").extendProductFlavorWith(DslExtensionType::class.java).build()
 
-        Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
-        Truth.assertThat(dslExtension.productFlavorExtensionType)
-            .isEqualTo(DslExtensionType::class.java)
-        Truth.assertThat(dslExtension.projectExtensionType).isNull()
-        Truth.assertThat(dslExtension.buildTypeExtensionType).isNull()
-    }
+    Truth.assertThat(dslExtension.dslName).isEqualTo("extension")
+    Truth.assertThat(dslExtension.productFlavorExtensionType).isEqualTo(DslExtensionType::class.java)
+    Truth.assertThat(dslExtension.projectExtensionType).isNull()
+    Truth.assertThat(dslExtension.buildTypeExtensionType).isNull()
+  }
 }

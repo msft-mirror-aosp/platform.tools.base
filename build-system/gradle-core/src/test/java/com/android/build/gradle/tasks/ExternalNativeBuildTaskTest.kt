@@ -17,21 +17,20 @@
 package com.android.build.gradle.tasks
 
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.lang.reflect.Modifier
+import org.junit.Test
 
 class ExternalNativeBuildTaskTest {
 
-    @Test
-    fun `ensure objFolder and soFolder`() {
-        val soFolder =
-            ExternalNativeBuildTask::class.java.methods.single { it.name == "getSoFolder" }
-        Truth.assertThat(Modifier.isPublic(soFolder.modifiers)).isTrue()
-    }
+  @Test
+  fun `ensure objFolder and soFolder`() {
+    val soFolder = ExternalNativeBuildTask::class.java.methods.single { it.name == "getSoFolder" }
+    Truth.assertThat(Modifier.isPublic(soFolder.modifiers)).isTrue()
+  }
 
-    @Test
-    fun `reference soFolder to remove Kotlin warning`() {
-        val task : ExternalNativeBuildTask? = null
-        task?.soFolder
-    }
+  @Test
+  fun `reference soFolder to remove Kotlin warning`() {
+    val task: ExternalNativeBuildTask? = null
+    task?.soFolder
+  }
 }

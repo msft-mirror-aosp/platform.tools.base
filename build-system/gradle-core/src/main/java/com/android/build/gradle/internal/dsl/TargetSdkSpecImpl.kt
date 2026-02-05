@@ -24,17 +24,14 @@ import javax.inject.Inject
 
 abstract class TargetSdkSpecImpl @Inject constructor(dslService: DslServices) : TargetSdkSpec {
 
-    override fun release(version: Int): TargetSdkVersion {
-        return TargetSdkVersionImpl(apiLevel = version, codeName = null)
-    }
+  override fun release(version: Int): TargetSdkVersion {
+    return TargetSdkVersionImpl(apiLevel = version, codeName = null)
+  }
 
-    override fun preview(codeName: String): TargetSdkVersion {
-        val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
-        return TargetSdkVersionImpl(apiLevel, codeName)
-    }
+  override fun preview(codeName: String): TargetSdkVersion {
+    val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
+    return TargetSdkVersionImpl(apiLevel, codeName)
+  }
 }
 
-internal data class TargetSdkVersionImpl(
-    override val apiLevel: Int?,
-    override val codeName: String?
-): TargetSdkVersion
+internal data class TargetSdkVersionImpl(override val apiLevel: Int?, override val codeName: String?) : TargetSdkVersion

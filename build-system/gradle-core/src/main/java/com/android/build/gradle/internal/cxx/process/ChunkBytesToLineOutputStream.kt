@@ -16,65 +16,58 @@
 
 package com.android.build.gradle.internal.cxx.process
 
-import com.android.build.gradle.internal.cxx.logging.lifecycleln
 import com.android.utils.cxx.process.LineOutputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
 
 /**
- * This OutputStream receives bytes and splits them into lines which are then sent to the
- * LineOutputStream. This class accounts for lines that span multiple write(byte[], int, int)
- * blocks.
+ * This OutputStream receives bytes and splits them into lines which are then sent to the LineOutputStream. This class accounts for lines
+ * that span multiple write(byte[], int, int) blocks.
  */
-class ChunkBytesToLineOutputStream(
-    private val logPrefix: String,
-    private val printer: LineOutputStream,
-    initialBufferSize : Int = 256) : OutputStream() {
-    private var buffer = ByteArray(initialBufferSize)
-    private var nextByteIndex = 0
+class ChunkBytesToLineOutputStream(private val logPrefix: String, private val printer: LineOutputStream, initialBufferSize: Int = 256) :
+  OutputStream() {
+  private var buffer = ByteArray(initialBufferSize)
+  private var nextByteIndex = 0
 
-    override fun write(b: ByteArray, off: Int, len: Int) {
-        for (i in 0 until len) {
-            val value = b[off + i].toInt()
-            // The reason this doesn't double the presented linebreaks is because
-            // in the \r\n case writeBufferToInfo() exits without emitting a linebreak
-            // when byteCount accumulated by writeByteToBuffer() is still zero. However,
-            // a single \r or \n will still emit a linebreak.
-            if (value == '\r'.code || value == '\n'.code) {
-                writeBufferToInfo()
-            } else {
-                writeByteToBuffer(value)
-            }
-        }
-    }
-
-    override fun write(b: Int) {
-        throw RuntimeException("Intentionally not implemented. " +
-                "Use write(byte[], int, int) for performance")
-    }
-
-    override fun close() {
+  override fun write(b: ByteArray, off: Int, len: Int) {
+    for (i in 0 until len) {
+      val value = b[off + i].toInt()
+      // The reason this doesn't double the presented linebreaks is because
+      // in the \r\n case writeBufferToInfo() exits without emitting a linebreak
+      // when byteCount accumulated by writeByteToBuffer() is still zero. However,
+      // a single \r or \n will still emit a linebreak.
+      if (value == '\r'.code || value == '\n'.code) {
         writeBufferToInfo()
-        printer.close()
+      } else {
+        writeByteToBuffer(value)
+      }
     }
+  }
 
-    private fun writeByteToBuffer(b: Int) {
-        if (nextByteIndex == buffer.size) {
-            buffer = buffer.copyOf(buffer.size * 2)
-        }
-        buffer[nextByteIndex] = b.toByte()
-        nextByteIndex++
+  override fun write(b: Int) {
+    throw RuntimeException("Intentionally not implemented. " + "Use write(byte[], int, int) for performance")
+  }
+
+  override fun close() {
+    writeBufferToInfo()
+    printer.close()
+  }
+
+  private fun writeByteToBuffer(b: Int) {
+    if (nextByteIndex == buffer.size) {
+      buffer = buffer.copyOf(buffer.size * 2)
     }
+    buffer[nextByteIndex] = b.toByte()
+    nextByteIndex++
+  }
 
-    private fun writeBufferToInfo() {
-        if (nextByteIndex == 0) {
-            return
-        }
-        val line =
-            String(buffer, 0, nextByteIndex, Charset.forName("UTF-8"))
-
-        printer.consume(logPrefix + line)
-        nextByteIndex = 0
+  private fun writeBufferToInfo() {
+    if (nextByteIndex == 0) {
+      return
     }
+    val line = String(buffer, 0, nextByteIndex, Charset.forName("UTF-8"))
+
+    printer.consume(logPrefix + line)
+    nextByteIndex = 0
+  }
 }
-

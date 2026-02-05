@@ -26,9 +26,9 @@ import com.android.build.gradle.integration.common.fixture.model.recoverExisting
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.core.Abi
+import com.android.build.gradle.internal.cxx.configure.CMakeVersion
 import com.android.build.gradle.internal.cxx.configure.CmakeProperty.CMAKE_CXX_FLAGS
 import com.android.build.gradle.internal.cxx.configure.CmakeProperty.CMAKE_C_FLAGS
-import com.android.build.gradle.internal.cxx.configure.CMakeVersion
 import com.android.build.gradle.internal.cxx.json.AndroidBuildGradleJsons.getNativeBuildMiniConfig
 import com.android.build.gradle.internal.cxx.json.NativeBuildConfigValueMini
 import com.android.build.gradle.internal.cxx.model.name
@@ -47,27 +47,23 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
 
-    @Rule
-    @JvmField
-    var project = GradleTestProject.builder()
-      .fromTestApp(
-        HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build()
-      )
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .create()
+  @Rule
+  @JvmField
+  var project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .create()
 
+  companion object {
+    @Parameterized.Parameters(name = "version={0}") @JvmStatic fun data() = CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray()
+  }
 
-    companion object {
-        @Parameterized.Parameters(name = "version={0}")
-        @JvmStatic
-        fun data() = CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray()
-    }
-
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            join(project.buildFile.parentFile, "CMakeSettings.json"),
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      join(project.buildFile.parentFile, "CMakeSettings.json"),
+      """
             {
                 "configurations": [{
                     "name": "android-gradle-plugin-predetermined-name",
@@ -80,11 +76,13 @@ class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
                         {"name": "$CMAKE_CXX_FLAGS", "value": "-DTEST_CPP_FLAG"},
                     ]
                 }]
-            }""".trimIndent())
+            }"""
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -119,67 +117,62 @@ class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
                     }
                 }
 
-            """.trimIndent()
-        )
+            """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun checkBuildFoldersRedirected() {
+    project.execute("clean", "assemble")
+    val abis = 2
+    val buildTypes = 4
+    val model = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+    val allBuildOutputs =
+      model.container.singleNativeModule.variants.flatMap { variant ->
+        variant.abis.flatMap { abi -> abi.symbolFolderIndexFile.readAsFileIndex().flatMap { it.list()!!.toList() } }
+      }
+    Truth.assertThat(allBuildOutputs).hasSize(abis * buildTypes)
+    Truth.assertThat(allBuildOutputs.toSet()).containsExactly("libhello-jni.so")
+    val projectRoot = project.buildFile.parentFile
+    assertThat(join(projectRoot, "cmake/android/debug")).isDirectory()
+    assertThat(join(projectRoot, "cmake/android/release")).isDirectory()
+    assertThat(join(projectRoot, "cmake/android/minSizeRel")).isDirectory()
+    assertThat(join(projectRoot, "cmake/android/relWithDebInfo")).isDirectory()
+  }
+
+  @Test
+  fun checkJsonRegeneratedForDifferentBuildCommands() {
+    project.execute("clean", "assemble")
+    val miniConfigs = getMiniConfigs()
+
+    assertThat(miniConfigs.size).isEqualTo(2)
+    for (miniConfig in miniConfigs) {
+      val buildCommand = miniConfig.buildTargetsCommandComponents?.joinToString(" ")
+      assertThat(buildCommand).doesNotContain("-j 100")
     }
 
-    @Test
-    fun checkBuildFoldersRedirected() {
-        project.execute("clean", "assemble")
-        val abis = 2
-        val buildTypes = 4
-        val model = project.modelV2().fetchNativeModules(
-            NativeModuleParams(
-                emptyList(),
-                emptyList()
-            )
-        )
-        val allBuildOutputs = model.container.singleNativeModule.variants.flatMap { variant ->
-            variant.abis.flatMap { abi ->
-                abi.symbolFolderIndexFile.readAsFileIndex().flatMap {
-                    it.list()!!.toList()
-                }
-            }
-        }
-        Truth.assertThat(allBuildOutputs).hasSize(abis * buildTypes)
-        Truth.assertThat(allBuildOutputs.toSet()).containsExactly("libhello-jni.so")
-        val projectRoot = project.buildFile.parentFile
-        assertThat(join(projectRoot, "cmake/android/debug")).isDirectory()
-        assertThat(join(projectRoot, "cmake/android/release")).isDirectory()
-        assertThat(join(projectRoot, "cmake/android/minSizeRel")).isDirectory()
-        assertThat(join(projectRoot, "cmake/android/relWithDebInfo")).isDirectory()
+    TestFileUtils.searchAndReplace(
+      join(project.buildFile.parentFile, "CMakeSettings.json"),
+      "\"buildCommandArgs\": \"\",",
+      "\"buildCommandArgs\": \"-j 100\",",
+    )
+
+    project.execute("clean", "assemble")
+    val miniConfigsWithBuildCommandArgs = getMiniConfigs()
+
+    assertThat(miniConfigs.size).isEqualTo(2)
+    for (miniConfig in miniConfigsWithBuildCommandArgs) {
+      val buildCommand = miniConfig.buildTargetsCommandComponents?.joinToString(" ")
+      assertThat(buildCommand).contains("-j 100")
     }
+  }
 
-    @Test
-    fun checkJsonRegeneratedForDifferentBuildCommands() {
-        project.execute("clean", "assemble")
-        val miniConfigs = getMiniConfigs()
-
-        assertThat(miniConfigs.size).isEqualTo(2)
-        for(miniConfig in miniConfigs){
-            val buildCommand = miniConfig.buildTargetsCommandComponents?.joinToString(" ")
-            assertThat(buildCommand).doesNotContain("-j 100")
-        }
-
-        TestFileUtils.searchAndReplace(
-            join(project.buildFile.parentFile, "CMakeSettings.json"),
-            "\"buildCommandArgs\": \"\",",
-            "\"buildCommandArgs\": \"-j 100\",")
-
-        project.execute("clean", "assemble")
-        val miniConfigsWithBuildCommandArgs = getMiniConfigs()
-
-        assertThat(miniConfigs.size).isEqualTo(2)
-        for(miniConfig in miniConfigsWithBuildCommandArgs){
-            val buildCommand = miniConfig.buildTargetsCommandComponents?.joinToString(" ")
-            assertThat(buildCommand).contains("-j 100")
-        }
-    }
-
-    private fun getMiniConfigs() : List<NativeBuildConfigValueMini> {
-        return project.recoverExistingCxxAbiModels()
-                .filter { it.name == Abi.X86_64.tag || it.name == Abi.ARMEABI_V7A.tag }
-                .filter { it.variant.variantName == "debug" }
-                .map { getNativeBuildMiniConfig(it, null) }
-    }
+  private fun getMiniConfigs(): List<NativeBuildConfigValueMini> {
+    return project
+      .recoverExistingCxxAbiModels()
+      .filter { it.name == Abi.X86_64.tag || it.name == Abi.ARMEABI_V7A.tag }
+      .filter { it.variant.variantName == "debug" }
+      .map { getNativeBuildMiniConfig(it, null) }
+  }
 }

@@ -34,25 +34,13 @@ class ClassEntryTest {
   fun testInnerClassOrdering() {
     // Ensure that we see outer classes before inner classes
     val classes =
-      listOf(
-          "Foo.class",
-          "Foo\$Bar2.class",
-          "Bar.class",
-          "Foo\$Bar1\$Inner.class",
-          "Foo\$Bar1.class",
-          "Bar1.class",
-        )
-        .map { getTestClassEntry(it) }
+      listOf("Foo.class", "Foo\$Bar2.class", "Bar.class", "Foo\$Bar1\$Inner.class", "Foo\$Bar1.class", "Bar1.class").map {
+        getTestClassEntry(it)
+      }
     checkTransitiveComparator(classes)
 
     assertEquals(
-      "" +
-        "Bar.class\n" +
-        "Bar1.class\n" +
-        "Foo.class\n" +
-        "Foo\$Bar1.class\n" +
-        "Foo\$Bar1\$Inner.class\n" +
-        "Foo\$Bar2.class",
+      "" + "Bar.class\n" + "Bar1.class\n" + "Foo.class\n" + "Foo\$Bar1.class\n" + "Foo\$Bar1\$Inner.class\n" + "Foo\$Bar2.class",
       classes.sorted().joinToString("\n") { it.file.name },
     )
   }
@@ -60,10 +48,7 @@ class ClassEntryTest {
   @Test
   fun testCompareTo() {
     // Regression test for 178805864
-    val classes =
-      listOf("A.class", "A-\$ExternalSyntheticLambda0.class", "A\$1.class")
-        .map { getTestClassEntry(it) }
-        .toList()
+    val classes = listOf("A.class", "A-\$ExternalSyntheticLambda0.class", "A\$1.class").map { getTestClassEntry(it) }.toList()
     checkTransitiveComparator(classes)
 
     // Unsorted
@@ -146,6 +131,5 @@ class ClassEntryTest {
     temporaryFolder.delete()
   }
 
-  private fun getTestClassEntry(p: String) =
-    ClassEntry(File(p), File("classes.jar"), File("bin"), ByteArray(0))
+  private fun getTestClassEntry(p: String) = ClassEntry(File(p), File("classes.jar"), File("bin"), ByteArray(0))
 }

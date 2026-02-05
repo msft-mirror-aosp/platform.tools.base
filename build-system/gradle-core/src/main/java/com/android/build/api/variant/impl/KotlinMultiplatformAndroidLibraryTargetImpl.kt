@@ -36,136 +36,126 @@ import com.android.build.gradle.internal.dsl.CompileSdkDelegate
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.MinSdkDelegate
 import com.android.build.gradle.internal.services.DslServices
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
-import javax.inject.Inject
 
 @OptIn(ExternalKotlinTargetApi::class)
-internal open class KotlinMultiplatformAndroidLibraryTargetImpl @Inject constructor(
-    dslServices: DslServices,
-    delegate: Delegate,
-    kotlinExtension: KotlinMultiplatformExtension,
-    androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
-) : DecoratedExternalKotlinTarget(delegate),
-    KotlinMultiplatformAndroidLibraryTarget,
-    KotlinMultiplatformAndroidLibraryExtension by androidExtension {
+internal open class KotlinMultiplatformAndroidLibraryTargetImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  delegate: Delegate,
+  kotlinExtension: KotlinMultiplatformExtension,
+  androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl,
+) :
+  DecoratedExternalKotlinTarget(delegate),
+  KotlinMultiplatformAndroidLibraryTarget,
+  KotlinMultiplatformAndroidLibraryExtension by androidExtension {
 
-    internal var enableJavaSources = false
-        private set
+  internal var enableJavaSources = false
+    private set
 
-    override val compilerOptions: KotlinJvmCompilerOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        (super.compilerOptions as KotlinJvmCompilerOptions).apply {
-            KotlinJvmToolchain.wireJvmTargetToToolchain(this, project)
-        }
+  override val compilerOptions: KotlinJvmCompilerOptions by
+    lazy(LazyThreadSafetyMode.PUBLICATION) {
+      (super.compilerOptions as KotlinJvmCompilerOptions).apply { KotlinJvmToolchain.wireJvmTargetToToolchain(this, project) }
     }
 
-    override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation> =
-        project.objects.domainObjectContainer(
-            KotlinMultiplatformAndroidCompilation::class.java,
-            KotlinMultiplatformAndroidCompilationFactory(
-                project = project,
-                target = this,
-                kotlinExtension = kotlinExtension,
-                androidExtension = androidExtension
-            )
-        )
-
-    override fun withJava() {
-        enableJavaSources = true
-    }
-
-    private val compileSdkDelegate = CompileSdkDelegate(
-        getCompileSdk = { androidExtension._compileSdk },
-        setCompileSdk = { androidExtension._compileSdk = it },
-        issueReporter = dslServices.issueReporter,
-        dslServices = dslServices
+  override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation> =
+    project.objects.domainObjectContainer(
+      KotlinMultiplatformAndroidCompilation::class.java,
+      KotlinMultiplatformAndroidCompilationFactory(
+        project = project,
+        target = this,
+        kotlinExtension = kotlinExtension,
+        androidExtension = androidExtension,
+      ),
     )
 
-    open fun compileSdk(action: Action<CompileSdkSpec>) {
-        compileSdkDelegate.compileSdk(action)
-    }
+  override fun withJava() {
+    enableJavaSources = true
+  }
 
-    //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
-    @Deprecated(
-        "To be removed after Gradle drops space assignment support",
-        ReplaceWith("compileSdk { version = release(value) }")
-    )
-    open fun compileSdk(value: Int) {
-        compileSdkDelegate.compileSdk = value
-    }
-
-    private val minSdkDelegate = MinSdkDelegate(
-        getMinSdk = { androidExtension._minSdk },
-        setMinSdk = { androidExtension._minSdk = it },
-        dslServices = dslServices
+  private val compileSdkDelegate =
+    CompileSdkDelegate(
+      getCompileSdk = { androidExtension._compileSdk },
+      setCompileSdk = { androidExtension._compileSdk = it },
+      issueReporter = dslServices.issueReporter,
+      dslServices = dslServices,
     )
 
-    open fun minSdk(action: Action<MinSdkSpec>) {
-        minSdkDelegate.minSdk(action)
-    }
+  open fun compileSdk(action: Action<CompileSdkSpec>) {
+    compileSdkDelegate.compileSdk(action)
+  }
 
-    //TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
-    @Deprecated(
-        "To be removed after Gradle drops space assignment support",
-        ReplaceWith("minSdk { version = release(value) }")
-    )
-    open fun minSdk(value: Int) {
-        minSdkDelegate.minSdk = value
-    }
+  // TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
+  @Deprecated("To be removed after Gradle drops space assignment support", ReplaceWith("compileSdk { version = release(value) }"))
+  open fun compileSdk(value: Int) {
+    compileSdkDelegate.compileSdk = value
+  }
 
-    fun localDependencySelection(action: Action<DependencySelection>) {
-        action.execute(localDependencySelection)
-    }
+  private val minSdkDelegate =
+    MinSdkDelegate(getMinSdk = { androidExtension._minSdk }, setMinSdk = { androidExtension._minSdk = it }, dslServices = dslServices)
 
-    fun androidResources(action: Action<LibraryAndroidResources>) {
-        action.execute(androidResources)
-    }
+  open fun minSdk(action: Action<MinSdkSpec>) {
+    minSdkDelegate.minSdk(action)
+  }
 
-    fun testCoverage(action: Action<TestCoverage>) {
-        action.execute(testCoverage)
-    }
+  // TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
+  @Deprecated("To be removed after Gradle drops space assignment support", ReplaceWith("minSdk { version = release(value) }"))
+  open fun minSdk(value: Int) {
+    minSdkDelegate.minSdk = value
+  }
 
-    fun optimization(action: Action<KmpOptimization>) {
-        action.execute(optimization)
-    }
+  fun localDependencySelection(action: Action<DependencySelection>) {
+    action.execute(localDependencySelection)
+  }
 
-    fun lint(action: Action<Lint>) {
-        action.execute(lint)
-    }
+  fun androidResources(action: Action<LibraryAndroidResources>) {
+    action.execute(androidResources)
+  }
 
-    fun aarMetadata(action: Action<AarMetadata>) {
-        action.execute(aarMetadata)
-    }
+  fun testCoverage(action: Action<TestCoverage>) {
+    action.execute(testCoverage)
+  }
 
-    fun packaging(action: Action<Packaging>) {
-        action.execute(packaging)
-    }
+  fun optimization(action: Action<KmpOptimization>) {
+    action.execute(optimization)
+  }
 
-    fun withHostTest(action: Action<KotlinMultiplatformAndroidHostTest>) {
-        withHostTest {
-            action.execute(this)
-        }
-    }
+  fun lint(action: Action<Lint>) {
+    action.execute(lint)
+  }
 
-    fun withHostTestBuilder(action: Action<KotlinMultiplatformAndroidCompilationBuilder>): HasConfigurableValue<KotlinMultiplatformAndroidHostTest> {
-        return withHostTestBuilder {
-            action.execute(this)
-        }
-    }
+  fun aarMetadata(action: Action<AarMetadata>) {
+    action.execute(aarMetadata)
+  }
 
-    fun withDeviceTest(action: Action<KotlinMultiplatformAndroidDeviceTest>) {
-        withDeviceTest {
-            action.execute(this)
-        }
-    }
+  fun packaging(action: Action<Packaging>) {
+    action.execute(packaging)
+  }
 
-    fun withDeviceTestBuilder(action: Action<KotlinMultiplatformAndroidCompilationBuilder>): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest> {
-        return withDeviceTestBuilder {
-            action.execute(this)
-        }
-    }
+  fun withHostTest(action: Action<KotlinMultiplatformAndroidHostTest>) {
+    withHostTest { action.execute(this) }
+  }
+
+  fun withHostTestBuilder(
+    action: Action<KotlinMultiplatformAndroidCompilationBuilder>
+  ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest> {
+    return withHostTestBuilder { action.execute(this) }
+  }
+
+  fun withDeviceTest(action: Action<KotlinMultiplatformAndroidDeviceTest>) {
+    withDeviceTest { action.execute(this) }
+  }
+
+  fun withDeviceTestBuilder(
+    action: Action<KotlinMultiplatformAndroidCompilationBuilder>
+  ): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest> {
+    return withDeviceTestBuilder { action.execute(this) }
+  }
 }

@@ -18,27 +18,23 @@ package com.android.tools.render.environment
 
 import com.android.tools.analytics.crash.CrashReport
 import com.android.tools.analytics.crash.CrashReporter
-import org.apache.http.HttpEntity
 import java.util.concurrent.CompletableFuture
+import org.apache.http.HttpEntity
 
 /** [CrashReporter] that prints the crashes information to the console. */
 internal class ConsoleCrashReporter : CrashReporter {
-    override fun submit(crashReport: CrashReport): CompletableFuture<String> =
-        submit(crashReport, false)
+  override fun submit(crashReport: CrashReport): CompletableFuture<String> = submit(crashReport, false)
 
-    override fun submit(
-        crashReport: CrashReport,
-        userReported: Boolean
-    ): CompletableFuture<String> {
-        (crashReport as? ThrowableCrashReport)?.report()
-        return CompletableFuture.completedFuture("")
-    }
+  override fun submit(crashReport: CrashReport, userReported: Boolean): CompletableFuture<String> {
+    (crashReport as? ThrowableCrashReport)?.report()
+    return CompletableFuture.completedFuture("")
+  }
 
-    override fun submit(kv: MutableMap<String, String>): CompletableFuture<String> {
-        return CompletableFuture.completedFuture("")
-    }
+  override fun submit(kv: MutableMap<String, String>): CompletableFuture<String> {
+    return CompletableFuture.completedFuture("")
+  }
 
-    override fun submit(entity: HttpEntity): CompletableFuture<String> {
-        return CompletableFuture.completedFuture("")
-    }
+  override fun submit(entity: HttpEntity): CompletableFuture<String> {
+    return CompletableFuture.completedFuture("")
+  }
 }

@@ -22,9 +22,9 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 
 /**
- * An [UnboundedSet] is either a finite [PersistentSet], or `null`, representing *all* elements.
- * This means that if [T] is finite, then `null` is a *redundant* `⊤` distinct from the finite set
- * of all elements of [T], and [UnboundedSet] won't be an appropriate representation.
+ * An [UnboundedSet] is either a finite [PersistentSet], or `null`, representing *all* elements. This means that if [T] is finite, then
+ * `null` is a *redundant* `⊤` distinct from the finite set of all elements of [T], and [UnboundedSet] won't be an appropriate
+ * representation.
  */
 typealias UnboundedSet<T> = PersistentSet<T>?
 
@@ -58,20 +58,15 @@ private val possibilityLattice =
     override val bottom = persistentSetOf<Nothing>()
     override val top = null
 
-    override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first intersectedWith second
+    override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first intersectedWith second
 
-    override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first unionedWith second
+    override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first unionedWith second
 
-    override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first isSubsetOf second
+    override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first isSubsetOf second
   }
 
 private val constraintLattice = possibilityLattice.dual()
 
-fun <T> possibilityLattice(): Lattice<UnboundedSet<T>> =
-  possibilityLattice as Lattice<UnboundedSet<T>>
+fun <T> possibilityLattice(): Lattice<UnboundedSet<T>> = possibilityLattice as Lattice<UnboundedSet<T>>
 
-fun <T> constraintLattice(): Lattice<UnboundedSet<T>> =
-  constraintLattice as Lattice<UnboundedSet<T>>
+fun <T> constraintLattice(): Lattice<UnboundedSet<T>> = constraintLattice as Lattice<UnboundedSet<T>>

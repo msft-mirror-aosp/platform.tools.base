@@ -23,28 +23,29 @@ import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuite
 /**
  * Adapter class for UTP plugins that need to update test results.
  *
- * After upgrading to the new UTP Core dependencies, unit testing UTP host plugins became
- * difficult because afterEach and afterAll do not return the updated test result.
- * Instead we need to send the updated test result through context.events.sendTestResultUpdate.
+ * After upgrading to the new UTP Core dependencies, unit testing UTP host plugins became difficult because afterEach and afterAll do not
+ * return the updated test result. Instead we need to send the updated test result through context.events.sendTestResultUpdate.
  *
- * In unit test we need to verify that a certain test result is sent through sendTestResultUpdate.
- * However, since sendTestResultUpdate is an extension function of Events class and does not allow
- * nullable input parameters, we cannot inject argument captor and argument matcher to the mock
- * due to Mockito limitations. Although we can do this through mockk framework, having multiple
- * Mock frameworks in the same project is bad in the long run.
+ * In unit test we need to verify that a certain test result is sent through sendTestResultUpdate. However, since sendTestResultUpdate is an
+ * extension function of Events class and does not allow nullable input parameters, we cannot inject argument captor and argument matcher to
+ * the mock due to Mockito limitations. Although we can do this through mockk framework, having multiple Mock frameworks in the same project
+ * is bad in the long run.
  */
 abstract class HostPluginAdapter : HostPlugin {
 
-    abstract fun afterEachWithReturn(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean = false): TestResult
+  abstract fun afterEachWithReturn(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean = false): TestResult
 
-    final override fun afterEach(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean) {
-        afterEachWithReturn(testResult, deviceController, cancelled)
-    }
+  final override fun afterEach(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean) {
+    afterEachWithReturn(testResult, deviceController, cancelled)
+  }
 
-    abstract fun afterAllWithReturn(testSuiteResult: TestSuiteResult, deviceController: DeviceController, cancelled: Boolean = false): TestSuiteResult
+  abstract fun afterAllWithReturn(
+    testSuiteResult: TestSuiteResult,
+    deviceController: DeviceController,
+    cancelled: Boolean = false,
+  ): TestSuiteResult
 
-    final override fun afterAll(testSuiteResult: TestSuiteResult, deviceController: DeviceController, cancelled: Boolean) {
-        afterAllWithReturn(testSuiteResult, deviceController, cancelled)
-    }
+  final override fun afterAll(testSuiteResult: TestSuiteResult, deviceController: DeviceController, cancelled: Boolean) {
+    afterAllWithReturn(testSuiteResult, deviceController, cancelled)
+  }
 }
-

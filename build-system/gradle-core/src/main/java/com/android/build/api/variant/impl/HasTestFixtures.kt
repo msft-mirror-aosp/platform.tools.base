@@ -18,9 +18,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.component.impl.TestFixturesImpl
 
-/**
- * Internal marker interface for [VariantImpl] that potentially has associated test fixtures.
- */
+/** Internal marker interface for [VariantImpl] that potentially has associated test fixtures. */
 interface HasTestFixtures {
-    var testFixtures: TestFixturesImpl?
+  var testFixtures: TestFixturesImpl?
 }

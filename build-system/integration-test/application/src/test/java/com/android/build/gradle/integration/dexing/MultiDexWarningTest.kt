@@ -22,42 +22,41 @@ import org.junit.Test
 
 class MultiDexWarningTest {
 
-    @get:Rule
-    var rule = GradleRule.from {}
+  @get:Rule var rule = GradleRule.from {}
 
-    val warning = """
-         The multidex library is included as a dependency, but it is not needed for apps
-         with minSdk >= 21. Please remove dependency 'androidx.multidex:multidex:2.0.1' from ':app'.
-         See https://developer.android.com/build/multidex for more information.
-        """.trimIndent()
+  val warning =
+    """
+    The multidex library is included as a dependency, but it is not needed for apps
+    with minSdk >= 21. Please remove dependency 'androidx.multidex:multidex:2.0.1' from ':app'.
+    See https://developer.android.com/build/multidex for more information.
+    """
+      .trimIndent()
 
-    @Test
-    fun `test warning is present for unnecessary multidex`() {
-        val build = rule.build {
-            androidApplication {
-                android.defaultConfig.minSdk = 21
+  @Test
+  fun `test warning is present for unnecessary multidex`() {
+    val build =
+      rule.build {
+        androidApplication {
+          android.defaultConfig.minSdk = 21
 
-                dependencies {
-                    implementation("androidx.multidex:multidex:2.0.1")
-                }
-            }
+          dependencies { implementation("androidx.multidex:multidex:2.0.1") }
         }
+      }
 
-        build.executor.run(":app:assembleDebug").assertOutputContains(warning)
-    }
+    build.executor.run(":app:assembleDebug").assertOutputContains(warning)
+  }
 
-    @Test
-    fun `test warning is not present for legacy minSdk `() {
-        val build = rule.build {
-            androidApplication {
-                android.defaultConfig.minSdk = 20
+  @Test
+  fun `test warning is not present for legacy minSdk `() {
+    val build =
+      rule.build {
+        androidApplication {
+          android.defaultConfig.minSdk = 20
 
-                dependencies {
-                    implementation("androidx.multidex:multidex:2.0.1")
-                }
-            }
+          dependencies { implementation("androidx.multidex:multidex:2.0.1") }
         }
+      }
 
-        build.executor.run(":app:assembleDebug").assertOutputDoesNotContain(warning)
-    }
+    build.executor.run(":app:assembleDebug").assertOutputDoesNotContain(warning)
+  }
 }

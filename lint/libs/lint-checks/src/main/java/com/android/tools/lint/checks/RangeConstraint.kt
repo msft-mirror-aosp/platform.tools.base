@@ -24,25 +24,16 @@ import org.jetbrains.uast.UAnnotation
 
 abstract class RangeConstraint {
   /**
-   * Checks whether the given range is compatible with this one. We err on the side of caution. E.g.
-   * if we have `method(x)` and the parameter declaration says that x is between 0 and 10, and then
-   * we have a parameter which is known to be in the range 5 to 15, here we consider this a
-   * compatible range; we don't flag this as an error. If however, the ranges don't overlap, *then*
-   * we complain.
+   * Checks whether the given range is compatible with this one. We err on the side of caution. E.g. if we have `method(x)` and the
+   * parameter declaration says that x is between 0 and 10, and then we have a parameter which is known to be in the range 5 to 15, here we
+   * consider this a compatible range; we don't flag this as an error. If however, the ranges don't overlap, *then* we complain.
    */
   open fun contains(other: RangeConstraint): Boolean? {
     return null
   }
 
-  /**
-   * For a given allowed constraint, returns a string describing how the [actual] constraint is not
-   * fully contained.
-   */
-  abstract fun describeDelta(
-    actual: RangeConstraint,
-    actualLabel: String,
-    allowedLabel: String,
-  ): String
+  /** For a given allowed constraint, returns a string describing how the [actual] constraint is not fully contained. */
+  abstract fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String
 
   /** Intersect two ranges */
   abstract infix fun and(other: RangeConstraint?): RangeConstraint

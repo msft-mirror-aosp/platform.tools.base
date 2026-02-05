@@ -24,7 +24,5 @@ import org.gradle.api.Incubating
  * This is accessed via [Bundle.abi]
  */
 interface BundleAbi {
-    @get:Incubating
-    @set:Incubating
-    var enableSplit: Boolean?
+  @get:Incubating @set:Incubating var enableSplit: Boolean?
 }

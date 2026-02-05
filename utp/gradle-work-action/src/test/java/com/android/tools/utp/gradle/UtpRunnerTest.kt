@@ -23,6 +23,8 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import java.io.File
+import java.util.concurrent.ExecutionException
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.junit.Before
@@ -36,139 +38,112 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isA
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import java.io.File
-import java.util.concurrent.ExecutionException
 
-/**
- * Unit test for [UtpRunner].
- */
+/** Unit test for [UtpRunner]. */
 @RunWith(MockitoJUnitRunner::class)
 class UtpRunnerTest {
 
-    @Rule
-    @JvmField
-    val tempDir = TemporaryFolder()
+  @Rule @JvmField val tempDir = TemporaryFolder()
 
-    @Mock
-    private lateinit var logger: Logger
+  @Mock private lateinit var logger: Logger
 
-    @Mock
-    private lateinit var utpDependencies: UtpDependencies
+  @Mock private lateinit var utpDependencies: UtpDependencies
 
-    // Inputs
-    private lateinit var runnerConfig1: RunnerConfigProto.RunnerConfig
-    private lateinit var runnerConfig2: RunnerConfigProto.RunnerConfig
+  // Inputs
+  private lateinit var runnerConfig1: RunnerConfigProto.RunnerConfig
+  private lateinit var runnerConfig2: RunnerConfigProto.RunnerConfig
 
-    // Outputs
-    private lateinit var resultFile1: File
-    private lateinit var resultFile2: File
-    private lateinit var mergedResultFile: File
-    private lateinit var exitCodeFile: File
+  // Outputs
+  private lateinit var resultFile1: File
+  private lateinit var resultFile2: File
+  private lateinit var mergedResultFile: File
+  private lateinit var exitCodeFile: File
 
-    private lateinit var utpRunner: UtpRunner
+  private lateinit var utpRunner: UtpRunner
 
-    // Test State
-    private var throwExceptionFromUtp = false
-    private var simulatedTestStatus = TestStatus.PASSED
-    private val capturedUtpConfigs = mutableListOf<RunnerConfigProto.RunnerConfig>()
+  // Test State
+  private var throwExceptionFromUtp = false
+  private var simulatedTestStatus = TestStatus.PASSED
+  private val capturedUtpConfigs = mutableListOf<RunnerConfigProto.RunnerConfig>()
 
-    @Before
-    fun setUp() {
-        // Setup Output Files
-        resultFile1 = tempDir.newFile("result-1.pb")
-        resultFile2 = tempDir.newFile("result-2.pb")
-        mergedResultFile = tempDir.newFile("merged-result.pb")
-        exitCodeFile = tempDir.newFile("exit-code.txt")
+  @Before
+  fun setUp() {
+    // Setup Output Files
+    resultFile1 = tempDir.newFile("result-1.pb")
+    resultFile2 = tempDir.newFile("result-2.pb")
+    mergedResultFile = tempDir.newFile("merged-result.pb")
+    exitCodeFile = tempDir.newFile("exit-code.txt")
 
-        // Setup Input Configs
-        runnerConfig1 = RunnerConfigProto.RunnerConfig.newBuilder().build()
-        runnerConfig2 = RunnerConfigProto.RunnerConfig.newBuilder().build()
+    // Setup Input Configs
+    runnerConfig1 = RunnerConfigProto.RunnerConfig.newBuilder().build()
+    runnerConfig2 = RunnerConfigProto.RunnerConfig.newBuilder().build()
 
-        // Initialize Runner with a custom executor lambda to mock UTP behavior
-        utpRunner = UtpRunner(
-            utpDependencies,
-            logger,
-            MoreExecutors::newDirectExecutorService,
-        ) { utpConfig ->
-            capturedUtpConfigs.add(utpConfig)
+    // Initialize Runner with a custom executor lambda to mock UTP behavior
+    utpRunner =
+      UtpRunner(utpDependencies, logger, MoreExecutors::newDirectExecutorService) { utpConfig ->
+        capturedUtpConfigs.add(utpConfig)
 
-            if (throwExceptionFromUtp) {
-                throw RuntimeException("UTP Process failed")
-            }
-
-            // Simulate UTP writing a result file based on which config is running.
-            // In a real scenario, the config contains the output path.
-            // Here we map the input config instance to the pre-created output file.
-            val targetFile = when (utpConfig) {
-                runnerConfig1 -> resultFile1
-                runnerConfig2 -> resultFile2
-                else -> throw IllegalStateException("Unknown config")
-            }
-
-            // Write a dummy proto result to the file so the merger can read it later
-            val dummyResult = TestSuiteResult.newBuilder()
-                .setTestStatus(simulatedTestStatus)
-                .build()
-            targetFile.outputStream().use { dummyResult.writeTo(it) }
+        if (throwExceptionFromUtp) {
+          throw RuntimeException("UTP Process failed")
         }
-    }
 
-    @Test
-    fun execute_successfulRun_startsAllProcessesInParallelAndMergesResults() {
-        // Act
-        utpRunner.execute(
-            listOf(runnerConfig1, runnerConfig2),
-            listOf(resultFile1, resultFile2),
-            mergedResultFile,
-            exitCodeFile
-        )
+        // Simulate UTP writing a result file based on which config is running.
+        // In a real scenario, the config contains the output path.
+        // Here we map the input config instance to the pre-created output file.
+        val targetFile =
+          when (utpConfig) {
+            runnerConfig1 -> resultFile1
+            runnerConfig2 -> resultFile2
+            else -> throw IllegalStateException("Unknown config")
+          }
 
-        // Assert: Verify tasks were submitted
-        assertThat(capturedUtpConfigs).containsExactly(runnerConfig1, runnerConfig2)
+        // Write a dummy proto result to the file so the merger can read it later
+        val dummyResult = TestSuiteResult.newBuilder().setTestStatus(simulatedTestStatus).build()
+        targetFile.outputStream().use { dummyResult.writeTo(it) }
+      }
+  }
 
-        // Assert: Verify exit code was written (0 for success)
-        assertThat(exitCodeFile.readText()).isEqualTo("0")
+  @Test
+  fun execute_successfulRun_startsAllProcessesInParallelAndMergesResults() {
+    // Act
+    utpRunner.execute(listOf(runnerConfig1, runnerConfig2), listOf(resultFile1, resultFile2), mergedResultFile, exitCodeFile)
 
-        // Assert: Verify merged file has content
-        val mergedResult = mergedResultFile.inputStream().use { TestSuiteResult.parseFrom(it) }
-        assertThat(mergedResult.testStatus).isEqualTo(TestStatus.PASSED)
-    }
+    // Assert: Verify tasks were submitted
+    assertThat(capturedUtpConfigs).containsExactly(runnerConfig1, runnerConfig2)
 
-    @Test
-    fun execute_testFailures_writesFailureExitCode() {
-        // Arrange
-        simulatedTestStatus = TestStatus.FAILED
+    // Assert: Verify exit code was written (0 for success)
+    assertThat(exitCodeFile.readText()).isEqualTo("0")
 
-        // Act
-        utpRunner.execute(
-            listOf(runnerConfig1, runnerConfig2),
-            listOf(resultFile1, resultFile2),
-            mergedResultFile,
-            exitCodeFile
-        )
+    // Assert: Verify merged file has content
+    val mergedResult = mergedResultFile.inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(mergedResult.testStatus).isEqualTo(TestStatus.PASSED)
+  }
 
-        // Assert: Verify exit code was written (1 for failure)
-        assertThat(exitCodeFile.readText()).isEqualTo("1")
-    }
+  @Test
+  fun execute_testFailures_writesFailureExitCode() {
+    // Arrange
+    simulatedTestStatus = TestStatus.FAILED
 
-    @Test
-    fun execute_executionException_throwsGradleException() {
-        // Arrange
-        throwExceptionFromUtp = true
+    // Act
+    utpRunner.execute(listOf(runnerConfig1, runnerConfig2), listOf(resultFile1, resultFile2), mergedResultFile, exitCodeFile)
 
-        // Act & Assert
-        val e = assertThrows<GradleException> {
-            utpRunner.execute(
-                listOf(runnerConfig1, runnerConfig2),
-                listOf(resultFile1, resultFile2),
-                mergedResultFile,
-                exitCodeFile
-            )
-        }
-        assertThat(e).hasMessageThat().isEqualTo("Test Execution failed")
+    // Assert: Verify exit code was written (1 for failure)
+    assertThat(exitCodeFile.readText()).isEqualTo("1")
+  }
 
-        // Assert: Logger should verify the underlying execution exception
-        verify(logger, times(2))
-            .warn(eq("Test Execution failed"), isA<ExecutionException>())
-    }
+  @Test
+  fun execute_executionException_throwsGradleException() {
+    // Arrange
+    throwExceptionFromUtp = true
+
+    // Act & Assert
+    val e =
+      assertThrows<GradleException> {
+        utpRunner.execute(listOf(runnerConfig1, runnerConfig2), listOf(resultFile1, resultFile2), mergedResultFile, exitCodeFile)
+      }
+    assertThat(e).hasMessageThat().isEqualTo("Test Execution failed")
+
+    // Assert: Logger should verify the underlying execution exception
+    verify(logger, times(2)).warn(eq("Test Execution failed"), isA<ExecutionException>())
+  }
 }

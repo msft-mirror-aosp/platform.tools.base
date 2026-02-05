@@ -25,21 +25,16 @@ import com.android.tools.configurations.ThemeInfoProvider
 private const val DEFAULT_APP_THEME = "@android:style/Theme.Material.Light"
 
 /**
- * A simplified [ThemeInfoProvider] reduced to a single hard-coded theme. This is sufficient for the
- * compose preview, but might need improvement to fully support other cases (e.g. xml layout
- * rendering).
+ * A simplified [ThemeInfoProvider] reduced to a single hard-coded theme. This is sufficient for the compose preview, but might need
+ * improvement to fully support other cases (e.g. xml layout rendering).
  */
 internal class StandaloneThemeInfoProvider : ThemeInfoProvider {
-    override val appThemeName: String = DEFAULT_APP_THEME
-    override val allActivityThemeNames: Set<String> = emptySet()
+  override val appThemeName: String = DEFAULT_APP_THEME
+  override val allActivityThemeNames: Set<String> = emptySet()
 
-    override fun getThemeNameForActivity(activityFqcn: String): String? = null
+  override fun getThemeNameForActivity(activityFqcn: String): String? = null
 
-    override fun getDeviceDefaultTheme(
-        renderingTarget: IAndroidTarget?,
-        screenSize: ScreenSize?,
-        device: Device?
-    ): String = appThemeName
+  override fun getDeviceDefaultTheme(renderingTarget: IAndroidTarget?, screenSize: ScreenSize?, device: Device?): String = appThemeName
 
-    override fun getDefaultTheme(configuration: Configuration): String = appThemeName
+  override fun getDefaultTheme(configuration: Configuration): String = appThemeName
 }

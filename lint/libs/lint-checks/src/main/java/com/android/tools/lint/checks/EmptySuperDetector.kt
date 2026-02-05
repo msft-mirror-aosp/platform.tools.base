@@ -33,13 +33,10 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.USuperExpression
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
-/**
- * Makes sure that methods do not call super when overriding methods annotated with `@EmptySuper`.
- */
+/** Makes sure that methods do not call super when overriding methods annotated with `@EmptySuper`. */
 class EmptySuperDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(EmptySuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(EmptySuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Missing call to super. */
     @JvmField
@@ -60,15 +57,10 @@ class EmptySuperDetector : Detector(), SourceCodeScanner {
 
     const val EMPTY_SUPER_ANNOTATION = "androidx.annotation.EmptySuper"
 
-    /**
-     * Checks whether the given method overrides a method annotated with `@EmptySuper`, and if so,
-     * returns it (otherwise returns null)
-     */
+    /** Checks whether the given method overrides a method annotated with `@EmptySuper`, and if so, returns it (otherwise returns null) */
     private fun getEmptySuperMethods(evaluator: JavaEvaluator, method: UMethod): List<PsiMethod> =
       method.javaPsi.findSuperMethods().filter { directSuper ->
-        evaluator.getAnnotations(directSuper, false).any {
-          it.qualifiedName == EMPTY_SUPER_ANNOTATION
-        }
+        evaluator.getAnnotations(directSuper, false).any { it.qualifiedName == EMPTY_SUPER_ANNOTATION }
       }
   }
 
@@ -87,8 +79,7 @@ class EmptySuperDetector : Detector(), SourceCodeScanner {
                 val resolved = node.resolve()
                 val superMethod = superMethods.find { it.isEquivalentTo(resolved) }
                 if (superMethod != null) {
-                  val message =
-                    "No need to call `super.${superMethod.name}`; the super method is defined to be empty"
+                  val message = "No need to call `super.${superMethod.name}`; the super method is defined to be empty"
                   val location = context.getNameLocation(node)
                   context.report(ISSUE, node, location, message)
                 }

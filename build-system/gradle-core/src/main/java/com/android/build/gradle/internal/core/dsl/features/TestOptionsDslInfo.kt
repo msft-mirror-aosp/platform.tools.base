@@ -19,5 +19,5 @@ package com.android.build.gradle.internal.core.dsl.features
 import com.android.build.api.variant.AndroidVersion
 
 interface TestOptionsDslInfo {
-    val targetSdkVersion: AndroidVersion?
+  val targetSdkVersion: AndroidVersion?
 }

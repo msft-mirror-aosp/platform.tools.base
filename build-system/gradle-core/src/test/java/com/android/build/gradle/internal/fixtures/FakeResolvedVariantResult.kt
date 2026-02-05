@@ -16,24 +16,27 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.util.Optional
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.capabilities.Capability
-import java.util.Optional
 
 data class FakeResolvedVariantResult(
-    private val owner: ComponentIdentifier? = null,
-    private val attributes: AttributeContainer? = null,
-    private val displayName: String? = null,
-    private val capabilities: MutableList<Capability>? = null,
-    private val externalVariant: Optional<ResolvedVariantResult> = Optional.empty()
-): ResolvedVariantResult {
+  private val owner: ComponentIdentifier? = null,
+  private val attributes: AttributeContainer? = null,
+  private val displayName: String? = null,
+  private val capabilities: MutableList<Capability>? = null,
+  private val externalVariant: Optional<ResolvedVariantResult> = Optional.empty(),
+) : ResolvedVariantResult {
 
-    override fun getOwner(): ComponentIdentifier = owner ?: error("value not set")
-    override fun getAttributes(): AttributeContainer = attributes ?: error("value not set")
-    override fun getDisplayName(): String = displayName ?: error("value not set")
-    override fun getCapabilities(): MutableList<Capability> =
-        capabilities ?: error("value not set")
-    override fun getExternalVariant(): Optional<ResolvedVariantResult> = externalVariant
+  override fun getOwner(): ComponentIdentifier = owner ?: error("value not set")
+
+  override fun getAttributes(): AttributeContainer = attributes ?: error("value not set")
+
+  override fun getDisplayName(): String = displayName ?: error("value not set")
+
+  override fun getCapabilities(): MutableList<Capability> = capabilities ?: error("value not set")
+
+  override fun getExternalVariant(): Optional<ResolvedVariantResult> = externalVariant
 }

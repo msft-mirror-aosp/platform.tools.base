@@ -30,92 +30,83 @@ import java.util.Collections
 import java.util.stream.Collectors
 
 fun checkLintModels(
-    project: GradleTestProject,
-    lintModelDir: Path,
-    modelSnapshotResourceRelativePath: String,
-    vararg expectedModelFiles: String
+  project: GradleTestProject,
+  lintModelDir: Path,
+  modelSnapshotResourceRelativePath: String,
+  vararg expectedModelFiles: String,
 ) {
-    val models = Files.list(lintModelDir).use { stream -> stream.collect(Collectors.toList()) }
+  val models = Files.list(lintModelDir).use { stream -> stream.collect(Collectors.toList()) }
 
-    Truth.assertThat(models.map { it.fileName.toString() }).containsExactly(
-        *expectedModelFiles
-    )
+  Truth.assertThat(models.map { it.fileName.toString() }).containsExactly(*expectedModelFiles)
 
-    val errors = mutableListOf<String>()
-    val replacements = createReplacements(project)
-    for (model in models) {
-        val actual = Files.readAllLines(model).map { applyReplacements(it, replacements) }
-        val expected = getExpectedModel("$modelSnapshotResourceRelativePath/${model.fileName}")
-        if (actual != expected){
-            val diff: String = TestUtils.getDiff(
-                expected.toTypedArray(),
-                actual.toTypedArray()
+  val errors = mutableListOf<String>()
+  val replacements = createReplacements(project)
+  for (model in models) {
+    val actual = Files.readAllLines(model).map { applyReplacements(it, replacements) }
+    val expected = getExpectedModel("$modelSnapshotResourceRelativePath/${model.fileName}")
+    if (actual != expected) {
+      val diff: String = TestUtils.getDiff(expected.toTypedArray(), actual.toTypedArray())
+      errors +=
+        if (System.getenv("GENERATE_MODEL_GOLDEN_FILES").isNullOrEmpty()) {
+          "Unexpected lint model change for ${model.fileName} (path: $modelSnapshotResourceRelativePath/${model.fileName})\n" +
+            "Run with env var GENERATE_MODEL_GOLDEN_FILES=true to regenerate\n" +
+            diff
+        } else {
+          val fileToUpdate =
+            TestUtils.resolveWorkspacePath(
+              "tools/base/build-system/integration-test/lint/src/test/resources/com/android/build/gradle/integration/lint/$modelSnapshotResourceRelativePath/${model.fileName}"
             )
-            errors += if (System.getenv("GENERATE_MODEL_GOLDEN_FILES").isNullOrEmpty()) {
-                "Unexpected lint model change for ${model.fileName} (path: $modelSnapshotResourceRelativePath/${model.fileName})\n" +
-                        "Run with env var GENERATE_MODEL_GOLDEN_FILES=true to regenerate\n" +
-                        diff
-            } else {
-                val fileToUpdate = TestUtils.resolveWorkspacePath("tools/base/build-system/integration-test/lint/src/test/resources/com/android/build/gradle/integration/lint/$modelSnapshotResourceRelativePath/${model.fileName}")
-                Files.write(fileToUpdate, actual)
-                "Updated ${model.fileName} with \n$diff"
-            }
+          Files.write(fileToUpdate, actual)
+          "Updated ${model.fileName} with \n$diff"
         }
     }
-    if (errors.isNotEmpty()) {
-        throw AssertionError(errors.joinToString("\n\n"))
-    }
+  }
+  if (errors.isNotEmpty()) {
+    throw AssertionError(errors.joinToString("\n\n"))
+  }
 }
 
 private val cacheReplace = Regex("""/[a-zA-Z0-9]{32}/(workspace/)?""")
 
-private val localRepositories = GradleTestProject.localRepositories
-        .map { it.toAbsolutePath().toString() }
-        .sortedByDescending { it.length }
+private val localRepositories = GradleTestProject.localRepositories.map { it.toAbsolutePath().toString() }.sortedByDescending { it.length }
 
 fun applyReplacements(original: String, replacements: Map<String, String>): String {
-    var normalized = original
-    replacements.forEach { (from, to) -> normalized = normalized.replace(from, to) }
-    return normalized.replace(cacheReplace, "/<digest>/")
+  var normalized = original
+  replacements.forEach { (from, to) -> normalized = normalized.replace(from, to) }
+  return normalized.replace(cacheReplace, "/<digest>/")
 }
 
 fun createReplacements(project: GradleTestProject): Map<String, String> {
-    return Collections.unmodifiableMap(mutableMapOf<String, String>().apply {
-        put(project.location.projectDir.absolutePath, "${"$"}{projectDir}")
-        put(project.location.testLocation.androidSdkHome.absolutePath, "${"$"}{androidSdkUserHome}")
-        project.androidSdkDir?.let{
-            put(it.absolutePath, "${"$"}{androidSdkDir}")
-        }
-        put(project.location.testLocation.gradleCacheDir.absolutePath, "${"$"}{gradleCacheDir}")
-        put(project.location.testLocation.gradleUserHome.toAbsolutePath().toString(), "${"$"}{gradleUserHome}")
-        val latestCompileSdkVersion = AndroidVersion(
-            GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt(),
-            null
-        )
-        put(
-            latestCompileSdkVersion.platformHashString,
-            "android-${"$"}{androidHighestKnownStableApi}"
-        )
-        put(
-            """targetSdkVersion="${latestCompileSdkVersion.apiStringWithoutExtension}"""",
-            """targetSdkVersion="${"$"}{androidHighestKnownStableApi}""""
-        )
-        for (repository in localRepositories) {
-            put(repository, "${"$"}{mavenRepo}")
-        }
-        put(Version.ANDROID_GRADLE_PLUGIN_VERSION, "${"$"}androidGradlePluginVersion")
-        put(File.separator, "/")
-        put(File.pathSeparator, ":")
-        put("kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib:${"$"}{kotlinVersion}")
-        put("kotlin-stdlib/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib/${"$"}{kotlinVersion}")
-        put("kotlin-stdlib-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-${"$"}{kotlinVersion}")
-        put("kotlin-stdlib-common:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common:${"$"}{kotlinVersion}")
-        put("kotlin-stdlib-common/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common/${"$"}{kotlinVersion}")
-        put("kotlin-stdlib-common-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common-${"$"}{kotlinVersion}")
-    })
+  return Collections.unmodifiableMap(
+    mutableMapOf<String, String>().apply {
+      put(project.location.projectDir.absolutePath, "${"$"}{projectDir}")
+      put(project.location.testLocation.androidSdkHome.absolutePath, "${"$"}{androidSdkUserHome}")
+      project.androidSdkDir?.let { put(it.absolutePath, "${"$"}{androidSdkDir}") }
+      put(project.location.testLocation.gradleCacheDir.absolutePath, "${"$"}{gradleCacheDir}")
+      put(project.location.testLocation.gradleUserHome.toAbsolutePath().toString(), "${"$"}{gradleUserHome}")
+      val latestCompileSdkVersion = AndroidVersion(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt(), null)
+      put(latestCompileSdkVersion.platformHashString, "android-${"$"}{androidHighestKnownStableApi}")
+      put(
+        """targetSdkVersion="${latestCompileSdkVersion.apiStringWithoutExtension}"""",
+        """targetSdkVersion="${"$"}{androidHighestKnownStableApi}"""",
+      )
+      for (repository in localRepositories) {
+        put(repository, "${"$"}{mavenRepo}")
+      }
+      put(Version.ANDROID_GRADLE_PLUGIN_VERSION, "${"$"}androidGradlePluginVersion")
+      put(File.separator, "/")
+      put(File.pathSeparator, ":")
+      put("kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib:${"$"}{kotlinVersion}")
+      put("kotlin-stdlib/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib/${"$"}{kotlinVersion}")
+      put("kotlin-stdlib-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-${"$"}{kotlinVersion}")
+      put("kotlin-stdlib-common:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common:${"$"}{kotlinVersion}")
+      put("kotlin-stdlib-common/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common/${"$"}{kotlinVersion}")
+      put("kotlin-stdlib-common-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common-${"$"}{kotlinVersion}")
+    }
+  )
 }
 
 private fun getExpectedModel(name: String): List<String> {
-    val resource = Resources.getResource(LintModelIntegrationTest::class.java, name)
-    return Resources.readLines(resource, StandardCharsets.UTF_8)
+  val resource = Resources.getResource(LintModelIntegrationTest::class.java, name)
+  return Resources.readLines(resource, StandardCharsets.UTF_8)
 }

@@ -43,13 +43,7 @@ class MissingResourcesPropertiesDetector : Detector(), GradleScanner {
     if (context.project.isLibrary) return
     if (property == "generateLocaleConfig" && value == "true") {
       if (context.project.resourceFolders.none { File(it, "resources.properties").exists() }) {
-        val incident =
-          Incident(
-            ISSUE,
-            propertyCookie,
-            context.getLocation(propertyCookie),
-            "Missing resources.properties file",
-          )
+        val incident = Incident(ISSUE, propertyCookie, context.getLocation(propertyCookie), "Missing resources.properties file")
         context.client.report(context, incident)
       }
     }
@@ -60,13 +54,11 @@ class MissingResourcesPropertiesDetector : Detector(), GradleScanner {
       Issue.create(
         id = "MissingResourcesProperties",
         briefDescription = "Missing resources.properties file",
-        explanation =
-          "When `generateLocaleConfig` is turned on, the default locale must be specified in a resources.properties file.",
+        explanation = "When `generateLocaleConfig` is turned on, the default locale must be specified in a resources.properties file.",
         category = Category.CORRECTNESS,
         priority = 2,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(MissingResourcesPropertiesDetector::class.java, Scope.GRADLE_SCOPE),
+        implementation = Implementation(MissingResourcesPropertiesDetector::class.java, Scope.GRADLE_SCOPE),
         moreInfo = "https://developer.android.com/r/studio-ui/build/automatic-per-app-languages",
         androidSpecific = true,
       )

@@ -30,55 +30,44 @@ import com.android.build.gradle.internal.dsl.NdkOptions
 import com.android.build.gradle.internal.services.VariantServices
 
 class NativeBuildCreationConfigImpl(
-    private val component: ConsumableCreationConfig,
-    private val dslInfo: NativeBuildDslInfo,
-    private val variantServices: VariantServices
-): NativeBuildCreationConfig {
+  private val component: ConsumableCreationConfig,
+  private val dslInfo: NativeBuildDslInfo,
+  private val variantServices: VariantServices,
+) : NativeBuildCreationConfig {
 
-    override val ndkConfig: MergedNdkConfig
-        get() = dslInfo.ndkConfig
-    override val isJniDebuggable: Boolean
-        get() = dslInfo.isJniDebuggable
-    override val supportedAbis: Set<String>
-        get() = dslInfo.supportedAbis
-    override val userDefinedAbis: Set<String>
-        get() = dslInfo.userDefinedAbis
-    override val externalNativeExperimentalProperties: Map<String, Any>
-        get() = dslInfo.externalNativeExperimentalProperties
+  override val ndkConfig: MergedNdkConfig
+    get() = dslInfo.ndkConfig
 
-    override val externalNativeBuild: ExternalNativeBuild? by lazy {
-        dslInfo.nativeBuildSystem?.let { nativeBuildType ->
-            when(nativeBuildType) {
-                NativeBuiltType.CMAKE ->
-                    dslInfo.externalNativeBuildOptions.externalNativeCmakeOptions?.let {
-                        ExternalCmakeImpl(
-                            it,
-                            variantServices
-                        )
-                    }
-                NativeBuiltType.NDK_BUILD ->
-                    dslInfo.externalNativeBuildOptions.externalNativeNdkBuildOptions?.let {
-                        ExternalNdkBuildImpl(
-                            it,
-                            variantServices
-                        )
-                    }
-                NativeBuiltType.NINJA -> {
-                    ExternalNinjaImpl(
-                        externalNativeNinjaOptions,
-                        variantServices
-                    )
-                }
-            }
+  override val isJniDebuggable: Boolean
+    get() = dslInfo.isJniDebuggable
+
+  override val supportedAbis: Set<String>
+    get() = dslInfo.supportedAbis
+
+  override val userDefinedAbis: Set<String>
+    get() = dslInfo.userDefinedAbis
+
+  override val externalNativeExperimentalProperties: Map<String, Any>
+    get() = dslInfo.externalNativeExperimentalProperties
+
+  override val externalNativeBuild: ExternalNativeBuild? by lazy {
+    dslInfo.nativeBuildSystem?.let { nativeBuildType ->
+      when (nativeBuildType) {
+        NativeBuiltType.CMAKE ->
+          dslInfo.externalNativeBuildOptions.externalNativeCmakeOptions?.let { ExternalCmakeImpl(it, variantServices) }
+        NativeBuiltType.NDK_BUILD ->
+          dslInfo.externalNativeBuildOptions.externalNativeNdkBuildOptions?.let { ExternalNdkBuildImpl(it, variantServices) }
+        NativeBuiltType.NINJA -> {
+          ExternalNinjaImpl(externalNativeNinjaOptions, variantServices)
         }
+      }
     }
+  }
 
-    override val nativeDebugSymbolLevel: NdkOptions.DebugSymbolLevel
-        get() {
-            val debugSymbolLevelOrNull =
-                NdkOptions.DEBUG_SYMBOL_LEVEL_CONVERTER.convert(
-                    dslInfo.ndkConfig.debugSymbolLevel
-                )
-            return debugSymbolLevelOrNull ?: if (component.debuggable) NdkOptions.DebugSymbolLevel.NONE else NdkOptions.DebugSymbolLevel.SYMBOL_TABLE
-        }
+  override val nativeDebugSymbolLevel: NdkOptions.DebugSymbolLevel
+    get() {
+      val debugSymbolLevelOrNull = NdkOptions.DEBUG_SYMBOL_LEVEL_CONVERTER.convert(dslInfo.ndkConfig.debugSymbolLevel)
+      return debugSymbolLevelOrNull
+        ?: if (component.debuggable) NdkOptions.DebugSymbolLevel.NONE else NdkOptions.DebugSymbolLevel.SYMBOL_TABLE
+    }
 }

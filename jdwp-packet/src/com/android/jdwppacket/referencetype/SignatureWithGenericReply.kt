@@ -19,8 +19,7 @@ import com.android.jdwppacket.MessageReader
 import com.android.jdwppacket.Reply
 import com.android.jdwppacket.Writer
 
-data class SignatureWithGenericReply(val signature: String, val genericSignature: String) :
-  Reply() {
+data class SignatureWithGenericReply(val signature: String, val genericSignature: String) : Reply() {
 
   companion object {
 

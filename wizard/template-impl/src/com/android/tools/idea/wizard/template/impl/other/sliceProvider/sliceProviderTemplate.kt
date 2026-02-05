@@ -81,7 +81,7 @@ val sliceProviderTemplate
       TextFieldWidget(authorities),
       TextFieldWidget(hostUrl),
       TextFieldWidget(pathPrefix),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb {

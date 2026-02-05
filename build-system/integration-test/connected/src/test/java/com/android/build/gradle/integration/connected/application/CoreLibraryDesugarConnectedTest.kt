@@ -30,17 +30,14 @@ import org.junit.Test
 
 class CoreLibraryDesugarConnectedTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestApp(
-                    HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", 21))
-            .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", 21)).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-                project.buildFile,
-                """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                     android {
                         //noinspection ExpiredTargetSdkVersion
                         defaultConfig.targetSdkVersion 21
@@ -58,63 +55,61 @@ class CoreLibraryDesugarConnectedTest {
                     dependencies {
                         coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                     }
-                """.trimIndent()
-        )
-
-        // Add a function using desugar library api which is called from app
-        TestFileUtils.addMethod(
-                FileUtils.join(project.mainSrcDir,"com/example/helloworld/HelloWorld.java"),
                 """
-                public static java.time.LocalTime getTime() {
-                    return java.time.LocalTime.MIDNIGHT;
-                }
-            """.trimIndent())
+        .trimIndent(),
+    )
 
-        TestFileUtils.searchAndReplace(
-                FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
-                "// onCreate",
-                "getTime();"
-        )
-        // Add a keep rule for android test to work around b/126429384
-        TestFileUtils.appendToFile(
-                project.projectDir.resolve("proguard-rules.pro"),
-                "-keep class j\$.time.LocalTime { *;}\n"
-        )
+    // Add a function using desugar library api which is called from app
+    TestFileUtils.addMethod(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      public static java.time.LocalTime getTime() {
+          return java.time.LocalTime.MIDNIGHT;
+      }
+      """
+        .trimIndent(),
+    )
 
-        // R.id can get shrunk away now, remove the test reference to it
-        TestFileUtils.searchAndReplace(
-                FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-                "mTextView = (TextView) a.findViewById(R.id.text)",
-                "// R.id will get shrunk away // mTextView = (TextView) a.findViewById(R.id.text)")
-        TestFileUtils.searchAndReplace(
-                FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-                "Assert.assertNotNull(mTextView)",
-                "// R.id will get shrunk away // Assert.assertNotNull(mTextView)")
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      "// onCreate",
+      "getTime();",
+    )
+    // Add a keep rule for android test to work around b/126429384
+    TestFileUtils.appendToFile(project.projectDir.resolve("proguard-rules.pro"), "-keep class j\$.time.LocalTime { *;}\n")
 
-        project.addAdbTimeout()
-        project.execute("uninstallAll")
-    }
+    // R.id can get shrunk away now, remove the test reference to it
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      "mTextView = (TextView) a.findViewById(R.id.text)",
+      "// R.id will get shrunk away // mTextView = (TextView) a.findViewById(R.id.text)",
+    )
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      "Assert.assertNotNull(mTextView)",
+      "// R.id will get shrunk away // Assert.assertNotNull(mTextView)",
+    )
 
-    // Regression test for b/266687543
-    @Test
-    fun testMinifiedRelease() {
-        TestFileUtils.appendToFile(
-                project.buildFile,
-                """
-                    android.testBuildType = "release"
-                """.trimIndent()
-        )
-        project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, true)
-                .run("connectedReleaseAndroidTest")
-    }
+    project.addAdbTimeout()
+    project.execute("uninstallAll")
+  }
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val emulator = getEmulator()
+  // Regression test for b/266687543
+  @Test
+  fun testMinifiedRelease() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.testBuildType = "release"
+      """
+        .trimIndent(),
+    )
+    project.executor().with(BooleanOption.USE_NON_FINAL_RES_IDS, true).run("connectedReleaseAndroidTest")
+  }
 
-        private const val DESUGAR_DEPENDENCY =
-                "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
-    }
+  companion object {
+    @ClassRule @JvmField val emulator = getEmulator()
+
+    private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
+  }
 }

@@ -31,59 +31,59 @@ private val LOG = Logger.getLogger("EmulatorAccessUtils")
 data class JwtConfig(val token: String, val jwkPath: String)
 
 val INVALID_JWT_CONFIG = JwtConfig("", "")
+
 fun createTokenConfig(aud: Set<String>, validForSeconds: Int, iss: String, info: EmulatorGrpcInfo?): JwtConfig {
 
-    if (info == null) {
-        return INVALID_JWT_CONFIG;
-    }
-    // We do not want to enable this feature if:
-    // - The emulator is not using jwks. We won't be able to authenticate properly as
-    //   the emulator might be using the `older` -use-grpc-token used by the embedded-emulator
-    //   this token which gives blanket access.
-    // - The emulator is not supporting allowlists. In this case it is unclear which
-    //   methods are (in)accessible.
-    if (info.jwks.isNullOrEmpty() || info.allowlist.isNullOrEmpty()) {
-        LOG.severe("This emulator is not protected with an allowlist, or jwt enabled")
-        return INVALID_JWT_CONFIG
-    }
+  if (info == null) {
+    return INVALID_JWT_CONFIG
+  }
+  // We do not want to enable this feature if:
+  // - The emulator is not using jwks. We won't be able to authenticate properly as
+  //   the emulator might be using the `older` -use-grpc-token used by the embedded-emulator
+  //   this token which gives blanket access.
+  // - The emulator is not supporting allowlists. In this case it is unclear which
+  //   methods are (in)accessible.
+  if (info.jwks.isNullOrEmpty() || info.allowlist.isNullOrEmpty()) {
+    LOG.severe("This emulator is not protected with an allowlist, or jwt enabled")
+    return INVALID_JWT_CONFIG
+  }
 
-    return createJwtConfig(aud, validForSeconds, iss, info.jwks)
+  return createJwtConfig(aud, validForSeconds, iss, info.jwks)
 }
+
 fun createJwtConfig(aud: Set<String>, validForSeconds: Int, iss: String, jwkDirectory: String?): JwtConfig {
-    if (jwkDirectory.isNullOrEmpty()) {
-        return INVALID_JWT_CONFIG;
-    }
-    JwtSignatureConfig.register();
+  if (jwkDirectory.isNullOrEmpty()) {
+    return INVALID_JWT_CONFIG
+  }
+  JwtSignatureConfig.register()
 
-    val tinkTemplate = KeyTemplates.get("JWT_ES512")
-    val handle = KeysetHandle.generateNew(tinkTemplate)
+  val tinkTemplate = KeyTemplates.get("JWT_ES512")
+  val handle = KeysetHandle.generateNew(tinkTemplate)
 
-    // Generate a JWK that the emulator can use, and place it in the discovery directory.
-    val jwkOutputFile = jwkDirectory + File.separator + handle.primary.id + ".jwk"
-    val jwk = JwkSetConverter.fromPublicKeysetHandle(handle.publicKeysetHandle)
+  // Generate a JWK that the emulator can use, and place it in the discovery directory.
+  val jwkOutputFile = jwkDirectory + File.separator + handle.primary.id + ".jwk"
+  val jwk = JwkSetConverter.fromPublicKeysetHandle(handle.publicKeysetHandle)
 
-    LOG.fine("Writing jwk: $jwk to: $jwkOutputFile")
-    File(jwkOutputFile).bufferedWriter().use { out -> out.write(jwk) }
+  LOG.fine("Writing jwk: $jwk to: $jwkOutputFile")
+  File(jwkOutputFile).bufferedWriter().use { out -> out.write(jwk) }
 
-    val now = Instant.now()
-    val claimSet =
-        RawJwt.newBuilder()
-            .setIssuer(iss)
-            .setExpiration(now.plusSeconds(validForSeconds.toLong()))
-            .setNotBefore(now)
-            .setIssuedAt(now)
-            .setJwtId(UUID.randomUUID().toString())
+  val now = Instant.now()
+  val claimSet =
+    RawJwt.newBuilder()
+      .setIssuer(iss)
+      .setExpiration(now.plusSeconds(validForSeconds.toLong()))
+      .setNotBefore(now)
+      .setIssuedAt(now)
+      .setJwtId(UUID.randomUUID().toString())
 
-    if (aud.isNotEmpty()) {
-        claimSet.setAudiences(aud.toList())
-    }
+  if (aud.isNotEmpty()) {
+    claimSet.setAudiences(aud.toList())
+  }
 
-    val rawJwt = claimSet.build()
-    val signer = handle.getPrimitive(JwtPublicKeySign::class.java)
-    val signedJwt = signer.signAndEncode(rawJwt)
-    LOG.fine("Signing claims: $rawJwt with jwk: ${handle.primary.id}")
+  val rawJwt = claimSet.build()
+  val signer = handle.getPrimitive(JwtPublicKeySign::class.java)
+  val signedJwt = signer.signAndEncode(rawJwt)
+  LOG.fine("Signing claims: $rawJwt with jwk: ${handle.primary.id}")
 
-    return JwtConfig(signedJwt, jwkOutputFile)
+  return JwtConfig(signedJwt, jwkOutputFile)
 }
-
-

@@ -1,5 +1,3 @@
-import com.android.tools.internal.testing.DevicePool;
-
 apply plugin: 'com.android.tools.java'
 apply plugin: 'com.android.tools.kotlin'
 
@@ -17,7 +15,6 @@ dependencies {
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.common
     testImplementation libs.com.android.tools.sdklib
-    testImplementation project(':base:testing-infrastructure:device-pool:device-provider')
     testImplementation libs.com.android.tools.testutils
 
     testImplementation libs.kotlin_stdlib

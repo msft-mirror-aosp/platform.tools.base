@@ -20,19 +20,19 @@ import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.ArtifactAccess
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetApksTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun getApksTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayApks"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class GetApksTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun getApksTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayApks"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -58,47 +58,45 @@ class GetApksTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# artifacts.get in Kotlin
-This sample shows how to obtain a built artifact from the AGP. The built artifact is identified by
-its [SingleArtifact. and in this case, it's [SingleArtifact.APK].
-The [onVariants] block will wire the [DisplayApksTask] input property (apkFolder) by using
-the [Artifacts.get] call with the right [SingleArtifact.
-`apkFolder.set(artifacts.get(SingleArtifact.APK))`
-Since more than one APK can be produced by the build when dealing with multi-apk, you should use the
-[BuiltArtifacts] interface to load the metadata associated with produced files using
-[BuiltArtifacts.load] method.
-`builtArtifactsLoader.get().load(apkFolder.get())'
-Once loaded, the built artifacts can be accessed.
-## To Run
-./gradlew debugDisplayApks
-expected result : "Got an APK...." message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Got an APK")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    it.variantApiAccess.artifactAccessList.forEach { artifactAccess ->
-                        println(artifactAccess.type)
-                    }
-                    Truth.assertThat(it.variantApiAccess.artifactAccessList).hasSize(1)
-                    val artifactAccess = it.variantApiAccess.artifactAccessList[0]
-                    Truth.assertThat(artifactAccess.type).isEqualTo(
-                            ArtifactAccess.AccessType.GET
-                    )
-                }
-            }
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+        This sample shows how to obtain a built artifact from the AGP. The built artifact is identified by
+        its [SingleArtifact. and in this case, it's [SingleArtifact.APK].
+        The [onVariants] block will wire the [DisplayApksTask] input property (apkFolder) by using
+        the [Artifacts.get] call with the right [SingleArtifact.
+        `apkFolder.set(artifacts.get(SingleArtifact.APK))`
+        Since more than one APK can be produced by the build when dealing with multi-apk, you should use the
+        [BuiltArtifacts] interface to load the metadata associated with produced files using
+        [BuiltArtifacts.load] method.
+        `builtArtifactsLoader.get().load(apkFolder.get())'
+        Once loaded, the built artifacts can be accessed.
+        ## To Run
+        ./gradlew debugDisplayApks
+        expected result : "Got an APK...." message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Got an APK")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          it.variantApiAccess.artifactAccessList.forEach { artifactAccess -> println(artifactAccess.type) }
+          Truth.assertThat(it.variantApiAccess.artifactAccessList).hasSize(1)
+          val artifactAccess = it.variantApiAccess.artifactAccessList[0]
+          Truth.assertThat(artifactAccess.type).isEqualTo(ArtifactAccess.AccessType.GET)
+        }
+      }
+    }
+  }
 }

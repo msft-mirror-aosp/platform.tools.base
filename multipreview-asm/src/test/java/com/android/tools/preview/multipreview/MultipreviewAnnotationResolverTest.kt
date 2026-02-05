@@ -19,113 +19,116 @@ package com.android.tools.preview.multipreview
 import com.android.tools.preview.multipreview.PreviewMethodFinder.Companion.COMPOSE_PREVIEW_ANNOTATION
 import com.android.tools.preview.multipreview.PreviewMethodFinder.Companion.COMPOSE_PREVIEW_ANNOTATION_CONTAINER
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.lang.StringBuilder
 import java.nio.file.Files
 import java.util.zip.ZipInputStream
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class MultipreviewAnnotationResolverTest {
 
-    @get:Rule
-    val tempDir = TemporaryFolder()
+  @get:Rule val tempDir = TemporaryFolder()
 
-    private val resolver: MultipreviewAnnotationResolver by lazy {
-        val testClassesDir = tempDir.newFolder()
-        ZipInputStream(requireNotNull(
-            this::class.java.classLoader.getResourceAsStream(
-                "testJarsAndClasses.zip"))).use { zipInputStream ->
-            generateSequence { zipInputStream.nextEntry }.forEach { entry ->
-                val outputFile = File(testClassesDir, entry.name)
-                if (entry.isDirectory) {
-                    outputFile.mkdirs()
-                } else {
-                    outputFile.parentFile.mkdirs()
-                    Files.copy(zipInputStream, outputFile.toPath())
-                }
-            }
+  private val resolver: MultipreviewAnnotationResolver by lazy {
+    val testClassesDir = tempDir.newFolder()
+    ZipInputStream(requireNotNull(this::class.java.classLoader.getResourceAsStream("testJarsAndClasses.zip"))).use { zipInputStream ->
+      generateSequence { zipInputStream.nextEntry }
+        .forEach { entry ->
+          val outputFile = File(testClassesDir, entry.name)
+          if (entry.isDirectory) {
+            outputFile.mkdirs()
+          } else {
+            outputFile.parentFile.mkdirs()
+            Files.copy(zipInputStream, outputFile.toPath())
+          }
         }
-
-        val rootDir = File(testClassesDir, "testJarsAndClasses")
-        MultipreviewAnnotationResolver(
-            COMPOSE_PREVIEW_ANNOTATION,
-            COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
-            listOf(File(rootDir, "screenshotTestDirs/dir1")),
-            listOf(File(rootDir, "screenshotTestJars/precompiledTestClasses.jar")),
-            listOf(File(rootDir, "mainDirs/dir1")),
-            listOf(File(rootDir, "mainJars/jar1.jar")),
-            listOf(File(rootDir, "depsJars/libjar1.jar"))
-        )
     }
 
-    private fun getPreviewAnnotationsForClass(annotationClassDescriptor: String): String {
-        val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
-        resolver.findAllPreviewAnnotations(annotationClassDescriptor, previewAnnotations::addAll)
+    val rootDir = File(testClassesDir, "testJarsAndClasses")
+    MultipreviewAnnotationResolver(
+      COMPOSE_PREVIEW_ANNOTATION,
+      COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
+      listOf(File(rootDir, "screenshotTestDirs/dir1")),
+      listOf(File(rootDir, "screenshotTestJars/precompiledTestClasses.jar")),
+      listOf(File(rootDir, "mainDirs/dir1")),
+      listOf(File(rootDir, "mainJars/jar1.jar")),
+      listOf(File(rootDir, "depsJars/libjar1.jar")),
+    )
+  }
 
-        val debugString = StringBuilder()
-        debugString.appendLine("size = ${previewAnnotations.size}")
-        previewAnnotations.forEach {
-            it.parameters.entries.forEach { (key, value) ->
-                debugString.appendLine("$key: $value")
-            }
-            debugString.appendLine("----")
-        }
-        return debugString.toString().trim()
-    }
+  private fun getPreviewAnnotationsForClass(annotationClassDescriptor: String): String {
+    val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
+    resolver.findAllPreviewAnnotations(annotationClassDescriptor, previewAnnotations::addAll)
 
-    @Test
-    fun multipreviewIsDefinedInTestSource() {
-        assertThat(getPreviewAnnotationsForClass(
-            "Lcom/example/myscreenshottestexample/screenshottest/MyCustomMultipreviewAnnotation;"))
-            .isEqualTo("""
-                size = 2
-                showBackground: true
-                ----
-                showBackground: false
-                ----
-            """.trimIndent())
+    val debugString = StringBuilder()
+    debugString.appendLine("size = ${previewAnnotations.size}")
+    previewAnnotations.forEach {
+      it.parameters.entries.forEach { (key, value) -> debugString.appendLine("$key: $value") }
+      debugString.appendLine("----")
     }
+    return debugString.toString().trim()
+  }
 
-    @Test
-    fun multipreviewIsDefinedInMainSource() {
-        assertThat(getPreviewAnnotationsForClass(
-            "Lcom/example/myscreenshottestexample/MyCustomMultipreviewAnnotationInMain;"))
-            .isEqualTo("""
-                size = 1
-                showBackground: true
-                ----
-            """.trimIndent())
-    }
+  @Test
+  fun multipreviewIsDefinedInTestSource() {
+    assertThat(getPreviewAnnotationsForClass("Lcom/example/myscreenshottestexample/screenshottest/MyCustomMultipreviewAnnotation;"))
+      .isEqualTo(
+        """
+        size = 2
+        showBackground: true
+        ----
+        showBackground: false
+        ----
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun multipreviewIsDefinedInDependency() {
-        assertThat(getPreviewAnnotationsForClass(
-            "Lcom/example/mylibrary/MyCustomPreviewAnnotationInLibrary;"))
-            .isEqualTo("""
-                size = 1
-                ----
-            """.trimIndent())
-    }
+  @Test
+  fun multipreviewIsDefinedInMainSource() {
+    assertThat(getPreviewAnnotationsForClass("Lcom/example/myscreenshottestexample/MyCustomMultipreviewAnnotationInMain;"))
+      .isEqualTo(
+        """
+        size = 1
+        showBackground: true
+        ----
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun cyclicPreviewAnnotation() {
-        assertThat(getPreviewAnnotationsForClass(
-            "Lcom/example/myscreenshottestexample/screenshottest/CyclicPreviewableAnnotation;"))
-            .isEqualTo("""
-                size = 2
-                showBackground: true
-                ----
-                showBackground: false
-                ----
-            """.trimIndent())
-    }
+  @Test
+  fun multipreviewIsDefinedInDependency() {
+    assertThat(getPreviewAnnotationsForClass("Lcom/example/mylibrary/MyCustomPreviewAnnotationInLibrary;"))
+      .isEqualTo(
+        """
+        size = 1
+        ----
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun cyclicNonPreviewAnnotation() {
-        assertThat(getPreviewAnnotationsForClass(
-            "Lcom/example/myscreenshottestexample/screenshottest/CyclicNonPreviewableAnnotation;"))
-            .isEqualTo("size = 0")
-    }
+  @Test
+  fun cyclicPreviewAnnotation() {
+    assertThat(getPreviewAnnotationsForClass("Lcom/example/myscreenshottestexample/screenshottest/CyclicPreviewableAnnotation;"))
+      .isEqualTo(
+        """
+        size = 2
+        showBackground: true
+        ----
+        showBackground: false
+        ----
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun cyclicNonPreviewAnnotation() {
+    assertThat(getPreviewAnnotationsForClass("Lcom/example/myscreenshottestexample/screenshottest/CyclicNonPreviewableAnnotation;"))
+      .isEqualTo("size = 0")
+  }
 }

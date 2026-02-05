@@ -21,24 +21,22 @@ import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 
 open class AnalyticsEnabledTestSuiteTargetBuilder(
-    private val delegate: TestSuiteTargetBuilder,
-    val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): TestSuiteTargetBuilder {
+  private val delegate: TestSuiteTargetBuilder,
+  val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+) : TestSuiteTargetBuilder {
 
-    override var enable: Boolean
-        get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_TARGET_BUILDER_ENABLE_VALUE
-            delegate.enable = value
-        }
+  override var enable: Boolean
+    get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_SUITE_TARGET_BUILDER_ENABLE_VALUE
+      delegate.enable = value
+    }
 
-    override val targetDevices: MutableList<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_TARGET_BUILDER_TARGET_DEVICES_VALUE
-            return delegate.targetDevices
-        }
+  override val targetDevices: MutableList<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_SUITE_TARGET_BUILDER_TARGET_DEVICES_VALUE
+      return delegate.targetDevices
+    }
 
-    override fun getName(): String = delegate.name
+  override fun getName(): String = delegate.name
 }

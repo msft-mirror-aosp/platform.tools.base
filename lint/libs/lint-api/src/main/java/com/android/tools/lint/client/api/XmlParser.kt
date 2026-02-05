@@ -35,8 +35,8 @@ import org.w3c.dom.Node
 import org.xml.sax.SAXException
 
 /**
- * A wrapper for an XML parser. This allows tools integrating lint to map directly to builtin
- * services, such as already-parsed data structures in XML editors.
+ * A wrapper for an XML parser. This allows tools integrating lint to map directly to builtin services, such as already-parsed data
+ * structures in XML editors.
  */
 abstract class XmlParser {
   /**
@@ -45,12 +45,11 @@ abstract class XmlParser {
    * @param file the file to be parsed
    * @return the parsed DOM document
    */
-  @Throws(IOException::class, SAXException::class, ParserConfigurationException::class)
-  abstract fun parseXml(file: File): Document?
+  @Throws(IOException::class, SAXException::class, ParserConfigurationException::class) abstract fun parseXml(file: File): Document?
 
   /**
-   * Parse the given XML string and return document, or null if any error occurs (does **not** throw
-   * parsing exceptions). Most clients should call [parseXml] instead.
+   * Parse the given XML string and return document, or null if any error occurs (does **not** throw parsing exceptions). Most clients
+   * should call [parseXml] instead.
    *
    * @param xml the parsing string
    * @param file the file corresponding to the XML string, **if known**. May be null.
@@ -61,9 +60,8 @@ abstract class XmlParser {
   /**
    * Parse the file pointed to by the given context and return as a Document
    *
-   * @param context the context pointing to the file to be parsed, typically via
-   *   [Context.getContents] but the file handle ( [Context.file] can also be used to map to an
-   *   existing editor buffer in the surrounding tool, etc)
+   * @param context the context pointing to the file to be parsed, typically via [Context.getContents] but the file handle ( [Context.file]
+   *   can also be used to map to an existing editor buffer in the surrounding tool, etc)
    * @return the parsed DOM document, or null if parsing fails
    */
   abstract fun parseXml(context: XmlContext): Document?
@@ -78,10 +76,9 @@ abstract class XmlParser {
   abstract fun getLocation(context: XmlContext, node: Node): Location
 
   /**
-   * Attempt to create a location for a given XML node. Note that since DOM does not normally
-   * provide offset information for nodes, this doesn't work if you pass in a random DOM node from
-   * your own parsing operations; you should only call this method with nodes provided by lint in
-   * the first place (internally it uses a special parser which tracks offset information.)
+   * Attempt to create a location for a given XML node. Note that since DOM does not normally provide offset information for nodes, this
+   * doesn't work if you pass in a random DOM node from your own parsing operations; you should only call this method with nodes provided by
+   * lint in the first place (internally it uses a special parser which tracks offset information.)
    *
    * @param file the file that contains the node that was parsed
    * @param node the node itself
@@ -90,8 +87,7 @@ abstract class XmlParser {
   abstract fun getLocation(file: File, node: Node): Location
 
   /**
-   * Returns a [Location] for the given DOM node. Like [getLocation], but allows a position range
-   * that is a subset of the node range.
+   * Returns a [Location] for the given DOM node. Like [getLocation], but allows a position range that is a subset of the node range.
    *
    * @param context information about the file being parsed
    * @param node the node to create a location for
@@ -122,22 +118,18 @@ abstract class XmlParser {
   /**
    * Create a location suitable for highlighting an element.
    *
-   * In some cases, you want to point to an element (for example where it is missing an attribute,
-   * so you can't point to the attribute itself). However, some elements can span multiple lines.
-   * When running in the IDE, you don't want the entire element range to be highlighted. For an
-   * error on the root tag of a layout for example, it would make the entire editor light up in red.
+   * In some cases, you want to point to an element (for example where it is missing an attribute, so you can't point to the attribute
+   * itself). However, some elements can span multiple lines. When running in the IDE, you don't want the entire element range to be
+   * highlighted. For an error on the root tag of a layout for example, it would make the entire editor light up in red.
    *
-   * In earlier versions, lint would special case [getLocation] for elements and deliberate treat it
-   * as [getNameLocation] instead. However, that's problematic since locations are not just used for
-   * error highlighting, but also for features such as quickfixes, where it's Very Very Bad™ to have
-   * the range magically change to some subset.
+   * In earlier versions, lint would special case [getLocation] for elements and deliberate treat it as [getNameLocation] instead. However,
+   * that's problematic since locations are not just used for error highlighting, but also for features such as quickfixes, where it's Very
+   * Very Bad™ to have the range magically change to some subset.
    *
-   * This method instead creates error ranges intended for warning display purposes. If [node] is
-   * non null, the location for that node will be used. Otherwise, if [attribute] is provided it
-   * will highlight the given attribute range if the attribute is specified. A common example of
-   * this is the "name" attribute in resource values. If not passed in or not defined on the
-   * element, this method will use the element range if it fits on a single line; otherwise it will
-   * use just the tag name range.
+   * This method instead creates error ranges intended for warning display purposes. If [node] is non null, the location for that node will
+   * be used. Otherwise, if [attribute] is provided it will highlight the given attribute range if the attribute is specified. A common
+   * example of this is the "name" attribute in resource values. If not passed in or not defined on the element, this method will use the
+   * element range if it fits on a single line; otherwise it will use just the tag name range.
    */
   fun getElementLocation(
     context: XmlContext,
@@ -171,8 +163,8 @@ abstract class XmlParser {
   }
 
   /**
-   * Creates a light-weight handle to a location for the given node. It can be turned into a full
-   * fledged location by [com.android.tools.lint.detector.api.Location.Handle.resolve].
+   * Creates a light-weight handle to a location for the given node. It can be turned into a full fledged location by
+   * [com.android.tools.lint.detector.api.Location.Handle.resolve].
    *
    * @param context the context providing the node
    * @param node the node (element or attribute) to create a location handle for
@@ -251,21 +243,15 @@ abstract class XmlParser {
   abstract fun getValueLocation(client: LintClient, file: File, node: Attr): Location
 
   /**
-   * Attempt to find the location of the given resource [item] for the given [client]. This will
-   * return the location for the entire element; see [getNameLocation] and [getValueLocation] to
-   * pick out more specific ranges. (For file-based resources, the location points to the first line
-   * of the file.)
+   * Attempt to find the location of the given resource [item] for the given [client]. This will return the location for the entire element;
+   * see [getNameLocation] and [getValueLocation] to pick out more specific ranges. (For file-based resources, the location points to the
+   * first line of the file.)
    */
   fun getLocation(client: LintClient, item: ResourceItem): Location? {
     return getLocation(client, item, false, false)
   }
 
-  open fun getLocation(
-    client: LintClient,
-    item: ResourceItem,
-    nameOnly: Boolean = false,
-    valueOnly: Boolean = false,
-  ): Location? {
+  open fun getLocation(client: LintClient, item: ResourceItem, nameOnly: Boolean = false, valueOnly: Boolean = false): Location? {
     if (item is Location.LocationAware) {
       val location = item.getLocation()
       // Normally the resource item location includes the whole element range.
@@ -273,8 +259,7 @@ abstract class XmlParser {
       // access to the file, then try to compute it as in the normal (non-partial
       // analysis) case.
       if ((nameOnly || valueOnly) && location.file.isFile) {
-        val adjustedLocation =
-          createLocation(client, location.file, item.name, item.type, nameOnly, valueOnly)
+        val adjustedLocation = createLocation(client, location.file, item.name, item.type, nameOnly, valueOnly)
         if (adjustedLocation != null) {
           return adjustedLocation
         }
@@ -350,18 +335,12 @@ abstract class XmlParser {
     return null
   }
 
-  /**
-   * Attempt to find the location of the given resource [item] for the given [client], and in
-   * particular, just the name part.
-   */
+  /** Attempt to find the location of the given resource [item] for the given [client], and in particular, just the name part. */
   fun getNameLocation(client: LintClient, item: ResourceItem): Location? {
     return getLocation(client, item, nameOnly = true)
   }
 
-  /**
-   * Attempt to find the location of the given resource [item] for the given [client], and in
-   * particular, just the value part.
-   */
+  /** Attempt to find the location of the given resource [item] for the given [client], and in particular, just the value part. */
   fun getValueLocation(client: LintClient, item: ResourceItem): Location? {
     return getLocation(client, item, valueOnly = true)
   }

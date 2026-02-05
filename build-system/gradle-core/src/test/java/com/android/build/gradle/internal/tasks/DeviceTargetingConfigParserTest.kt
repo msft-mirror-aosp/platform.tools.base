@@ -19,36 +19,36 @@ package com.android.build.gradle.internal.tasks
 import com.android.bundle.DeviceGroup
 import com.android.bundle.DeviceGroupConfig
 import com.android.bundle.DeviceId
-import com.android.bundle.DeviceSelector
 import com.android.bundle.DeviceRam
 import com.android.bundle.SystemFeature
 import com.android.bundle.SystemOnChip
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
-import org.xml.sax.InputSource
-import org.xml.sax.SAXParseException
 import java.io.StringReader
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+import org.xml.sax.InputSource
+import org.xml.sax.SAXParseException
 
 class DeviceTargetingConfigParserTest {
 
-    lateinit var documentBuilder: DocumentBuilder
+  lateinit var documentBuilder: DocumentBuilder
 
-    @Before
-    fun setUp() {
-        val factory = DocumentBuilderFactory.newInstance()
-        factory.isNamespaceAware = true
-        documentBuilder = factory.newDocumentBuilder()
-    }
+  @Before
+  fun setUp() {
+    val factory = DocumentBuilderFactory.newInstance()
+    factory.isNamespaceAware = true
+    documentBuilder = factory.newDocumentBuilder()
+  }
 
-    @Test
-    fun testParseCustomConfig_allElements() {
-        val customConfigXML = """
+  @Test
+  fun testParseCustomConfig_allElements() {
+    val customConfigXML =
+      """
             <config:device-targeting-config
               xmlns:config="http://schemas.android.com/apk/config">
 
@@ -70,36 +70,36 @@ class DeviceTargetingConfigParserTest {
 
             </config:device-targeting-config>
             """
-        val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
+    val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
 
-        val allOptionsGroup = DeviceGroup.newBuilder().setName("allOptions")
-        allOptionsGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMinBytes(1024L).setMaxBytes(1234567L))
-            .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("redfin"))
-            .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("sailfish"))
-            .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("good-brand"))
-            .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("brand-only"))
-            .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("caiman"))
-            .addRequiredSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.bluetooth"))
-            .addRequiredSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.location"))
-            .addForbiddenSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.camera"))
-            .addForbiddenSystemFeatures(SystemFeature.newBuilder().setName("mindcontrol.laser"))
-            .addSystemOnChips(SystemOnChip.newBuilder().setManufacturer("Sinclair").setModel("ZX80"))
-            .addSystemOnChips(SystemOnChip.newBuilder().setManufacturer("Commodore").setModel("C64"))
+    val allOptionsGroup = DeviceGroup.newBuilder().setName("allOptions")
+    allOptionsGroup
+      .addDeviceSelectorsBuilder()
+      .setDeviceRam(DeviceRam.newBuilder().setMinBytes(1024L).setMaxBytes(1234567L))
+      .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("redfin"))
+      .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("sailfish"))
+      .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("good-brand"))
+      .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("brand-only"))
+      .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("caiman"))
+      .addRequiredSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.bluetooth"))
+      .addRequiredSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.location"))
+      .addForbiddenSystemFeatures(SystemFeature.newBuilder().setName("android.hardware.camera"))
+      .addForbiddenSystemFeatures(SystemFeature.newBuilder().setName("mindcontrol.laser"))
+      .addSystemOnChips(SystemOnChip.newBuilder().setManufacturer("Sinclair").setModel("ZX80"))
+      .addSystemOnChips(SystemOnChip.newBuilder().setManufacturer("Commodore").setModel("C64"))
 
-        val customConfigProto = DeviceGroupConfig.newBuilder()
-            .addDeviceGroups(allOptionsGroup)
-            .build()
+    val customConfigProto = DeviceGroupConfig.newBuilder().addDeviceGroups(allOptionsGroup).build()
 
-        val parser = DeviceTargetingConfigParser(customConfigDoc)
-        val parsedCustomConfigProto = parser.parseConfig()
+    val parser = DeviceTargetingConfigParser(customConfigDoc)
+    val parsedCustomConfigProto = parser.parseConfig()
 
-        assertEquals(customConfigProto, parsedCustomConfigProto)
-    }
+    assertEquals(customConfigProto, parsedCustomConfigProto)
+  }
 
-    @Test
-    fun testParseCustomConfig_multipleSelectors() {
-        val customConfigXML = """
+  @Test
+  fun testParseCustomConfig_multipleSelectors() {
+    val customConfigXML =
+      """
             <config:device-targeting-config
               xmlns:config="http://schemas.android.com/apk/config">
 
@@ -115,30 +115,31 @@ class DeviceTargetingConfigParserTest {
 
             </config:device-targeting-config>
             """
-        val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
+    val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
 
-        val multipleSelectorsGroup = DeviceGroup.newBuilder().setName("multipleSelectors")
-        multipleSelectorsGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMinBytes(12345678L))
-            .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google"))
-            .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("caiman"))
-        multipleSelectorsGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMinBytes(24567890L))
-            .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("samsung"))
+    val multipleSelectorsGroup = DeviceGroup.newBuilder().setName("multipleSelectors")
+    multipleSelectorsGroup
+      .addDeviceSelectorsBuilder()
+      .setDeviceRam(DeviceRam.newBuilder().setMinBytes(12345678L))
+      .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google"))
+      .addExcludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("caiman"))
+    multipleSelectorsGroup
+      .addDeviceSelectorsBuilder()
+      .setDeviceRam(DeviceRam.newBuilder().setMinBytes(24567890L))
+      .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("samsung"))
 
-        val customConfigProto = DeviceGroupConfig.newBuilder()
-            .addDeviceGroups(multipleSelectorsGroup)
-            .build()
+    val customConfigProto = DeviceGroupConfig.newBuilder().addDeviceGroups(multipleSelectorsGroup).build()
 
-        val parser = DeviceTargetingConfigParser(customConfigDoc)
-        val parsedCustomConfigProto = parser.parseConfig()
+    val parser = DeviceTargetingConfigParser(customConfigDoc)
+    val parsedCustomConfigProto = parser.parseConfig()
 
-        assertEquals(customConfigProto, parsedCustomConfigProto)
-    }
+    assertEquals(customConfigProto, parsedCustomConfigProto)
+  }
 
-    @Test
-    fun testParseCustomConfig_ram() {
-        val customConfigXML = """
+  @Test
+  fun testParseCustomConfig_ram() {
+    val customConfigXML =
+      """
             <config:device-targeting-config
               xmlns:config="http://schemas.android.com/apk/config">
 
@@ -160,53 +161,51 @@ class DeviceTargetingConfigParserTest {
 
             </config:device-targeting-config>
             """
-        val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
+    val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
 
-        val highRamGroup = DeviceGroup.newBuilder().setName("highRam")
-        highRamGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMinBytes(500L))
+    val highRamGroup = DeviceGroup.newBuilder().setName("highRam")
+    highRamGroup.addDeviceSelectorsBuilder().setDeviceRam(DeviceRam.newBuilder().setMinBytes(500L))
 
-        val mediumRamGroup = DeviceGroup.newBuilder().setName("mediumRam")
-        mediumRamGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMinBytes(300L).setMaxBytes(500L))
+    val mediumRamGroup = DeviceGroup.newBuilder().setName("mediumRam")
+    mediumRamGroup.addDeviceSelectorsBuilder().setDeviceRam(DeviceRam.newBuilder().setMinBytes(300L).setMaxBytes(500L))
 
-        val lowRamGroup = DeviceGroup.newBuilder().setName("lowRam")
-        lowRamGroup.addDeviceSelectorsBuilder()
-            .setDeviceRam(DeviceRam.newBuilder().setMaxBytes(300L))
+    val lowRamGroup = DeviceGroup.newBuilder().setName("lowRam")
+    lowRamGroup.addDeviceSelectorsBuilder().setDeviceRam(DeviceRam.newBuilder().setMaxBytes(300L))
 
-        val anyRamGroup = DeviceGroup.newBuilder().setName("anyRam")
-        anyRamGroup.addDeviceSelectorsBuilder().setDeviceRam(DeviceRam.getDefaultInstance())
+    val anyRamGroup = DeviceGroup.newBuilder().setName("anyRam")
+    anyRamGroup.addDeviceSelectorsBuilder().setDeviceRam(DeviceRam.getDefaultInstance())
 
-        val customConfigProto = DeviceGroupConfig.newBuilder()
-            .addDeviceGroups(highRamGroup)
-            .addDeviceGroups(mediumRamGroup)
-            .addDeviceGroups(lowRamGroup)
-            .addDeviceGroups(anyRamGroup)
-            .build()
+    val customConfigProto =
+      DeviceGroupConfig.newBuilder()
+        .addDeviceGroups(highRamGroup)
+        .addDeviceGroups(mediumRamGroup)
+        .addDeviceGroups(lowRamGroup)
+        .addDeviceGroups(anyRamGroup)
+        .build()
 
-        val parser = DeviceTargetingConfigParser(customConfigDoc)
-        val parsedCustomConfigProto = parser.parseConfig()
+    val parser = DeviceTargetingConfigParser(customConfigDoc)
+    val parsedCustomConfigProto = parser.parseConfig()
 
-        assertEquals(customConfigProto, parsedCustomConfigProto)
-    }
+    assertEquals(customConfigProto, parsedCustomConfigProto)
+  }
 
-    @Test
-    fun testParseCustomConfig_invalidElement() {
-        val customConfigXML = """
+  @Test
+  fun testParseCustomConfig_invalidElement() {
+    val customConfigXML =
+      """
         <config:device-targeting-config
               xmlns:config="http://schemas.android.com/apk/config">
         </config:device-targeting-config>
         """
-        val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
+    val customConfigDoc = documentBuilder.parse(InputSource(StringReader(customConfigXML)))
 
-        val parser = DeviceTargetingConfigParser(customConfigDoc)
-        val exception =
-            assertFailsWith<DeviceTargetingConfigParser.InvalidDeviceTargetingConfigException> { parser.parseConfig() }
-        assertEquals(exception.message, "The DeviceTargetingConfig xml provided is invalid.")
-        assertTrue(exception.cause is SAXParseException)
-        assertContains(
-            (exception.cause as SAXParseException).message!!,
-            "The content of element 'config:device-targeting-config' is not complete."
-        )
-    }
+    val parser = DeviceTargetingConfigParser(customConfigDoc)
+    val exception = assertFailsWith<DeviceTargetingConfigParser.InvalidDeviceTargetingConfigException> { parser.parseConfig() }
+    assertEquals(exception.message, "The DeviceTargetingConfig xml provided is invalid.")
+    assertTrue(exception.cause is SAXParseException)
+    assertContains(
+      (exception.cause as SAXParseException).message!!,
+      "The content of element 'config:device-targeting-config' is not complete.",
+    )
+  }
 }

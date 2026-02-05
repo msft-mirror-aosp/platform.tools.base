@@ -21,10 +21,9 @@ import org.gradle.api.NamedDomainObjectContainer
 /**
  * Extensions method to create and configure object in named object container as if it was a DSL.
  *
- * The function passed in parameter is an extension function of the created object and therefore
- * doesn't need to use "it"
+ * The function passed in parameter is an extension function of the created object and therefore doesn't need to use "it"
  */
 fun <T> NamedDomainObjectContainer<T>.createAndConfig(name: String, action: T.() -> Unit) {
-    val value = this.maybeCreate(name)
-    action.invoke(value)
+  val value = this.maybeCreate(name)
+  action.invoke(value)
 }

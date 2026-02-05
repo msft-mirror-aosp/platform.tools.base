@@ -22,28 +22,28 @@ import kotlinx.coroutines.CoroutineScope
 
 class HpgcHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
 
-        client.requestHgpc()
+    client.requestHgpc()
 
-        // Empty response used to be sent out before the release of Android 28
-        if (device.apiLevel < 28) {
-            val responsePacket = JdwpPacket.createEmptyDdmsResponse(packet.id)
-            responsePacket.write(jdwpHandlerOutput)
-        }
-
-        // Keep JDWP connection open
-        return true
+    // Empty response used to be sent out before the release of Android 28
+    if (device.apiLevel < 28) {
+      val responsePacket = JdwpPacket.createEmptyDdmsResponse(packet.id)
+      responsePacket.write(jdwpHandlerOutput)
     }
 
-    companion object {
+    // Keep JDWP connection open
+    return true
+  }
 
-        val CHUNK_TYPE = encodeChunkType("HPGC")
-    }
+  companion object {
+
+    val CHUNK_TYPE = encodeChunkType("HPGC")
+  }
 }

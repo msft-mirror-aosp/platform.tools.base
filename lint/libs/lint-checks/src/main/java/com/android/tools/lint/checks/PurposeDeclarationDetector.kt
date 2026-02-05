@@ -53,9 +53,9 @@ import org.xmlpull.v1.XmlPullParser.END_DOCUMENT
 import org.xmlpull.v1.XmlPullParser.START_TAG
 
 /**
- * The detector flags cases where an app requests a permission that requires purpose but fails to
- * provide appropriate purpose elements. The check applies this rule across all appropriate SDK
- * versions by taking into account the app's targetSdkVersion and various other parameters.
+ * The detector flags cases where an app requests a permission that requires purpose but fails to provide appropriate purpose elements. The
+ * check applies this rule across all appropriate SDK versions by taking into account the app's targetSdkVersion and various other
+ * parameters.
  */
 class PurposeDeclarationDetector : Detector(), XmlScanner {
   override fun checkMergedProject(context: Context) {
@@ -72,8 +72,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Evaluate whether the permission requires purposes. If yes, ensure appropriate purpose elements
-   * are declared for all applicable SDKs.
+   * Evaluate whether the permission requires purposes. If yes, ensure appropriate purpose elements are declared for all applicable SDKs.
    */
   private fun evaluatePermissionRequest(context: Context, element: Element) {
     // Check if permission requires purpose.
@@ -83,13 +82,9 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
 
     // Compute relevant parameters for identifying the target SDK range for which purpose is needed.
     val projectMinSdk = context.mainProject.minSdkVersion.featureLevel
-    val usesPermissionMinSdkVersion =
-      element.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull()
-        ?: MIN_SDK_VERSION_DEFAULT
+    val usesPermissionMinSdkVersion = element.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
     val projectTargetSdk = context.mainProject.targetSdkVersion.featureLevel
-    val usesPermissionMaxSdkVersion =
-      element.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull()
-        ?: MAX_SDK_VERSION_DEFAULT
+    val usesPermissionMaxSdkVersion = element.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
     val usesPermissionSdkRange = SdkRange(usesPermissionMinSdkVersion, usesPermissionMaxSdkVersion)
 
     val missingPurposeErrorMessages = mutableListOf<String>()
@@ -100,12 +95,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
         element,
         permissionInfo.validPurposes,
         TAG_PURPOSE,
-        computeRequiresPurposeSdkRange(
-          permissionInfo.requiresPurposeSdkRange,
-          projectMinSdk,
-          projectTargetSdk,
-          usesPermissionSdkRange,
-        ),
+        computeRequiresPurposeSdkRange(permissionInfo.requiresPurposeSdkRange, projectMinSdk, projectTargetSdk, usesPermissionSdkRange),
       )
     purposeError?.let { missingPurposeErrorMessages.add(it) }
 
@@ -135,10 +125,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     projectTargetSdk: Int,
     usesPermissionSdkRange: SdkRange,
   ): SdkRange {
-    val minPurposeStringSdk =
-      maxOf(purposeTypeSdkRange.min, projectMinSdk, usesPermissionSdkRange.min)
-    val maxPurposeStringSdk =
-      minOf(purposeTypeSdkRange.max, projectTargetSdk, usesPermissionSdkRange.max)
+    val minPurposeStringSdk = maxOf(purposeTypeSdkRange.min, projectMinSdk, usesPermissionSdkRange.min)
+    val maxPurposeStringSdk = minOf(purposeTypeSdkRange.max, projectTargetSdk, usesPermissionSdkRange.max)
     return SdkRange(minPurposeStringSdk, maxPurposeStringSdk)
   }
 
@@ -179,11 +167,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     return null
   }
 
-  private fun validatePurposeResourceString(
-    context: Context,
-    permissionElement: Element,
-    requiredRange: SdkRange,
-  ): String? {
+  private fun validatePurposeResourceString(context: Context, permissionElement: Element, requiredRange: SdkRange): String? {
     // No SDK range targeted by this app requires a purpose string resource to be declared.
     if (requiredRange.min > requiredRange.max) {
       return null
@@ -209,8 +193,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     }
 
     // If a string resource is defined, the content can be validated.
-    val resources =
-      context.client.getResources(context.mainProject, ResourceRepositoryScope.ALL_DEPENDENCIES)
+    val resources = context.client.getResources(context.mainProject, ResourceRepositoryScope.ALL_DEPENDENCIES)
     val purposeResources =
       resources
         .getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
@@ -245,24 +228,15 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
   }
 
   /** Calculates the union of all valid SDK ranges from the declared purpose elements. */
-  private fun getValidCoverageRanges(
-    purposeElements: List<Element>,
-    validPurposesMap: Map<String, SdkRange>,
-  ): List<SdkRange> {
+  private fun getValidCoverageRanges(purposeElements: List<Element>, validPurposesMap: Map<String, SdkRange>): List<SdkRange> {
     val effectiveRanges =
       purposeElements.mapNotNull { purposeElement ->
-        val declaredPurposeName =
-          purposeElement.getAttributeNS(ANDROID_URI, ATTR_NAME).takeIf { it.isNotEmpty() }
-            ?: return@mapNotNull null
+        val declaredPurposeName = purposeElement.getAttributeNS(ANDROID_URI, ATTR_NAME).takeIf { it.isNotEmpty() } ?: return@mapNotNull null
         val platformRange = validPurposesMap[declaredPurposeName] ?: return@mapNotNull null
 
         // The purpose's own min/max SDK attributes need to be considered.
-        val purposeMinSdk =
-          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull()
-            ?: MIN_SDK_VERSION_DEFAULT
-        val purposeMaxSdk =
-          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull()
-            ?: MAX_SDK_VERSION_DEFAULT
+        val purposeMinSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
+        val purposeMaxSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
 
         // The effective range for this single purpose is the intersection of its
         // platform-defined validity and its element-defined validity.
@@ -299,8 +273,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Subtracts a list of sorted, disjoint ranges (`toSubtract`) from a main range (`source`).
-   * Returns a list of ranges representing the parts of `source` that were not covered.
+   * Subtracts a list of sorted, disjoint ranges (`toSubtract`) from a main range (`source`). Returns a list of ranges representing the
+   * parts of `source` that were not covered.
    */
   private fun subtractRanges(source: SdkRange, toSubtract: List<SdkRange>): List<SdkRange> {
     val uncovered = mutableListOf<SdkRange>()
@@ -340,8 +314,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     }
 
     val detailsString = missingPurposeErrorMessages.joinToString(separator = "; ")
-    val finalMessage =
-      "$permissionName permission is missing required purpose attributes/elements: $detailsString"
+    val finalMessage = "$permissionName permission is missing required purpose attributes/elements: $detailsString"
 
     context.report(MISSING_PURPOSE, context.getLocation(permissionElement), finalMessage)
   }
@@ -363,8 +336,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     // For convenience to avoid overflow errors with interval math when adding 1
     private const val MAX_SDK_VERSION_DEFAULT = 999999
 
-    private val IMPLEMENTATION =
-      Implementation(PurposeDeclarationDetector::class.java, Scope.MANIFEST_SCOPE)
+    private val IMPLEMENTATION = Implementation(PurposeDeclarationDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val MISSING_PURPOSE: Issue =
@@ -447,11 +419,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
 
     private fun computePermissionsMap(project: Project): Map<String, PermissionInfo> {
       // Uses compileSdkVersion of app to get access to the latest permission versions file.
-      val dataFile =
-        project.buildTarget
-          ?.getPath(PERMISSION_VERSIONS)
-          ?.let { File(it.toString()) }
-          ?.takeIf { it.exists() }
+      val dataFile = project.buildTarget?.getPath(PERMISSION_VERSIONS)?.let { File(it.toString()) }?.takeIf { it.exists() }
 
       // Handle gracefully if file doesn't exist. Using empty map signifies no permissions
       // require purpose.
@@ -467,25 +435,15 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
 
         while (parser.next() != END_DOCUMENT) {
           if (parser.eventType == START_TAG && parser.name == TAG_PERMISSION) {
-            val permissionName =
-              parser.getAttributeValue(null, ATTR_NAME).takeIf { !it.isNullOrEmpty() } ?: continue
-            val requiresPurposeMinSdk =
-              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_MIN)?.toIntOrNull()
-                ?: MAX_SDK_VERSION_DEFAULT
-            val requiresPurposeMaxSdk =
-              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_MAX)?.toIntOrNull()
-                ?: MAX_SDK_VERSION_DEFAULT
+            val permissionName = parser.getAttributeValue(null, ATTR_NAME).takeIf { !it.isNullOrEmpty() } ?: continue
+            val requiresPurposeMinSdk = parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_MIN)?.toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
+            val requiresPurposeMaxSdk = parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_MAX)?.toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
             val requiresPurposeStringMinSdk =
-              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MIN)?.toIntOrNull()
-                ?: MAX_SDK_VERSION_DEFAULT
+              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MIN)?.toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
             val requiresPurposeStringMaxSdk =
-              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MAX)?.toIntOrNull()
-                ?: MAX_SDK_VERSION_DEFAULT
+              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MAX)?.toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
 
-            if (
-              requiresPurposeMinSdk == MAX_SDK_VERSION_DEFAULT &&
-                requiresPurposeStringMinSdk == MAX_SDK_VERSION_DEFAULT
-            ) {
+            if (requiresPurposeMinSdk == MAX_SDK_VERSION_DEFAULT && requiresPurposeStringMinSdk == MAX_SDK_VERSION_DEFAULT) {
               continue
             }
 
@@ -493,21 +451,14 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
             val depth = parser.depth
             while (true) {
               val event = parser.next()
-              if (
-                event == END_DOCUMENT || (event == XmlPullParser.END_TAG && parser.depth == depth)
-              ) {
+              if (event == END_DOCUMENT || (event == XmlPullParser.END_TAG && parser.depth == depth)) {
                 break
               } else if (event != START_TAG) {
                 continue
               } else if (parser.name == TAG_VALID_PURPOSE) {
-                val purposeName =
-                  parser.getAttributeValue(null, ATTR_NAME).takeIf { !it.isNullOrEmpty() }
-                    ?: continue
-                val purposeMinSdk =
-                  parser.getAttributeValue(null, ATTR_MIN_SDK)?.toIntOrNull() ?: continue
-                val purposeMaxSdk =
-                  parser.getAttributeValue(null, ATTR_MAX_SDK)?.toIntOrNull()
-                    ?: MAX_SDK_VERSION_DEFAULT
+                val purposeName = parser.getAttributeValue(null, ATTR_NAME).takeIf { !it.isNullOrEmpty() } ?: continue
+                val purposeMinSdk = parser.getAttributeValue(null, ATTR_MIN_SDK)?.toIntOrNull() ?: continue
+                val purposeMaxSdk = parser.getAttributeValue(null, ATTR_MAX_SDK)?.toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
                 purposeMap[purposeName] = SdkRange(min = purposeMinSdk, max = purposeMaxSdk)
               }
             }
@@ -517,10 +468,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
             if (purposeMap.isNotEmpty() || requiresPurposeStringMinSdk != MAX_SDK_VERSION_DEFAULT) {
               mapBuilder[permissionName] =
                 PermissionInfo(
-                  requiresPurposeSdkRange =
-                    SdkRange(min = requiresPurposeMinSdk, max = requiresPurposeMaxSdk),
-                  requiresPurposeStringSdkRange =
-                    SdkRange(min = requiresPurposeStringMinSdk, max = requiresPurposeStringMaxSdk),
+                  requiresPurposeSdkRange = SdkRange(min = requiresPurposeMinSdk, max = requiresPurposeMaxSdk),
+                  requiresPurposeStringSdkRange = SdkRange(min = requiresPurposeStringMinSdk, max = requiresPurposeStringMaxSdk),
                   validPurposes = purposeMap.toMap(),
                 )
             }

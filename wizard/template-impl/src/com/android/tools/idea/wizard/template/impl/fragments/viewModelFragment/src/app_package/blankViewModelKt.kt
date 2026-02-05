@@ -16,14 +16,11 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.viewModelFragment.src.app_package
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun blankViewModelKt(
-  packageName: String,
-  useAndroidX: Boolean,
-  viewModelName: String
-) = """
+fun blankViewModelKt(packageName: String, useAndroidX: Boolean, viewModelName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModel", useAndroidX)}

@@ -21,34 +21,32 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * Builds the payload of a DDM packet by invoking [block] with a [DdmPayloadWriter]
- */
+/** Builds the payload of a DDM packet by invoking [block] with a [DdmPayloadWriter] */
 @Suppress("TestFunctionName")
 internal fun DdmPacketHandler.DdmPayload(block: DdmPayloadWriter.() -> Unit): ByteArray {
-    val writer = DdmPayloadWriter()
-    writer.block()
-    return writer.bytes()
+  val writer = DdmPayloadWriter()
+  writer.block()
+  return writer.bytes()
 }
 
 internal class DdmPayloadWriter {
-    val stream = ByteArrayOutputStream()
+  val stream = ByteArrayOutputStream()
 
-    fun bytes(): ByteArray {
-        return stream.toByteArray()
-    }
+  fun bytes(): ByteArray {
+    return stream.toByteArray()
+  }
 
-    fun writeByte(byte: Byte) {
-        stream.write(byte.toInt())
-    }
+  fun writeByte(byte: Byte) {
+    stream.write(byte.toInt())
+  }
 
-    fun writeBytes(bytes: ByteArray) {
-        stream.write(bytes)
-    }
+  fun writeBytes(bytes: ByteArray) {
+    stream.write(bytes)
+  }
 
-    fun writeString(string: String) {
-        val byteBuffer = ByteBuffer.allocate(string.ddmByteCount()).order(ByteOrder.BIG_ENDIAN)
-        byteBuffer.putDdmString(string)
-        stream.writeBytes(byteBuffer.array())
-    }
+  fun writeString(string: String) {
+    val byteBuffer = ByteBuffer.allocate(string.ddmByteCount()).order(ByteOrder.BIG_ENDIAN)
+    byteBuffer.putDdmString(string)
+    stream.writeBytes(byteBuffer.array())
+  }
 }

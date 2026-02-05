@@ -25,5 +25,4 @@ import com.android.build.api.dsl.TestExtension
  *
  * Only the Android Gradle Plugin should create instances of interfaces in com.android.build.api.variant.
  */
-interface TestAndroidComponentsExtension:
-    AndroidComponentsExtension<TestExtension, TestVariantBuilder, TestVariant>
+interface TestAndroidComponentsExtension : AndroidComponentsExtension<TestExtension, TestVariantBuilder, TestVariant>

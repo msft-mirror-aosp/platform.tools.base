@@ -20,44 +20,48 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
 import org.gradle.api.provider.Provider
 
-abstract class JUnitEngineSpecImpl: JUnitEngineSpec {
+abstract class JUnitEngineSpecImpl : JUnitEngineSpec {
 
-    override val includeEngines = mutableSetOf<String>()
+  override val includeEngines = mutableSetOf<String>()
 
-    /**
-     * Adds one or more engine IDs to the [includeEngines] set.
-     *
-     * This method is provided for Groovy DSL support, allowing a more idiomatic syntax.
-     * For example:
-     * ```groovy
-     * includeEngines 'journeys-test-engine', 'another-engine'
-     * ```
-     * @param includeEngines The unique IDs of the JUnit Platform engines to add.
-     */
-    fun includeEngines(vararg includeEngines: String) { this.includeEngines.addAll(includeEngines) }
+  /**
+   * Adds one or more engine IDs to the [includeEngines] set.
+   *
+   * This method is provided for Groovy DSL support, allowing a more idiomatic syntax. For example:
+   * ```groovy
+   * includeEngines 'journeys-test-engine', 'another-engine'
+   * ```
+   *
+   * @param includeEngines The unique IDs of the JUnit Platform engines to add.
+   */
+  fun includeEngines(vararg includeEngines: String) {
+    this.includeEngines.addAll(includeEngines)
+  }
 
-    override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+  override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
 
-    /**
-     * Adds one or more AGP-provided parameters to the [inputs] list.
-     *
-     * This method is provided for Groovy DSL support, allowing a more idiomatic syntax.
-     * For example:
-     * ```groovy
-     * inputs AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.ADB_EXECUTABLE
-     * ```
-     * @param inputs The [AgpTestSuiteInputParameters] to add.
-     */
-    fun inputs(vararg inputs: AgpTestSuiteInputParameters) { this.inputs.addAll(inputs) }
+  /**
+   * Adds one or more AGP-provided parameters to the [inputs] list.
+   *
+   * This method is provided for Groovy DSL support, allowing a more idiomatic syntax. For example:
+   * ```groovy
+   * inputs AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.ADB_EXECUTABLE
+   * ```
+   *
+   * @param inputs The [AgpTestSuiteInputParameters] to add.
+   */
+  fun inputs(vararg inputs: AgpTestSuiteInputParameters) {
+    this.inputs.addAll(inputs)
+  }
 
-    override fun addInputProperty(propertyName: String, propertyValue: String) {
-        inputStaticProperties[propertyName] = propertyValue
-    }
+  override fun addInputProperty(propertyName: String, propertyValue: String) {
+    inputStaticProperties[propertyName] = propertyValue
+  }
 
-    override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
-        inputProperties[propertyName] = propertyValue
-    }
+  override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+    inputProperties[propertyName] = propertyValue
+  }
 
-    internal val inputStaticProperties = mutableMapOf<String, String>()
-    internal val inputProperties = mutableMapOf<String, Provider<String>>()
+  internal val inputStaticProperties = mutableMapOf<String, String>()
+  internal val inputProperties = mutableMapOf<String, Provider<String>>()
 }

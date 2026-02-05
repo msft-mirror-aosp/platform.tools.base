@@ -19,18 +19,17 @@ import java.util.concurrent.Callable
 import java.util.concurrent.LinkedBlockingQueue
 
 /**
- * This queue is the primary message pump for listening threads to know when events have
- * arrived, as well as what to do for such an event.
+ * This queue is the primary message pump for listening threads to know when events have arrived, as well as what to do for such an event.
  */
 class StateChangeQueue {
 
-    private val mQueue = LinkedBlockingQueue<Callable<StateChangeHandlerFactory.HandlerResult>>()
+  private val mQueue = LinkedBlockingQueue<Callable<StateChangeHandlerFactory.HandlerResult>>()
 
-    fun take(): Callable<StateChangeHandlerFactory.HandlerResult> {
-        return mQueue.take()
-    }
+  fun take(): Callable<StateChangeHandlerFactory.HandlerResult> {
+    return mQueue.take()
+  }
 
-    fun add(handler: Callable<StateChangeHandlerFactory.HandlerResult>) {
-        mQueue.add(handler)
-    }
+  fun add(handler: Callable<StateChangeHandlerFactory.HandlerResult>) {
+    mQueue.add(handler)
+  }
 }

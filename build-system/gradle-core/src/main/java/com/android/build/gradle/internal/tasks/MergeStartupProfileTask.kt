@@ -34,62 +34,53 @@ import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = SIMPLE_MERGING_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ART_PROFILE, secondaryTaskCategories = [TaskCategory.MERGING])
-abstract class MergeStartupProfileTask: MergeFileTask() {
+abstract class MergeStartupProfileTask : MergeFileTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    abstract val baselineProfilesSources: ListProperty<RegularFile>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val baselineProfilesSources: ListProperty<RegularFile>
 
-    override fun doTaskAction() {
-        val sources = baselineProfilesSources.orNull
-        if (sources.isNullOrEmpty()) {
-            logger.info(
-                "Dex optimization based on startup profile is enabled, " +
-                "but there are no source folders.")
-        } else {
-            val startupProfiles = sources.filter { it.asFile.exists() }.map { it.asFile }
-            if (startupProfiles.isEmpty()) {
-                logger.info(
-                    "Dex optimization based on startup profile is enabled, but there are no " +
-                    "input baseline profiles found in the baselineProfiles sources. " +
-                    "You should add ${sources.first().asFile.absolutePath}, for instance.")
-            } else {
-                mergeFiles(startupProfiles, outputFile.get().asFile)
-            }
-        }
+  override fun doTaskAction() {
+    val sources = baselineProfilesSources.orNull
+    if (sources.isNullOrEmpty()) {
+      logger.info("Dex optimization based on startup profile is enabled, " + "but there are no source folders.")
+    } else {
+      val startupProfiles = sources.filter { it.asFile.exists() }.map { it.asFile }
+      if (startupProfiles.isEmpty()) {
+        logger.info(
+          "Dex optimization based on startup profile is enabled, but there are no " +
+            "input baseline profiles found in the baselineProfiles sources. " +
+            "You should add ${sources.first().asFile.absolutePath}, for instance."
+        )
+      } else {
+        mergeFiles(startupProfiles, outputFile.get().asFile)
+      }
+    }
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<MergeStartupProfileTask, ApkCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = creationConfig.computeTaskNameInternal("merge", "StartupProfile")
+
+    override val type: Class<MergeStartupProfileTask>
+      get() = MergeStartupProfileTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeStartupProfileTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeFileTask::outputFile)
+        .withName(BaselineProfiles.StartupProfileFileName)
+        .on(InternalArtifactType.MERGED_STARTUP_PROFILE)
     }
 
-    class CreationAction(
-        creationConfig: ApkCreationConfig
-    ) : VariantTaskCreationAction<MergeStartupProfileTask, ApkCreationConfig>(creationConfig) {
+    override fun configure(task: MergeStartupProfileTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = creationConfig.computeTaskNameInternal("merge", "StartupProfile")
-        override val type: Class<MergeStartupProfileTask>
-            get() = MergeStartupProfileTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<MergeStartupProfileTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                MergeFileTask::outputFile
-            ).withName(BaselineProfiles.StartupProfileFileName)
-                .on(InternalArtifactType.MERGED_STARTUP_PROFILE)
-        }
-
-        override fun configure(task: MergeStartupProfileTask) {
-            super.configure(task)
-
-            creationConfig.sources.baselineProfiles {
-                task.baselineProfilesSources.setDisallowChanges(
-                    it.all.map { directories ->
-                        directories.map { directory ->
-                            directory.file(BaselineProfiles.StartupProfileFileName)
-                        }
-                    }
-                )
-            }
-        }
+      creationConfig.sources.baselineProfiles {
+        task.baselineProfilesSources.setDisallowChanges(
+          it.all.map { directories -> directories.map { directory -> directory.file(BaselineProfiles.StartupProfileFileName) } }
+        )
+      }
     }
+  }
 }

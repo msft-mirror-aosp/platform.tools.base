@@ -159,9 +159,7 @@ class LintIssueDocGenerator(
   private val allIssues: List<Issue> = registryMap.keys.flatMap { it.issues }
 
   private val issueToRegistry: Map<String, List<IssueRegistry>> =
-    registryMap.keys
-      .flatMap { registry -> registry.issues.map { issue -> issue.id to registry } }
-      .groupBy({ it.first }, { it.second })
+    registryMap.keys.flatMap { registry -> registry.issues.map { issue -> issue.id to registry } }.groupBy({ it.first }, { it.second })
 
   private val aliasMap: Map<IssueRegistry, Map<String, Issue>>
 
@@ -267,12 +265,8 @@ class LintIssueDocGenerator(
     sb.append("# Lint Issues\n")
 
     if (registryMap.size == 1 && registryMap.keys.first() is BuiltinIssueRegistry) {
-      sb.append(
-        "This document lists the built-in issues for Lint. Note that lint also reads additional\n"
-      )
-      sb.append(
-        "checks directly bundled with libraries, so this is a subset of the checks lint will\n"
-      )
+      sb.append("This document lists the built-in issues for Lint. Note that lint also reads additional\n")
+      sb.append("checks directly bundled with libraries, so this is a subset of the checks lint will\n")
       sb.append("perform.\n")
     }
 
@@ -325,21 +319,13 @@ class LintIssueDocGenerator(
     return years
   }
 
-  private fun writeStats(
-    sb: StringBuilder,
-    categories: HashMap<Category, MutableList<Issue>>,
-    issues: List<Issue>,
-  ) {
+  private fun writeStats(sb: StringBuilder, categories: HashMap<Category, MutableList<Issue>>, issues: List<Issue>) {
     sb.append("\n## Vital Stats\n")
 
-    sb.append(
-      "Current As Of\n:   ${DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now())}\n"
-    )
+    sb.append("Current As Of\n:   ${DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now())}\n")
     sb.append("Category Count\n:   ${categories.keys.size}\n")
     sb.append("Issue Count\n:   ${issues.size}\n")
-    sb.append(
-      "Informational\n:   ${issues.count { it.defaultSeverity == Severity.INFORMATIONAL }}\n"
-    )
+    sb.append("Informational\n:   ${issues.count { it.defaultSeverity == Severity.INFORMATIONAL }}\n")
     sb.append("Warnings\n:   ${issues.count { it.defaultSeverity == Severity.WARNING }}\n")
     sb.append("Errors\n:   ${issues.count { it.defaultSeverity == Severity.ERROR }}\n")
     sb.append("Fatal\n:   ${issues.count { it.defaultSeverity == Severity.FATAL }}\n")
@@ -380,11 +366,7 @@ class LintIssueDocGenerator(
     if (now != null) {
       sb.append(wrap("This issue id is an alias for [${now.id}](${now.id}${format.extension})."))
     } else {
-      sb.append(
-        wrap(
-          "The issue for this id has been deleted or marked obsolete and can " + "now be ignored."
-        )
-      )
+      sb.append(wrap("The issue for this id has been deleted or marked obsolete and can " + "now be ignored."))
     }
 
     registry.vendor?.let { vendor ->
@@ -436,10 +418,7 @@ class LintIssueDocGenerator(
     if (pom.isNotBlank()) {
       val document = XmlUtils.parseDocumentSilently(pom, true)?.documentElement
       name = getXmlValue(document, "name")
-      description =
-        getXmlValue(document, "description")?.let {
-          wrap(it).trim().split("\n").joinToString("\n:   ")
-        }
+      description = getXmlValue(document, "description")?.let { wrap(it).trim().split("\n").joinToString("\n:   ") }
       val licenseName = getXmlValue(document, "licenses", "license", "name")
       val licenseUrl = getXmlValue(document, "licenses", "license", "url")
       license =
@@ -471,11 +450,7 @@ class LintIssueDocGenerator(
         )
         .toTypedArray()
     val artifactMap = arrayOf("Artifact" to artifact)
-    val atLeastMap =
-      arrayOf(
-        "Min" to "Lint ${describeApi(registry.minApi)}",
-        "Compiled" to "Lint ${describeApi(registry.api)}",
-      )
+    val atLeastMap = arrayOf("Min" to "Lint ${describeApi(registry.minApi)}", "Compiled" to "Lint ${describeApi(registry.api)}")
 
     val array = arrayOf(*vendorInfo, *atLeastMap, *artifactMap)
 
@@ -538,9 +513,7 @@ class LintIssueDocGenerator(
         var file = File.createTempFile(artifact, DOT_JAR)
         file.deleteOnExit()
         file.writeBytes(bytes)
-        val r =
-          JarFileIssueRegistry.get(client, listOf(file), skipVerification = true).firstOrNull()
-            ?: continue
+        val r = JarFileIssueRegistry.get(client, listOf(file), skipVerification = true).firstOrNull() ?: continue
 
         versionIssues.add(versionString to r.issues.map { it.id }.sorted())
 
@@ -615,9 +588,7 @@ class LintIssueDocGenerator(
       if (incompatibilities.isNotEmpty()) {
         versionTable.append("\nCompatibility Problems:\n\n")
         for ((message, number) in incompatibilities.entries.sortedBy { it.value }) {
-          versionTable.append(
-            "[^$number]: $message  \n"
-          ) // Trailing double space ensures markdown doesn't combine lines
+          versionTable.append("[^$number]: $message  \n") // Trailing double space ensures markdown doesn't combine lines
         }
       }
 
@@ -777,10 +748,7 @@ class LintIssueDocGenerator(
       for (registry in registryMap.keys) {
         if (registry is DocIssueRegistry) {
           val library = registry.library
-          val list =
-            if (library.lintLibrary || library.id.contains("-lint") || library.id.contains(":lint"))
-              jars
-            else aars
+          val list = if (library.lintLibrary || library.id.contains("-lint") || library.id.contains(":lint")) jars else aars
           list.add(registry)
         }
       }
@@ -927,9 +895,7 @@ class LintIssueDocGenerator(
       }
 
     val onTheFly = canAnalyzeInEditor(issue)
-    val inEditor =
-      if (onTheFly) "This check runs on the fly in the IDE editor"
-      else "This check can *not* run live in the IDE editor"
+    val inEditor = if (onTheFly) "This check runs on the fly in the IDE editor" else "This check can *not* run live in the IDE editor"
 
     val moreInfo = issue.moreInfo
     if (moreInfo.isNotEmpty()) {
@@ -963,10 +929,7 @@ class LintIssueDocGenerator(
       } else emptyArray()
     val atLeastMap =
       if (registry !is BuiltinIssueRegistry && registry != null) {
-        arrayOf(
-          "Min" to "Lint ${describeApi(registry.minApi)}",
-          "Compiled" to "Lint ${describeApi(registry.api)}",
-        )
+        arrayOf("Min" to "Lint ${describeApi(registry.minApi)}", "Compiled" to "Lint ${describeApi(registry.api)}")
       } else {
         emptyArray()
       }
@@ -1053,9 +1016,7 @@ class LintIssueDocGenerator(
 
     val issueData = issueMap[id]
     if (issueData?.quickFixable == true) {
-      sb.append(
-        "!!! Tip\n" + "   This lint check has an associated quickfix available in the IDE.\n\n"
-      )
+      sb.append("!!! Tip\n" + "   This lint check has an associated quickfix available in the IDE.\n\n")
     }
 
     val options = issue.getOptions()
@@ -1077,8 +1038,7 @@ class LintIssueDocGenerator(
         if (r !is BuiltinIssueRegistry) {
           val desc =
             registryMap[r]?.let { "$id from $it" }
-              ?: if (vendor?.vendorName != null && vendor.identifier != null)
-                "$id from ${vendor.vendorName} ${vendor.identifier}"
+              ?: if (vendor?.vendorName != null && vendor.identifier != null) "$id from ${vendor.vendorName} ${vendor.identifier}"
               else null ?: (vendor?.vendorName ?: vendor?.identifier)?.let { "$id from $it" }
           desc?.let { registryNames[r] = it }
         }
@@ -1103,8 +1063,7 @@ class LintIssueDocGenerator(
         sb.append("* $id: ${issue.getDescription()} (this issue)\n")
         for (conflict in conflicts) {
           val builtin = if (conflict.registry is BuiltinIssueRegistry) "$id: Built-in" else null
-          val desc =
-            builtin ?: registryNames[conflict.registry] ?: "$id: ${conflict.getDescription()}"
+          val desc = builtin ?: registryNames[conflict.registry] ?: "$id: ${conflict.getDescription()}"
           sb.append("* [$desc](${getFileName(conflict, this.format)})\n")
         }
         sb.append("\n\n")
@@ -1134,9 +1093,7 @@ class LintIssueDocGenerator(
 
     if (artifactId != null) {
       addLibraryInclude(library, sb, artifact, library?.lintLibrary ?: false)
-      sb.append(
-        "\n\n[Additional details about ${artifactId}](${getArtifactPageName(artifactId)}).\n"
-      )
+      sb.append("\n\n[Additional details about ${artifactId}](${getArtifactPageName(artifactId)}).\n")
     }
 
     if (includeSuppressInfo) {
@@ -1144,12 +1101,7 @@ class LintIssueDocGenerator(
     }
   }
 
-  private fun addLibraryInclude(
-    library: Library?,
-    sb: StringBuilder,
-    artifact: String,
-    lintLibrary: Boolean,
-  ) {
+  private fun addLibraryInclude(library: Library?, sb: StringBuilder, artifact: String, lintLibrary: Boolean) {
     sb.append("(##) Including\n\n")
 
     val endorsed = !artifact.startsWith("androidx.") && !artifact.startsWith("com.google")
@@ -1178,9 +1130,7 @@ class LintIssueDocGenerator(
 
     val dependency = if (lintLibrary) "lintChecks" else "implementation"
 
-    val catalogId =
-      if (artifactId == "lint") groupId.replace(":", "-").replace(".", "-") + "-" + artifactId
-      else artifactId
+    val catalogId = if (artifactId == "lint") groupId.replace(":", "-").replace(".", "-") + "-" + artifactId else artifactId
 
     sb.append(
       """
@@ -1216,9 +1166,7 @@ class LintIssueDocGenerator(
 
     val twinArtifacts = library?.twinArtifacts ?: emptyList()
     if (twinArtifacts.isNotEmpty()) {
-      sb.append(
-        "\n\nNOTE: These lint checks are **also** made available separate from the main library.\n"
-      )
+      sb.append("\n\nNOTE: These lint checks are **also** made available separate from the main library.\n")
       if (twinArtifacts.size == 1) {
         sb.append("You can also use `${twinArtifacts.first()}`.\n")
       } else {
@@ -1265,11 +1213,7 @@ class LintIssueDocGenerator(
     }
   }
 
-  private fun writeCodeLine(
-    sb: StringBuilder,
-    language: String = "",
-    lineNumbers: Boolean = false,
-  ) {
+  private fun writeCodeLine(sb: StringBuilder, language: String = "", lineNumbers: Boolean = false) {
     if (format == DocFormat.MARKDEEP) {
       val max = 70 - language.length - if (lineNumbers) " linenumbers".length else 0
       for (i in 0 until max) {
@@ -1285,24 +1229,12 @@ class LintIssueDocGenerator(
     }
   }
 
-  private fun writeExample(
-    sb: StringBuilder,
-    issueData: IssueData,
-    example: Example,
-    issue: Issue,
-  ) {
+  private fun writeExample(sb: StringBuilder, issueData: IssueData, example: Example, issue: Issue) {
     sb.append("(##) Example\n")
     sb.append('\n')
     sb.append("Here is an example of lint warnings produced by this check:\n")
     writeCodeLine(sb, "text")
-    sb
-      .append(
-        (example.output ?: "")
-          .lines()
-          .filter { it.isNotBlank() }
-          .joinToString("\n") { it.trimEnd() }
-      )
-      .append('\n')
+    sb.append((example.output ?: "").lines().filter { it.isNotBlank() }.joinToString("\n") { it.trimEnd() }).append('\n')
     writeCodeLine(sb)
     sb.append('\n')
 
@@ -1428,11 +1360,7 @@ class LintIssueDocGenerator(
 
     val issueData = issueMap[issue.id]
     val language =
-      issueData
-        ?.suppressExample
-        ?.files
-        ?.firstOrNull { containsSuppress(it.source, issue) }
-        ?.language
+      issueData?.suppressExample?.files?.firstOrNull { containsSuppress(it.source, issue) }?.language
         ?: issueData?.example?.files?.firstOrNull { containsSuppress(it.source, issue) }?.language
         ?: issueData?.example?.files?.firstOrNull()?.language
 
@@ -1456,9 +1384,7 @@ class LintIssueDocGenerator(
     if (kotlinOrJava) {
       val statement =
         detector?.getApplicableMethodNames()?.firstOrNull()?.let { "$it(...)" }
-          ?: detector?.getApplicableConstructorTypes()?.firstOrNull()?.let {
-            "new ${it.substring(it.lastIndexOf('.') + 1)}(...)"
-          }
+          ?: detector?.getApplicableConstructorTypes()?.firstOrNull()?.let { "new ${it.substring(it.lastIndexOf('.') + 1)}(...)" }
           ?: "problematicStatement()"
 
       annotation =
@@ -1553,9 +1479,7 @@ class LintIssueDocGenerator(
           snippet.append("      $lt")
           snippet.append(tag)
           snippet.append(" ")
-          detector.getApplicableAttributes()?.firstOrNull()?.let {
-            snippet.append(it).append("=\"...\" ")
-          }
+          detector.getApplicableAttributes()?.firstOrNull()?.let { snippet.append(it).append("=\"...\" ") }
         } else {
           snippet.append("\n      ")
         }
@@ -1652,24 +1576,17 @@ class LintIssueDocGenerator(
     return files
   }
 
-  private fun findSourceFiles():
-    Pair<Map<String, Map<File, List<File>>>, Map<String, Map<File, List<File>>>> {
+  private fun findSourceFiles(): Pair<Map<String, Map<File, List<File>>>, Map<String, Map<File, List<File>>>> {
     return Pair(findSourceFiles(sourcePath), findSourceFiles(testPath))
   }
 
-  /**
-   * Map from URL prefixes (where an empty string is allowed) to source roots to relative files
-   * below that root
-   */
-  private fun findSourceFiles(
-    prefixMap: Map<String, List<File>>
-  ): Map<String, Map<File, List<File>>> {
+  /** Map from URL prefixes (where an empty string is allowed) to source roots to relative files below that root */
+  private fun findSourceFiles(prefixMap: Map<String, List<File>>): Map<String, Map<File, List<File>>> {
     val map = mutableMapOf<String, MutableMap<File, MutableList<File>>>()
     for ((prefix, path) in prefixMap) {
       for (dir in path) {
         val sources = findSourceFiles(dir)
-        val dirMap =
-          map[prefix] ?: mutableMapOf<File, MutableList<File>>().also { map[prefix] = it }
+        val dirMap = map[prefix] ?: mutableMapOf<File, MutableList<File>>().also { map[prefix] = it }
         val list = dirMap[dir] ?: mutableListOf<File>().also { dirMap[dir] = it }
         list.addAll(sources)
       }
@@ -1694,14 +1611,9 @@ class LintIssueDocGenerator(
         val copyrightYear = findCopyrightYear(file)
         val since = issueSince[issueData.issue]
         if (since != null && since.contains("(")) {
-          val releaseYear =
-            since.substringAfter("(").substringAfter(" ").substringBefore(")").toInt()
+          val releaseYear = since.substringAfter("(").substringAfter(" ").substringBefore(")").toInt()
           issueData.copyrightYear = releaseYear
-          if (
-            copyrightYear != releaseYear &&
-              releaseYear <= 2014 &&
-              singleIssueDetectors.contains(issueData.issue)
-          ) {
+          if (copyrightYear != releaseYear && releaseYear <= 2014 && singleIssueDetectors.contains(issueData.issue)) {
             // If it's a detector with a SINGLE issue, we're more likely
             // to trust the copyright year from the early days, since
             // we don't have release binaries for the first few years
@@ -1814,8 +1726,7 @@ class LintIssueDocGenerator(
     }
   }
 
-  private fun Class<*>.isKotlinClass(): Boolean =
-    this.declaredAnnotations.any { it.annotationClass == Metadata::class }
+  private fun Class<*>.isKotlinClass(): Boolean = this.declaredAnnotations.any { it.annotationClass == Metadata::class }
 
   private fun initializeExamples(issueData: IssueData) {
     val detectorTestSource = issueData.detectorTestSource
@@ -1836,11 +1747,8 @@ class LintIssueDocGenerator(
     val ktFiles = if (source.path.endsWith(DOT_KT)) listOf(source) else emptyList()
     environment.analyzeFiles(ktFiles)
     val local = StandardFileSystems.local()
-    val virtualFile =
-      local.findFileByPath(source.path) ?: error("Could not find virtual file for $source")
-    val psiFile =
-      PsiManager.getInstance(environment.ideaProject).findFile(virtualFile)
-        ?: error("Could not find PSI file for $source")
+    val virtualFile = local.findFileByPath(source.path) ?: error("Could not find virtual file for $source")
+    val psiFile = PsiManager.getInstance(environment.ideaProject).findFile(virtualFile) ?: error("Could not find PSI file for $source")
     val file = psiFile.toUElementOfType<UFile>() ?: error("Could not create UAST file for $source")
 
     val methods: MutableList<UMethod> = mutableListOf()
@@ -1871,14 +1779,12 @@ class LintIssueDocGenerator(
       }
     }
 
-    val suppressExampleNames =
-      setOf("testSuppressExample", "testSuppressExample$id", "suppressExample")
+    val suppressExampleNames = setOf("testSuppressExample", "testSuppressExample$id", "suppressExample")
     val suppressExample = methods.firstOrNull { suppressExampleNames.contains(it.name) }
 
     if (suppressExample != null) {
       methods.remove(suppressExample)
-      issueData.suppressExample =
-        findExampleInMethod(fileName, suppressExample, issueData, inferred = false, suppress = true)
+      issueData.suppressExample = findExampleInMethod(fileName, suppressExample, issueData, inferred = false, suppress = true)
     }
 
     methods.sortWith(
@@ -1972,21 +1878,13 @@ class LintIssueDocGenerator(
 
     // If we can find a test method where only our issue id is reported, and there are quick-fixes
     // being tested, then the issue has quick-fixes.
-    if (
-      methods.any { it.hasFixCalls() && it.issueIdsReported().singleOrNull() == issueData.issue.id }
-    ) {
+    if (methods.any { it.hasFixCalls() && it.issueIdsReported().singleOrNull() == issueData.issue.id }) {
       issueData.quickFixable = true
       return
     }
   }
 
-  private fun findExampleInMethod(
-    fileName: String,
-    method: UMethod,
-    issueData: IssueData,
-    inferred: Boolean,
-    suppress: Boolean,
-  ): Example? {
+  private fun findExampleInMethod(fileName: String, method: UMethod, issueData: IssueData, inferred: Boolean, suppress: Boolean): Example? {
     val issue = issueData.issue
     var example: Example? = null
     method.accept(
@@ -2015,13 +1913,7 @@ class LintIssueDocGenerator(
       val lintProject = Project.create(FakeClient(), root, root)
       lintProject.name = "jvm"
       lintProject.javaSourceFolders.add(root)
-      return UastEnvironment.Module(
-        lintProject,
-        null,
-        false,
-        includeTestFixtureSources = false,
-        isUnitTest = false,
-      )
+      return UastEnvironment.Module(lintProject, null, false, includeTestFixtureSources = false, isUnitTest = false)
     }
 
     val config = UastEnvironment.Configuration.create()
@@ -2039,8 +1931,7 @@ class LintIssueDocGenerator(
       if (name.endsWith(DOT_JAR)) {
         libs.add(file)
       } else if (
-        !file.path.endsWith("android.sdktools.base.lint.checks-base") &&
-          !file.path.endsWith("android.sdktools.base.lint.studio-checks")
+        !file.path.endsWith("android.sdktools.base.lint.checks-base") && !file.path.endsWith("android.sdktools.base.lint.studio-checks")
       ) {
         libs.add(file)
       }
@@ -2078,10 +1969,7 @@ class LintIssueDocGenerator(
       unsupported()
     }
 
-    override fun getResources(
-      project: Project,
-      scope: ResourceRepositoryScope,
-    ): ResourceRepository {
+    override fun getResources(project: Project, scope: ResourceRepositoryScope): ResourceRepository {
       unsupported()
     }
   }
@@ -2110,9 +1998,7 @@ class LintIssueDocGenerator(
     }
 
     for (data in map.values) {
-      if (
-        data.sourceUrl == null || data.detectorSource == null && data.detectorTestSource == null
-      ) {
+      if (data.sourceUrl == null || data.detectorSource == null && data.detectorTestSource == null) {
         data.initialize()
       }
     }
@@ -2165,18 +2051,7 @@ class LintIssueDocGenerator(
         override fun visitCallExpression(node: UCallExpression): Boolean {
           val name = node.methodName ?: node.methodIdentifier?.name
           if (example == null && (name == "files" || name == "project")) {
-            example =
-              findExample(
-                node,
-                map,
-                issue,
-                fileName,
-                method,
-                inferred,
-                suppress,
-                expected,
-                issueData,
-              )
+            example = findExample(node, map, issue, fileName, method, inferred, suppress, expected, issueData)
           }
           return super.visitCallExpression(node)
         }
@@ -2186,10 +2061,7 @@ class LintIssueDocGenerator(
     return example
   }
 
-  /**
-   * TODO: include the .jar file in the environment to help resolve when test data is in other
-   *   files?
-   */
+  /** TODO: include the .jar file in the environment to help resolve when test data is in other files? */
   private fun getTestFileDeclaration(argument: UExpression?): UCallExpression? {
     argument ?: return null
 
@@ -2211,16 +2083,12 @@ class LintIssueDocGenerator(
 
     if (argument is UQualifiedReferenceExpression) {
       val selector = argument.selector
-      return if (
-        selector is UCallExpression &&
-          (selector.methodName ?: selector.methodIdentifier?.name) == "indented"
-      ) {
+      return if (selector is UCallExpression && (selector.methodName ?: selector.methodIdentifier?.name) == "indented") {
         getTestFileDeclaration(selector.receiver)
       } else {
         if (
           selector is UCallExpression && selector.methodName?.contains("Stub") == true ||
-            selector is USimpleNameReferenceExpression &&
-              selector.resolvedName?.contains("Stub") == true
+            selector is USimpleNameReferenceExpression && selector.resolvedName?.contains("Stub") == true
         ) {
           return null
         }
@@ -2254,12 +2122,7 @@ class LintIssueDocGenerator(
       val testFile = getTestFileDeclaration(argument) ?: continue
       val fileType = testFile.methodName ?: testFile.methodIdentifier?.name
 
-      if (
-        fileType == "bytecode" ||
-          fileType == "bytecodeStub" ||
-          fileType == "binaryStub" ||
-          fileType == "kotlinAndBytecodeStub"
-      ) {
+      if (fileType == "bytecode" || fileType == "bytecodeStub" || fileType == "binaryStub" || fileType == "kotlinAndBytecodeStub") {
         continue
       }
       val testArgs = testFile.valueArguments
@@ -2274,8 +2137,7 @@ class LintIssueDocGenerator(
             val text = first.sourcePsi?.text
             if (text?.uppercase(Locale.US)?.contains("MANIFEST") == true) {
               path = "AndroidManifest.xml"
-              if (outputMap.containsKey("src/main/AndroidManifest.xml"))
-                path = "src/main/AndroidManifest.xml"
+              if (outputMap.containsKey("src/main/AndroidManifest.xml")) path = "src/main/AndroidManifest.xml"
             }
           }
         } else {
@@ -2327,14 +2189,9 @@ class LintIssueDocGenerator(
 
         // Stub file? If the error output references the file, we'll assume not; otherwise,
         // look for other telltale signs
-        if (
-          outputMap[path] == null && isStubSource(source, issue, path ?: "") ||
-            source.contains("HIDE-FROM-DOCUMENTATION")
-        ) {
+        if (outputMap[path] == null && isStubSource(source, issue, path ?: "") || source.contains("HIDE-FROM-DOCUMENTATION")) {
           if (verbose && source.isNotBlank() && !source.contains("HIDE-FROM-DOCUMENTATION")) {
-            println(
-              "Warning: $fileName: ${method.name}: $path looks like a stub, but isn't marked with HIDE-FROM-DOCUMENTATION"
-            )
+            println("Warning: $fileName: ${method.name}: $path looks like a stub, but isn't marked with HIDE-FROM-DOCUMENTATION")
           }
           continue
         }
@@ -2352,9 +2209,7 @@ class LintIssueDocGenerator(
           }
           val bytes =
             getBase64gzippedTestData(source)
-              ?: throw RuntimeException(
-                "Couldn't convert base64gzip test data for $path in test ${method.name} for issue ${issue.id}"
-              )
+              ?: throw RuntimeException("Couldn't convert base64gzip test data for $path in test ${method.name} for issue ${issue.id}")
           val binaryUrl = getExampleBinaryRelativeUrl(path, bytes)
           val exampleFile = ExampleFile(path, "", lang, binaryUrl)
           exampleFiles.add(exampleFile)
@@ -2504,10 +2359,9 @@ class LintIssueDocGenerator(
   }
 
   /**
-   * Given a binary file byte array (for example for a .jar file or an image file), returns the
-   * relative URL to be used to reference this example when writing out the page. (This is done to
-   * avoid file name conflicts when tests are overlapping and still allow sharing the same resource
-   * when the contents are identical.)
+   * Given a binary file byte array (for example for a .jar file or an image file), returns the relative URL to be used to reference this
+   * example when writing out the page. (This is done to avoid file name conflicts when tests are overlapping and still allow sharing the
+   * same resource when the contents are identical.)
    */
   private fun getExampleBinaryRelativeUrl(path: String, bytes: ByteArray): String {
     val url = exampleByteToUrl[bytes]
@@ -2590,10 +2444,7 @@ class LintIssueDocGenerator(
   }
 
   private fun containsSuppress(source: String, issue: Issue): Boolean {
-    return source.contains(issue.id) &&
-      (source.contains("@Suppress") ||
-        source.contains(":ignore") ||
-        source.contains("noinspection"))
+    return source.contains(issue.id) && (source.contains("@Suppress") || source.contains(":ignore") || source.contains("noinspection"))
   }
 
   private val lt = if (format == DocFormat.MARKDEEP) "&lt;" else "<"
@@ -2653,8 +2504,7 @@ class LintIssueDocGenerator(
       return sb.toString()
     }
 
-    private val STUB_COMMENT_REGEX =
-      Regex(".*\\bstub\\b.*", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
+    private val STUB_COMMENT_REGEX = Regex(".*\\bstub\\b.*", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))
 
     fun isStubSource(source: String, issue: Issue? = null, path: String = ""): Boolean {
       if (source.contains("HIDE-FROM-DOCUMENTATION") || source.isBlank()) {
@@ -2727,20 +2577,15 @@ class LintIssueDocGenerator(
     const val SKIP_NETWORK = false
 
     private val MESSAGE_PATTERN: Pattern =
-      Pattern.compile(
-        """([^\n]+): (Error|Warning|Information|Hint): (.+?) \[([^]]+?)]$""",
-        Pattern.MULTILINE or Pattern.DOTALL,
-      )
+      Pattern.compile("""([^\n]+): (Error|Warning|Information|Hint): (.+?) \[([^]]+?)]$""", Pattern.MULTILINE or Pattern.DOTALL)
     private val LOCATION_PATTERN: Pattern = Pattern.compile("""(.+):(\d+)""")
     private val YEAR_PATTERN = Pattern.compile("""\b(\d\d\d\d)\b""")
-    private val ANDROID_SUPPORT_SYMBOL_PATTERN =
-      Pattern.compile("\\b(android.support.[a-zA-Z0-9_.]+)\\b")
+    private val ANDROID_SUPPORT_SYMBOL_PATTERN = Pattern.compile("\\b(android.support.[a-zA-Z0-9_.]+)\\b")
     /** Pattern recognizing lint quickfix test output messages */
     private val FIX_PATTERN: Pattern = Pattern.compile("((Fix|Data) for .* line )(\\d+)(: .+)")
 
     @Suppress("SpellCheckingInspection")
-    private const val AOSP_CS =
-      "https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main"
+    private const val AOSP_CS = "https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main"
 
     private val NUMBER_PATTERN = Pattern.compile("^\\d+\\. ")
 
@@ -2815,10 +2660,8 @@ class LintIssueDocGenerator(
           projectUrl = "https://github.com/JakeWharton/timber",
           sourceUrl = "https://github.com/JakeWharton/timber/tree/trunk/timber-lint/src/main/java",
           testUrl = "https://github.com/JakeWharton/timber/tree/trunk/timber-lint/src/test/java",
-          sourceContentUrl =
-            "https://raw.githubusercontent.com/JakeWharton/timber/trunk/timber-lint/src/main/java",
-          testContentUrl =
-            "https://raw.githubusercontent.com/JakeWharton/timber/trunk/timber-lint/src/test/java",
+          sourceContentUrl = "https://raw.githubusercontent.com/JakeWharton/timber/trunk/timber-lint/src/main/java",
+          testContentUrl = "https://raw.githubusercontent.com/JakeWharton/timber/trunk/timber-lint/src/test/java",
           lintLibrary = false,
         ),
         MavenCentralLibrary(
@@ -2826,14 +2669,10 @@ class LintIssueDocGenerator(
           "autodispose-lint",
           Type.JAR,
           projectUrl = "https://github.com/uber/AutoDispose",
-          sourceUrl =
-            "https://github.com/uber/AutoDispose/tree/main/static-analysis/autodispose-lint/src/main/kotlin",
-          testUrl =
-            "https://github.com/uber/AutoDispose/tree/main/static-analysis/autodispose-lint/src/test/kotlin",
-          sourceContentUrl =
-            "https://raw.githubusercontent.com/uber/AutoDispose/main/static-analysis/autodispose-lint/src/main/kotlin",
-          testContentUrl =
-            "https://raw.githubusercontent.com/uber/AutoDispose/main/static-analysis/autodispose-lint/src/test/kotlin",
+          sourceUrl = "https://github.com/uber/AutoDispose/tree/main/static-analysis/autodispose-lint/src/main/kotlin",
+          testUrl = "https://github.com/uber/AutoDispose/tree/main/static-analysis/autodispose-lint/src/test/kotlin",
+          sourceContentUrl = "https://raw.githubusercontent.com/uber/AutoDispose/main/static-analysis/autodispose-lint/src/main/kotlin",
+          testContentUrl = "https://raw.githubusercontent.com/uber/AutoDispose/main/static-analysis/autodispose-lint/src/test/kotlin",
           lintLibrary = true,
         ),
       )
@@ -2846,15 +2685,9 @@ class LintIssueDocGenerator(
       }
     }
 
-    /**
-     * Given lint unit test output, returns a map from file path to line number to list of errors
-     * for that line
-     */
+    /** Given lint unit test output, returns a map from file path to line number to list of errors for that line */
     @VisibleForTesting
-    fun computeResultMap(
-      issueId: String,
-      expected: String,
-    ): MutableMap<String, MutableMap<Int, MutableList<String>>> {
+    fun computeResultMap(issueId: String, expected: String): MutableMap<String, MutableMap<Int, MutableList<String>>> {
       val map = HashMap<String, MutableMap<Int, MutableList<String>>>()
 
       for (incident in getOutputIncidents(expected)) {
@@ -2865,8 +2698,7 @@ class LintIssueDocGenerator(
           incident.sourceLine2?.let { strings.add(it) }
           val path = incident.path
           val lineNumber = incident.lineNumber
-          val lineNumberMap =
-            map[path] ?: HashMap<Int, MutableList<String>>().also { map[path] = it }
+          val lineNumberMap = map[path] ?: HashMap<Int, MutableList<String>>().also { map[path] = it }
           lineNumberMap[lineNumber] = strings
         }
       }
@@ -2875,8 +2707,8 @@ class LintIssueDocGenerator(
     }
 
     /**
-     * Given lint test output (lint CLI text report output), return the corresponding lines
-     * (including only the error lines, not for example source code snippets)
+     * Given lint test output (lint CLI text report output), return the corresponding lines (including only the error lines, not for example
+     * source code snippets)
      */
     fun getOutputLines(output: String): List<String> {
       return getOutputIncidents(output).map { it.message }
@@ -2912,9 +2744,7 @@ class LintIssueDocGenerator(
 
       // Couldn't find a copyright
       val prefix = lines.subList(0, min(8, lines.size)).joinToString("\n")
-      if (
-        !prefix.contains("vannik") && !prefix.contains("timber.lint")
-      ) { // known to not contain years in copyrights
+      if (!prefix.contains("vannik") && !prefix.contains("timber.lint")) { // known to not contain years in copyrights
         println("Warning: Couldn't find copyright year in $prefix\n\n")
       }
 
@@ -2970,8 +2800,7 @@ class LintIssueDocGenerator(
         // no source included in error output?
         if (!MESSAGE_PATTERN.matcher(sourceLine1).matches()) {
           val nextStart2 = min(output.length, nextEnd + 1)
-          val nextEnd2 =
-            output.indexOf('\n', nextStart2).let { if (it == -1) output.length else it }
+          val nextEnd2 = output.indexOf('\n', nextStart2).let { if (it == -1) output.length else it }
           sourceLine2 = output.substring(nextStart2, nextEnd2)
           column = sourceLine2.indexOfFirst { !it.isWhitespace() }
         }
@@ -2979,18 +2808,7 @@ class LintIssueDocGenerator(
         val severity = matcher.group(2)
         val id = matcher.group(4).substringBefore(' ') // Sometimes output includes library source
         val message = matcher.group(3)
-        list.add(
-          ReportedIncident(
-            path,
-            severity,
-            lineNumber,
-            column,
-            message,
-            id,
-            sourceLine1,
-            sourceLine2,
-          )
-        )
+        list.add(ReportedIncident(path, severity, lineNumber, column, message, id, sourceLine1, sourceLine2))
       }
 
       return list
@@ -3026,9 +2844,7 @@ class LintIssueDocGenerator(
     ): Map<IssueRegistry, String?> {
       return if (includeBuiltins) {
         val builtIns = mapOf<IssueRegistry, String?>(BuiltinIssueRegistry() to null)
-        builtIns +
-          registryMap +
-          if (includeAospIssueRegistry) mapOf(AospIssueRegistry() to null) else emptyMap()
+        builtIns + registryMap + if (includeAospIssueRegistry) mapOf(AospIssueRegistry() to null) else emptyMap()
       } else {
         registryMap
       }
@@ -3058,28 +2874,18 @@ class LintIssueDocGenerator(
     }
 
     /**
-     * Add some URLs for pointing to the AOSP source code if nothing has been specified for the
-     * built-in checks. If we have access to the source code, we provide a source path for more
-     * accurate search; we only include a test fallback if we're not in unit tests since in unit
-     * tests we may or may not find the source code based on the build system the test is run from.
+     * Add some URLs for pointing to the AOSP source code if nothing has been specified for the built-in checks. If we have access to the
+     * source code, we provide a source path for more accurate search; we only include a test fallback if we're not in unit tests since in
+     * unit tests we may or may not find the source code based on the build system the test is run from.
      */
     @Suppress("SpellCheckingInspection")
-    private fun addAospUrls(
-      sourcePath: MutableMap<String, MutableList<File>>,
-      testPath: MutableMap<String, MutableList<File>>,
-    ) {
+    private fun addAospUrls(sourcePath: MutableMap<String, MutableList<File>>, testPath: MutableMap<String, MutableList<File>>) {
       if (!LintClient.isUnitTest) {
         val lintRoot = findStudioSource()?.let { File("tools/base/lint") }
         if (lintRoot != null) {
-          testPath["$AOSP_CS:lint/libs/lint-tests/src/test/java/"] =
-            mutableListOf(File("$lintRoot/libs/lint-tests/src/test/java"))
+          testPath["$AOSP_CS:lint/libs/lint-tests/src/test/java/"] = mutableListOf(File("$lintRoot/libs/lint-tests/src/test/java"))
           sourcePath["$AOSP_CS:lint/libs/lint-checks/src/main/java/"] =
-            mutableListOf(
-              File(
-                "$lintRoot/libs/lint-checks/src/main/java",
-                "$lintRoot/studio-checks/src/main/java",
-              )
-            )
+            mutableListOf(File("$lintRoot/libs/lint-checks/src/main/java", "$lintRoot/studio-checks/src/main/java"))
         }
       } else {
         // We can't have a default URL for tests because we have no way to look up
@@ -3170,10 +2976,7 @@ class LintIssueDocGenerator(
               System.err.println("Missing source URL prefix")
               return ERRNO_ERRORS
             }
-            val prefix =
-              args[++index].let {
-                if (it.isEmpty()) it else if (it.last().isLetter()) "$it/" else it
-              }
+            val prefix = args[++index].let { if (it.isEmpty()) it else if (it.last().isLetter()) "$it/" else it }
             if (index == args.size - 1) {
               System.err.println("Missing source path")
               return ERRNO_ERRORS
@@ -3203,10 +3006,7 @@ class LintIssueDocGenerator(
               System.err.println("Missing source URL prefix")
               return ERRNO_ERRORS
             }
-            val prefix =
-              args[++index].let {
-                if (it.isEmpty()) it else if (it.last().isLetter()) "$it/" else it
-              }
+            val prefix = args[++index].let { if (it.isEmpty()) it else if (it.last().isLetter()) "$it/" else it }
             if (index == args.size - 1) {
               System.err.println("Missing source path")
               return ERRNO_ERRORS
@@ -3272,9 +3072,7 @@ class LintIssueDocGenerator(
       val client = createClient()
       val registries: Map<IssueRegistry, String?> =
         if (jarPath == null && !(searchGmaven || searchMavenCentral || includeUnpublished)) {
-          println(
-            "Note: No lint jars specified: creating documents for the built-in lint checks instead ($ARG_INCLUDE_BUILTINS)"
-          )
+          println("Note: No lint jars specified: creating documents for the built-in lint checks instead ($ARG_INCLUDE_BUILTINS)")
           includeBuiltins = true
           emptyMap()
         } else {
@@ -3282,20 +3080,11 @@ class LintIssueDocGenerator(
             populateJCenterOfflineRepo(getJCenterCache(), verbose)
           }
 
-          val gmavenMap =
-            if (searchGmaven) findLintIssueRegistriesFromGmaven(client, verbose) else emptyMap()
-          val mavenCentralMap =
-            if (searchMavenCentral) findLintIssueRegistriesFromMavenCentral(client, verbose)
-            else emptyMap()
-          val localMap =
-            if (includeUnpublished) findLintIssueRegistriesFromUnpublished(client) else emptyMap()
+          val gmavenMap = if (searchGmaven) findLintIssueRegistriesFromGmaven(client, verbose) else emptyMap()
+          val mavenCentralMap = if (searchMavenCentral) findLintIssueRegistriesFromMavenCentral(client, verbose) else emptyMap()
+          val localMap = if (includeUnpublished) findLintIssueRegistriesFromUnpublished(client) else emptyMap()
           val jarMap =
-            if (jarPath != null)
-              findLintIssueRegistries(
-                client,
-                jarPath,
-                { id, lintLibrary -> createGmavenLibrary(id, lintLibrary) },
-              )
+            if (jarPath != null) findLintIssueRegistries(client, jarPath, { id, lintLibrary -> createGmavenLibrary(id, lintLibrary) })
             else emptyMap()
           jarMap + gmavenMap + mavenCentralMap + localMap
         }
@@ -3337,12 +3126,11 @@ class LintIssueDocGenerator(
     }
 
     /**
-     * Look through the various jar files of the built-in lint checks to figure out when each issue
-     * was introduced. We can't use the normal machinery for this (loading them as issue registries)
-     * -- I tried injecting a service loader registration of the BuiltinIssueRegistry, but even with
-     * that, for older versions, class loading fails since the lint APIs they depend on have changed
-     * significantly over the years. So instead, we just look up detector implementations, and scan
-     * them looking for Issue.create registrations that mention our target issue id's.
+     * Look through the various jar files of the built-in lint checks to figure out when each issue was introduced. We can't use the normal
+     * machinery for this (loading them as issue registries) -- I tried injecting a service loader registration of the BuiltinIssueRegistry,
+     * but even with that, for older versions, class loading fails since the lint APIs they depend on have changed significantly over the
+     * years. So instead, we just look up detector implementations, and scan them looking for Issue.create registrations that mention our
+     * target issue id's.
      */
     private fun findSinceMap(
       verbose: Boolean,
@@ -3357,10 +3145,7 @@ class LintIssueDocGenerator(
       if (searchGmaven && includeBuiltins) {
         if (verbose) println("Checking builtin-versions")
         val issues = BuiltinIssueRegistry().issues
-        val issueToDetectorClass =
-          issues.associate {
-            it to it.implementation.detectorClass.name.replace('.', '/') + DOT_CLASS
-          }
+        val issueToDetectorClass = issues.associate { it to it.implementation.detectorClass.name.replace('.', '/') + DOT_CLASS }
         val issueIdMap = issues.associateBy { it.id }
         val detectorVersions = mutableMapOf<String, String>()
         val detectorToIssues = mutableMapOf<String, MutableList<Issue>>()
@@ -3382,8 +3167,7 @@ class LintIssueDocGenerator(
               if (dateFile.isFile) {
                 val dateString = dateFile.readText().trim()
                 val date =
-                  if (dateString.contains("/"))
-                    LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+                  if (dateString.contains("/")) LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy/MM/dd"))
                   else LocalDate.parse(dateString)
                 val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
                 date.format(formatter)
@@ -3393,9 +3177,7 @@ class LintIssueDocGenerator(
 
             // Convert from lint artifact version to AGP version
             val major = version.substringBefore('.').toInt() - 23
-            val version =
-              if (major < 0) Version.parse("0.0.0")
-              else Version.parse(major.toString() + "." + version.substringAfter('.'))
+            val version = if (major < 0) Version.parse("0.0.0") else Version.parse(major.toString() + "." + version.substringAfter('.'))
             if (date != null && major >= 0) {
               assert(releaseDates[version] == null)
               releaseDates[version] = date
@@ -3407,12 +3189,7 @@ class LintIssueDocGenerator(
             val cachedFile = File(jar.path + "-issues")
 
             if (cachedFile.isFile) {
-              presentInThisVersion =
-                cachedFile
-                  .readText()
-                  .lines()
-                  .filter { it.isNotBlank() }
-                  .mapNotNull { issueIdMap[it] }
+              presentInThisVersion = cachedFile.readText().lines().filter { it.isNotBlank() }.mapNotNull { issueIdMap[it] }
               if (verbose) {
                 println(" - cached")
               }
@@ -3428,17 +3205,12 @@ class LintIssueDocGenerator(
                     // We can't JUST look at detector presence; we should also check the issues
                     // themselves, since sometimes we add new issues to old detectors
                     for (issue in detectorToIssues[detector]!!) {
-                      var found =
-                        classContainsIssueId(issue.id, jarFile.getInputStream(entry).readBytes())
+                      var found = classContainsIssueId(issue.id, jarFile.getInputStream(entry).readBytes())
                       if (!found) {
                         val companion = detector.removeSuffix(DOT_CLASS) + "\$Companion.class"
                         val companionEntry = jarFile.getJarEntry(companion)
                         if (companionEntry != null) {
-                          found =
-                            classContainsIssueId(
-                              issue.id,
-                              jarFile.getInputStream(companionEntry).readBytes(),
-                            )
+                          found = classContainsIssueId(issue.id, jarFile.getInputStream(companionEntry).readBytes())
                         }
                       }
                       if (found) {
@@ -3501,9 +3273,7 @@ class LintIssueDocGenerator(
           var file = File.createTempFile(artifact, DOT_JAR)
           file.deleteOnExit()
           file.writeBytes(bytes)
-          val r =
-            JarFileIssueRegistry.get(client, listOf(file), skipVerification = true).firstOrNull()
-              ?: continue
+          val r = JarFileIssueRegistry.get(client, listOf(file), skipVerification = true).firstOrNull() ?: continue
 
           versionIssues.add(v to r.issues.map { it.id }.sorted())
         }
@@ -3531,10 +3301,7 @@ class LintIssueDocGenerator(
       return result
     }
 
-    /**
-     * Checks whether we find a Issue.create registration for the given issue id in the given class
-     * byte code.
-     */
+    /** Checks whether we find a Issue.create registration for the given issue id in the given class byte code. */
     private fun classContainsIssueId(issueId: String, bytes: ByteArray?): Boolean {
       val classReader = ClassReader(bytes)
       val cn = ClassNode()
@@ -3552,10 +3319,7 @@ class LintIssueDocGenerator(
               while (curr != null) {
                 if (curr is LdcInsnNode && curr.cst == issueId) {
                   return true
-                } else if (
-                  curr is MethodInsnNode &&
-                    (curr.name == "create" || curr.name == "create\$default")
-                ) {
+                } else if (curr is MethodInsnNode && (curr.name == "create" || curr.name == "create\$default")) {
                   break
                 }
                 curr = curr.previous
@@ -3568,18 +3332,13 @@ class LintIssueDocGenerator(
       return false
     }
 
-    private fun findLintIssueRegistriesFromUnpublished(
-      client: LintCliClient
-    ): Map<IssueRegistry, String?> {
+    private fun findLintIssueRegistriesFromUnpublished(client: LintCliClient): Map<IssueRegistry, String?> {
       val result = mutableMapOf<IssueRegistry, String?>()
       for (library in unpublishedChecks) {
         // Check out repo
         val cache = File(getUnpublishedCache(), library.user + "/" + library.repository)
         if (!cache.isDirectory) {
-          val url =
-            URL(
-              "https://github.com/${library.user}/${library.repository}/archive/refs/heads/${library.branch}.zip"
-            )
+          val url = URL("https://github.com/${library.user}/${library.repository}/archive/refs/heads/${library.branch}.zip")
           try {
             val zip = url.readBytes()
             try {
@@ -3599,9 +3358,7 @@ class LintIssueDocGenerator(
               continue
             }
           } catch (e: IOException) {
-            System.err.println(
-              "Error: Skipping library ${library.id}; couldn't download archive at $url ($e)"
-            )
+            System.err.println("Error: Skipping library ${library.id}; couldn't download archive at $url ($e)")
             continue
           }
           System.err.println("Extracted the unpublished ${library.projectUrl} into $cache")
@@ -3617,10 +3374,7 @@ class LintIssueDocGenerator(
             Runtime.getRuntime()
               .exec(
                 arrayOf(gradlew.path, library.buildTask),
-                arrayOf(
-                  "JAVA_HOME=${System.getProperty("java.home")}",
-                  "ANDROID_HOME=${client.getSdkHome()}",
-                ),
+                arrayOf("JAVA_HOME=${System.getProperty("java.home")}", "ANDROID_HOME=${client.getSdkHome()}"),
                 dir,
               )
           val code = process.waitFor()
@@ -3638,9 +3392,7 @@ class LintIssueDocGenerator(
             continue
           }
           if (!jarFile.isFile) {
-            System.err.println(
-              "Error: Project built successfully, but couldn't find jar file in expected place: $jarFile"
-            )
+            System.err.println("Error: Project built successfully, but couldn't find jar file in expected place: $jarFile")
             continue
           }
         }
@@ -3653,10 +3405,7 @@ class LintIssueDocGenerator(
       return result
     }
 
-    private fun findLintIssueRegistriesFromGmaven(
-      client: LintCliClient,
-      verbose: Boolean,
-    ): Map<IssueRegistry, String?> {
+    private fun findLintIssueRegistriesFromGmaven(client: LintCliClient, verbose: Boolean): Map<IssueRegistry, String?> {
       val cacheDir = File(getGmavenCache(), "m2repository")
       populateGmavenOfflineRepo(client, cacheDir, verbose)
       val registries: Map<IssueRegistry, String?> =
@@ -3670,11 +3419,8 @@ class LintIssueDocGenerator(
       return joinDuplicateRegistries(registries)
     }
 
-    private fun joinDuplicateRegistries(
-      registries: Map<IssueRegistry, String?>
-    ): Map<IssueRegistry, String?> {
-      val artifactToRegistry =
-        registries.map { (registry, artifactId) -> artifactId to registry }.toMap().toMutableMap()
+    private fun joinDuplicateRegistries(registries: Map<IssueRegistry, String?>): Map<IssueRegistry, String?> {
+      val artifactToRegistry = registries.map { (registry, artifactId) -> artifactId to registry }.toMap().toMutableMap()
 
       val duplicateRegistries = mutableListOf<IssueRegistry>()
 
@@ -3693,8 +3439,7 @@ class LintIssueDocGenerator(
         val pairs: List<Pair<String, DocIssueRegistry>> =
           artifacts.mapNotNull {
             val registry = artifactToRegistry[it]
-            if (registry is DocIssueRegistry && registry.issues.isNotEmpty()) it to registry
-            else null
+            if (registry is DocIssueRegistry && registry.issues.isNotEmpty()) it to registry else null
           }
         val fileToId = pairs.associate { it.second.jarFile to it.first }
         val grouped = mutableMapOf<String, MutableList<File>>()
@@ -3798,59 +3543,38 @@ class LintIssueDocGenerator(
       return GmavenLibrary(id, lintLibrary)
     }
 
-    private fun findLintIssueRegistriesFromMavenCentral(
-      client: LintCliClient,
-      verbose: Boolean,
-    ): Map<IssueRegistry, String?> {
+    private fun findLintIssueRegistriesFromMavenCentral(client: LintCliClient, verbose: Boolean): Map<IssueRegistry, String?> {
       val cacheDir = File(getMavenCentralCache(), "m2repository")
       populateMavenCentralOfflineRepo(client, cacheDir, verbose)
 
       return findLintIssueRegistries(
         client,
         cacheDir.path,
-        { id, _ ->
-          thirdPartyChecks.firstOrNull { it.id == id }
-            ?: error("Couldn't find registration info for $id")
-        },
+        { id, _ -> thirdPartyChecks.firstOrNull { it.id == id } ?: error("Couldn't find registration info for $id") },
         searchWithinArchives = true,
         allJarsAreLintChecks = true,
       )
     }
 
-    private fun populateMavenCentralOfflineRepo(
-      client: LintCliClient,
-      cacheDir: File,
-      verbose: Boolean,
-    ) {
+    private fun populateMavenCentralOfflineRepo(client: LintCliClient, cacheDir: File, verbose: Boolean) {
       if (SKIP_NETWORK) return
       for (library in thirdPartyChecks) {
         val versions = library.getVersions(client)
         for (version in versions) {
-          val dir =
-            File(
-              library.group.replace('.', separatorChar) +
-                separator +
-                library.artifact +
-                separator +
-                version
-            )
+          val dir = File(library.group.replace('.', separatorChar) + separator + library.artifact + separator + version)
           val extension = library.type.getExtension()
           val name = library.artifact + "-" + version + extension
           val file = File(cacheDir, dir.path + separator + name)
 
           if (file.exists()) {
-            if (verbose)
-              println("Cached ${library.group}:${library.artifact}:$version in $dir:$name")
+            if (verbose) println("Cached ${library.group}:${library.artifact}:$version in $dir:$name")
             continue
           }
 
           val downloaded = downloadMavenFile(library, version) ?: continue
           file.parentFile.mkdirs()
           file.writeBytes(downloaded)
-          if (verbose)
-            println(
-              "Stored ${library.group}:${library.artifact}:$version: ${downloaded.size} bytes in $dir:$name"
-            )
+          if (verbose) println("Stored ${library.group}:${library.artifact}:$version: ${downloaded.size} bytes in $dir:$name")
           val pomUrl = library.getUrl(version, ".pom")
           val pom = downloadMavenFile(library, version, pomUrl)
           if (pom != null) {
@@ -3863,16 +3587,13 @@ class LintIssueDocGenerator(
     }
 
     /**
-     * Before gmaven we published our artifacts on jcenter; these jars seem to be mirrored on maven
-     * central now. This method downloads the old versions of the lint-check jars, for use by
-     * [findSinceMap].
+     * Before gmaven we published our artifacts on jcenter; these jars seem to be mirrored on maven central now. This method downloads the
+     * old versions of the lint-check jars, for use by [findSinceMap].
      */
     private fun populateJCenterOfflineRepo(cacheDir: File, verbose: Boolean) {
       if (SKIP_NETWORK) return
 
-      val metadata =
-        URL("https://repo1.maven.org/maven2/com/android/tools/lint/lint-checks/maven-metadata.xml")
-          .readText()
+      val metadata = URL("https://repo1.maven.org/maven2/com/android/tools/lint/lint-checks/maven-metadata.xml").readText()
       val document = XmlUtils.parseDocumentSilently(metadata, false) ?: return
       val nodes = document.getElementsByTagName("version")
       for (i in 0 until nodes.length) {
@@ -3893,18 +3614,11 @@ class LintIssueDocGenerator(
         cachedEntry.parentFile.mkdirs()
         cachedEntry.writeBytes(bytes)
         writePomDate(jarUrl, File(cacheDir, "m2repository/$relative.date"))
-        if (verbose)
-          println(
-            "Stored com.android.tools.lint:lint-checks::$version: ${bytes.size} bytes in $cachedEntry"
-          )
+        if (verbose) println("Stored com.android.tools.lint:lint-checks::$version: ${bytes.size} bytes in $cachedEntry")
       }
     }
 
-    private fun downloadMavenFile(
-      library: MavenCentralLibrary,
-      version: String,
-      url: URL = library.getUrl(version),
-    ): ByteArray? {
+    private fun downloadMavenFile(library: MavenCentralLibrary, version: String, url: URL = library.getUrl(version)): ByteArray? {
       if (SKIP_NETWORK) return null
 
       try {
@@ -3913,8 +3627,7 @@ class LintIssueDocGenerator(
         val urlString = url.toExternalForm()
         val dot = urlString.lastIndexOf('.')
         try {
-          return URL(urlString.substring(0, dot) + "-release" + urlString.substring(dot))
-            .readBytes()
+          return URL(urlString.substring(0, dot) + "-release" + urlString.substring(dot)).readBytes()
         } catch (e2: IOException) {
           if (urlString.endsWith(DOT_JAR)) {
             try {
@@ -3923,11 +3636,7 @@ class LintIssueDocGenerator(
             } catch (ignore: IOException) {}
           }
 
-          if (
-            library.group == "com.vanniktech" &&
-              library.artifact == "lint-rules-android" &&
-              version == "0.7.0"
-          ) {
+          if (library.group == "com.vanniktech" && library.artifact == "lint-rules-android" && version == "0.7.0") {
             // looks like this version didn't include a library, only sources & javadocs:
             // https://search.maven.org/artifact/com.vanniktech/lint-rules-android/0.7.0/aar
             return null
@@ -3940,20 +3649,17 @@ class LintIssueDocGenerator(
     }
 
     /**
-     * Uses the [GoogleMavenRepository] to fetch the various lint libraries from maven.google.com.
-     * It also inserts empty files for all the remote artifacts that aren't lint jars, such that
-     * running it multiple times only fetches new artifacts.
+     * Uses the [GoogleMavenRepository] to fetch the various lint libraries from maven.google.com. It also inserts empty files for all the
+     * remote artifacts that aren't lint jars, such that running it multiple times only fetches new artifacts.
      */
     private fun populateGmavenOfflineRepo(client: LintCliClient, cacheDir: File, verbose: Boolean) {
       if (SKIP_NETWORK) return
 
       val repository: GoogleMavenRepository =
         object : GoogleMavenRepository(cacheDir.toPath()) {
-          public override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
-            readUrlData(client, url, timeout, lastModified)
+          public override fun readUrlData(url: String, timeout: Int, lastModified: Long) = readUrlData(client, url, timeout, lastModified)
 
-          public override fun error(throwable: Throwable, message: String?) =
-            client.log(throwable, message)
+          public override fun error(throwable: Throwable, message: String?) = client.log(throwable, message)
         }
 
       for (group in repository.getGroups().sorted()) {
@@ -4027,8 +3733,7 @@ class LintIssueDocGenerator(
                     aarTarget.writeBytes(bytes)
 
                     // Try to get the POM
-                    val pomUrl =
-                      "https://dl.google.com/android/maven2/$groupPath/$artifact/$version/$artifact-$version.pom"
+                    val pomUrl = "https://dl.google.com/android/maven2/$groupPath/$artifact/$version/$artifact-$version.pom"
                     val pom =
                       try {
                         readUrlData(client, pomUrl, 30 * 1000)
@@ -4045,9 +3750,7 @@ class LintIssueDocGenerator(
                     JarFile(aarTarget).use { jarFile ->
                       val lintJar = jarFile.getJarEntry("lint.jar")
                       if (lintJar != null) {
-                        jarFile.getInputStream(lintJar).use { stream ->
-                          lintJarBytes = ByteStreams.toByteArray(stream)
-                        }
+                        jarFile.getInputStream(lintJar).use { stream -> lintJarBytes = ByteStreams.toByteArray(stream) }
                       }
                     }
                   }
@@ -4093,13 +3796,10 @@ class LintIssueDocGenerator(
       if (connection.responseCode == 200) {
         val lastModifiedHeader = connection.getHeaderField("Last-Modified")
         if (lastModifiedHeader != null) {
-          val lastModifiedDate =
-            SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z").parse(lastModifiedHeader)!!.time
+          val lastModifiedDate = SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z").parse(lastModifiedHeader)!!.time
           val localDate = Date(lastModifiedDate)
           val localTime = LocalDateTime.ofInstant(localDate.toInstant(), ZoneOffset.UTC)
-          dateTarget.writeText(
-            "%4d/%02d/%02d".format(localTime.year, localTime.monthValue, localTime.dayOfMonth)
-          )
+          dateTarget.writeText("%4d/%02d/%02d".format(localTime.year, localTime.monthValue, localTime.dayOfMonth))
         }
         connection.disconnect()
       }
@@ -4112,11 +3812,8 @@ class LintIssueDocGenerator(
       searchWithinArchives: Boolean = true,
       allJarsAreLintChecks: Boolean = false,
     ): Map<IssueRegistry, String?> {
-      val into =
-        mutableMapOf<String, LibraryVersionEntry>() // Issue registry to (optional) maven artifact
-      splitPath(jarPath).forEach { path ->
-        addLintIssueRegistries(into, File(path), searchWithinArchives, allJarsAreLintChecks)
-      }
+      val into = mutableMapOf<String, LibraryVersionEntry>() // Issue registry to (optional) maven artifact
+      splitPath(jarPath).forEach { path -> addLintIssueRegistries(into, File(path), searchWithinArchives, allJarsAreLintChecks) }
 
       val artifacts = mutableMapOf<String, Library>()
       val artifactIds = into.keys.map { it.substringBeforeLast(':') }.toSet()
@@ -4135,8 +3832,7 @@ class LintIssueDocGenerator(
             id = withoutSuffix
           }
         }
-        val artifact =
-          artifacts[id] ?: libraryFactory(id, entry.lintLibrary).also { artifacts[id] = it }
+        val artifact = artifacts[id] ?: libraryFactory(id, entry.lintLibrary).also { artifacts[id] = it }
         artifact.addVersion(entry)
       }
 
@@ -4171,16 +3867,16 @@ class LintIssueDocGenerator(
       /** Maven group:artifact for this library */
       val id: String,
       /**
-       * If true, this is a lint jar library (which you would use via `lintChecks`); if false, it's
-       * an AAR library (usually not lint related) which also includes a lint payload
+       * If true, this is a lint jar library (which you would use via `lintChecks`); if false, it's an AAR library (usually not lint
+       * related) which also includes a lint payload
        */
       val lintLibrary: Boolean,
     ) {
       val versions: TreeMap<Version, LibraryVersionEntry> = TreeMap { o1, o2 -> -o1.compareTo(o2) }
       var registry: IssueRegistry? = null
       /**
-       * Some libraries are released both as part of another library and as a standalone AAR. This
-       * points from the main library to the standalone artifact name.
+       * Some libraries are released both as part of another library and as a standalone AAR. This points from the main library to the
+       * standalone artifact name.
        */
       val twinArtifacts = mutableListOf<String>()
 
@@ -4221,14 +3917,7 @@ class LintIssueDocGenerator(
     }
 
     class GmavenLibrary(id: String, lintLibrary: Boolean) : Library(id, lintLibrary) {
-      override fun getUrl(
-        view: Boolean,
-        test: Boolean,
-        issue: Issue,
-        detectorPath: String,
-        sourceSet: String,
-        extension: String,
-      ): String {
+      override fun getUrl(view: Boolean, test: Boolean, issue: Issue, detectorPath: String, sourceSet: String, extension: String): String {
         return getGmavenUrl(id, view, test, issue, detectorPath, sourceSet, extension)
       }
     }
@@ -4249,9 +3938,7 @@ class LintIssueDocGenerator(
         url.append("https://android.googlesource.com/platform/frameworks/support/+/androidx-main/")
       }
 
-      var m =
-        id.removePrefix("androidx.").replace(':', '/').replace('.', '/').removeSuffix("-android") +
-          "-lint"
+      var m = id.removePrefix("androidx.").replace(':', '/').replace('.', '/').removeSuffix("-android") + "-lint"
       // workaround: androidx generally places lint checks in a predictable place except for one or
       // two
       // weird exceptions. Work around this for now (and get androidx updated.)
@@ -4278,57 +3965,39 @@ class LintIssueDocGenerator(
           when (detectorPath) {
             "androidx/fragment/lint/UnsafeFragmentLifecycleObserverDetector" -> {
               when (issue.id) {
-                "FragmentLiveDataObserve" ->
-                  "androidx/fragment/lint/FragmentLiveDataObserveDetector"
+                "FragmentLiveDataObserve" -> "androidx/fragment/lint/FragmentLiveDataObserveDetector"
                 "FragmentAddMenuProvider" -> "androidx/fragment/lint/AddMenuProviderDetector"
-                "FragmentBackPressedCallback" ->
-                  "androidx/fragment/lint/BackPressedDispatcherCallbackDetector"
+                "FragmentBackPressedCallback" -> "androidx/fragment/lint/BackPressedDispatcherCallbackDetector"
                 else -> detectorPath
               }
             }
-            "androidx/activity/lint/OnBackPressedDetector" ->
-              "androidx/activity/lint/OnBackPressedDispatcher"
+            "androidx/activity/lint/OnBackPressedDetector" -> "androidx/activity/lint/OnBackPressedDispatcher"
             "androidx/lifecycle/testing/lint/TestLifecycleOwnerInCoroutineDetector" ->
               "androidx/lifecycle/runtime/testing/lint/TestLifecycleOwnerInCoroutineDetector"
-            "androidx/annotation/experimental/lint/ExperimentalDetector" ->
-              "androidx/annotation/experimental/lint/ExperimentalDetector"
+            "androidx/annotation/experimental/lint/ExperimentalDetector" -> "androidx/annotation/experimental/lint/ExperimentalDetector"
 
             // Actually has two test files:
             // wear/protolayout/protolayout-lint/src/test/java/PrimaryLayoutResponsiveDetectorTest.kt
             // wear/protolayout/protolayout-lint/src/test/java/EdgeContentLayoutResponsiveDetectorTest.kt
-            "androidx/wear/protolayout/lint/ResponsiveLayoutDetector" ->
-              "PrimaryLayoutResponsiveDetector"
-            "androidx/wear/protolayout/lint/ProtoLayoutMinSchemaDetector" ->
-              "ProtoLayoutMinSchemaDetector"
+            "androidx/wear/protolayout/lint/ResponsiveLayoutDetector" -> "PrimaryLayoutResponsiveDetector"
+            "androidx/wear/protolayout/lint/ProtoLayoutMinSchemaDetector" -> "ProtoLayoutMinSchemaDetector"
             "androidx/lifecycle/lint/NonNullableMutableLiveDataDetector" ->
               "androidx/lifecycle/livedata/core/lint/NonNullableMutableLiveDataDetector"
-            "androidx/lifecycle/lint/LifecycleWhenChecks" ->
-              "androidx/lifecycle/runtime/lint/LifecycleWhenChecks"
-            "androidx/lifecycle/lint/RepeatOnLifecycleDetector" ->
-              "androidx/lifecycle/runtime/lint/RepeatOnLifecycleDetector"
-            "androidx/recyclerview/lint/InvalidSetHasFixedSizeDetector" ->
-              "androidx/recyclerview/lint/InvalidSetHasFixedSize"
-            "androidx/activity/compose/lint/ActivityResultLaunchDetector" ->
-              "androidx/activity/compose/lint/ActivityResultLaunchDetector"
-            "androidx/activity/lint/ActivityResultFragmentVersionDetector" ->
-              "androidx/activity/lint/ActivityResultFragmentVersionDetector"
-            "androidx/compose/ui/lint/ComposedModifierDetector" ->
-              "androidx/compose/ui/lint/ComposedModifierDetector"
-            "androidx/work/lint/BadConfigurationProviderIssueDetector" ->
-              "androidx/work/lint/BadConfigurationProvider"
-            "androidx/startup/lint/InitializerConstructorDetector" ->
-              "androidx/startup/lint/InitializerConstructor"
-            "androidx/startup/lint/EnsureInitializerMetadataDetector" ->
-              "androidx/startup/lint/EnsureInitializerMetadata"
+            "androidx/lifecycle/lint/LifecycleWhenChecks" -> "androidx/lifecycle/runtime/lint/LifecycleWhenChecks"
+            "androidx/lifecycle/lint/RepeatOnLifecycleDetector" -> "androidx/lifecycle/runtime/lint/RepeatOnLifecycleDetector"
+            "androidx/recyclerview/lint/InvalidSetHasFixedSizeDetector" -> "androidx/recyclerview/lint/InvalidSetHasFixedSize"
+            "androidx/activity/compose/lint/ActivityResultLaunchDetector" -> "androidx/activity/compose/lint/ActivityResultLaunchDetector"
+            "androidx/activity/lint/ActivityResultFragmentVersionDetector" -> "androidx/activity/lint/ActivityResultFragmentVersionDetector"
+            "androidx/compose/ui/lint/ComposedModifierDetector" -> "androidx/compose/ui/lint/ComposedModifierDetector"
+            "androidx/work/lint/BadConfigurationProviderIssueDetector" -> "androidx/work/lint/BadConfigurationProvider"
+            "androidx/startup/lint/InitializerConstructorDetector" -> "androidx/startup/lint/InitializerConstructor"
+            "androidx/startup/lint/EnsureInitializerMetadataDetector" -> "androidx/startup/lint/EnsureInitializerMetadata"
             "androidx/compose/ui/test/manifest/lint/GradleDebugConfigurationDetector" ->
               // Typo: androix
               "androix/compose/ui/test/manifest/lint/GradleDebugConfigurationDetector"
             else -> {
               // All the appcompat lint check tests are in the wrong package; fix that here
-              if (
-                detectorPath.startsWith("androidx/appcompat/") &&
-                  !detectorPath.startsWith("androidx/appcompat/lint/")
-              ) {
+              if (detectorPath.startsWith("androidx/appcompat/") && !detectorPath.startsWith("androidx/appcompat/lint/")) {
                 "androidx/appcompat/lint/" + detectorPath.substring("androidx/appcompat/".length)
               } else {
                 detectorPath
@@ -4380,14 +4049,7 @@ class LintIssueDocGenerator(
       lintLibrary: Boolean = true,
       val published: Boolean = true,
     ) : Library("$group:$artifact", lintLibrary) {
-      override fun getUrl(
-        view: Boolean,
-        test: Boolean,
-        issue: Issue,
-        detectorPath: String,
-        sourceSet: String,
-        extension: String,
-      ): String {
+      override fun getUrl(view: Boolean, test: Boolean, issue: Issue, detectorPath: String, sourceSet: String, extension: String): String {
         val url = StringBuilder()
         if (view) {
           if (test) {
@@ -4413,8 +4075,7 @@ class LintIssueDocGenerator(
                 "com/vanniktech/lintrules/rxjava2/KotlinRequireNotNullUseMessageDetector"
 
               // Stuff from the slack lint checks:
-              "slack/lint/mocking/ErrorProneDoNotMockDetector" ->
-                "slack/lint/mocking/DoNotMockUsageDetector"
+              "slack/lint/mocking/ErrorProneDoNotMockDetector" -> "slack/lint/mocking/DoNotMockUsageDetector"
               "slack/lint/mocking/MockDetector" -> "slack/lint/mocking/DoNotMockMockDetector"
               else -> {
                 detectorPath
@@ -4434,15 +4095,12 @@ class LintIssueDocGenerator(
         return getVersionsFromRemoteRepo(client)
       }
 
-      fun getUrl(version: String, extension: String) =
-        URL(getUrl(version).toExternalForm().substringBeforeLast('.') + extension)
+      fun getUrl(version: String, extension: String) = URL(getUrl(version).toExternalForm().substringBeforeLast('.') + extension)
 
       fun getUrl(version: String): URL {
         val groupPath = group.replace('.', '/')
         val ext = type.getExtension()
-        return URL(
-          "https://search.maven.org/remotecontent?filepath=$groupPath/$artifact/$version/$artifact-$version$ext"
-        )
+        return URL("https://search.maven.org/remotecontent?filepath=$groupPath/$artifact/$version/$artifact-$version$ext")
         // https://search.maven.org/remotecontent?filepath=com/faithlife/android-lint/1.1.6/android-lint-1.1.6.aar
         // https://search.maven.org/remotecontent?filepath=com/faithlife/android-lint/1.1.5/android-lint-1.1.5-debug.aar
         // https://search.maven.org/remotecontent?filepath=com/faithlife/android-lint/1.1.5/android-lint-1.1.5-release.aar
@@ -4513,14 +4171,10 @@ class LintIssueDocGenerator(
         group = group,
         artifact = artifact,
         projectUrl = projectUrl,
-        sourceUrl =
-          "https://github.com/$user/$repository/tree/$branch/$relative/$sourceSet/$language",
-        testUrl =
-          "https://github.com/$user/$repository/tree/$branch/$relative/$testSourceSet/$language",
-        sourceContentUrl =
-          "https://raw.githubusercontent.com/$user/$repository/$branch/$relative/$sourceSet/$language",
-        testContentUrl =
-          "https://raw.githubusercontent.com/$user/$repository/$branch/$relative/$testSourceSet/$language",
+        sourceUrl = "https://github.com/$user/$repository/tree/$branch/$relative/$sourceSet/$language",
+        testUrl = "https://github.com/$user/$repository/tree/$branch/$relative/$testSourceSet/$language",
+        sourceContentUrl = "https://raw.githubusercontent.com/$user/$repository/$branch/$relative/$sourceSet/$language",
+        testContentUrl = "https://raw.githubusercontent.com/$user/$repository/$branch/$relative/$testSourceSet/$language",
         type = type,
         lintLibrary = lintLibrary,
         published = published,
@@ -4588,13 +4242,7 @@ class LintIssueDocGenerator(
       )
 
     /** Data about a specific version of the library */
-    class LibraryVersionEntry(
-      val artifact: String,
-      val jarBytes: ByteArray,
-      val pom: String,
-      val date: String,
-      val lintLibrary: Boolean,
-    ) {
+    class LibraryVersionEntry(val artifact: String, val jarBytes: ByteArray, val pom: String, val date: String, val lintLibrary: Boolean) {
       val id = artifact.substringBeforeLast(':')
       val version = Version.parse(artifact.substringAfterLast(':').removeSuffix("-lint"))
       var registry: IssueRegistry? = null
@@ -4629,9 +4277,7 @@ class LintIssueDocGenerator(
     ) {
       if (file.isDirectory) {
         val children = file.listFiles() ?: return
-        children.forEach { child ->
-          addLintIssueRegistries(into, child, searchWithinArchives, allJarsAreLintChecks)
-        }
+        children.forEach { child -> addLintIssueRegistries(into, child, searchWithinArchives, allJarsAreLintChecks) }
       } else if (file.isFile) {
         // file length of 0 means it's not a valid jar but is deliberately there
         // as a cache entry to record the fact that this library does *not*
@@ -4700,22 +4346,14 @@ class LintIssueDocGenerator(
       val index = name.indexOf("m2repository/").let { if (it == -1) name.indexOf("m2/") else it }
       if (index != -1) {
         return name.substring(index).split("/").let {
-          it.subList(1, it.size - 3).joinToString(".") +
-            ":" +
-            it[it.size - 3] +
-            ":" +
-            it[it.size - 2]
+          it.subList(1, it.size - 3).joinToString(".") + ":" + it[it.size - 3] + ":" + it[it.size - 2]
         }
       }
 
       return null
     }
 
-    private class DocIssueRegistry(
-      original: IssueRegistry,
-      val library: Library,
-      val jarFile: File,
-    ) : IssueRegistry() {
+    private class DocIssueRegistry(original: IssueRegistry, val library: Library, val jarFile: File) : IssueRegistry() {
       override val issues: List<Issue> = original.issues
       override val api: Int = original.api
       override val minApi: Int = original.minApi
@@ -4818,11 +4456,9 @@ class LintIssueDocGenerator(
           ARG_HELP,
           "This message.",
           "$ARG_OUTPUT <dir>",
-          "Sets the path to write the documentation to. Normally a directory, unless $ARG_SINGLE_DOC " +
-            "is also specified",
+          "Sets the path to write the documentation to. Normally a directory, unless $ARG_SINGLE_DOC " + "is also specified",
           ARG_SINGLE_DOC,
-          "Instead of writing one page per issue into a directory, write a single page containing " +
-            "all the issues",
+          "Instead of writing one page per issue into a directory, write a single page containing " + "all the issues",
           ARG_MD,
           "Write to plain Markdown (.md) files instead of Markdeep (.md.html)",
           ARG_INCLUDE_BUILTINS,
@@ -4904,12 +4540,7 @@ class LintIssueDocGenerator(
     }
   }
 
-  class ExampleFile(
-    val path: String?,
-    val source: String,
-    val language: String,
-    val binaryUrl: String? = null,
-  ) {
+  class ExampleFile(val path: String?, val source: String, val language: String, val binaryUrl: String? = null) {
     fun hasContent(): Boolean = source.isNotBlank() || binaryUrl != null && binaryUrl.isNotBlank()
   }
 
@@ -4966,12 +4597,7 @@ class LintIssueDocGenerator(
       return vendor == AOSP_VENDOR && issue.registry is BuiltinIssueRegistry
     }
 
-    private fun findDetectorSource(
-      library: Library,
-      detectorPath: String,
-      test: Boolean,
-      assign: (String, File, String) -> Unit,
-    ) {
+    private fun findDetectorSource(library: Library, detectorPath: String, test: Boolean, assign: (String, File, String) -> Unit) {
       var url: String? = null
       val cacheDir = getSourceCache()
       val testResult =
@@ -5004,14 +4630,7 @@ class LintIssueDocGenerator(
       extension: String,
       cacheDir: File,
     ): Pair<File, String>? {
-      val relative =
-        (if (test) "test" else "main") +
-          "/" +
-          sourceSet +
-          "/" +
-          detectorPath +
-          (if (test) "Test" else "") +
-          extension
+      val relative = (if (test) "test" else "main") + "/" + sourceSet + "/" + detectorPath + (if (test) "Test" else "") + extension
 
       val cached = File(cacheDir, relative)
       if (cached.isFile) {
@@ -5045,8 +4664,7 @@ class LintIssueDocGenerator(
     }
   }
 
-  private fun getFileName(issueId: String, format: DocFormat): String =
-    "$issueId${format.extension}"
+  private fun getFileName(issueId: String, format: DocFormat): String = "$issueId${format.extension}"
 
   private fun getFileName(issue: Issue, format: DocFormat): String {
     val fileName = getFileName(issue.id, format)

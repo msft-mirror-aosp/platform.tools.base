@@ -101,19 +101,19 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam">
-                    <ignore path="res/layout-xlarge/activation.xml" />
-                </issue>
-                <issue id="ValidActionsXml" severity="ignore" />
-                <issue id="TrulyRandom" severity="error" />
-                <issue id="SdCardPath,ContentDescription" severity="ignore" />
-                <issue id="NewApi">
-                    <ignore path="res/layout-xlarge" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam">
+                <ignore path="res/layout-xlarge/activation.xml" />
+            </issue>
+            <issue id="ValidActionsXml" severity="ignore" />
+            <issue id="TrulyRandom" severity="error" />
+            <issue id="SdCardPath,ContentDescription" severity="ignore" />
+            <issue id="NewApi">
+                <ignore path="res/layout-xlarge" />
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
     assertTrue(configuration.isEnabled(ObsoleteLayoutParamsDetector.ISSUE))
@@ -131,52 +131,35 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="UnknownNullness">
-                    <option name="ignore-deprecated" value="true" />
-                </issue>
-                <issue id="TooManyViews">
-                    <option name="maxCount" value="20" />
-                </issue>
-                <issue id="TooDeepLayout">
-                    <option name="maxDepth" value="5" />
-                </issue>
-                <issue id="NewApi">
-                    <option name="allowed" value="api/list.xml" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="UnknownNullness">
+                <option name="ignore-deprecated" value="true" />
+            </issue>
+            <issue id="TooManyViews">
+                <option name="maxCount" value="20" />
+            </issue>
+            <issue id="TooDeepLayout">
+                <option name="maxDepth" value="5" />
+            </issue>
+            <issue id="NewApi">
+                <option name="allowed" value="api/list.xml" />
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
     assertNull(configuration.getOption(InteroperabilityDetector.PLATFORM_NULLNESS, "unknown", null))
-    assertEquals(
-      "default",
-      configuration.getOption(InteroperabilityDetector.PLATFORM_NULLNESS, "unknown", "default"),
-    )
-    assertEquals(
-      true,
-      configuration.getOptionAsBoolean(
-        InteroperabilityDetector.PLATFORM_NULLNESS,
-        "ignore-deprecated",
-        false,
-      ),
-    )
+    assertEquals("default", configuration.getOption(InteroperabilityDetector.PLATFORM_NULLNESS, "unknown", "default"))
+    assertEquals(true, configuration.getOptionAsBoolean(InteroperabilityDetector.PLATFORM_NULLNESS, "ignore-deprecated", false))
     assertEquals(5, configuration.getOptionAsInt(TooManyViewsDetector.TOO_DEEP, "maxDepth", 1))
     val file = configuration.getOptionAsFile(ApiDetector.UNSUPPORTED, "allowed", null)
     assertNotNull(file)
-    assertEquals(
-      file!!.canonicalFile,
-      File(configuration.configFile.parentFile, "api" + separator + "list.xml").canonicalFile,
-    )
+    assertEquals(file!!.canonicalFile, File(configuration.configFile.parentFile, "api" + separator + "list.xml").canonicalFile)
 
     configuration.startBulkEditing()
     // unset
-    configuration.setBooleanOption(
-      InteroperabilityDetector.PLATFORM_NULLNESS,
-      "ignore-deprecated",
-      null,
-    )
+    configuration.setBooleanOption(InteroperabilityDetector.PLATFORM_NULLNESS, "ignore-deprecated", null)
     // replace
     configuration.setIntOption(TooManyViewsDetector.TOO_DEEP, "maxDepth", 5)
     // new
@@ -187,25 +170,25 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val updated = configuration.configFile.readText()
     assertEquals(
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ContentDescription">
-                    <option name="enforceDesc" value="true" />
-                </issue>
-                <issue id="NewApi">
-                    <option name="allowed" value="api/list.xml" />
-                </issue>
-                <issue id="ObsoleteLayoutParam">
-                    <option name="except" value="layoutEnd" />
-                </issue>
-                <issue id="TooDeepLayout">
-                    <option name="maxDepth" value="5" />
-                </issue>
-                <issue id="TooManyViews">
-                    <option name="maxCount" value="20" />
-                </issue>
-            </lint>
-            """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue id="ContentDescription">
+              <option name="enforceDesc" value="true" />
+          </issue>
+          <issue id="NewApi">
+              <option name="allowed" value="api/list.xml" />
+          </issue>
+          <issue id="ObsoleteLayoutParam">
+              <option name="except" value="layoutEnd" />
+          </issue>
+          <issue id="TooDeepLayout">
+              <option name="maxDepth" value="5" />
+          </issue>
+          <issue id="TooManyViews">
+              <option name="maxCount" value="20" />
+          </issue>
+      </lint>
+      """
         .trimIndent(),
       updated,
     )
@@ -238,15 +221,15 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val parentConfiguration =
       getConfiguration(
         """
-            <lint>
-                <issue id="UnknownNullness">
-                    <option name="exceptions" value="exceptions.xml" />
-                </issue>
-                <issue id="NewApi">
-                    <option name="allowed" value="api/list.xml" />
-                </issue>
-            </lint>
-            """
+        <lint>
+            <issue id="UnknownNullness">
+                <option name="exceptions" value="exceptions.xml" />
+            </issue>
+            <issue id="NewApi">
+                <option name="allowed" value="api/list.xml" />
+            </issue>
+        </lint>
+        """
           .trimIndent(),
         initialDir = File(folder, "parent"),
       )
@@ -254,13 +237,13 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="UnknownNullness">
-                    <option name="exceptions" value="new-exceptions.xml" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="UnknownNullness">
+                <option name="exceptions" value="new-exceptions.xml" />
+            </issue>
+        </lint>
+        """
           .trimIndent(),
         initialDir = File(folder, "child"),
       )
@@ -278,9 +261,7 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     )
     assertEquals(
       "/child/new-exceptions.xml",
-      getPath(
-        configuration.getOptionAsFile(InteroperabilityDetector.PLATFORM_NULLNESS, "exceptions")
-      ),
+      getPath(configuration.getOptionAsFile(InteroperabilityDetector.PLATFORM_NULLNESS, "exceptions")),
     )
   }
 
@@ -289,23 +270,23 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue in="all2" id="ObsoleteLayoutParam" severity="informational" />
-                <issue in="!studio" id="ObsoleteLayoutParam" severity="fatal" />
-                <issue in="gradle" id="ObsoleteLayoutParam" severity="hidden" />
-                <issue id="ValidActionsXml" severity="fatal" />
-                <issue in="test" id="ValidActionsXml" severity="hide" />
-                <issue id="NewApi" severity="fatal">
-                <issue id="SdCardPath,ContentDescription" severity="hidden" />
-                <issue in="studio,test" id="NewApi">
-                    <ignore path="res/layout-xlarge" />
-                </issue>
-                <issue in="gradle, test" id="ValidActionsXml" severity="ignore" />
-                <issue in="!studio" id="ContentDescription" severity="ignore" />
-                <issue in="!test" id="InlinedApi" severity="ignore" />
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue in="all2" id="ObsoleteLayoutParam" severity="informational" />
+            <issue in="!studio" id="ObsoleteLayoutParam" severity="fatal" />
+            <issue in="gradle" id="ObsoleteLayoutParam" severity="hidden" />
+            <issue id="ValidActionsXml" severity="fatal" />
+            <issue in="test" id="ValidActionsXml" severity="hide" />
+            <issue id="NewApi" severity="fatal">
+            <issue id="SdCardPath,ContentDescription" severity="hidden" />
+            <issue in="studio,test" id="NewApi">
+                <ignore path="res/layout-xlarge" />
+            </issue>
+            <issue in="gradle, test" id="ValidActionsXml" severity="ignore" />
+            <issue in="!studio" id="ContentDescription" severity="ignore" />
+            <issue in="!test" id="InlinedApi" severity="ignore" />
+        </lint>
+        """
           .trimIndent()
       )
     assertEquals(LintClient.clientName, "test")
@@ -323,22 +304,22 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val updated = configuration.configFile.readText()
     assertEquals(
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue in="test" id="ValidActionsXml" severity="ignore" />
-                <issue in="studio,test" id="NewApi">
-                    <ignore path="res/layout-xlarge" />
-                </issue>
-                <issue in="test" id="ValidActionsXml" severity="ignore" />
-                <issue id="ContentDescription" severity="ignore" />
-                <issue id="InlinedApi" severity="ignore" />
-                <issue id="NewApi" severity="fatal" />
-                <issue id="SdCardPath" severity="ignore" />
-                <issue id="ValidActionsXml" severity="fatal" />
-                <issue in="!studio" id="ContentDescription" severity="ignore" />
-                <issue in="!studio" id="ObsoleteLayoutParam" severity="fatal" />
-            </lint>
-            """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue in="test" id="ValidActionsXml" severity="ignore" />
+          <issue in="studio,test" id="NewApi">
+              <ignore path="res/layout-xlarge" />
+          </issue>
+          <issue in="test" id="ValidActionsXml" severity="ignore" />
+          <issue id="ContentDescription" severity="ignore" />
+          <issue id="InlinedApi" severity="ignore" />
+          <issue id="NewApi" severity="fatal" />
+          <issue id="SdCardPath" severity="ignore" />
+          <issue id="ValidActionsXml" severity="fatal" />
+          <issue in="!studio" id="ContentDescription" severity="ignore" />
+          <issue in="!studio" id="ObsoleteLayoutParam" severity="fatal" />
+      </lint>
+      """
         .trimIndent(),
       updated,
     )
@@ -348,12 +329,12 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint in="studio">
-                <issue id="ObsoleteLayoutParam" severity="fatal" />
-                <issue in="test" id="ValidActionsXml" severity="fatal" />
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint in="studio">
+            <issue id="ObsoleteLayoutParam" severity="fatal" />
+            <issue in="test" id="ValidActionsXml" severity="fatal" />
+        </lint>
+        """
           .trimIndent()
       )
     assertEquals(LintClient.clientName, "test")
@@ -365,12 +346,12 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="all" severity="ignore" />
-                <issue id="ValidActionsXml" severity="error" />
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="all" severity="ignore" />
+            <issue id="ValidActionsXml" severity="error" />
+        </lint>
+        """
           .trimIndent()
       )
     assertEquals(Severity.IGNORE, configuration.getSeverity(AccessibilityDetector.ISSUE))
@@ -383,10 +364,10 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+        </lint>
+        """
           .trimIndent()
       )
     assertThat(configuration.getAbortOnError()).isNull()
@@ -396,23 +377,23 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint
-                checkAllWarnings='true'
-                ignoreWarnings='true'
-                warningsAsErrors='true'
-                fatalOnly='true'
-                checkTestSources='true'
-                ignoreTestSources='true'
-                checkGeneratedSources='true'
-                checkDependencies='true'
-                explainIssues='true'
-                removeFixedBaselineIssues='true'
-                abortOnError='true'
-                allowSuppress='true'
-            >
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint
+            checkAllWarnings='true'
+            ignoreWarnings='true'
+            warningsAsErrors='true'
+            fatalOnly='true'
+            checkTestSources='true'
+            ignoreTestSources='true'
+            checkGeneratedSources='true'
+            checkDependencies='true'
+            explainIssues='true'
+            removeFixedBaselineIssues='true'
+            abortOnError='true'
+            allowSuppress='true'
+        >
+        </lint>
+        """
           .trimIndent()
       )
     assertThat(configuration.getCheckAllWarnings()).isTrue()
@@ -436,11 +417,9 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val driver = LintDriver(TestIssueRegistry(), client, request)
     val plainFile = File(projectDir, "res" + separator + "layout" + separator + "onclick.xml")
     assertTrue(plainFile.exists())
-    val largeFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
+    val largeFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
     assertTrue(largeFile.exists())
-    val windowsFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
+    val windowsFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
     assertTrue(windowsFile.exists())
     val stringsFile = File(projectDir, "res" + separator + "values" + separator + "strings.xml")
     val plainContext = Context(driver, project, project, plainFile, null)
@@ -455,57 +434,42 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="all">
-                    <ignore path="res/values/strings.xml" />
-                </issue>
-                <issue id="ObsoleteLayoutParam">
-                    <ignore path="res/layout-xlarge/onclick.xml" />
-                    <ignore path="res\layout-xlarge\activation.xml" />
-                </issue>
-                <issue id="NewApi">
-                    <ignore path="res/layout-xlarge" />
-                </issue>
-                <issue in="gradle, test" id="ValidActionsXml">
-                    <ignore path="res/layout" />
-                </issue>
-                <issue in="!studio" id="ContentDescription">
-                    <ignore path="res/layout" />
-                </issue>
-                <issue in="!test" id="InlinedApi">
-                    <ignore path="res/layout" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="all">
+                <ignore path="res/values/strings.xml" />
+            </issue>
+            <issue id="ObsoleteLayoutParam">
+                <ignore path="res/layout-xlarge/onclick.xml" />
+                <ignore path="res\layout-xlarge\activation.xml" />
+            </issue>
+            <issue id="NewApi">
+                <ignore path="res/layout-xlarge" />
+            </issue>
+            <issue in="gradle, test" id="ValidActionsXml">
+                <ignore path="res/layout" />
+            </issue>
+            <issue in="!studio" id="ContentDescription">
+                <ignore path="res/layout" />
+            </issue>
+            <issue in="!test" id="InlinedApi">
+                <ignore path="res/layout" />
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
 
     assertTrue(configuration.isIgnored(plainContext, ActionsXmlDetector.ISSUE, plainLocation, ""))
-    assertTrue(
-      configuration.isIgnored(plainContext, AccessibilityDetector.ISSUE, plainLocation, "")
-    )
+    assertTrue(configuration.isIgnored(plainContext, AccessibilityDetector.ISSUE, plainLocation, ""))
     assertFalse(configuration.isIgnored(plainContext, ApiDetector.INLINED, plainLocation, ""))
 
     assertFalse(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED, plainLocation, ""))
-    assertFalse(
-      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, "")
-    )
-    assertTrue(
-      configuration.isIgnored(
-        windowsContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        windowsLocation,
-        "",
-      )
-    )
+    assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, ""))
+    assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE, windowsLocation, ""))
     assertTrue(configuration.isIgnored(largeContext, ApiDetector.UNSUPPORTED, largeLocation, ""))
-    assertTrue(
-      configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, "")
-    )
-    assertTrue(
-      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, stringsLocation, "")
-    )
+    assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, ""))
+    assertTrue(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, stringsLocation, ""))
     assertTrue(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED, stringsLocation, ""))
   }
 
@@ -517,11 +481,9 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val driver = LintDriver(TestIssueRegistry(), client, request)
     val plainFile = File(projectDir, "res" + separator + "layout" + separator + "onclick.xml")
     assertTrue(plainFile.exists())
-    val largeFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
+    val largeFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
     assertTrue(largeFile.exists())
-    val windowsFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
+    val windowsFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
     assertTrue(windowsFile.exists())
     val stringsFile = File(projectDir, "res" + separator + "values" + separator + "strings.xml")
     val plainContext = Context(driver, project, project, plainFile, null)
@@ -536,50 +498,32 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="all">
-                    <ignore regexp="st.*gs" />
-                </issue>
-                <issue id="ObsoleteLayoutParam">
-                    <ignore regexp="x.*onclick" />
-                    <ignore regexp="res/.*layout.*/activation.xml" />
-                </issue>
-                <issue id="UnusedResources">
-                    <ignore regexp="R\.font.*">
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="all">
+                <ignore regexp="st.*gs" />
+            </issue>
+            <issue id="ObsoleteLayoutParam">
+                <ignore regexp="x.*onclick" />
+                <ignore regexp="res/.*layout.*/activation.xml" />
+            </issue>
+            <issue id="UnusedResources">
+                <ignore regexp="R\.font.*">
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
     assertFalse(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED, plainLocation, ""))
-    assertFalse(
-      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, "")
-    )
-    assertTrue(
-      configuration.isIgnored(
-        windowsContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        windowsLocation,
-        "",
-      )
-    )
-    assertTrue(
-      configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, "")
-    )
+    assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, ""))
+    assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE, windowsLocation, ""))
+    assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, ""))
     assertTrue(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED, stringsLocation, ""))
-    assertTrue(
-      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, stringsLocation, "")
-    )
+    assertTrue(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, stringsLocation, ""))
     // Regression test for https://issuetracker.google.com/131851821
     // Lint reports error about unused font resource in the library project
     assertTrue(
-      configuration.isIgnored(
-        plainContext,
-        UnusedResourceDetector.ISSUE,
-        plainLocation,
-        "The resource R.font. appears to be unused",
-      )
+      configuration.isIgnored(plainContext, UnusedResourceDetector.ISSUE, plainLocation, "The resource R.font. appears to be unused")
     )
   }
 
@@ -601,8 +545,7 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val project = Project.create(client, projectDir, projectDir)
     val request = LintRequest(client, emptyList())
     val driver = LintDriver(TestIssueRegistry(), client, request)
-    val plainFile =
-      File(projectDir, "src/androidTest/java/com/domain/android/lever2/RepositoryShould2.java")
+    val plainFile = File(projectDir, "src/androidTest/java/com/domain/android/lever2/RepositoryShould2.java")
     val context = Context(driver, project, project, plainFile, null)
     val location = create(plainFile)
     val message = "This is the message"
@@ -613,50 +556,44 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration1 =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam" severity="error">
-                    <ignore regexp=".*/src/androidTest"/>
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam" severity="error">
+                <ignore regexp=".*/src/androidTest"/>
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
-    assertTrue(
-      configuration1.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message)
-    )
+    assertTrue(configuration1.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message))
 
     val configuration2 =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam" severity="error">
-                    <ignore regexp=".*/src/androidTest/.*"/>
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam" severity="error">
+                <ignore regexp=".*/src/androidTest/.*"/>
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
-    assertTrue(
-      configuration2.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message)
-    )
+    assertTrue(configuration2.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message))
 
     val configuration3 =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam" severity="error">
-                    <ignore path="*/src/androidTest*"/>
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam" severity="error">
+                <ignore path="*/src/androidTest*"/>
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
-    assertTrue(
-      configuration3.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message)
-    )
+    assertTrue(configuration3.isIgnored(context, ObsoleteLayoutParamsDetector.ISSUE, location, message))
   }
 
   fun testGlobbing() {
@@ -667,11 +604,9 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val driver = LintDriver(TestIssueRegistry(), client, request)
     val plainFile = File(projectDir, "res" + separator + "layout" + separator + "onclick.xml")
     assertTrue(plainFile.exists())
-    val largeFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
+    val largeFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "onclick.xml")
     assertTrue(largeFile.exists())
-    val windowsFile =
-      File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
+    val windowsFile = File(projectDir, "res" + separator + "layout-xlarge" + separator + "activation.xml")
     assertTrue(windowsFile.exists())
     val plainContext = Context(driver, project, project, plainFile, null)
     val largeContext = Context(driver, project, project, largeFile, null)
@@ -684,42 +619,25 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam">
-                    <ignore path="**/layout-x*/onclick.xml" />
-                    <ignore path="app/res/*/activation.xml" />
-                    <ignore path="**/res2/**" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam">
+                <ignore path="**/layout-x*/onclick.xml" />
+                <ignore path="app/res/*/activation.xml" />
+                <ignore path="**/res2/**" />
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
     assertFalse(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED, plainLocation, ""))
-    assertFalse(
-      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, "")
-    )
-    assertTrue(
-      configuration.isIgnored(
-        windowsContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        windowsLocation,
-        "",
-      )
-    )
-    assertTrue(
-      configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, "")
-    )
-    val res2 =
-      File(
-        projectDir,
-        "something" + separator + "res2" + separator + "something" + separator + "something2.xml",
-      )
+    assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation, ""))
+    assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE, windowsLocation, ""))
+    assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation, ""))
+    val res2 = File(projectDir, "something" + separator + "res2" + separator + "something" + separator + "something2.xml")
     val res2Location = create(res2)
     val res2Context = Context(driver, project, project, res2, null)
-    assertTrue(
-      configuration.isIgnored(res2Context, ObsoleteLayoutParamsDetector.ISSUE, res2Location, "")
-    )
+    assertTrue(configuration.isIgnored(res2Context, ObsoleteLayoutParamsDetector.ISSUE, res2Location, ""))
   }
 
   fun testMessagePatternIgnore() {
@@ -736,14 +654,14 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="ObsoleteLayoutParam">
-                    <ignore regexp="sample_icon\.gif" />
-                    <ignore regexp="javax\.swing" />
-                </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="ObsoleteLayoutParam">
+                <ignore regexp="sample_icon\.gif" />
+                <ignore regexp="javax\.swing" />
+            </issue>
+        </lint>
+        """
           .trimIndent()
       )
     assertFalse(
@@ -784,47 +702,38 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="Interoperability" severity="fatal" />
-                <issue id="UnsupportedChromeOsHardware" severity="error" />
-                <issue id="Chrome OS" severity="warning" />
-                <issue id="ValidActionsXml" severity="error" />
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="Interoperability" severity="fatal" />
+            <issue id="UnsupportedChromeOsHardware" severity="error" />
+            <issue id="Chrome OS" severity="warning" />
+            <issue id="ValidActionsXml" severity="error" />
+        </lint>
+        """
           .trimIndent()
       )
     // Inherit from ChromeOS category
-    assertEquals(
-      Severity.WARNING,
-      configuration.getSeverity(ChromeOsDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE),
-    )
+    assertEquals(Severity.WARNING, configuration.getSeverity(ChromeOsDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE))
     // Inherit from nested Interoperability category
-    assertEquals(
-      Severity.FATAL,
-      configuration.getSeverity(InteroperabilityDetector.PLATFORM_NULLNESS),
-    )
+    assertEquals(Severity.FATAL, configuration.getSeverity(InteroperabilityDetector.PLATFORM_NULLNESS))
     // Make sure issue which has issue-specific severity uses that instead of inherited category
-    assertEquals(
-      Severity.ERROR,
-      configuration.getSeverity(ChromeOsDetector.UNSUPPORTED_CHROME_OS_HARDWARE),
-    )
+    assertEquals(Severity.ERROR, configuration.getSeverity(ChromeOsDetector.UNSUPPORTED_CHROME_OS_HARDWARE))
   }
 
   fun testWriteLintXml() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint lintJars="foo/lint.jar">
-              <issue id="ObsoleteLayoutParam">
-                  <ignore path="res/layout-xlarge/activation.xml" />
-                  <ignore path="res\layout-xlarge\activation2.xml" />
-                  <ignore regexp="res/.*/activation2.xml" />
-              </issue>
-              <issue id="ValidActionsXml" severity="ignore" />
-              <issue id="SdCardPath" severity="ignore" /></lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint lintJars="foo/lint.jar">
+          <issue id="ObsoleteLayoutParam">
+              <ignore path="res/layout-xlarge/activation.xml" />
+              <ignore path="res\layout-xlarge\activation2.xml" />
+              <ignore regexp="res/.*/activation2.xml" />
+          </issue>
+          <issue id="ValidActionsXml" severity="ignore" />
+          <issue id="SdCardPath" severity="ignore" /></lint>
+        """
           .trimIndent(),
         projectLevel = true,
         create = { f ->
@@ -840,20 +749,20 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val updated = configuration.configFile.readText()
     assertEquals(
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint lintJars="foo/lint.jar">
-                <issue id="ObsoleteLayoutParam">
-                    <ignore path="res/layout-xlarge/activation.xml" />
-                    <ignore path="res/layout-xlarge/activation2.xml" />
-                    <ignore regexp="res/.*/activation2.xml" />
-                </issue>
-                <issue id="SdCardPath" severity="ignore" />
-                <issue id="Typos" severity="error">
-                    <ignore path="foo/bar/Baz.java" />
-                </issue>
-                <issue id="ValidActionsXml" severity="ignore" />
-            </lint>
-            """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint lintJars="foo/lint.jar">
+          <issue id="ObsoleteLayoutParam">
+              <ignore path="res/layout-xlarge/activation.xml" />
+              <ignore path="res/layout-xlarge/activation2.xml" />
+              <ignore regexp="res/.*/activation2.xml" />
+          </issue>
+          <issue id="SdCardPath" severity="ignore" />
+          <issue id="Typos" severity="error">
+              <ignore path="foo/bar/Baz.java" />
+          </issue>
+          <issue id="ValidActionsXml" severity="ignore" />
+      </lint>
+      """
         .trimIndent(),
       updated,
     )
@@ -893,26 +802,23 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-              <issue id="ObsoleteLayoutParam">
-                  <ignore path="res/layout/onclick.xml" />
-                  <ignore path="res/layout-xlarge/activation.xml" />
-                  <ignore path="res\layout-xlarge\activation2.xml" />
-                  <ignore path="res/layout-land" />
-              </issue>
-            </lint>
-            """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+          <issue id="ObsoleteLayoutParam">
+              <ignore path="res/layout/onclick.xml" />
+              <ignore path="res/layout-xlarge/activation.xml" />
+              <ignore path="res\layout-xlarge\activation2.xml" />
+              <ignore path="res/layout-land" />
+          </issue>
+        </lint>
+        """
           .trimIndent()
       )
     val projectDir = getProjectDir(mOnclick4, mOnclick5, mOnclick6, mOnclick7)
     val client: LintClient =
       object : TestLintClient() {
         override fun getResourceFolders(project: Project): List<File> {
-          return listOf(
-            File(project.dir, "src" + separator + "main" + separator + "res"),
-            File(project.dir, "generated-res"),
-          )
+          return listOf(File(project.dir, "src" + separator + "main" + separator + "res"), File(project.dir, "generated-res"))
         }
       }
     val project = Project.create(client, projectDir, projectDir)
@@ -938,38 +844,12 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val landscapeLocation = create(landscapeFile)
     assertTrue(
       String.format(Locale.US, "File `%s` was not ignored", plainFile.path),
-      configuration.isIgnored(
-        plainContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(plainFile),
-        "",
-      ),
+      configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, create(plainFile), ""),
     )
-    assertTrue(
-      configuration.isIgnored(
-        largeContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(largeFile),
-        "",
-      )
-    )
-    assertTrue(
-      configuration.isIgnored(
-        windowsContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(windowsFile),
-        "",
-      )
-    )
+    assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, create(largeFile), ""))
+    assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE, create(windowsFile), ""))
     // directory allowlist
-    assertTrue(
-      configuration.isIgnored(
-        landscapeContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        landscapeLocation,
-        "",
-      )
-    )
+    assertTrue(configuration.isIgnored(landscapeContext, ObsoleteLayoutParamsDetector.ISSUE, landscapeLocation, ""))
   }
 
   fun testErrorHandling() {
@@ -977,11 +857,11 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val invalidXml =
       // language=TEXT since this is broken source
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint
-                <issue id="SdCardPath" severity="ignore" />
-            </lint>
-            """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint
+          <issue id="SdCardPath" severity="ignore" />
+      </lint>
+      """
         .trimIndent()
     lint()
       .files(
@@ -1079,11 +959,7 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
   }
 
   fun testSeverityImpliesIgnore() {
-    val projectDir =
-      getProjectDir(
-        image("src/main/res/drawable/abc.png", 48, 48),
-        source("build/generated/R.java", "class R { };"),
-      )
+    val projectDir = getProjectDir(image("src/main/res/drawable/abc.png", 48, 48), source("build/generated/R.java", "class R { };"))
     // Let's say you ignore a specific path for "all". If you also
     // deliberately enable a check in the same lint.xml file, that
     // should act as an "unignore", so you'll have to specifically
@@ -1091,16 +967,16 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <lint>
-                <issue id="all">
-                    <ignore path="src/"/>
-                 </issue>
-                <issue id="SdCardPath" severity="error"/>
-                <issue id="UnusedResources" severity="error">
-                    <ignore path="src/" />
-                </issue>
-            </lint>
-            """
+        <lint>
+            <issue id="all">
+                <ignore path="src/"/>
+             </issue>
+            <issue id="SdCardPath" severity="error"/>
+            <issue id="UnusedResources" severity="error">
+                <ignore path="src/" />
+            </issue>
+        </lint>
+        """
           .trimIndent(),
         // Place the configuration file in the project directory to make sure that
         // relative paths are resolved relative to the config file
@@ -1116,36 +992,14 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     assertTrue(generatedR.exists())
     val drawableContext = Context(driver, project, project, drawable, null)
     val generatedRContext = Context(driver, project, project, generatedR, null)
-    assertTrue(
-      configuration.isIgnored(
-        drawableContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(drawable),
-        "",
-      )
-    )
-    assertFalse(
-      configuration.isIgnored(
-        generatedRContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(generatedR),
-        "",
-      )
-    )
-    assertFalse(
-      configuration.isIgnored(drawableContext, SdCardDetector.ISSUE, create(drawable), "")
-    )
-    assertTrue(
-      configuration.isIgnored(drawableContext, UnusedResourceDetector.ISSUE, create(drawable), "")
-    )
+    assertTrue(configuration.isIgnored(drawableContext, ObsoleteLayoutParamsDetector.ISSUE, create(drawable), ""))
+    assertFalse(configuration.isIgnored(generatedRContext, ObsoleteLayoutParamsDetector.ISSUE, create(generatedR), ""))
+    assertFalse(configuration.isIgnored(drawableContext, SdCardDetector.ISSUE, create(drawable), ""))
+    assertTrue(configuration.isIgnored(drawableContext, UnusedResourceDetector.ISSUE, create(drawable), ""))
   }
 
   fun testIgnoreRelativePath() {
-    val projectDir =
-      getProjectDir(
-        image("src/main/res/drawable/abc.png", 48, 48),
-        source("build/generated/R.java", "class R { };"),
-      )
+    val projectDir = getProjectDir(image("src/main/res/drawable/abc.png", 48, 48), source("build/generated/R.java", "class R { };"))
     // Let's say you ignore a specific path for "all". If you also
     // deliberately enable a check in the same lint.xml file, that
     // should act as an "unignore", so you'll have to specifically
@@ -1153,12 +1007,12 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     val configuration =
       getConfiguration(
         """
-            <lint>
-                <issue id="ObsoleteLayoutParam" severity="error">
-                    <ignore path="drawable/" />
-                </issue>
-            </lint>
-            """
+        <lint>
+            <issue id="ObsoleteLayoutParam" severity="error">
+                <ignore path="drawable/" />
+            </issue>
+        </lint>
+        """
           .trimIndent(),
         // Place the configuration file in somewhere in the project to make sure
         // relative paths are resolved relative to the config file
@@ -1174,22 +1028,8 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     assertTrue(generatedR.exists())
     val drawableContext = Context(driver, project, project, drawable, null)
     val generatedRContext = Context(driver, project, project, generatedR, null)
-    assertTrue(
-      configuration.isIgnored(
-        drawableContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(drawable),
-        "",
-      )
-    )
-    assertFalse(
-      configuration.isIgnored(
-        generatedRContext,
-        ObsoleteLayoutParamsDetector.ISSUE,
-        create(generatedR),
-        "",
-      )
-    )
+    assertTrue(configuration.isIgnored(drawableContext, ObsoleteLayoutParamsDetector.ISSUE, create(drawable), ""))
+    assertFalse(configuration.isIgnored(generatedRContext, ObsoleteLayoutParamsDetector.ISSUE, create(generatedR), ""))
   }
 
   fun testWriteConfig() {
@@ -1212,14 +1052,14 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
         assertSame(Severity.FATAL, configuration.getDefinedSeverity(ApiDetector.UNSUPPORTED))
         assertEquals(
           """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <lint>
-                    <issue id="IconDuplicates">
-                        <ignore path="name.xml" />
-                    </issue>
-                    <issue id="NewApi" severity="fatal" />
-                </lint>
-                    """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <lint>
+              <issue id="IconDuplicates">
+                  <ignore path="name.xml" />
+              </issue>
+              <issue id="NewApi" severity="fatal" />
+          </lint>
+          """
             .trimIndent(),
           file.readText(),
         )
@@ -1232,12 +1072,12 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     @Language("XML")
     val contents: CharSequence =
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="IconDuplicates" severity="ignore"/>
-                <issue id="NewApi" severity="fatal" />
-            </lint>
-        """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue id="IconDuplicates" severity="ignore"/>
+          <issue id="NewApi" severity="fatal" />
+      </lint>
+      """
         .trimIndent()
     val file = File("/tmp/nonexistent")
     val client = TestLintClient()
@@ -1256,23 +1096,19 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     @Language("XML")
     val contents =
       """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-                <issue id="IconDuplicates" severity="ignore"/>
-                <issue id="NewApi" severity="fatal" />
-            </lint>
-        """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue id="IconDuplicates" severity="ignore"/>
+          <issue id="NewApi" severity="fatal" />
+      </lint>
+      """
         .trimIndent()
 
     val configFile = File("/tmp/nonexistent")
     fun isConfigFile(file: File): Boolean = file.path.equals(configFile.path, ignoreCase = true)
     val client =
       object : TestLintClient() {
-        override fun fileExists(
-          file: File,
-          requireFile: Boolean,
-          requireDirectory: Boolean,
-        ): Boolean {
+        override fun fileExists(file: File, requireFile: Boolean, requireDirectory: Boolean): Boolean {
           if (isConfigFile(file)) {
             return true
           }
@@ -1293,9 +1129,8 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
   }
 
   /**
-   * Test support for reading and writing configurations; this builds on top of a normal lint run in
-   * order to make it easy to set up configurations etc without having to manually configure a lot
-   * of state, as used to be the case.
+   * Test support for reading and writing configurations; this builds on top of a normal lint run in order to make it easy to set up
+   * configurations etc without having to manually configure a lot of state, as used to be the case.
    */
   private fun checkConfiguration(
     projectName: String? = null,
@@ -1364,11 +1199,11 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     private val LAYOUT_XML =
       """
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical" />
-            """
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:orientation="vertical" />
+      """
         .trimIndent()
   }
 }

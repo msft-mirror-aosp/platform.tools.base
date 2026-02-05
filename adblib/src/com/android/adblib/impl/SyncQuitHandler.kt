@@ -18,16 +18,18 @@ package com.android.adblib.impl
 /**
  * Implementation of the `QUIT` protocol of the `SYNC` command
  *
- * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
+ * See
+ * [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
 internal class SyncQuitHandler(private val connection: SyncConnection) {
 
-    private val syncRequestId: String = "QUIT"
+  private val syncRequestId: String = "QUIT"
 
-    suspend fun quit() {
-        // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/client/file_sync_client.cpp;l=256
-        // Send "QUIT" then read channel until EOF
-        connection.startSyncRequest(syncRequestId, "")
-        connection.readForOrderlyShutdown()
-    }
+  suspend fun quit() {
+    // See
+    // https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/client/file_sync_client.cpp;l=256
+    // Send "QUIT" then read channel until EOF
+    connection.startSyncRequest(syncRequestId, "")
+    connection.readForOrderlyShutdown()
+  }
 }

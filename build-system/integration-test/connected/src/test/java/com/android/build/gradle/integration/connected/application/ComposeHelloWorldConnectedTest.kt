@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
@@ -26,30 +25,25 @@ import org.junit.Test
 
 class ComposeHelloWorldConnectedTest {
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val emulator = getEmulator()
-    }
+  companion object {
+    @ClassRule @JvmField val emulator = getEmulator()
+  }
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-            .fromTestProject("composeHelloWorld")
-            .withComposeCompilerGradlePlugin(true)
-            .create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestProject("composeHelloWorld").withComposeCompilerGradlePlugin(true).create()
 
-    @Before
-    fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().run("uninstallAll")
-    }
+  @Before
+  fun setUp() {
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.executor().run("uninstallAll")
+  }
 
-    @Test
-    fun connectedCheck() {
-        project.executor().run("connectedAndroidTest")
-    }
+  @Test
+  fun connectedCheck() {
+    project.executor().run("connectedAndroidTest")
+  }
 }

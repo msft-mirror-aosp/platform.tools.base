@@ -23,11 +23,10 @@ import com.android.SdkConstants.DOT_XML
 import com.android.tools.lint.LintResourceRepository
 
 /**
- * Test mode which looks for checks that are accessing module repositories, moves resources into a
- * separate library and makes sure that the associated detector doesn't attempt to access module
- * resources. Usually, the test output is the same, but not always so the output check here only
- * looks to see if lint errors are raised (such as the one flagged by [LintResourceRepository] when
- * you look up a module library resource during the analysis phase).
+ * Test mode which looks for checks that are accessing module repositories, moves resources into a separate library and makes sure that the
+ * associated detector doesn't attempt to access module resources. Usually, the test output is the same, but not always so the output check
+ * here only looks to see if lint errors are raised (such as the one flagged by [LintResourceRepository] when you look up a module library
+ * resource during the analysis phase).
  */
 internal class ModuleResourcesTestMode :
   SourceTransformationTestMode(
@@ -41,11 +40,7 @@ internal class ModuleResourcesTestMode :
   override fun applies(context: TestModeContext): Boolean {
     // This mode looks specifically for lint checks that are using resource repositories
     // *and* has either multiple resource files or code and resources
-    if (
-      context.task.requestedResourceRepository &&
-        context.task.incrementalFileName == null &&
-        context.projects.size == 1
-    ) {
+    if (context.task.requestedResourceRepository && context.task.incrementalFileName == null && context.projects.size == 1) {
       var hasCode = false
       var resourceCount = 0
       var hasManifest = false
@@ -88,21 +83,14 @@ internal class ModuleResourcesTestMode :
     // place every resource in its own module, but we again don't know the
     // access order between them.)
 
-    val values =
-      ProjectDescription(*project.files.filter { it.isValueXmlResource() }.toTypedArray())
-        .name("values")
+    val values = ProjectDescription(*project.files.filter { it.isValueXmlResource() }.toTypedArray()).name("values")
 
     val files =
-      ProjectDescription(
-          *project.files.filter { it.isXmlResource() && !it.isValueXmlResource() }.toTypedArray()
-        )
+      ProjectDescription(*project.files.filter { it.isXmlResource() && !it.isValueXmlResource() }.toTypedArray())
         .name("resources")
         .dependsOn(values)
 
-    val code =
-      ProjectDescription(*project.files.filter { !it.isXmlResource() }.toTypedArray())
-        .name(project.name)
-        .dependsOn(files)
+    val code = ProjectDescription(*project.files.filter { !it.isXmlResource() }.toTypedArray()).name(project.name).dependsOn(files)
 
     return listOf(files, values, code)
   }
@@ -126,10 +114,8 @@ internal class ModuleResourcesTestMode :
       .trimIndent()
 }
 
-private fun TestFile.isXmlResource(): Boolean =
-  targetRelativePath.endsWith(DOT_XML) && !isManifest()
+private fun TestFile.isXmlResource(): Boolean = targetRelativePath.endsWith(DOT_XML) && !isManifest()
 
-private fun TestFile.isValueXmlResource(): Boolean =
-  isXmlResource() && targetRelativePath.contains("res/values")
+private fun TestFile.isValueXmlResource(): Boolean = isXmlResource() && targetRelativePath.contains("res/values")
 
 private fun TestFile.isManifest(): Boolean = targetRelativePath.endsWith(ANDROID_MANIFEST_XML)

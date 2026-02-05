@@ -37,24 +37,25 @@ import org.mockito.kotlin.mock
 /**
  * Basic DSL entry point for simulating a [VariantInputModel]
  *
- * This may later be replaced by the real DSL extension if they can be run without a full
- * project/plugin
+ * This may later be replaced by the real DSL extension if they can be run without a full project/plugin
  */
 interface VariantInputModelDsl {
-    fun defaultConfig(action: DefaultConfig.() -> Unit)
-    fun buildTypes(action: Container<BuildType>.() -> Unit)
-    fun productFlavors(action: Container<ProductFlavor>.() -> Unit)
+  fun defaultConfig(action: DefaultConfig.() -> Unit)
+
+  fun buildTypes(action: Container<BuildType>.() -> Unit)
+
+  fun productFlavors(action: Container<ProductFlavor>.() -> Unit)
 }
 
 /**
  * Fake DSL Container to simulate [VariantInputModel]
  *
- * This may later be replaced by the real DSL extension if they can be run without a full
- * project/plugin
+ * This may later be replaced by the real DSL extension if they can be run without a full project/plugin
  */
-interface Container<T: Named> {
-    fun create(name: String): T
-    fun create(name: String, action: T.() -> Unit): T
+interface Container<T : Named> {
+  fun create(name: String): T
+
+  fun create(name: String, action: T.() -> Unit): T
 }
 
 /**
@@ -62,141 +63,133 @@ interface Container<T: Named> {
  *
  * After running the DSL, use [toModel]
  */
-class VariantInputModelBuilder(
-    private val componentType: ComponentType,
-    private val dslServices: DslServices = createDslServices()
-): VariantInputModelDsl {
-    val defaultConfig: DefaultConfig = dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
-    val buildTypes: ContainerImpl<BuildType> = ContainerImpl { name ->
-        dslServices.newDecoratedInstance(BuildType::class.java, name, dslServices, componentType)
-    }
-    val productFlavors: ContainerImpl<ProductFlavor> = ContainerImpl { name ->
-        dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
-    }
+class VariantInputModelBuilder(private val componentType: ComponentType, private val dslServices: DslServices = createDslServices()) :
+  VariantInputModelDsl {
+  val defaultConfig: DefaultConfig = dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
+  val buildTypes: ContainerImpl<BuildType> = ContainerImpl { name ->
+    dslServices.newDecoratedInstance(BuildType::class.java, name, dslServices, componentType)
+  }
+  val productFlavors: ContainerImpl<ProductFlavor> = ContainerImpl { name ->
+    dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
+  }
 
-    override fun defaultConfig(action: DefaultConfig.() -> Unit) {
-        action(defaultConfig)
-    }
+  override fun defaultConfig(action: DefaultConfig.() -> Unit) {
+    action(defaultConfig)
+  }
 
-    override fun buildTypes(action: Container<BuildType>.() -> Unit) {
-        action(buildTypes)
-    }
+  override fun buildTypes(action: Container<BuildType>.() -> Unit) {
+    action(buildTypes)
+  }
 
-    override fun productFlavors(action: Container<ProductFlavor>.() -> Unit) {
-        action(productFlavors)
-    }
+  override fun productFlavors(action: Container<ProductFlavor>.() -> Unit) {
+    action(productFlavors)
+  }
 
-    fun toModel() : TestVariantInputModel {
-        val buildTypes = buildTypes.values.map {
-            val mainSourceSet = mock<DefaultAndroidSourceSet>()
-            val testFixturesSourceSet = mock<LazyAndroidSourceSet>()
-            val androidTestSourceSet = mock<LazyAndroidSourceSet>()
-            val unitTestSourceSet = mock<LazyAndroidSourceSet>()
-            val screenshotTestSourceSet = mock<LazyAndroidSourceSet>()
+  fun toModel(): TestVariantInputModel {
+    val buildTypes =
+      buildTypes.values
+        .map {
+          val mainSourceSet = mock<DefaultAndroidSourceSet>()
+          val testFixturesSourceSet = mock<LazyAndroidSourceSet>()
+          val androidTestSourceSet = mock<LazyAndroidSourceSet>()
+          val unitTestSourceSet = mock<LazyAndroidSourceSet>()
+          val screenshotTestSourceSet = mock<LazyAndroidSourceSet>()
 
-            BuildTypeData(
-               it,
-                mainSourceSet,
-                testFixturesSourceSet,
-                androidTestSourceSet,
-                unitTestSourceSet,
-                screenshotTestSourceSet,
-                lazySourceSetCreation = false
-            )
-        }.associateBy { it.buildType.name }
-
-        val flavors = productFlavors.values.map {
-            val mainSourceSet = mock<DefaultAndroidSourceSet>()
-            val testFixturesSourceSet = mock<LazyAndroidSourceSet>()
-            val androidTestSourceSet = mock<LazyAndroidSourceSet>()
-            val unitTestSourceSet = mock<LazyAndroidSourceSet>()
-            val screenshotTestSourceSet = mock<LazyAndroidSourceSet>()
-
-            ProductFlavorData(
-                it,
-                mainSourceSet,
-                testFixturesSourceSet,
-                androidTestSourceSet,
-                unitTestSourceSet,
-                screenshotTestSourceSet,
-                lazySourceSetCreation = false
-            )
-        }.associateBy { it.productFlavor.name }
-
-        // the default Config
-        val defaultConfig = DefaultConfigData(
-            defaultConfig,
-            mock<DefaultAndroidSourceSet>(),
-            mock<LazyAndroidSourceSet>(),
-            mock<LazyAndroidSourceSet>(),
-            mock<LazyAndroidSourceSet>(),
-            mock<LazyAndroidSourceSet>(),
-            lazySourceSetCreation = false
-        )
-
-        // compute the implicit dimension list
-        val dimensionBuilder = ImmutableList.builder<String>()
-        val nameSet = mutableSetOf<String>()
-        for (flavor in productFlavors.values) {
-            val dim = flavor.dimension ?: continue
-            if (!nameSet.contains(dim)) {
-                nameSet.add(dim)
-                dimensionBuilder.add(dim)
-            }
+          BuildTypeData(
+            it,
+            mainSourceSet,
+            testFixturesSourceSet,
+            androidTestSourceSet,
+            unitTestSourceSet,
+            screenshotTestSourceSet,
+            lazySourceSetCreation = false,
+          )
         }
+        .associateBy { it.buildType.name }
 
-        return TestVariantInputModel(
-            defaultConfig,
-            buildTypes,
-            flavors,
-            mapOf(),
-            dimensionBuilder.build()
-        )
-    }
+    val flavors =
+      productFlavors.values
+        .map {
+          val mainSourceSet = mock<DefaultAndroidSourceSet>()
+          val testFixturesSourceSet = mock<LazyAndroidSourceSet>()
+          val androidTestSourceSet = mock<LazyAndroidSourceSet>()
+          val unitTestSourceSet = mock<LazyAndroidSourceSet>()
+          val screenshotTestSourceSet = mock<LazyAndroidSourceSet>()
 
-    fun createDefaults() {
-        buildTypes {
-            create("debug") {
-                isDebuggable = true
-            }
-            create("release")
+          ProductFlavorData(
+            it,
+            mainSourceSet,
+            testFixturesSourceSet,
+            androidTestSourceSet,
+            unitTestSourceSet,
+            screenshotTestSourceSet,
+            lazySourceSetCreation = false,
+          )
         }
+        .associateBy { it.productFlavor.name }
+
+    // the default Config
+    val defaultConfig =
+      DefaultConfigData(
+        defaultConfig,
+        mock<DefaultAndroidSourceSet>(),
+        mock<LazyAndroidSourceSet>(),
+        mock<LazyAndroidSourceSet>(),
+        mock<LazyAndroidSourceSet>(),
+        mock<LazyAndroidSourceSet>(),
+        lazySourceSetCreation = false,
+      )
+
+    // compute the implicit dimension list
+    val dimensionBuilder = ImmutableList.builder<String>()
+    val nameSet = mutableSetOf<String>()
+    for (flavor in productFlavors.values) {
+      val dim = flavor.dimension ?: continue
+      if (!nameSet.contains(dim)) {
+        nameSet.add(dim)
+        dimensionBuilder.add(dim)
+      }
     }
+
+    return TestVariantInputModel(defaultConfig, buildTypes, flavors, mapOf(), dimensionBuilder.build())
+  }
+
+  fun createDefaults() {
+    buildTypes {
+      create("debug") { isDebuggable = true }
+      create("release")
+    }
+  }
 }
 
-class ContainerImpl<T: Named>(
-    private val factory: (String) -> T
-): Container<T> {
+class ContainerImpl<T : Named>(private val factory: (String) -> T) : Container<T> {
 
-    val values: MutableList<T> = mutableListOf()
+  val values: MutableList<T> = mutableListOf()
 
-    override fun create(name: String) : T = maybeCreate(name)
-    override fun create(name: String, action: T.() -> Unit) = maybeCreate(name).also { action(it) }
+  override fun create(name: String): T = maybeCreate(name)
 
-    private fun maybeCreate(name: String): T {
-        val result = values.find { it.name == name }
-        if (result != null) {
-            return result
-        }
+  override fun create(name: String, action: T.() -> Unit) = maybeCreate(name).also { action(it) }
 
-        return factory(name).also { values.add(it) }
+  private fun maybeCreate(name: String): T {
+    val result = values.find { it.name == name }
+    if (result != null) {
+      return result
     }
+
+    return factory(name).also { values.add(it) }
+  }
 }
 
-/**
- * Implementation of [VariantInputModel] adding an implicit flavor dimension list.
- */
+/** Implementation of [VariantInputModel] adding an implicit flavor dimension list. */
 class TestVariantInputModel(
-    override val defaultConfigData: DefaultConfigData<DefaultConfig>,
-    override val buildTypes: Map<String, BuildTypeData<BuildType>>,
-    override val productFlavors: Map<String, ProductFlavorData<ProductFlavor>>,
-    override val signingConfigs: Map<String, SigningConfig>,
-    /**
-     * Implicit dimension list, gathered from looking at all the flavors in the order
-     * they were added.
-     * This allows not having to declare them during tests to simplify the fake DSL.
-     */
-    val implicitFlavorDimensions: List<String>,
-    override val sourceSetManager: SourceSetManager = mock()
-): VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
-
+  override val defaultConfigData: DefaultConfigData<DefaultConfig>,
+  override val buildTypes: Map<String, BuildTypeData<BuildType>>,
+  override val productFlavors: Map<String, ProductFlavorData<ProductFlavor>>,
+  override val signingConfigs: Map<String, SigningConfig>,
+  /**
+   * Implicit dimension list, gathered from looking at all the flavors in the order they were added. This allows not having to declare them
+   * during tests to simplify the fake DSL.
+   */
+  val implicitFlavorDimensions: List<String>,
+  override val sourceSetManager: SourceSetManager = mock(),
+) : VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>

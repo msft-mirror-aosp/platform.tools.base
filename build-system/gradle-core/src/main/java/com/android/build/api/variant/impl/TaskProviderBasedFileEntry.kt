@@ -21,13 +21,11 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class TaskProviderBasedFileEntry(
-        override val name: String,
-        private val element: Provider<RegularFile>,
-        override val isUserAdded: Boolean = true,
-        override val isGenerated: Boolean = false,
-        override val shouldBeAddedToIdeModel: Boolean = false
-): FileEntry {
-    override fun asFile(
-            projectDir: Provider<Directory>
-    ): Provider<RegularFile> = element
+  override val name: String,
+  private val element: Provider<RegularFile>,
+  override val isUserAdded: Boolean = true,
+  override val isGenerated: Boolean = false,
+  override val shouldBeAddedToIdeModel: Boolean = false,
+) : FileEntry {
+  override fun asFile(projectDir: Provider<Directory>): Provider<RegularFile> = element
 }

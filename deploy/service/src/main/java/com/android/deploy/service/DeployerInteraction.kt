@@ -20,40 +20,38 @@ import java.util.LinkedList
 import java.util.Queue
 
 /**
- * The deployer requires a UIService to be provided. This UIService acts as a way for the Deployer
- * to communicate with the user. An example is prompting the user to re-install the APK when the APK
- * versions do not match.
+ * The deployer requires a UIService to be provided. This UIService acts as a way for the Deployer to communicate with the user. An example
+ * is prompting the user to re-install the APK when the APK versions do not match.
  *
- * Before [com.android.tools.deployer.DeployerRunner.run] is called, [setPromptResponses] should be
- * set to clear previous run results and setup prompt responses. If no prompt responses are set the
- * default response will be false.
+ * Before [com.android.tools.deployer.DeployerRunner.run] is called, [setPromptResponses] should be set to clear previous run results and
+ * setup prompt responses. If no prompt responses are set the default response will be false.
  */
 class DeployerInteraction : UIService {
 
-    val prompts = mutableListOf<String>()
-    private val myResponses: Queue<Boolean> = LinkedList()
-    val messages = mutableListOf<String>()
+  val prompts = mutableListOf<String>()
+  private val myResponses: Queue<Boolean> = LinkedList()
+  val messages = mutableListOf<String>()
 
-    fun clear() {
-        myResponses.clear()
-        prompts.clear()
-        messages.clear()
-    }
+  fun clear() {
+    myResponses.clear()
+    prompts.clear()
+    messages.clear()
+  }
 
-    fun setPromptResponses(responses: MutableList<Boolean>) {
-        clear()
-        myResponses.addAll(responses)
-    }
+  fun setPromptResponses(responses: MutableList<Boolean>) {
+    clear()
+    myResponses.addAll(responses)
+  }
 
-    override fun prompt(result: String): Boolean {
-        prompts.add(result)
-        if (!myResponses.isEmpty()) {
-            return myResponses.poll()!!
-        }
-        return false
+  override fun prompt(result: String): Boolean {
+    prompts.add(result)
+    if (!myResponses.isEmpty()) {
+      return myResponses.poll()!!
     }
+    return false
+  }
 
-    override fun message(message: String) {
-        messages.add(message)
-    }
+  override fun message(message: String) {
+    messages.add(message)
+  }
 }

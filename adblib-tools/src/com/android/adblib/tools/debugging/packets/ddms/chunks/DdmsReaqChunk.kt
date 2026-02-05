@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.readNBytes
-import com.android.adblib.readRemaining
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readByte
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataWriting
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -31,37 +30,30 @@ import com.android.adblib.utils.ResizableBuffer
  * @see DdmsChunkType.REAQ
  */
 internal data class DdmsReaqChunk(
-    /**
-     * Whether "REAQ" is currently enabled.
-     */
-    val enabled: Boolean
+  /** Whether "REAQ" is currently enabled. */
+  val enabled: Boolean
 ) {
 
-    companion object {
+  companion object {
 
-        internal suspend fun parse(
-            chunk: DdmsChunkView,
-            workBuffer: ResizableBuffer = ResizableBuffer()
-        ): DdmsReaqChunk {
-            // Read payload into "buffer"
-            workBuffer.clear()
-            val buffer = chunk.withPayload { payload ->
-                payload.readNBytes(workBuffer, chunk.length)
-                workBuffer.afterChannelRead()
-            }
-
-            buffer.order(DDMS_CHUNK_BYTE_ORDER)
-            val enabled = readByte(buffer) != 0.toByte()
-
-            // All done, return chunk
-            return DdmsReaqChunk(enabled)
+    internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsReaqChunk {
+      // Read payload into "buffer"
+      workBuffer.clear()
+      val buffer =
+        chunk.withPayload { payload ->
+          payload.readNBytes(workBuffer, chunk.length)
+          workBuffer.afterChannelRead()
         }
 
-        internal fun writePayload(
-            buffer: ResizableBuffer,
-            enabled: Boolean
-        ) {
-            ChunkDataWriting.writeByte(buffer, if (enabled) 1 else 0)
-        }
+      buffer.order(DDMS_CHUNK_BYTE_ORDER)
+      val enabled = readByte(buffer) != 0.toByte()
+
+      // All done, return chunk
+      return DdmsReaqChunk(enabled)
     }
+
+    internal fun writePayload(buffer: ResizableBuffer, enabled: Boolean) {
+      ChunkDataWriting.writeByte(buffer, if (enabled) 1 else 0)
+    }
+  }
 }

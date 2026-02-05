@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2020 The Android Open Source Project
  *
@@ -19,272 +18,199 @@ package com.android.build.api.component.impl
 import com.android.build.api.variant.VariantBuilder
 import com.android.testutils.AbstractReturnGivenReturnExpectTest
 import com.android.testutils.on
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.regex.Pattern
+import kotlin.test.fail
 import org.gradle.api.Action
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.regex.Pattern
-import kotlin.test.fail
 
-/**
- * Tests for [FilteredComponentAction]
- */
-class FilteredComponentActionTest: AbstractReturnGivenReturnExpectTest<Pair<FilteredComponentActionTest.FilterInfo, FilteredComponentActionTest.VariantInfo>, Boolean>() {
+/** Tests for [FilteredComponentAction] */
+class FilteredComponentActionTest :
+  AbstractReturnGivenReturnExpectTest<Pair<FilteredComponentActionTest.FilterInfo, FilteredComponentActionTest.VariantInfo>, Boolean>() {
 
-    @Test
-    fun `matching name`() {
-        given {
-            filteredOperation {
-                name = "foo"
-            } on variant {
-                name = "foo"
-            }
-        }
+  @Test
+  fun `matching name`() {
+    given { filteredOperation { name = "foo" } on variant { name = "foo" } }
 
-        expect { true }
+    expect { true }
+  }
+
+  @Test
+  fun `non matching name`() {
+    given { filteredOperation { name = "foo" } on variant { name = "bar" } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `partial name`() {
+    given { filteredOperation { name = "foo" } on variant { name = "foobar" } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `matching pattern`() {
+    given { filteredOperation { namePattern = Pattern.compile("foo.*") } on variant { name = "foo" } }
+
+    expect { true }
+  }
+
+  @Test
+  fun `not matching pattern`() {
+    given { filteredOperation { namePattern = Pattern.compile("foo.*") } on variant { name = "bar" } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `matching build type`() {
+    given { filteredOperation { buildType = "debug" } on variant { buildType = "debug" } }
+
+    expect { true }
+  }
+
+  @Test
+  fun `not matching build type`() {
+    given { filteredOperation { buildType = "debug" } on variant { buildType = "release" } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `not matching build type when no-build-type variant`() {
+    given { filteredOperation { buildType = "debug" } on variant { buildType = null } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `matching single flavor`() {
+    given { filteredOperation { productFlavors = listOf("one" to "flavor1") } on variant { productFlavors = listOf("one" to "flavor1") } }
+
+    expect { true }
+  }
+
+  @Test
+  fun `not matching single flavor`() {
+    given { filteredOperation { productFlavors = listOf("one" to "flavor1") } on variant { productFlavors = listOf("one" to "flavor2") } }
+
+    expect { false }
+  }
+
+  @Test
+  fun `matching all flavors`() {
+    given {
+      filteredOperation { productFlavors = listOf("one" to "flavor1", "two" to "flavorA") } on
+        variant { productFlavors = listOf("one" to "flavor1", "two" to "flavorA") }
     }
 
-    @Test
-    fun `non matching name`() {
-        given {
-            filteredOperation {
-                name = "foo"
-            } on variant {
-                name = "bar"
-            }
-        }
+    expect { true }
+  }
 
-        expect { false }
+  @Test
+  fun `matching no flavors`() {
+    given {
+      filteredOperation { productFlavors = listOf("one" to "flavor1", "two" to "flavorA") } on
+        variant { productFlavors = listOf("one" to "flavor2", "two" to "flavorB") }
     }
 
-    @Test
-    fun `partial name`() {
-        given {
-            filteredOperation {
-                name = "foo"
-            } on variant {
-                name = "foobar"
-            }
-        }
+    expect { false }
+  }
 
-        expect { false }
+  @Test
+  fun `not matching all flavors`() {
+    given {
+      filteredOperation { productFlavors = listOf("one" to "flavor1", "two" to "flavorA") } on
+        variant { productFlavors = listOf("one" to "flavor1", "two" to "flavorB") }
     }
 
-    @Test
-    fun `matching pattern`() {
-        given {
-            filteredOperation {
-                namePattern = Pattern.compile("foo.*")
-            } on variant {
-                name = "foo"
-            }
+    expect { false }
+  }
+
+  // ---------------------------------------------------------------------------------------------
+
+  override fun defaultWhen(given: Pair<FilterInfo, VariantInfo>): Boolean? {
+    val atomicBoolean = AtomicBoolean(false)
+
+    val operation =
+      with(given.first) {
+        FilteredComponentAction(
+          buildType = buildType,
+          flavors = productFlavors ?: listOf(),
+          namePattern = namePattern,
+          name = name,
+          action = Action { atomicBoolean.set(true) },
+        )
+      }
+
+    val variant =
+      with(given.second) {
+        mock<VariantBuilder>().also { variant ->
+          name?.let { whenever(variant.name).thenReturn(it) }
+          buildType?.let { whenever(variant.buildType).thenReturn(it) }
+          whenever(variant.productFlavors).thenReturn(productFlavors)
+        }
+      }
+
+    operation.executeFor(variant)
+
+    // return whether the variant ran
+    return atomicBoolean.get()
+  }
+
+  override fun compareResult(expected: Boolean?, actual: Boolean?, given: Pair<FilterInfo, VariantInfo>) {
+    val actualB = actual ?: throw RuntimeException("actual should not be null")
+    val expectedB = expected ?: throw RuntimeException("expected should not be null")
+
+    if (actualB != expectedB) {
+      val header =
+        if (expectedB) {
+          "FilteredVariantOperation expected to run but did not."
+        } else {
+          "FilteredVariantOperation expected to not run but did."
         }
 
-        expect { true }
-    }
-
-    @Test
-    fun `not matching pattern`() {
-        given {
-            filteredOperation {
-                namePattern = Pattern.compile("foo.*")
-            } on variant {
-                name = "bar"
-            }
-        }
-
-        expect { false }
-    }
-
-    @Test
-    fun `matching build type`() {
-        given {
-            filteredOperation {
-                buildType = "debug"
-            } on variant {
-                buildType = "debug"
-            }
-        }
-
-        expect { true }
-    }
-
-    @Test
-    fun `not matching build type`() {
-        given {
-            filteredOperation {
-                buildType = "debug"
-            } on variant {
-                buildType = "release"
-            }
-        }
-
-        expect { false }
-    }
-
-    @Test
-    fun `not matching build type when no-build-type variant`() {
-        given {
-            filteredOperation {
-                buildType = "debug"
-            } on variant {
-                buildType = null
-            }
-        }
-
-        expect { false }
-    }
-
-    @Test
-    fun `matching single flavor`() {
-        given {
-            filteredOperation {
-                productFlavors = listOf("one" to "flavor1")
-            } on variant {
-                productFlavors = listOf("one" to "flavor1")
-            }
-        }
-
-        expect { true }
-    }
-
-    @Test
-    fun `not matching single flavor`() {
-        given {
-            filteredOperation {
-                productFlavors = listOf("one" to "flavor1")
-            } on variant {
-                productFlavors = listOf("one" to "flavor2")
-            }
-        }
-
-        expect { false }
-    }
-
-    @Test
-    fun `matching all flavors`() {
-        given {
-            filteredOperation {
-                productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-            } on variant {
-                productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-            }
-        }
-
-        expect { true }
-    }
-
-    @Test
-    fun `matching no flavors`() {
-        given {
-            filteredOperation {
-                productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-            } on variant {
-                productFlavors = listOf("one" to "flavor2", "two" to "flavorB")
-            }
-        }
-
-        expect { false }
-    }
-
-    @Test
-    fun `not matching all flavors`() {
-        given {
-            filteredOperation {
-                productFlavors = listOf("one" to "flavor1", "two" to "flavorA")
-            } on variant {
-                productFlavors = listOf("one" to "flavor1", "two" to "flavorB")
-            }
-        }
-
-        expect { false }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun defaultWhen(given: Pair<FilterInfo, VariantInfo>): Boolean? {
-        val atomicBoolean = AtomicBoolean(false)
-
-        val operation = with(given.first) {
-            FilteredComponentAction(
-                buildType = buildType,
-                flavors = productFlavors ?: listOf(),
-                namePattern = namePattern,
-                name = name,
-                action = Action {
-                    atomicBoolean.set(true)
-                })
-        }
-
-        val variant = with(given.second) {
-            mock<VariantBuilder>().also { variant ->
-                name?.let { whenever(variant.name).thenReturn(it) }
-                buildType?.let { whenever(variant.buildType).thenReturn(it) }
-                whenever(variant.productFlavors).thenReturn(productFlavors)
-            }
-        }
-
-        operation.executeFor(variant)
-
-        // return whether the variant ran
-        return atomicBoolean.get()
-    }
-
-    override fun compareResult(
-        expected: Boolean?,
-        actual: Boolean?,
-        given: Pair<FilterInfo, VariantInfo>
-    ) {
-        val actualB = actual ?: throw RuntimeException("actual should not be null")
-        val expectedB = expected ?: throw RuntimeException("expected should not be null")
-
-        if (actualB != expectedB) {
-            val header = if (expectedB) {
-                "FilteredVariantOperation expected to run but did not."
-            } else {
-                "FilteredVariantOperation expected to not run but did."
-            }
-
-            fail("""$header
+      fail(
+        """$header
                 |The following inputs were used:
                 |- ${given.first}
                 |- ${given.second}
-            """.trimMargin())
-        }
+            """
+          .trimMargin()
+      )
     }
+  }
 
-    class FilterInfo(
-        var name: String? = null,
-        var namePattern: Pattern? = null,
-        var buildType: String? = null,
-        var productFlavors: List<Pair<String, String>>? = null
-
-
-    ) {
-        override fun toString(): String {
-            return "OperationFilter(name=$name, namePattern=$namePattern, buildType=$buildType, productFlavors=$productFlavors)"
-        }
+  class FilterInfo(
+    var name: String? = null,
+    var namePattern: Pattern? = null,
+    var buildType: String? = null,
+    var productFlavors: List<Pair<String, String>>? = null,
+  ) {
+    override fun toString(): String {
+      return "OperationFilter(name=$name, namePattern=$namePattern, buildType=$buildType, productFlavors=$productFlavors)"
     }
+  }
 
-    private fun filteredOperation(action: FilterInfo.() -> Unit) = FilterInfo().also { action(it) }
+  private fun filteredOperation(action: FilterInfo.() -> Unit) = FilterInfo().also { action(it) }
 
-    /**
-     * Variant Info.
-     *
-     * Important to have some default that match the most common use case.
-     */
-    class VariantInfo(
-        var name: String = "some-name",
-        var buildType: String? = "some-build-type",
-        var productFlavors: List<Pair<String, String>> = listOf()
-    ) {
-        override fun toString(): String {
-            return "VariantInfo(name=$name, buildType=$buildType, productFlavors=$productFlavors)"
-        }
+  /**
+   * Variant Info.
+   *
+   * Important to have some default that match the most common use case.
+   */
+  class VariantInfo(
+    var name: String = "some-name",
+    var buildType: String? = "some-build-type",
+    var productFlavors: List<Pair<String, String>> = listOf(),
+  ) {
+    override fun toString(): String {
+      return "VariantInfo(name=$name, buildType=$buildType, productFlavors=$productFlavors)"
     }
+  }
 
-    private fun variant(action: VariantInfo.() -> Unit) = VariantInfo().also { action(it) }
-
+  private fun variant(action: VariantInfo.() -> Unit) = VariantInfo().also { action(it) }
 }
-

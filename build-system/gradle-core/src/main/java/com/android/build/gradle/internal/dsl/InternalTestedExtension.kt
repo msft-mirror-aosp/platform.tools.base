@@ -21,6 +21,6 @@ import com.android.build.api.dsl.TestedExtension
 import org.gradle.api.Action
 
 /** See [InternalCommonExtension] */
-interface InternalTestedExtension: TestedExtension, InternalCommonExtension {
-    fun testFixtures(action: Action<TestFixtures>)
+interface InternalTestedExtension : TestedExtension, InternalCommonExtension {
+  fun testFixtures(action: Action<TestFixtures>)
 }

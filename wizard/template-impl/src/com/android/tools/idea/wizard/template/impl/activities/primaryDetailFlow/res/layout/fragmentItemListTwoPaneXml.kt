@@ -26,8 +26,9 @@ fun fragmentItemListTwoPaneXml(
   itemListContentLayout: String,
   childNavGraphFileId: String,
   packageName: String,
-  useAndroidX: Boolean
-) = """
+  useAndroidX: Boolean,
+) =
+  """
   <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}
     android:id="@+id/${itemListLayout}_container"
     android:layout_width="match_parent"

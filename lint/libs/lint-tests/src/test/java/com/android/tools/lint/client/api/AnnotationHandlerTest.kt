@@ -55,10 +55,7 @@ class AnnotationHandlerTest {
   private fun lint(includesDefinition: Boolean = false) =
     TestLintTask.lint()
       .sdkHome(getSdk().toFile())
-      .issues(
-        if (includesDefinition) MyAnnotationDetectorDefinitionToo.TEST_ISSUE
-        else MyAnnotationDetector.TEST_ISSUE
-      )
+      .issues(if (includesDefinition) MyAnnotationDetectorDefinitionToo.TEST_ISSUE else MyAnnotationDetector.TEST_ISSUE)
 
   private val javaAnnotation: TestFile =
     java(
@@ -2237,8 +2234,7 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
         </project>
       """
         .trimIndent()
-    val task =
-      lint().issues(MyAnnotationDetector.TEST_ISSUE).projects(shared, common).allowMissingSdk()
+    val task = lint().issues(MyAnnotationDetector.TEST_ISSUE).projects(shared, common).allowMissingSdk()
     val projects = task.createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
@@ -2271,16 +2267,11 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
         val annotation = annotationInfo.annotation
         // Regression test for https://issuetracker.google.com/191286558: Make sure we can report
         // incidents on annotations from package info files without throwing an exception
-        context.report(
-          testIssue,
-          context.getLocation(annotation),
-          "Incident reported on package annotation",
-        )
+        context.report(testIssue, context.getLocation(annotation), "Incident reported on package annotation")
       }
 
       val name = annotationInfo.qualifiedName.substringAfterLast('.')
-      val message =
-        "`${usageInfo.type.name}` usage associated with `@$name` on ${annotationInfo.origin}"
+      val message = "`${usageInfo.type.name}` usage associated with `@$name` on ${annotationInfo.origin}"
       val locationType = if (element is UMethod) LocationType.NAME else LocationType.ALL
       val location = context.getLocation(element, locationType)
       context.report(testIssue, element, location, message)
@@ -2332,8 +2323,7 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
           category = TEST_CATEGORY,
           priority = 10,
           severity = Severity.ERROR,
-          implementation =
-            Implementation(MyAnnotationDetectorDefinitionToo::class.java, Scope.JAVA_FILE_SCOPE),
+          implementation = Implementation(MyAnnotationDetectorDefinitionToo::class.java, Scope.JAVA_FILE_SCOPE),
         )
     }
   }

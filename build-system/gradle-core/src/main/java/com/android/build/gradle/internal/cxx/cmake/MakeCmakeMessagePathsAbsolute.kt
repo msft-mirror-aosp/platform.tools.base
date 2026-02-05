@@ -23,43 +23,41 @@ import java.io.StringReader
 private val pattern = "^(.*CMake (Error|Warning).* at\\s+)([^:]+)(:.*)$".toRegex()
 
 /**
- * CMake output contains paths relative to the CMakeLists.txt folder. However, this is
- * not the folder that Android Studio users need to see. They need an absolute path or
- * a path relative to the project root.
+ * CMake output contains paths relative to the CMakeLists.txt folder. However, this is not the folder that Android Studio users need to see.
+ * They need an absolute path or a path relative to the project root.
  *
  * This function remaps path names so that they are absolute.
  *
  * An example error message from CMake:
  *
- *   CMake Error at CMakeLists.txt:123:456. We had a reactor leak here now. Give us a
- *     few minutes to lock it down. Large leak, very dangerous.
+ * CMake Error at CMakeLists.txt:123:456. We had a reactor leak here now. Give us a few minutes to lock it down. Large leak, very dangerous.
  *
  * This should be corrected to:
  *
- *   CMake Error at /path/to/CMakeLists.txt:123:456. We had a reactor leak...
+ * CMake Error at /path/to/CMakeLists.txt:123:456. We had a reactor leak...
  *
  * TODO(jomof) this string could be very large. This function should accept and return a sequence of lines
  */
 fun makeCmakeMessagePathsAbsolute(cmakeOutput: String, makeFileDirectory: File): String {
-    return StringReader(cmakeOutput).readLines().joinToString(System.lineSeparator()) { line ->
-        val match = pattern.matchEntire(line)
-        if (match == null) {
-            line
+  return StringReader(cmakeOutput).readLines().joinToString(System.lineSeparator()) { line ->
+    val match = pattern.matchEntire(line)
+    if (match == null) {
+      line
+    } else {
+      val type = match.groupValues[1]
+      val makeFileName = match.groupValues[3]
+      val message = match.groupValues[4]
+      if (File(makeFileName).isAbsolute) {
+        // No need to update absolute paths.
+        line
+      } else {
+        val resolved = join(makeFileDirectory, makeFileName)
+        if (!resolved.isFile) {
+          line
         } else {
-            val type = match.groupValues[1]
-            val makeFileName = match.groupValues[3]
-            val message = match.groupValues[4]
-            if (File(makeFileName).isAbsolute) {
-                // No need to update absolute paths.
-                line
-            } else {
-                val resolved = join(makeFileDirectory, makeFileName)
-                if (!resolved.isFile) {
-                    line
-                } else {
-                    "$type${resolved.absolutePath}$message"
-                }
-            }
+          "$type${resolved.absolutePath}$message"
         }
+      }
     }
+  }
 }

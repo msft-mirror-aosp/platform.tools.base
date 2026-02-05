@@ -28,116 +28,108 @@ import com.android.tools.agent.shared.FoldObserver
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import java.util.concurrent.atomic.AtomicBoolean
 
-fun createFoldSupport(
-    connection: Connection,
-    continuous: () -> Boolean,
-    @VisibleForTesting foldObserverForTesting: FoldObserver? = null
-) = try {
+fun createFoldSupport(connection: Connection, continuous: () -> Boolean, @VisibleForTesting foldObserverForTesting: FoldObserver? = null) =
+  try {
     FoldSupport(connection, continuous, foldObserverForTesting)
-} catch (e: Exception) {
+  } catch (e: Exception) {
     null
-}
+  }
 
-/**
- * Support for listening to foldable device state changes and sending relevant events to studio.
- */
+/** Support for listening to foldable device state changes and sending relevant events to studio. */
 class FoldSupport(
-    private val connection: Connection,
-    private val continuous: () -> Boolean,
-    @VisibleForTesting foldObserverForTesting: FoldObserver? = null
+  private val connection: Connection,
+  private val continuous: () -> Boolean,
+  @VisibleForTesting foldObserverForTesting: FoldObserver? = null,
 ) {
 
-    private val observer: FoldObserver
+  private val observer: FoldObserver
 
-    // During setup fold events can be triggered by both the angle sensor and the androidx.window
-    // library. We want to send exactly one event during setup, so track whether that's happened.
-    private var sentInitialFoldEvent = false
+  // During setup fold events can be triggered by both the angle sensor and the androidx.window
+  // library. We want to send exactly one event during setup, so track whether that's happened.
+  private var sentInitialFoldEvent = false
 
-    // If we've sent fold information and then the fold state later becomes null, we need to
-    // send an event to studio saying we've gone into non-folding mode (e.g. the device is
-    // closed).
-    private var isFoldActive = false
+  // If we've sent fold information and then the fold state later becomes null, we need to
+  // send an event to studio saying we've gone into non-folding mode (e.g. the device is
+  // closed).
+  private var isFoldActive = false
 
-    private var currentHingeAngle: Int? = null
-    private var sensorsInitialized = AtomicBoolean(false)
+  private var currentHingeAngle: Int? = null
+  private var sensorsInitialized = AtomicBoolean(false)
 
-    init {
-        observer = foldObserverForTesting ?: try {
-            // Since FoldObserverImpl has to be built without jarjar so as to interact with the
-            // app's androidx.coroutines objects, it can't be a declared dependency of this,
-            // and so has to be invoked through reflection.
-            val foldObserverClass =
-                Class.forName("com.android.tools.agent.nojarjar.FoldObserverImpl")
-            foldObserverClass?.getConstructor(Any::class.java)
-                ?.newInstance(::sendFoldStateEvent) as FoldObserver
+  init {
+    observer =
+      foldObserverForTesting
+        ?: try {
+          // Since FoldObserverImpl has to be built without jarjar so as to interact with the
+          // app's androidx.coroutines objects, it can't be a declared dependency of this,
+          // and so has to be invoked through reflection.
+          val foldObserverClass = Class.forName("com.android.tools.agent.nojarjar.FoldObserverImpl")
+          foldObserverClass?.getConstructor(Any::class.java)?.newInstance(::sendFoldStateEvent) as FoldObserver
         } catch (e: Exception) {
-            // couldn't instantiate, probably because library isn't found.
-            throw InstantiationException()
+          // couldn't instantiate, probably because library isn't found.
+          throw InstantiationException()
         }
+  }
+
+  /**
+   * Initialize FoldSupport, including setting up the hinge angle listener. Must be called at least once, after which calls will be ignored.
+   */
+  fun initialize(context: Context) {
+    if (!sensorsInitialized.compareAndSet(false, true)) {
+      return
     }
 
-    /**
-     * Initialize FoldSupport, including setting up the hinge angle listener.
-     * Must be called at least once, after which calls will be ignored.
-     */
-    fun initialize(context: Context) {
-        if (!sensorsInitialized.compareAndSet(false, true)) {
-            return
-        }
+    val sensorManager = context.getSystemService(SensorManager::class.java)
+    sensorManager?.getDefaultSensor(Sensor.TYPE_HINGE_ANGLE)?.let { hingeAngleSensor ->
+      sensorManager.registerListener(
+        object : SensorEventListener {
+          override fun onSensorChanged(event: SensorEvent) {
+            currentHingeAngle = event.values[0].toInt()
+            sendFoldStateEvent()
+          }
 
-        val sensorManager = context.getSystemService(SensorManager::class.java)
-        sensorManager?.getDefaultSensor(Sensor.TYPE_HINGE_ANGLE)?.let { hingeAngleSensor ->
-            sensorManager.registerListener(object : SensorEventListener {
-                override fun onSensorChanged(event: SensorEvent) {
-                    currentHingeAngle = event.values[0].toInt()
-                    sendFoldStateEvent()
-                }
-
-                override fun onAccuracyChanged(p0: Sensor?, p1: Int) = Unit
-            }, hingeAngleSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        }
+          override fun onAccuracyChanged(p0: Sensor?, p1: Int) = Unit
+        },
+        hingeAngleSensor,
+        SensorManager.SENSOR_DELAY_NORMAL,
+      )
     }
+  }
 
-    fun start(root: View) {
-        observer.startObservingFoldState(root)
-    }
+  fun start(root: View) {
+    observer.startObservingFoldState(root)
+  }
 
-    fun stop(root: View) {
-        observer.stopObservingFoldState(root)
-    }
+  fun stop(root: View) {
+    observer.stopObservingFoldState(root)
+  }
 
-    fun shutdown() {
-        observer.shutdown()
-    }
+  fun shutdown() {
+    observer.shutdown()
+  }
 
-    /**
-     * Send a fold state event to studio if we need to.
-     */
-    fun sendFoldStateEvent() {
-        if ((!continuous() && sentInitialFoldEvent) ||
-            (!isFoldActive && observer.foldState == null)) {
-            return
-        }
-        sentInitialFoldEvent = true
-        isFoldActive = observer.foldState != null
-        sendFoldStateEventNow()
+  /** Send a fold state event to studio if we need to. */
+  fun sendFoldStateEvent() {
+    if ((!continuous() && sentInitialFoldEvent) || (!isFoldActive && observer.foldState == null)) {
+      return
     }
+    sentInitialFoldEvent = true
+    isFoldActive = observer.foldState != null
+    sendFoldStateEventNow()
+  }
 
-    /**
-     * Send a fold state event to studio if we have any fold state information at all.
-     */
-    fun sendFoldStateEventNow() {
-        val foldState = observer.foldState
-        if (currentHingeAngle == null && foldState == null) {
-            return
-        }
-        connection.sendEvent {
-            foldEventBuilder.apply {
-                angle = currentHingeAngle ?: LayoutInspectorViewProtocol.FoldEvent.SpecialAngles.NO_FOLD_ANGLE_VALUE
-                foldState?.let { this.foldState = it }
-                this.orientation = observer.orientation ?: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.NONE
-            }
-        }
+  /** Send a fold state event to studio if we have any fold state information at all. */
+  fun sendFoldStateEventNow() {
+    val foldState = observer.foldState
+    if (currentHingeAngle == null && foldState == null) {
+      return
     }
+    connection.sendEvent {
+      foldEventBuilder.apply {
+        angle = currentHingeAngle ?: LayoutInspectorViewProtocol.FoldEvent.SpecialAngles.NO_FOLD_ANGLE_VALUE
+        foldState?.let { this.foldState = it }
+        this.orientation = observer.orientation ?: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.NONE
+      }
+    }
+  }
 }
-

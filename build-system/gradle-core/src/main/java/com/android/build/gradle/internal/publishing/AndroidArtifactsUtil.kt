@@ -25,37 +25,38 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
 import org.gradle.api.specs.Spec
 
-fun AndroidArtifacts.ArtifactType.getAttributes(
-    named: (Class<out Named>, String) -> Named
-) = AndroidAttributes(
-    namedAttributes = category?.let { category ->
+fun AndroidArtifacts.ArtifactType.getAttributes(named: (Class<out Named>, String) -> Named) =
+  AndroidAttributes(
+    namedAttributes =
+      category?.let { category ->
         mapOf(
-            Category.CATEGORY_ATTRIBUTE to named(Category::class.java, category.categoryName),
-            category.secondaryAttribute to named(category.secondaryAttribute.type, type)
+          Category.CATEGORY_ATTRIBUTE to named(Category::class.java, category.categoryName),
+          category.secondaryAttribute to named(category.secondaryAttribute.type, type),
         )
-    } ?: emptyMap()
-)
+      } ?: emptyMap()
+  )
 
 fun AndroidArtifacts.ArtifactType.getAttributes(
-    namedAttributes: Map<Attribute<out Named>, Named>?,
-    named: (Class<out Named>, String) -> Named
-) = AndroidAttributes(
-    namedAttributes = (namedAttributes ?: emptyMap()) + (category?.let { category ->
-        mapOf(
+  namedAttributes: Map<Attribute<out Named>, Named>?,
+  named: (Class<out Named>, String) -> Named,
+) =
+  AndroidAttributes(
+    namedAttributes =
+      (namedAttributes ?: emptyMap()) +
+        (category?.let { category ->
+          mapOf(
             Category.CATEGORY_ATTRIBUTE to named(Category::class.java, category.categoryName),
-            category.secondaryAttribute to named(category.secondaryAttribute.type, type)
-        )
-    } ?: emptyMap())
-)
+            category.secondaryAttribute to named(category.secondaryAttribute.type, type),
+          )
+        } ?: emptyMap())
+  )
 
 fun AndroidArtifacts.ArtifactScope.getComponentFilter(): Spec<ComponentIdentifier> {
-    return when (this) {
-        AndroidArtifacts.ArtifactScope.ALL -> Spec { true }
-        AndroidArtifacts.ArtifactScope.EXTERNAL -> Spec { it !is ProjectComponentIdentifier }
-        AndroidArtifacts.ArtifactScope.PROJECT -> Spec { it is ProjectComponentIdentifier }
-        AndroidArtifacts.ArtifactScope.REPOSITORY_MODULE -> Spec { it is ModuleComponentIdentifier }
-        AndroidArtifacts.ArtifactScope.FILE -> Spec {
-            !(it is ProjectComponentIdentifier || it is ModuleComponentIdentifier)
-        }
-    }
+  return when (this) {
+    AndroidArtifacts.ArtifactScope.ALL -> Spec { true }
+    AndroidArtifacts.ArtifactScope.EXTERNAL -> Spec { it !is ProjectComponentIdentifier }
+    AndroidArtifacts.ArtifactScope.PROJECT -> Spec { it is ProjectComponentIdentifier }
+    AndroidArtifacts.ArtifactScope.REPOSITORY_MODULE -> Spec { it is ModuleComponentIdentifier }
+    AndroidArtifacts.ArtifactScope.FILE -> Spec { !(it is ProjectComponentIdentifier || it is ModuleComponentIdentifier) }
+  }
 }

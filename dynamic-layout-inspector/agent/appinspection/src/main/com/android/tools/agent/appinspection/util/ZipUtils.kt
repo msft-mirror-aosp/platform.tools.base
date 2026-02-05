@@ -22,39 +22,38 @@ import java.util.zip.Deflater
 import java.util.zip.Inflater
 
 fun ByteArray.compress(): ByteArray {
-    val deflater = Deflater(Deflater.BEST_SPEED)
-    deflater.setInput(this)
-    deflater.finish()
+  val deflater = Deflater(Deflater.BEST_SPEED)
+  deflater.setInput(this)
+  deflater.finish()
 
-    val baos = ByteArrayOutputStream()
-    val buffer = ByteArray(4096)
-    while (!deflater.finished()) {
-        val count = deflater.deflate(buffer)
-        if (count <= 0) break
+  val baos = ByteArrayOutputStream()
+  val buffer = ByteArray(4096)
+  while (!deflater.finished()) {
+    val count = deflater.deflate(buffer)
+    if (count <= 0) break
 
-        baos.write(buffer, 0, count)
-    }
-    deflater.end()
-    baos.flush()
-    return baos.toByteArray()
+    baos.write(buffer, 0, count)
+  }
+  deflater.end()
+  baos.flush()
+  return baos.toByteArray()
 }
 
 // decompress is the opposite of compress, and while it's not actually used by the inspector
 // itself, it will be used by tests to verify that compression worked.
 @VisibleForTesting
 fun ByteArray.decompress(): ByteArray {
-    val inflater = Inflater()
-    inflater.setInput(this)
+  val inflater = Inflater()
+  inflater.setInput(this)
 
-    val baos = ByteArrayOutputStream()
-    val buffer = ByteArray(4096)
-    while (!inflater.finished()) {
-        val count = inflater.inflate(buffer)
-        if (count <= 0) break
+  val baos = ByteArrayOutputStream()
+  val buffer = ByteArray(4096)
+  while (!inflater.finished()) {
+    val count = inflater.inflate(buffer)
+    if (count <= 0) break
 
-        baos.write(buffer, 0, count)
-    }
-    baos.flush()
-    return baos.toByteArray()
+    baos.write(buffer, 0, count)
+  }
+  baos.flush()
+  return baos.toByteArray()
 }
-

@@ -18,46 +18,41 @@ package com.android.build.gradle.internal.lint
 
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.testutils.truth.PathSubject.assertThat
-
-import org.junit.Test
-
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class LintToolTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun initializeLintCacheDir() {
-        val cacheDir = temporaryFolder.newFolder("lint-cache").toPath()
+  @Test
+  fun initializeLintCacheDir() {
+    val cacheDir = temporaryFolder.newFolder("lint-cache").toPath()
 
-        val exampleCacheFile = cacheDir.resolve("exampleCacheFile.txt").also { Files.write(it, "content1".toByteArray()) }
+    val exampleCacheFile = cacheDir.resolve("exampleCacheFile.txt").also { Files.write(it, "content1".toByteArray()) }
 
-        val lintTool = FakeObjectFactory.factory.newInstance(LintTool::class.java)
+    val lintTool = FakeObjectFactory.factory.newInstance(LintTool::class.java)
 
-        lintTool.versionKey.set("version 1")
-        lintTool.lintCacheDirectory.fileValue(cacheDir.toFile())
+    lintTool.versionKey.set("version 1")
+    lintTool.lintCacheDirectory.fileValue(cacheDir.toFile())
 
-        assertThat(exampleCacheFile).hasContents("content1")
-        // Check that initialization with no version present clears the directory
-        lintTool.initializeLintCacheDir()
-        assertThat(exampleCacheFile).doesNotExist()
+    assertThat(exampleCacheFile).hasContents("content1")
+    // Check that initialization with no version present clears the directory
+    lintTool.initializeLintCacheDir()
+    assertThat(exampleCacheFile).doesNotExist()
 
-        Files.write(exampleCacheFile, "content2".toByteArray())
+    Files.write(exampleCacheFile, "content2".toByteArray())
 
-        // Check that initializing with the same version doesn't clear the directory
-        assertThat(exampleCacheFile).hasContents("content2")
-        lintTool.initializeLintCacheDir()
-        assertThat(exampleCacheFile).hasContents("content2")
+    // Check that initializing with the same version doesn't clear the directory
+    assertThat(exampleCacheFile).hasContents("content2")
+    lintTool.initializeLintCacheDir()
+    assertThat(exampleCacheFile).hasContents("content2")
 
-
-        // Check that initializing with a different version clears the directory
-        lintTool.versionKey.set("version 2")
-        lintTool.initializeLintCacheDir()
-        assertThat(exampleCacheFile).doesNotExist()
-
-    }
+    // Check that initializing with a different version clears the directory
+    lintTool.versionKey.set("version 2")
+    lintTool.initializeLintCacheDir()
+    assertThat(exampleCacheFile).doesNotExist()
+  }
 }

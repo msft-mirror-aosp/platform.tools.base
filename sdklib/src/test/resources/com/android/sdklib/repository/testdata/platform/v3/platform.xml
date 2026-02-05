@@ -1,0 +1,19 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <localPackage path="platforms;android-24" obsolete="false">
+        <type-details xsi:type="sdk:platformDetailsType">
+            <api-level>24x</api-level>
+            <extension-level>3</extension-level>
+            <base-extension>false</base-extension>
+            <layoutlib api="7"/>
+        </type-details>
+        <revision>
+            <major>4</major>
+            <minor>5</minor>
+            <micro>6</micro>
+            <preview>7</preview>
+        </revision>
+        <display-name>Sample platform v3</display-name>
+    </localPackage>
+</common:repository>

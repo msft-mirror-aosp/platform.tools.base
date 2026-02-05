@@ -16,33 +16,27 @@
 package com.android.testutils.annotation
 
 import com.android.sdklib.AndroidVersion
+import java.lang.reflect.Method
 import org.junit.rules.MethodRule
 import org.junit.runners.model.FrameworkMethod
 import org.junit.runners.model.Statement
-import java.lang.reflect.Method
 
 /**
  * Annotation for specifying the Min API level for a test.
  *
  * The minApi can be read via [AnnotationRule.minApi].
  */
-@Retention(AnnotationRetention.RUNTIME)
-annotation class MinApi(val level: Int)
+@Retention(AnnotationRetention.RUNTIME) annotation class MinApi(val level: Int)
 
-/**
- * Rule for reading the API level for the [MinApi] annotation.
- */
-class AnnotationRule(
-    private val defaultMinApi: Int = AndroidVersion.MIN_RECOMMENDED_API
-) : MethodRule {
-    private var lastMethod: Method? = null
+/** Rule for reading the API level for the [MinApi] annotation. */
+class AnnotationRule(private val defaultMinApi: Int = AndroidVersion.MIN_RECOMMENDED_API) : MethodRule {
+  private var lastMethod: Method? = null
 
-    val minApi: Int
-        get() = lastMethod?.annotations?.filterIsInstance<MinApi>()?.singleOrNull()?.level
-            ?: defaultMinApi
+  val minApi: Int
+    get() = lastMethod?.annotations?.filterIsInstance<MinApi>()?.singleOrNull()?.level ?: defaultMinApi
 
-    override fun apply(base: Statement, method: FrameworkMethod, target: Any): Statement {
-        lastMethod = method.method
-        return base
-    }
+  override fun apply(base: Statement, method: FrameworkMethod, target: Any): Statement {
+    lastMethod = method.method
+    return base
+  }
 }

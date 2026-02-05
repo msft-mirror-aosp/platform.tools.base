@@ -15,7 +15,6 @@
  */
 package com.android.tools.perflib.heap
 
-import com.google.common.annotations.VisibleForTesting
 import com.android.tools.perflib.analyzer.Capture
 import com.android.tools.perflib.captures.DataBuffer
 import com.android.tools.perflib.heap.analysis.LinkEvalDominators
@@ -23,6 +22,7 @@ import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor
 import com.android.tools.perflib.heap.ext.NativeRegistryPostProcessor
 import com.android.tools.perflib.heap.ext.SnapshotPostProcessor
 import com.android.tools.proguard.ProguardMap
+import com.google.common.annotations.VisibleForTesting
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet
@@ -36,268 +36,278 @@ import kotlin.streams.asStream
  * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap is being referenced.
  */
 class Snapshot @VisibleForTesting constructor(val buffer: DataBuffer) : Capture() {
-    @JvmField val heapList = ArrayList<Heap>()
-    private var currentHeap: Heap? = null
+  @JvmField val heapList = ArrayList<Heap>()
+  private var currentHeap: Heap? = null
 
-    //  Root objects such as interned strings, jni locals, etc
-    private var roots = ArrayList<RootObj>()
+  //  Root objects such as interned strings, jni locals, etc
+  private var roots = ArrayList<RootObj>()
 
-    //  List stack traces, which are lists of stack frames
-    private var traces = Int2ObjectOpenHashMap<StackTrace>()
+  //  List stack traces, which are lists of stack frames
+  private var traces = Int2ObjectOpenHashMap<StackTrace>()
 
-    //  List of individual stack frames
-    private var frames = Long2ObjectOpenHashMap<StackFrame>()
-    private var areRetainedSizesComputed = false
+  //  List of individual stack frames
+  private var frames = Long2ObjectOpenHashMap<StackFrame>()
+  private var areRetainedSizesComputed = false
 
-    //  The set of all classes that are (sub)class(es) of java.lang.ref.Reference.
-    private val referenceClasses = ObjectOpenHashSet<ClassObj>()
-    private var typeSizes: IntArray? = null
-    var idSizeMask = 0x00000000ffffffffL
-        private set
+  //  The set of all classes that are (sub)class(es) of java.lang.ref.Reference.
+  private val referenceClasses = ObjectOpenHashSet<ClassObj>()
+  private var typeSizes: IntArray? = null
+  var idSizeMask = 0x00000000ffffffffL
+    private set
 
-    val heaps: Collection<Heap> get() = heapList
-    val gcRoots: Collection<RootObj> get() = roots
+  val heaps: Collection<Heap>
+    get() = heapList
 
-    init {
-        setToDefaultHeap()
-    }
+  val gcRoots: Collection<RootObj>
+    get() = roots
 
-    fun dispose() = buffer.dispose()
+  init {
+    setToDefaultHeap()
+  }
 
-    fun setToDefaultHeap(): Heap = setHeapTo(DEFAULT_HEAP_ID, "default")
+  fun dispose() = buffer.dispose()
 
-    fun setHeapTo(id: Int, name: String): Heap {
-        val heap = getHeap(id)
-            ?: Heap(id, name).also {
-                it.mSnapshot = this
-                heapList.add(it)
-            }
-        currentHeap = heap
-        return heap
-    }
+  fun setToDefaultHeap(): Heap = setHeapTo(DEFAULT_HEAP_ID, "default")
 
-    fun getHeapIndex(heap: Heap): Int = heapList.indexOf(heap)
-    fun getHeap(id: Int): Heap? = heapList.find { it.id == id }
-    fun getHeap(name: String): Heap? = heapList.find { it.name == name }
-
-    fun addStackFrame(theFrame: StackFrame) = frames.put(theFrame.mId, theFrame)
-    fun getStackFrame(id: Long): StackFrame? = frames[id]
-    fun addStackTrace(theTrace: StackTrace) = traces.put(theTrace.mSerialNumber, theTrace)
-    fun getStackTrace(traceSerialNumber: Int): StackTrace? = traces[traceSerialNumber]
-
-    fun getStackTraceAtDepth(traceSerialNumber: Int, depth: Int): StackTrace? =
-        traces[traceSerialNumber]?.fromDepth(depth)
-
-    fun addRoot(root: RootObj) {
-        roots.add(root)
-        root.heap = currentHeap
-    }
-
-    fun addThread(thread: ThreadObj?, serialNumber: Int) =
-        currentHeap!!.addThread(thread, serialNumber)
-
-    fun getThread(serialNumber: Int): ThreadObj =
-        currentHeap!!.getThread(serialNumber)
-
-    fun setIdSize(size: Int) {
-        val maxId = Type.values().maxOf { it.typeId }
-        // Update this if hprof format ever changes its supported types.
-        assert(maxId in 1 .. Type.LONG.typeId)
-        typeSizes = IntArray(maxId + 1) { -1 }
-        for (i in Type.values().indices) {
-            typeSizes!![Type.values()[i].typeId] = Type.values()[i].size
+  fun setHeapTo(id: Int, name: String): Heap {
+    val heap =
+      getHeap(id)
+        ?: Heap(id, name).also {
+          it.mSnapshot = this
+          heapList.add(it)
         }
-        typeSizes!![Type.OBJECT.typeId] = size
-        idSizeMask = -0x1L ushr (8 - size) * 8
+    currentHeap = heap
+    return heap
+  }
+
+  fun getHeapIndex(heap: Heap): Int = heapList.indexOf(heap)
+
+  fun getHeap(id: Int): Heap? = heapList.find { it.id == id }
+
+  fun getHeap(name: String): Heap? = heapList.find { it.name == name }
+
+  fun addStackFrame(theFrame: StackFrame) = frames.put(theFrame.mId, theFrame)
+
+  fun getStackFrame(id: Long): StackFrame? = frames[id]
+
+  fun addStackTrace(theTrace: StackTrace) = traces.put(theTrace.mSerialNumber, theTrace)
+
+  fun getStackTrace(traceSerialNumber: Int): StackTrace? = traces[traceSerialNumber]
+
+  fun getStackTraceAtDepth(traceSerialNumber: Int, depth: Int): StackTrace? = traces[traceSerialNumber]?.fromDepth(depth)
+
+  fun addRoot(root: RootObj) {
+    roots.add(root)
+    root.heap = currentHeap
+  }
+
+  fun addThread(thread: ThreadObj?, serialNumber: Int) = currentHeap!!.addThread(thread, serialNumber)
+
+  fun getThread(serialNumber: Int): ThreadObj = currentHeap!!.getThread(serialNumber)
+
+  fun setIdSize(size: Int) {
+    val maxId = Type.values().maxOf { it.typeId }
+    // Update this if hprof format ever changes its supported types.
+    assert(maxId in 1..Type.LONG.typeId)
+    typeSizes = IntArray(maxId + 1) { -1 }
+    for (i in Type.values().indices) {
+      typeSizes!![Type.values()[i].typeId] = Type.values()[i].size
     }
+    typeSizes!![Type.OBJECT.typeId] = size
+    idSizeMask = -0x1L ushr (8 - size) * 8
+  }
 
-    fun getTypeSize(type: Type): Int = typeSizes!![type.typeId]
+  fun getTypeSize(type: Type): Int = typeSizes!![type.typeId]
 
-    fun addInstance(id: Long, instance: Instance) {
-        currentHeap!!.addInstance(id, instance)
-        instance.heap = currentHeap
-    }
+  fun addInstance(id: Long, instance: Instance) {
+    currentHeap!!.addInstance(id, instance)
+    instance.heap = currentHeap
+  }
 
-    fun addClass(id: Long, theClass: ClassObj) {
-        currentHeap!!.addClass(id, theClass)
-        theClass.heap = currentHeap
-    }
+  fun addClass(id: Long, theClass: ClassObj) {
+    currentHeap!!.addClass(id, theClass)
+    theClass.heap = currentHeap
+  }
 
-    fun findInstance(id: Long): Instance? =
-        heapList.firstNotNullOfOrNull { it.getInstance(id) } ?:
-        //  Couldn't find an instance of a class, look for a class object
-        findClass(id)
+  fun findInstance(id: Long): Instance? =
+    heapList.firstNotNullOfOrNull { it.getInstance(id) }
+      ?:
+      //  Couldn't find an instance of a class, look for a class object
+      findClass(id)
 
-    fun findClass(id: Long): ClassObj? = heapList.firstNotNullOfOrNull { it.getClass(id) }
+  fun findClass(id: Long): ClassObj? = heapList.firstNotNullOfOrNull { it.getClass(id) }
 
-    /**
-     * Finds the first ClassObj with a class name that matches `name`.
-     *
-     * @param name of the class to find
-     * @return the found `ClassObj`, or null if not found
-     */
-    fun findClass(name: String?): ClassObj? =
-        heapList.firstNotNullOfOrNull { it.getClass(name) }
+  /**
+   * Finds the first ClassObj with a class name that matches `name`.
+   *
+   * @param name of the class to find
+   * @return the found `ClassObj`, or null if not found
+   */
+  fun findClass(name: String?): ClassObj? = heapList.firstNotNullOfOrNull { it.getClass(name) }
 
-    /**
-     * Finds all `ClassObj`s with class name that match the given `name`.
-     *
-     * @param name of the class to find
-     * @return a collection of the found `ClassObj`s, or empty collection if not found
-     */
-    fun findClasses(name: String?): Collection<ClassObj> = heapList.flatMap { it.getClasses(name) }
+  /**
+   * Finds all `ClassObj`s with class name that match the given `name`.
+   *
+   * @param name of the class to find
+   * @return a collection of the found `ClassObj`s, or empty collection if not found
+   */
+  fun findClasses(name: String?): Collection<ClassObj> = heapList.flatMap { it.getClasses(name) }
 
-    fun resolveClasses() {
-        val clazz = findClass(JAVA_LANG_CLASS)
-        val javaLangClassSize = clazz?.instanceSize ?: 0
-        for (heap in heapList) {
-            for (classObj in heap.classes) {
-                val superClass = classObj.superClassObj
-                superClass?.addSubclass(classObj)
-                // We under-approximate the size of the class by including the size of Class.class
-                // and the size of static fields, and omitting padding, vtable and imtable sizes.
-                var classSize = javaLangClassSize
-                for (f in classObj.staticFields) {
-                    classSize += getTypeSize(f.type)
-                }
-                classObj.size = classSize
-            }
-            val heapId = heap.id
-            heap.forEachInstance { instance ->
-                val classObj = instance.classObj
-                classObj?.addInstance(heapId, instance)
-                true
-            }
+  fun resolveClasses() {
+    val clazz = findClass(JAVA_LANG_CLASS)
+    val javaLangClassSize = clazz?.instanceSize ?: 0
+    for (heap in heapList) {
+      for (classObj in heap.classes) {
+        val superClass = classObj.superClassObj
+        superClass?.addSubclass(classObj)
+        // We under-approximate the size of the class by including the size of Class.class
+        // and the size of static fields, and omitting padding, vtable and imtable sizes.
+        var classSize = javaLangClassSize
+        for (f in classObj.staticFields) {
+          classSize += getTypeSize(f.type)
         }
+        classObj.size = classSize
+      }
+      val heapId = heap.id
+      heap.forEachInstance { instance ->
+        val classObj = instance.classObj
+        classObj?.addInstance(heapId, instance)
+        true
+      }
     }
+  }
 
-    fun identifySoftReferences() {
-        for (classObj in findAllDescendantClasses(ClassObj.referenceClassName)) {
-            classObj.setIsSoftReference()
-            referenceClasses.add(classObj)
+  fun identifySoftReferences() {
+    for (classObj in findAllDescendantClasses(ClassObj.referenceClassName)) {
+      classObj.setIsSoftReference()
+      referenceClasses.add(classObj)
+    }
+  }
+
+  fun resolveReferences() {
+    for (heap in heaps) {
+      heap.classes.forEach(Instance::resolveReferences)
+      heap.forEachInstance { instance ->
+        instance.resolveReferences()
+        true
+      }
+    }
+  }
+
+  fun compactMemory() {
+    val cache = mutableMapOf<Set<Instance>, InstanceList>()
+    fun compactList(insts: InstanceList): InstanceList =
+      insts.onCases(InstanceList::of) {
+        when {
+          it.isEmpty() -> InstanceList.Empty
+          else ->
+            it.asSequence().filterNotNull().toHashSet().let { elems -> cache.getOrPut(elems) { InstanceList.of(elems.toTypedArray()) } }
         }
+      }
+    fun compact(inst: Instance) {
+      inst._hardFwdRefs = compactList(inst._hardFwdRefs)
+      inst._hardRevRefs = compactList(inst._hardRevRefs)
+      inst._softRevRefs = compactList(inst._softRevRefs)
     }
+    for (heap in heaps) {
+      heap.classes.forEach(::compact)
+      heap.forEachInstance { instance ->
+        compact(instance)
+        true
+      }
+    }
+  }
 
-    fun resolveReferences() {
-        for (heap in heaps) {
-            heap.classes.forEach(Instance::resolveReferences)
-            heap.forEachInstance { instance ->
-                instance.resolveReferences()
-                true
-            }
+  fun findAllDescendantClasses(className: String): List<ClassObj> = findClasses(className).flatMap { it.descendantClasses }
+
+  // Returns the dominator result if this is the first time it's computed, or `null` if already
+  fun computeRetainedSizes(): LinkEvalDominators.Result<Instance>? {
+    if (!areRetainedSizesComputed) {
+      areRetainedSizesComputed = true
+      prepareComputeRetainedSizes()
+      return doComputeRetainedSizes()
+    }
+    return null
+  }
+
+  private fun prepareComputeRetainedSizes() {
+    resolveReferences()
+    compactMemory()
+    ShortestDistanceVisitor().doVisit(gcRoots)
+
+    // Initialize retained sizes for all classes and objects, including unreachable ones.
+    for (heap in heaps) {
+      heap.classes.forEach(Instance::resetRetainedSize)
+      heap.forEachInstance {
+        it.resetRetainedSize()
+        true
+      }
+    }
+  }
+
+  private fun doComputeRetainedSizes(): LinkEvalDominators.Result<Instance> {
+    val result =
+      LinkEvalDominators.computeDominators(
+        gcRoots.mapNotNullTo(mutableSetOf(), RootObj::referredInstance),
+        { it.hardForwardReferences.asStream() },
+      )
+    val (instances, immDom) = result
+
+    // We only update the retained sizes of objects in the dominator tree (i.e. reachable).
+    // It's important to traverse in reverse topological order
+    for (i in instances.indices.reversed()) {
+      immDom[i]?.addRetainedSizes(instances[i]!!)
+    }
+    return result
+  }
+
+  private inline fun forEachReachableInstance(crossinline visit: (Instance) -> Unit) =
+    object : NonRecursiveVisitor() {
+        override fun defaultAction(instance: Instance) {
+          if (instance.isReachable) {
+            visit(instance)
+          }
         }
+      }
+      .doVisit(gcRoots)
+
+  fun getReachableInstances(): List<Instance> {
+    val result = ArrayList<Instance>()
+    forEachReachableInstance(result::add)
+    return result
+  }
+
+  override fun <T> getRepresentation(asClass: Class<T>): T? =
+    when {
+      asClass.isAssignableFrom(javaClass) -> asClass.cast(this)
+      else -> null
     }
 
-    fun compactMemory() {
-        val cache = mutableMapOf<Set<Instance>, InstanceList>()
-        fun compactList(insts: InstanceList): InstanceList =
-            insts.onCases(InstanceList::of) { when {
-                it.isEmpty() -> InstanceList.Empty
-                else -> it.asSequence().filterNotNull().toHashSet().let { elems ->
-                    cache.getOrPut(elems) { InstanceList.of(elems.toTypedArray()) }
-                }
-            }}
-        fun compact(inst: Instance) {
-            inst._hardFwdRefs = compactList(inst._hardFwdRefs)
-            inst._hardRevRefs = compactList(inst._hardRevRefs)
-            inst._softRevRefs = compactList(inst._softRevRefs)
+  override fun getTypeName(): String = TYPE_NAME
+
+  companion object {
+    const val TYPE_NAME = "hprof"
+    private const val JAVA_LANG_CLASS = "java.lang.Class"
+
+    //  Special root object used in dominator computation for objects reachable via multiple roots.
+    @JvmField val SENTINEL_ROOT: Instance = RootObj(RootType.UNKNOWN)
+    private const val DEFAULT_HEAP_ID = 0
+
+    @JvmOverloads
+    @JvmStatic
+    fun createSnapshot(
+      buffer: DataBuffer,
+      map: ProguardMap = ProguardMap(),
+      postProcessors: List<SnapshotPostProcessor> = listOf(NativeRegistryPostProcessor()),
+    ): Snapshot =
+      try {
+        Snapshot(buffer).also { snapshot ->
+          HprofParser.parseBuffer(snapshot, buffer, map)
+          postProcessors.forEach { it.postProcess(snapshot) }
         }
-        for (heap in heaps) {
-            heap.classes.forEach(::compact)
-            heap.forEachInstance { instance ->
-                compact(instance)
-                true
-            }
-        }
-    }
-
-    fun findAllDescendantClasses(className: String): List<ClassObj> =
-        findClasses(className).flatMap { it.descendantClasses }
-
-    // Returns the dominator result if this is the first time it's computed, or `null` if already
-    fun computeRetainedSizes() : LinkEvalDominators.Result<Instance>? {
-        if (!areRetainedSizesComputed) {
-            areRetainedSizesComputed = true
-            prepareComputeRetainedSizes()
-            return doComputeRetainedSizes()
-        }
-        return null
-    }
-
-    private fun prepareComputeRetainedSizes() {
-        resolveReferences()
-        compactMemory()
-        ShortestDistanceVisitor().doVisit(gcRoots)
-
-        // Initialize retained sizes for all classes and objects, including unreachable ones.
-        for (heap in heaps) {
-            heap.classes.forEach(Instance::resetRetainedSize)
-            heap.forEachInstance {
-                it.resetRetainedSize()
-                true
-            }
-        }
-    }
-
-    private fun doComputeRetainedSizes() : LinkEvalDominators.Result<Instance> {
-        val result = LinkEvalDominators.computeDominators(
-            gcRoots.mapNotNullTo(mutableSetOf(), RootObj::referredInstance),
-            { it.hardForwardReferences.asStream() },
-        )
-        val (instances, immDom) = result
-
-        // We only update the retained sizes of objects in the dominator tree (i.e. reachable).
-        // It's important to traverse in reverse topological order
-        for (i in instances.indices.reversed()) {
-            immDom[i]?.addRetainedSizes(instances[i]!!)
-        }
-        return result
-    }
-
-    private inline fun forEachReachableInstance(crossinline visit: (Instance) -> Unit) =
-        object : NonRecursiveVisitor() {
-            override fun defaultAction(instance: Instance) {
-                if (instance.isReachable) {
-                    visit(instance)
-                }
-            }
-        }.doVisit(gcRoots)
-
-    fun getReachableInstances(): List<Instance> {
-        val result = ArrayList<Instance>()
-        forEachReachableInstance(result::add)
-        return result
-    }
-
-    override fun <T> getRepresentation(asClass: Class<T>): T? = when {
-        asClass.isAssignableFrom(javaClass) -> asClass.cast(this)
-        else -> null
-    }
-
-    override fun getTypeName(): String = TYPE_NAME
-
-    companion object {
-        const val TYPE_NAME = "hprof"
-        private const val JAVA_LANG_CLASS = "java.lang.Class"
-
-        //  Special root object used in dominator computation for objects reachable via multiple roots.
-        @JvmField val SENTINEL_ROOT: Instance = RootObj(RootType.UNKNOWN)
-        private const val DEFAULT_HEAP_ID = 0
-
-        @JvmOverloads @JvmStatic
-        fun createSnapshot(
-            buffer: DataBuffer,
-            map: ProguardMap = ProguardMap(),
-            postProcessors: List<SnapshotPostProcessor> = listOf(NativeRegistryPostProcessor())
-        ): Snapshot =
-            try {
-                Snapshot(buffer).also { snapshot ->
-                    HprofParser.parseBuffer(snapshot, buffer, map)
-                    postProcessors.forEach { it.postProcess(snapshot) }
-                }
-            } catch (e: RuntimeException) {
-                buffer.dispose()
-                throw e
-            }
-    }
+      } catch (e: RuntimeException) {
+        buffer.dispose()
+        throw e
+      }
+  }
 }

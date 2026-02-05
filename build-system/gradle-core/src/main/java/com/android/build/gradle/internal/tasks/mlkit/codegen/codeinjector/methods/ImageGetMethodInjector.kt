@@ -25,24 +25,17 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-/** Injects a getter method to get image.  */
+/** Injects a getter method to get image. */
 class ImageGetMethodInjector : MethodInjector() {
-    override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
-        val returnType = getOutputParameterType(tensorInfo)
-        val methodSpec = MethodSpec.methodBuilder(
-            MlNames.formatGetterName(
-                tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)
-            )
-        )
-            .addModifiers(Modifier.PUBLIC)
-            .addAnnotation(ClassNames.NON_NULL)
-            .returns(returnType)
-            .addStatement(
-                "return \$L.process(\$L)",
-                getProcessorName(tensorInfo),
-                tensorInfo.identifierName
-            )
-            .build()
-        classBuilder.addMethod(methodSpec)
-    }
+  override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
+    val returnType = getOutputParameterType(tensorInfo)
+    val methodSpec =
+      MethodSpec.methodBuilder(MlNames.formatGetterName(tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)))
+        .addModifiers(Modifier.PUBLIC)
+        .addAnnotation(ClassNames.NON_NULL)
+        .returns(returnType)
+        .addStatement("return \$L.process(\$L)", getProcessorName(tensorInfo), tensorInfo.identifierName)
+        .build()
+    classBuilder.addMethod(methodSpec)
+  }
 }

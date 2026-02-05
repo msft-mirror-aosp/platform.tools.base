@@ -18,55 +18,44 @@ package com.android.adblib.impl
 
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 class AdbChannelProviderConnectAddressesTest {
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    private lateinit var serverSocket: ServerSocket
+  private lateinit var serverSocket: ServerSocket
 
-    @Before
-    fun setUp() {
-        // Find an available port
-        serverSocket = ServerSocket(0)
-    }
+  @Before
+  fun setUp() {
+    // Find an available port
+    serverSocket = ServerSocket(0)
+  }
 
-    @After
-    fun tearDown() {
-        serverSocket.close()
-    }
+  @After
+  fun tearDown() {
+    serverSocket.close()
+  }
 
-    @Test
-    fun testCreateChannel(): Unit = runBlocking {
-        // Setup
-        val host = TestingAdbSessionHost()
-        val socketAddresses = listOf(
-            InetSocketAddress("127.0.0.1", serverSocket.localPort),
-            InetSocketAddress("::1", serverSocket.localPort)
-        )
-        val channelProvider = AdbChannelProviderConnectAddresses(host) { socketAddresses }
+  @Test
+  fun testCreateChannel(): Unit = runBlocking {
+    // Setup
+    val host = TestingAdbSessionHost()
+    val socketAddresses = listOf(InetSocketAddress("127.0.0.1", serverSocket.localPort), InetSocketAddress("::1", serverSocket.localPort))
+    val channelProvider = AdbChannelProviderConnectAddresses(host) { socketAddresses }
 
-        // Act
-        val channel =
-            closeables.register(
-                channelProvider.createChannel(
-                    Long.MAX_VALUE,
-                    TimeUnit.MILLISECONDS
-                )
-            )
+    // Act
+    val channel = closeables.register(channelProvider.createChannel(Long.MAX_VALUE, TimeUnit.MILLISECONDS))
 
-        // Assert
-        assertNotNull(channel)
-    }
+    // Assert
+    assertNotNull(channel)
+  }
 }

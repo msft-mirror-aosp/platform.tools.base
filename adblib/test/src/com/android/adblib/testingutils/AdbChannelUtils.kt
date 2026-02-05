@@ -22,17 +22,11 @@ import com.android.adblib.impl.channels.DEFAULT_CHANNEL_BUFFER_SIZE
 import com.android.adblib.utils.AdbProtocolUtils
 import java.io.InputStream
 
-fun String.asAdbInputChannel(
-  session: AdbSession,
-  bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
-): AdbInputChannel {
-    //TODO: This is inefficient as `byteInputStream` creates an in-memory copy of the whole string
-    return byteInputStream(AdbProtocolUtils.ADB_CHARSET).asAdbInputChannel(session, bufferSize)
+fun String.asAdbInputChannel(session: AdbSession, bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): AdbInputChannel {
+  // TODO: This is inefficient as `byteInputStream` creates an in-memory copy of the whole string
+  return byteInputStream(AdbProtocolUtils.ADB_CHARSET).asAdbInputChannel(session, bufferSize)
 }
 
-fun InputStream.asAdbInputChannel(
-  session: AdbSession,
-  bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
-): AdbInputChannel {
-    return AdbInputStreamChannel(session.host, this, bufferSize)
+fun InputStream.asAdbInputChannel(session: AdbSession, bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): AdbInputChannel {
+  return AdbInputStreamChannel(session.host, this, bufferSize)
 }

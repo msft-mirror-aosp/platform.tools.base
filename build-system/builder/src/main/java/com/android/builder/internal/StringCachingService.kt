@@ -23,10 +23,8 @@ package com.android.builder.internal
  */
 interface StringCachingService {
 
-    /**
-     * Returns a cached version of the string.
-     */
-    fun cacheString(string: String): String
+  /** Returns a cached version of the string. */
+  fun cacheString(string: String): String
 }
 
 fun StringCachingService?.cacheString(string: String): String = this?.cacheString(string) ?: string

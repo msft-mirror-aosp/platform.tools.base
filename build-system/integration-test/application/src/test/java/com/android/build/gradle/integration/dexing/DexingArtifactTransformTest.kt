@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.dexing
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
@@ -28,265 +27,245 @@ import com.android.build.gradle.internal.dependency.DexingNoClasspathTransform
 import com.android.build.gradle.internal.dependency.DexingWithClasspathTransform
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
-import com.android.build.gradle.internal.tasks.DexingExternalLibArtifactTransform
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.apache.commons.io.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class DexingArtifactTransformTest {
 
-    @Rule
-    @JvmField
-    val project =
-        GradleTestProject.builder().fromTestApp(
-            MinimalSubProject.app("com.example.test")
-        ).addGradleProperties(
-            "${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true"
-        ).addGradleProperties(
-            "${BooleanOption.USE_ANDROID_X.propertyName}=false"
-        ).withAdditionalMavenRepo(
-                MavenRepoGenerator(
-                        listOf(
-                                MavenRepoGenerator.Library(
-                                        "com.example:library:1.0",
-                                        TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MyClass"))
-                                ),
-                                MavenRepoGenerator.Library(
-                                        "com.example:library:2.0",
-                                        TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MyClass"))
-                                )
-                        )
-                )
-        ).addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
-
-    @Before
-    fun before() {
-        // Enable buildConfig, so we can test for the presence of the BuildConfig class.
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    buildFeatures {
-                        buildConfig = true
-                    }
-                }
-            """.trimIndent()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MinimalSubProject.app("com.example.test"))
+      .addGradleProperties("${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true")
+      .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=false")
+      .withAdditionalMavenRepo(
+        MavenRepoGenerator(
+          listOf(
+            MavenRepoGenerator.Library("com.example:library:1.0", TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MyClass"))),
+            MavenRepoGenerator.Library("com.example:library:2.0", TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MyClass"))),
+          )
         )
+      )
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
+
+  @Before
+  fun before() {
+    // Enable buildConfig, so we can test for the presence of the BuildConfig class.
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+          buildFeatures {
+              buildConfig = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testMonoDex() {
+    project.buildFile.appendText("\nandroid.defaultConfig.multiDexEnabled = false")
+    val result = executor().run("assembleDebug")
+    assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
+    assertThat(result.tasks).doesNotContain(":mergeLibDexDebug")
+    assertThat(result.tasks).doesNotContain(":mergeProjectDexDebug")
+    if (!project.getIntermediateFile(InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName(), "debug", "BuildConfig.jar").exists()) {
+      assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Lcom/example/test/BuildConfig;")
     }
+  }
 
-    @Test
-    fun testMonoDex() {
-        project.buildFile.appendText("\nandroid.defaultConfig.multiDexEnabled = false")
-        val result = executor().run("assembleDebug")
-        assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
-        assertThat(result.tasks).doesNotContain(":mergeLibDexDebug")
-        assertThat(result.tasks).doesNotContain(":mergeProjectDexDebug")
-        if (!project.getIntermediateFile(
-                        InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName(),
-                        "debug", "BuildConfig.jar").exists()) {
-            assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG))
-                    .containsClass("Lcom/example/test/BuildConfig;")
-        }
+  @Test
+  fun testMultiDex() {
+    project.buildFile.appendText(
+      "\n" +
+        """
+        android.defaultConfig.multiDexEnabled = true
+        android.defaultConfig.minSdkVersion = 21
+        """
+          .trimIndent()
+    )
+    val result = executor().run("assembleDebug")
+    assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeProjectDexDebug", ":mergeLibDexDebug"))
+    assertThat(result.tasks).doesNotContain(":mergeDexDebug")
+    if (!project.getIntermediateFile(InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName(), "debug", "BuildConfig.jar").exists()) {
+      assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Lcom/example/test/BuildConfig;")
     }
+  }
 
-    @Test
-    fun testMultiDex() {
-        project.buildFile.appendText("\n" +
-            """
-            android.defaultConfig.multiDexEnabled = true
-            android.defaultConfig.minSdkVersion = 21
-        """.trimIndent()
-        )
-        val result = executor().run("assembleDebug")
-        assertThat(result.tasks).containsAllIn(
-            listOf(
-                ":mergeExtDexDebug",
-                ":mergeProjectDexDebug",
-                ":mergeLibDexDebug"
-            )
-        )
-        assertThat(result.tasks).doesNotContain(":mergeDexDebug")
-        if (!project.getIntermediateFile(
-                        InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName(),
-                        "debug",
-                        "BuildConfig.jar").exists()) {
-            assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG))
-                    .containsClass("Lcom/example/test/BuildConfig;")
-        }
-    }
+  @Test
+  fun testLegacyMultiDex() {
+    project.buildFile.appendText(
+      "\n" +
+        """
+        android.defaultConfig.multiDexEnabled = true
+        android.defaultConfig.minSdkVersion = 19
+        """
+          .trimIndent()
+    )
+    val result = executor().run("assembleDebug")
+    // Merge legacy multidex in a single task. This is so synthesized classes that originate
+    // from the main dex classes are packaged in the primary dex.
+    assertThat(result.tasks).contains(":mergeDexDebug")
+    assertThat(result.tasks).doesNotContain(":mergeExtDexDebug")
+    assertThat(result.tasks).doesNotContain(":mergeLibDexDebug")
+    assertThat(result.tasks).doesNotContain(":mergeProjectDexDebug")
+    assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Landroid/support/multidex/MultiDexApplication;")
+  }
 
-    @Test
-    fun testLegacyMultiDex() {
-        project.buildFile.appendText("\n" +
-            """
-            android.defaultConfig.multiDexEnabled = true
-            android.defaultConfig.minSdkVersion = 19
-        """.trimIndent()
-        )
-        val result = executor().run("assembleDebug")
-        // Merge legacy multidex in a single task. This is so synthesized classes that originate
-        // from the main dex classes are packaged in the primary dex.
-        assertThat(result.tasks).contains(":mergeDexDebug")
-        assertThat(result.tasks).doesNotContain(":mergeExtDexDebug")
-        assertThat(result.tasks).doesNotContain(":mergeLibDexDebug")
-        assertThat(result.tasks).doesNotContain(":mergeProjectDexDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG))
-                .containsClass("Landroid/support/multidex/MultiDexApplication;")
-    }
+  @Test
+  fun testAndroidTest() {
+    project.buildFile.appendText(
+      "\n" +
+        """
+        android.defaultConfig.multiDexEnabled = true
+        android.defaultConfig.minSdkVersion = 21
+        """
+          .trimIndent()
+    )
+    val result = executor().run("assembleAndroidTest")
+    assertThat(result.tasks)
+      .containsAllIn(listOf(":mergeExtDexDebugAndroidTest", ":mergeLibDexDebugAndroidTest", ":mergeProjectDexDebugAndroidTest"))
+  }
 
-    @Test
-    fun testAndroidTest() {
-        project.buildFile.appendText("\n" +
-            """
-            android.defaultConfig.multiDexEnabled = true
-            android.defaultConfig.minSdkVersion = 21
-        """.trimIndent()
-        )
-        val result = executor().run("assembleAndroidTest")
-        assertThat(result.tasks).containsAllIn(
-            listOf(
-                ":mergeExtDexDebugAndroidTest",
-                ":mergeLibDexDebugAndroidTest",
-                ":mergeProjectDexDebugAndroidTest"
-            )
-        )
-    }
-
-    @Test
-    fun testExternalDeps() {
-        project.buildFile.appendText("\n" +
-            """
+  @Test
+  fun testExternalDeps() {
+    project.buildFile.appendText(
+      "\n" +
+        """
             android.defaultConfig.minSdkVersion = 21
             dependencies {
                 implementation 'com.android.support:support-core-utils:$SUPPORT_LIB_VERSION'
             }
-        """.trimIndent()
-        )
-        executor().run("assembleDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(35)
+        """
+          .trimIndent()
+    )
+    executor().run("assembleDebug")
+    assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(35)
 
-        assertThat(
-            File(
-                InternalArtifactType.EXTERNAL_LIBS_DEX_ARCHIVE.getOutputDir(project.buildDir),
-                "debug/dexBuilderDebug/out"
-            ).listFiles()
-        ).named("dexing task output for external libs").isEmpty()
+    assertThat(File(InternalArtifactType.EXTERNAL_LIBS_DEX_ARCHIVE.getOutputDir(project.buildDir), "debug/dexBuilderDebug/out").listFiles())
+      .named("dexing task output for external libs")
+      .isEmpty()
 
-        project.buildFile.appendText("\nandroid.defaultConfig.minSdkVersion = 26")
-        executor().run("assembleDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(38)
-    }
+    project.buildFile.appendText("\nandroid.defaultConfig.minSdkVersion = 26")
+    executor().run("assembleDebug")
+    assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(38)
+  }
 
-    @Test
-    fun testAddingExternalDeps() {
-        project.buildFile.appendText("\n" +
-            """
+  @Test
+  fun testAddingExternalDeps() {
+    project.buildFile.appendText(
+      "\n" +
+        """
             android.defaultConfig.minSdkVersion = 21
             android.defaultConfig.multiDexEnabled = true
             dependencies {
                 implementation 'com.android.support:support-core-utils:$SUPPORT_LIB_VERSION'
             }
-        """.trimIndent()
-        )
-        executor().run("assembleDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(35)
+        """
+          .trimIndent()
+    )
+    executor().run("assembleDebug")
+    assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).hasDexVersion(35)
 
-        project.buildFile.appendText(
-            """
+    project.buildFile.appendText(
+      """
 
-            dependencies {
-                implementation 'com.google.guava:guava:19.0'
-            }
-        """.trimIndent()
-        )
-        val run = executor().run("assembleDebug")
-        assertThat(run.didWorkTasks).contains(":mergeExtDexDebug")
-        assertThat(run.upToDateTasks).containsAllOf(":mergeLibDexDebug", ":mergeProjectDexDebug")
-    }
+      dependencies {
+          implementation 'com.google.guava:guava:19.0'
+      }
+      """
+        .trimIndent()
+    )
+    val run = executor().run("assembleDebug")
+    assertThat(run.didWorkTasks).contains(":mergeExtDexDebug")
+    assertThat(run.upToDateTasks).containsAllOf(":mergeLibDexDebug", ":mergeProjectDexDebug")
+  }
 
-    @Test
-    fun testDesugaringDoesUseNewPipeline() {
-        project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 11")
-        val result = executor().run("assembleDebug")
-        assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
-    }
+  @Test
+  fun testDesugaringDoesUseNewPipeline() {
+    project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 11")
+    val result = executor().run("assembleDebug")
+    assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
+  }
 
-    /** Regression test for b/129910310. */
-    @Test
-    fun testGeneratedBytecodeIsProcessed() {
-        TestInputsGenerator.jarWithEmptyClasses(
-            project.projectDir.resolve("generated-classes.jar").toPath(), setOf("test/A")
-        )
+  /** Regression test for b/129910310. */
+  @Test
+  fun testGeneratedBytecodeIsProcessed() {
+    TestInputsGenerator.jarWithEmptyClasses(project.projectDir.resolve("generated-classes.jar").toPath(), setOf("test/A"))
 
-        project.buildFile.appendText("\n" +
-            """
-            android.applicationVariants.all { variant ->
-                def generated = project.files("generated-classes.jar")
-                variant.registerPostJavacGeneratedBytecode(generated)
-            }
-        """.trimIndent()
-        )
+    project.buildFile.appendText(
+      "\n" +
+        """
+        android.applicationVariants.all { variant ->
+            def generated = project.files("generated-classes.jar")
+            variant.registerPostJavacGeneratedBytecode(generated)
+        }
+        """
+          .trimIndent()
+    )
 
-        project.executor().run("assembleDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Ltest/A;")
-    }
+    project.executor().run("assembleDebug")
+    assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Ltest/A;")
+  }
 
-    @Test
-    fun testDesugaringWithMinSdk24() {
-        project.buildFile.appendText("\n" + """
+  @Test
+  fun testDesugaringWithMinSdk24() {
+    project.buildFile.appendText(
+      "\n" +
+        """
             android.defaultConfig.minSdkVersion 24
             android.compileOptions.targetCompatibility 11
             dependencies {
                 implementation 'com.android.support:support-core-utils:$SUPPORT_LIB_VERSION'
             }
-        """.trimIndent())
-        val result = executor().run("assembleDebug")
-        result.stdout.use { scanner ->
-            ScannerSubject.assertThat(scanner).doesNotContain(DexingWithClasspathTransform::class.java.simpleName)
-        }
-        result.stdout.use { scanner ->
-            ScannerSubject.assertThat(scanner).contains(DexingNoClasspathTransform::class.java.simpleName)
-        }
-    }
+        """
+          .trimIndent()
+    )
+    val result = executor().run("assembleDebug")
+    result.stdout.use { scanner -> ScannerSubject.assertThat(scanner).doesNotContain(DexingWithClasspathTransform::class.java.simpleName) }
+    result.stdout.use { scanner -> ScannerSubject.assertThat(scanner).contains(DexingNoClasspathTransform::class.java.simpleName) }
+  }
 
-    /** Regression test for b/205968564. */
-    @Test
-    fun testNameImpactsDexingTransformOutput() {
-        // Generate 2 identical libraries.
-        project.buildFile.appendText(
-                """
+  /** Regression test for b/205968564. */
+  @Test
+  fun testNameImpactsDexingTransformOutput() {
+    // Generate 2 identical libraries.
+    project.buildFile.appendText(
+      """
 
 dependencies {
     implementation 'com.example:library:1.0'
 }
         """
-        )
-        project.executor().run("mergeExtDexDebug")
-        val transformCacheDir = project.location.testLocation.gradleCacheDir
-        assertThat(transformCacheDir.walk()
-                .filter { it.invariantSeparatorsPath.endsWith("library-1.0/library-1.0_dex/classes.dex") }
-                .single()).exists()
+    )
+    project.executor().run("mergeExtDexDebug")
+    val transformCacheDir = project.location.testLocation.gradleCacheDir
+    assertThat(transformCacheDir.walk().filter { it.invariantSeparatorsPath.endsWith("library-1.0/library-1.0_dex/classes.dex") }.single())
+      .exists()
 
-        project.buildFile.appendText(
-                """
+    project.buildFile.appendText(
+      """
 dependencies {
     implementation 'com.example:library:2.0'
 }
         """
-        )
-        executor().run("mergeExtDexDebug")
-        assertThat(transformCacheDir.walk()
-                .filter { it.invariantSeparatorsPath.endsWith("library-2.0/library-2.0_dex/classes.dex") }
-                .single()).exists()
-    }
+    )
+    executor().run("mergeExtDexDebug")
+    assertThat(transformCacheDir.walk().filter { it.invariantSeparatorsPath.endsWith("library-2.0/library-2.0_dex/classes.dex") }.single())
+      .exists()
+  }
 
-    private fun executor() = project.executor()
+  private fun executor() = project.executor()
 }

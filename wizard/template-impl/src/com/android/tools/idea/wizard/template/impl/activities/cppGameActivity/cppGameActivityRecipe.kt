@@ -40,75 +40,55 @@ import com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.sr
 import java.io.File
 
 fun RecipeExecutor.generateCppGameActivity(
-    moduleData: ModuleTemplateData,
-    activityClass: String,
-    isLauncher: Boolean,
-    packageName: PackageName,
-    cppFlags: String
+  moduleData: ModuleTemplateData,
+  activityClass: String,
+  isLauncher: Boolean,
+  packageName: PackageName,
+  cppFlags: String,
 ) {
-    val (projectData, srcOut) = moduleData
-    val ktOrJavaExt = projectData.language.extension
+  val (projectData, srcOut) = moduleData
+  val ktOrJavaExt = projectData.language.extension
 
-    addDependency("com.google.android.material:material:1.10.+", minRev = "1.10.0")
+  addDependency("com.google.android.material:material:1.10.+", minRev = "1.10.0")
 
-    // things needed for game-activity
-    setBuildFeature("prefab", true)
-    addDependency("androidx.games:games-activity:4.0.0+", minRev = "4.0.0")
+  // things needed for game-activity
+  setBuildFeature("prefab", true)
+  addDependency("androidx.games:games-activity:4.0.0+", minRev = "4.0.0")
 
-    setCppOptions(
-        cppFlags = cppFlags,
-        cppPath = "src/main/cpp/CMakeLists.txt",
-        cppVersion = DEFAULT_CMAKE_VERSION
-    )
+  setCppOptions(cppFlags = cppFlags, cppPath = "src/main/cpp/CMakeLists.txt", cppVersion = DEFAULT_CMAKE_VERSION)
 
-    val libraryName = packageName.deriveNativeLibraryName()
+  val libraryName = packageName.deriveNativeLibraryName()
 
-    generateManifest(
-        moduleData , activityClass, packageName, isLauncher, false,
-        generateActivityTitle = false, libraryName = libraryName
-    )
+  generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false, libraryName = libraryName)
 
-    addAllKotlinDependencies(moduleData)
+  addAllKotlinDependencies(moduleData)
 
-    val simpleActivityPath = srcOut.resolve("$activityClass.$ktOrJavaExt")
+  val simpleActivityPath = srcOut.resolve("$activityClass.$ktOrJavaExt")
 
-    val simpleActivity = when (projectData.language) {
-        Language.Kotlin -> cppGameActivityKt(
-            packageName = packageName,
-            activityClass = activityClass,
-            libraryName = libraryName,
-        )
-        Language.Java -> cppGameActivityJava(
-            packageName = packageName,
-            activityClass = activityClass,
-            libraryName = libraryName,
-        )
+  val simpleActivity =
+    when (projectData.language) {
+      Language.Kotlin -> cppGameActivityKt(packageName = packageName, activityClass = activityClass, libraryName = libraryName)
+      Language.Java -> cppGameActivityJava(packageName = packageName, activityClass = activityClass, libraryName = libraryName)
     }
-    save(simpleActivity, simpleActivityPath)
+  save(simpleActivity, simpleActivityPath)
 
-    val nativeSrcOut = moduleData.rootDir.resolve("src/main/cpp")
-    val nativeLibCpp = "main.cpp"
-    save(nativeLibCpp(), nativeSrcOut.resolve(nativeLibCpp))
-    save(androidOutCpp(), nativeSrcOut.resolve("AndroidOut.cpp"))
-    save(androidOutH(), nativeSrcOut.resolve("AndroidOut.h"))
-    save(modelH(), nativeSrcOut.resolve("Model.h"))
-    save(rendererCpp(), nativeSrcOut.resolve("Renderer.cpp"))
-    save(rendererH(), nativeSrcOut.resolve("Renderer.h"))
-    save(shaderCpp(), nativeSrcOut.resolve("Shader.cpp"))
-    save(shaderH(), nativeSrcOut.resolve("Shader.h"))
-    save(textureAssetCpp(), nativeSrcOut.resolve("TextureAsset.cpp"))
-    save(textureAssetH(), nativeSrcOut.resolve("TextureAsset.h"))
-    save(utilityCpp(), nativeSrcOut.resolve("Utility.cpp"))
-    save(utilityH(), nativeSrcOut.resolve("Utility.h"))
-    save(
-        gameActivityCMakeListsTxt(nativeLibCpp, libraryName),
-        nativeSrcOut.resolve("CMakeLists.txt")
-    )
+  val nativeSrcOut = moduleData.rootDir.resolve("src/main/cpp")
+  val nativeLibCpp = "main.cpp"
+  save(nativeLibCpp(), nativeSrcOut.resolve(nativeLibCpp))
+  save(androidOutCpp(), nativeSrcOut.resolve("AndroidOut.cpp"))
+  save(androidOutH(), nativeSrcOut.resolve("AndroidOut.h"))
+  save(modelH(), nativeSrcOut.resolve("Model.h"))
+  save(rendererCpp(), nativeSrcOut.resolve("Renderer.cpp"))
+  save(rendererH(), nativeSrcOut.resolve("Renderer.h"))
+  save(shaderCpp(), nativeSrcOut.resolve("Shader.cpp"))
+  save(shaderH(), nativeSrcOut.resolve("Shader.h"))
+  save(textureAssetCpp(), nativeSrcOut.resolve("TextureAsset.cpp"))
+  save(textureAssetH(), nativeSrcOut.resolve("TextureAsset.h"))
+  save(utilityCpp(), nativeSrcOut.resolve("Utility.cpp"))
+  save(utilityH(), nativeSrcOut.resolve("Utility.h"))
+  save(gameActivityCMakeListsTxt(nativeLibCpp, libraryName), nativeSrcOut.resolve("CMakeLists.txt"))
 
-    copy(
-        File("cpp-game-activity").resolve("assets"),
-        moduleData.resDir.resolve("../assets")
-    )
+  copy(File("cpp-game-activity").resolve("assets"), moduleData.resDir.resolve("../assets"))
 
-    open(simpleActivityPath)
+  open(simpleActivityPath)
 }

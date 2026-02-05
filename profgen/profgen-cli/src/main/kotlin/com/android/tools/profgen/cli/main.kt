@@ -21,14 +21,14 @@ import kotlinx.cli.ExperimentalCli
 
 @OptIn(ExperimentalCli::class)
 fun main(args: Array<String>) {
-    val parser = ArgParser("profgen")
-    parser.subcommands(
-        BinCommand(),
-        ValidateCommand(),
-        ProfileDumpCommand(),
-        ExpandWildcardsCommand(),
-        ExtractProfileCommand(),
-        PrintCommand()
-    )
-    parser.parse(args)
+  val parser = ArgParser("profgen")
+  parser.subcommands(
+    BinCommand(),
+    ValidateCommand(),
+    ProfileDumpCommand(),
+    ExpandWildcardsCommand(),
+    ExtractProfileCommand(),
+    PrintCommand(),
+  )
+  parser.parse(args)
 }

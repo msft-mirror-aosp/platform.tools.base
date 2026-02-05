@@ -31,60 +31,48 @@ import org.junit.Test
 
 class KotlinMultiplatformGeneratedSourcesTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
-            android {
-                namespace = "com.mylibrary.foo"
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-
-            pluginCallbacks += Callback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
+        android {
+          namespace = "com.mylibrary.foo"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
         }
+
+        pluginCallbacks += Callback::class.java
+      }
     }
 
-    class Callback: KotlinMultiplatformCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: KotlinMultiplatformExtension
-        ) {
-            val generateJavaRes = project.tasks.register(
-                "generateJavaRes",
-                KMP_GenerateJavaRes::class.java
-            )
-            generateJavaRes.configure {
-                it.outputDir.set(project.layout.buildDirectory.dir("generated/javaRes"))
-            }
+  class Callback : KotlinMultiplatformCallback {
+    override fun handleExtension(project: Project, extension: KotlinMultiplatformExtension) {
+      val generateJavaRes = project.tasks.register("generateJavaRes", KMP_GenerateJavaRes::class.java)
+      generateJavaRes.configure { it.outputDir.set(project.layout.buildDirectory.dir("generated/javaRes")) }
 
-            extension.apply {
-                sourceSets.androidMain.configure {
-                    it.resources.srcDir(generateJavaRes.map { it.outputDir })
-                }
-            }
-        }
+      extension.apply { sourceSets.androidMain.configure { it.resources.srcDir(generateJavaRes.map { it.outputDir }) } }
     }
+  }
 
-    @Test
-    fun testGeneratedKotlinSources() {
-        val build = rule.build
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":library:assembleAndroidMain")
+  @Test
+  fun testGeneratedKotlinSources() {
+    val build = rule.build
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":library:assembleAndroidMain")
 
-        build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
-            javaResources().resourceAsText("res.txt").isEqualTo("foo")
-        }
+    build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
+      javaResources().resourceAsText("res.txt").isEqualTo("foo")
     }
+  }
 }
 
 abstract class KMP_GenerateJavaRes : DefaultTask() {
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @TaskAction
-    fun taskAction() {
-        val d = outputDir.get().file("res.txt").asFile
-        d.parentFile.mkdirs()
-        d.writeText("foo")
-    }
+  @TaskAction
+  fun taskAction() {
+    val d = outputDir.get().file("res.txt").asFile
+    d.parentFile.mkdirs()
+    d.writeText("foo")
+  }
 }

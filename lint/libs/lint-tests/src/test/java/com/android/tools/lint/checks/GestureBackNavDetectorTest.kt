@@ -77,11 +77,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
 
   fun testOverridesTrue() {
     lint()
-      .files(
-        manifest(MANIFEST_35_TRUE),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
+      .files(manifest(MANIFEST_35_TRUE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
       .run()
       .expect(
         """
@@ -103,34 +99,16 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   }
 
   fun testOverridesDefault() {
-    lint()
-      .files(
-        manifest(MANIFEST_35_DEFAULT),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
-      .run()
-      .expectClean()
+    lint().files(manifest(MANIFEST_35_DEFAULT), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testOverridesFalse() {
-    lint()
-      .files(
-        manifest(MANIFEST_35_FALSE),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
-      .run()
-      .expectClean()
+    lint().files(manifest(MANIFEST_35_FALSE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testOverrides36True() {
     lint()
-      .files(
-        manifest(MANIFEST_36_TRUE),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
+      .files(manifest(MANIFEST_36_TRUE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
       .run()
       .expect(
         """
@@ -153,11 +131,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
 
   fun testOverrides36Default() {
     lint()
-      .files(
-        manifest(MANIFEST_36_DEFAULT),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
+      .files(manifest(MANIFEST_36_DEFAULT), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
       .run()
       .expect(
         """
@@ -179,14 +153,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   }
 
   fun testOverrides36False() {
-    lint()
-      .files(
-        manifest(MANIFEST_36_FALSE),
-        java(JAVA_FILE_WITH_OVERRIDES),
-        kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-      )
-      .run()
-      .expectClean()
+    lint().files(manifest(MANIFEST_36_FALSE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testKeyCodeBackSwitchJava() {

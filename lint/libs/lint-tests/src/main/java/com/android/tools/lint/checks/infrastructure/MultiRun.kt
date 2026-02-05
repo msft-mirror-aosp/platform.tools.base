@@ -16,20 +16,18 @@
 package com.android.tools.lint.checks.infrastructure
 
 /**
- * A [MultiRun] is a task which lets you [run] your already configured `lint` task repeatedly,
- * applying multiple different configurations such as command line flags, and then perform either
- * the same verification step on all the test results, or individual verification steps for each
- * test run.
+ * A [MultiRun] is a task which lets you [run] your already configured `lint` task repeatedly, applying multiple different configurations
+ * such as command line flags, and then perform either the same verification step on all the test results, or individual verification steps
+ * for each test run.
  */
 class MultiRun internal constructor(private val root: TestLintTask) {
   class Step(val setup: TestLintTask.() -> Any?, val verify: TestLintResult.() -> Any?)
 
   /**
-   * Run the lint tests repeatedly, performing additional [TestLintTask] customizations for each run
-   * and then running verification steps (such as [TestLintResult.expect]) on the results. This
-   * method specifies a single verification step, meant to be the same for all the variations. If
-   * you expect each test run to potentially have different expectations, construct individual
-   * [Step] objects which maps setup to individual tasks instead.
+   * Run the lint tests repeatedly, performing additional [TestLintTask] customizations for each run and then running verification steps
+   * (such as [TestLintResult.expect]) on the results. This method specifies a single verification step, meant to be the same for all the
+   * variations. If you expect each test run to potentially have different expectations, construct individual [Step] objects which maps
+   * setup to individual tasks instead.
    */
   fun run(vararg configurations: TestLintTask.() -> Any?, verify: TestLintResult.() -> Any) {
     val steps = configurations.map { Step(setup = it, verify = verify) }

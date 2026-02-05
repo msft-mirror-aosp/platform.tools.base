@@ -1,0 +1,14 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/02"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <localPackage path="sources;android-23" obsolete="true">
+        <type-details xsi:type="sdk:sourceDetailsType">
+            <api-level>23</api-level>
+        </type-details>
+        <revision>
+            <major>3</major>
+            <preview>1</preview>
+        </revision>
+        <display-name>Sample source v2 (obsolete)</display-name>
+    </localPackage>
+</common:repository>

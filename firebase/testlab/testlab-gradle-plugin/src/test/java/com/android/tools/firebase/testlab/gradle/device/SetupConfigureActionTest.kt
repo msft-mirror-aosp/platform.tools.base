@@ -49,18 +49,10 @@ class SetupConfigureActionTest {
 
     project = ProjectBuilder.builder().withName("testProject").withProjectDir(projectPath).build()
 
-    appProject =
-      ProjectBuilder.builder()
-        .withName("app")
-        .withParent(project)
-        .withProjectDir(appProjectPath)
-        .build()
+    appProject = ProjectBuilder.builder().withName("app").withParent(project).withProjectDir(appProjectPath).build()
 
     appProject.gradle.sharedServices.registerIfAbsent(
-      TestLabBuildService.RegistrationAction.getBuildServiceName(
-        TestLabBuildService::class.java,
-        appProject,
-      ),
+      TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, appProject),
       TestLabBuildService::class.java,
     ) {
       // no configure needed for test.
@@ -69,8 +61,7 @@ class SetupConfigureActionTest {
 
   fun <T> assertNoModify(property: Property<T>, value: T) {
     val error = assertThrows(IllegalStateException::class.java) { property.set(value) }
-    assertThat(error.message)
-      .isEqualTo("The value for ${property.toString()} cannot be changed any further.")
+    assertThat(error.message).isEqualTo("The value for ${property.toString()} cannot be changed any further.")
   }
 
   @Test
@@ -87,17 +78,14 @@ class SetupConfigureActionTest {
       assertThat(deviceName.get()).isEqualTo("testDeviceName")
       assertThat(device.get()).isEqualTo("Pixel 3")
       assertThat(apiLevel.get()).isEqualTo(32)
-      assertThat(buildService.get())
-        .isSameInstanceAs(TestLabBuildService.RegistrationAction.getBuildService(appProject).get())
+      assertThat(buildService.get()).isSameInstanceAs(TestLabBuildService.RegistrationAction.getBuildService(appProject).get())
 
       assertNoModify(deviceName, "hello")
       assertNoModify(device, "hello")
       assertNoModify(apiLevel, 24)
       assertNoModify(
         buildService,
-        appProject.gradle.sharedServices
-          .registerIfAbsent("newService", TestLabBuildService::class.java) {}
-          .get(),
+        appProject.gradle.sharedServices.registerIfAbsent("newService", TestLabBuildService::class.java) {}.get(),
       )
     }
   }

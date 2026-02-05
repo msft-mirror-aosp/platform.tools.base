@@ -39,9 +39,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
   val runningDevices = mutableSetOf<FakeEmulatorConsole>()
   var avdIndex = 1
   var avdEditor: (AvdInfo) -> AvdInfo = { avdInfo: AvdInfo ->
-    avdInfo.copy(
-      properties = avdInfo.properties + (ConfigKey.DISPLAY_NAME to avdInfo.displayName + " Edited")
-    )
+    avdInfo.copy(properties = avdInfo.properties + (ConfigKey.DISPLAY_NAME to avdInfo.displayName + " Edited"))
   }
 
   fun rescanAvds(): List<AvdInfo> = synchronized(avds) { avds.toList() }
@@ -74,8 +72,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
   fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
     avdInfo.properties[LAUNCH_EXCEPTION_MESSAGE]?.let { throw DeviceActionException(it) }
 
-    val device =
-      FakeEmulatorConsole(avdInfo.name, avdInfo.dataFolderPath.toString()) { doStopAvd(avdInfo) }
+    val device = FakeEmulatorConsole(avdInfo.name, avdInfo.dataFolderPath.toString()) { doStopAvd(avdInfo) }
     val selector = DeviceSelector.fromSerialNumber("emulator-${device.port}")
     session.deviceServices.configureDeviceProperties(
       selector,
@@ -120,21 +117,15 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
   }
 
   private fun updateDevices() {
-    session.hostServices.devices =
-      DeviceList(
-        runningDevices.map { DeviceInfo("emulator-${it.port}", DeviceState.ONLINE) },
-        emptyList(),
-      )
+    session.hostServices.devices = DeviceList(runningDevices.map { DeviceInfo("emulator-${it.port}", DeviceState.ONLINE) }, emptyList())
   }
 
   private val properties =
     mapOf(
       "ro.serialno" to "EMULATOR31X3X7X0",
-      DevicePropertyNames.RO_BUILD_VERSION_SDK to
-        LocalEmulatorProvisionerPluginTest.API_LEVEL.apiStringWithoutExtension,
+      DevicePropertyNames.RO_BUILD_VERSION_SDK to LocalEmulatorProvisionerPluginTest.API_LEVEL.apiStringWithoutExtension,
       DevicePropertyNames.RO_BUILD_VERSION_RELEASE to LocalEmulatorProvisionerPluginTest.RELEASE,
-      DevicePropertyNames.RO_PRODUCT_MANUFACTURER to
-        LocalEmulatorProvisionerPluginTest.MANUFACTURER,
+      DevicePropertyNames.RO_PRODUCT_MANUFACTURER to LocalEmulatorProvisionerPluginTest.MANUFACTURER,
       DevicePropertyNames.RO_PRODUCT_MODEL to LocalEmulatorProvisionerPluginTest.MODEL,
       DevicePropertyNames.RO_PRODUCT_CPU_ABI to LocalEmulatorProvisionerPluginTest.ABI.toString(),
       "ro.kernel.qemu" to "1",

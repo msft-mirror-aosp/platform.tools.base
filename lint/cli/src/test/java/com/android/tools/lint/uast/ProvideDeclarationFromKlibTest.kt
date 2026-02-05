@@ -136,20 +136,20 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
           // For reference only, not used
           kotlin(
             """
-          package com.testdata
-          annotation class LibAnnotation()
-          fun libGlobalMethod() = Unit
-          val String.globalProperty
-            get() = LibClass()
-          const val LIB_CONST = ""
-          class LibClass() {
-            val libAttr = 0
-            fun libMethod(arg: Int) = Int
-            fun libMethod(arg: Long) = Long
-            fun <T> libGenericMethod(arg: T): Array<T>? = null
-            operator fun unaryPlus() = Unit
-          }
-      """
+            package com.testdata
+            annotation class LibAnnotation()
+            fun libGlobalMethod() = Unit
+            val String.globalProperty
+              get() = LibClass()
+            const val LIB_CONST = ""
+            class LibClass() {
+              val libAttr = 0
+              fun libMethod(arg: Int) = Int
+              fun libMethod(arg: Long) = Long
+              fun <T> libGenericMethod(arg: T): Array<T>? = null
+              operator fun unaryPlus() = Unit
+            }
+            """
               .trimIndent()
           ),
         )
@@ -169,17 +169,10 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
           generatedFiles = emptyList(),
           kotlinPlatforms = "Native [general]",
         )
-      lintProject.klibs[Path(tmp.path, klibFile.targetPath).toFile()] =
-        Project.DependencyKind.Regular
+      lintProject.klibs[Path(tmp.path, klibFile.targetPath).toFile()] = Project.DependencyKind.Regular
       config.addModules(
         listOf(
-          UastEnvironment.Module(
-            lintProject,
-            jdkHome = null,
-            includeTests = false,
-            includeTestFixtureSources = false,
-            isUnitTest = false,
-          )
+          UastEnvironment.Module(lintProject, jdkHome = null, includeTests = false, includeTestFixtureSources = false, isUnitTest = false)
         )
       )
       val env = UastEnvironment.create(config)
@@ -227,8 +220,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     // This is the correct type (as in .knm), and when resolving call to this method
     // with AA the KaType for return is kotlin.Int.Companion as well.
     assertThat(libMethods.returnType?.canonicalText).isEqualTo("kotlin.Int.Companion")
-    assertThat(libReloadedMethods.parameterList.getParameter(0)?.type?.canonicalText)
-      .isEqualTo("kotlin.Long")
+    assertThat(libReloadedMethods.parameterList.getParameter(0)?.type?.canonicalText).isEqualTo("kotlin.Long")
     assertThat(libReloadedMethods.returnType?.canonicalText).isEqualTo("kotlin.Long.Companion")
 
     val libGenericMethod = targetClass.methods.single { it.name == "libGenericMethod" }
@@ -261,8 +253,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val returnType = mock<KaType> {}
     val symbol =
       mock<KaNamedFunctionSymbol> {
-        on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), FqName("LibClass"), Name.identifier("libMethod"))
+        on { callableId } doReturn CallableId(FqName(TEST_DATA_PACKAGE), FqName("LibClass"), Name.identifier("libMethod"))
         on { annotations } doReturn emptyAnnotationList
         on { this.returnType } doReturn returnType
         on { valueParameters } doReturn listOf(valueParam)
@@ -274,30 +265,10 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
         // Mocking KaType.asPsiType
         // (https://github.com/JetBrains/kotlin/blob/master/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaJavaInteroperabilityComponent.kt#L55)
         // on the two mock KaTypes
-        on {
-          same(paramType)
-            .asPsiType(
-              any(),
-              anyBoolean(),
-              any(),
-              anyBoolean(),
-              isNull(),
-              anyBoolean(),
-              anyBoolean(),
-            )
-        } doReturn MockPsiType("kotlin.Int")
-        on {
-          same(returnType)
-            .asPsiType(
-              any(),
-              anyBoolean(),
-              any(),
-              anyBoolean(),
-              isNull(),
-              anyBoolean(),
-              anyBoolean(),
-            )
-        } doReturn MockPsiType("kotlin.Int.Companion")
+        on { same(paramType).asPsiType(any(), anyBoolean(), any(), anyBoolean(), isNull(), anyBoolean(), anyBoolean()) } doReturn
+          MockPsiType("kotlin.Int")
+        on { same(returnType).asPsiType(any(), anyBoolean(), any(), anyBoolean(), isNull(), anyBoolean(), anyBoolean()) } doReturn
+          MockPsiType("kotlin.Int.Companion")
       }
 
     with(DecompiledPsiDeclarationProvider) {
@@ -306,8 +277,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
       assertThat(result).isInstanceOf(PsiMethod::class.java)
       val methodsResult = result as PsiMethod
       assertThat(methodsResult.name).isEqualTo("libMethod")
-      assertThat(methodsResult.parameterList.getParameter(0)?.type?.canonicalText)
-        .isEqualTo("kotlin.Int")
+      assertThat(methodsResult.parameterList.getParameter(0)?.type?.canonicalText).isEqualTo("kotlin.Int")
       assertThat(methodsResult.returnType?.canonicalText).isEqualTo("kotlin.Int.Companion")
     }
   }
@@ -320,10 +290,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val provider = factory.createPsiDeclarationProvider(projectScope)
 
     val kaFunction =
-      mock<KaNamedFunctionSymbol> {
-        on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("libGlobalMethod"))
-      }
+      mock<KaNamedFunctionSymbol> { on { callableId } doReturn CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("libGlobalMethod")) }
 
     val globalMethod = provider.getFunctions(kaFunction)
     assertThat(globalMethod).hasSize(1)
@@ -331,8 +298,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
 
     val kaExtensionProperty =
       mock<KaPropertySymbol> {
-        on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("globalProperty"))
+        on { callableId } doReturn CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("globalProperty"))
         on { name } doReturn Name.identifier("globalProperty")
       }
 
@@ -340,13 +306,11 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     assertThat(globalExtensionProperty).hasSize(1)
     assertThat(globalExtensionProperty.single().name).isEqualTo("globalProperty")
     assertThat(globalExtensionProperty.single()).isInstanceOf(PsiField::class.java)
-    assertThat((globalExtensionProperty.single() as PsiField).type.canonicalText)
-      .isEqualTo("com.testdata.LibClass")
+    assertThat((globalExtensionProperty.single() as PsiField).type.canonicalText).isEqualTo("com.testdata.LibClass")
 
     val kaConstProperty =
       mock<KaPropertySymbol> {
-        on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("LIB_CONST"))
+        on { callableId } doReturn CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("LIB_CONST"))
         on { name } doReturn Name.identifier("LIB_CONST")
       }
 
@@ -354,8 +318,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     assertThat(globalConstProperty).hasSize(1)
     assertThat(globalConstProperty.single().name).isEqualTo("LIB_CONST")
     assertThat(globalConstProperty.single()).isInstanceOf(PsiField::class.java)
-    assertThat((globalConstProperty.single() as PsiField).type.canonicalText)
-      .isEqualTo("kotlin.String")
+    assertThat((globalConstProperty.single() as PsiField).type.canonicalText).isEqualTo("kotlin.String")
   }
 }
 

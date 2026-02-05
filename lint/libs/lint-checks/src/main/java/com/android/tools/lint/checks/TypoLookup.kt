@@ -33,22 +33,15 @@ import java.util.WeakHashMap
 import kotlin.text.Charsets
 
 /** Database of common typos / misspellings. */
-class TypoLookup
-private constructor(
-  private var data: ByteArray,
-  private var indices: IntArray,
-  private var wordCount: Int = 0,
-) {
+class TypoLookup private constructor(private var data: ByteArray, private var indices: IntArray, private var wordCount: Int = 0) {
   /**
-   * Look up whether this word is a typo, and if so, return the typo itself and one or more likely
-   * meanings
+   * Look up whether this word is a typo, and if so, return the typo itself and one or more likely meanings
    *
    * @param text the string containing the word
    * @param begin the index of the first character in the word
-   * @param end the index of the first character after the word. Note that the search may extend
-   *   **beyond** this index, if for example the word matches a multi-word typo in the dictionary
-   * @return a list of the typo itself followed by the replacement strings if the word represents a
-   *   typo, and null otherwise
+   * @param end the index of the first character after the word. Note that the search may extend **beyond** this index, if for example the
+   *   word matches a multi-word typo in the dictionary
+   * @return a list of the typo itself followed by the replacement strings if the word represents a typo, and null otherwise
    */
   fun getTypos(text: CharSequence, begin: Int, end: Int): List<String>? {
     assert(end <= text.length)
@@ -122,15 +115,13 @@ private constructor(
   }
 
   /**
-   * Look up whether this word is a typo, and if so, return the typo itself and one or more likely
-   * meanings
+   * Look up whether this word is a typo, and if so, return the typo itself and one or more likely meanings
    *
    * @param utf8Text the string containing the word, encoded as UTF-8
    * @param begin the index of the first character in the word
-   * @param end the index of the first character after the word. Note that the search may extend
-   *   **beyond** this index, if for example the word matches a multi-word typo in the dictionary
-   * @return a list of the typo itself followed by the replacement strings if the word represents a
-   *   typo, and null otherwise
+   * @param end the index of the first character after the word. Note that the search may extend **beyond** this index, if for example the
+   *   word matches a multi-word typo in the dictionary
+   * @return a list of the typo itself followed by the replacement strings if the word represents a typo, and null otherwise
    */
   fun getTypos(utf8Text: ByteArray, begin: Int, end: Int): List<String>? {
     assert(end <= utf8Text.size)
@@ -243,14 +234,12 @@ private constructor(
     /**
      * Returns an instance of the Typo database for the given locale
      *
-     * @param client the client to associate with this database - used only for logging. The
-     *   database object may be shared among repeated invocations, and in that case client used will
-     *   be the one originally passed in. In other words, this parameter may be ignored if the
-     *   client created is not new.
-     * @param locale the locale to look up a typo database for (should be a language code (ISO
-     *   639-1, two lowercase character names)
-     * @param region the region to look up a typo database for (should be a two letter ISO 3166-1
-     *   alpha-2 country code in upper case) language code
+     * @param client the client to associate with this database - used only for logging. The database object may be shared among repeated
+     *   invocations, and in that case client used will be the one originally passed in. In other words, this parameter may be ignored if
+     *   the client created is not new.
+     * @param locale the locale to look up a typo database for (should be a language code (ISO 639-1, two lowercase character names)
+     * @param region the region to look up a typo database for (should be a two letter ISO 3166-1 alpha-2 country code in upper case)
+     *   language code
      * @return a (possibly shared) instance of the typo database, or null if its data can't be found
      */
     @JvmStatic
@@ -300,13 +289,8 @@ private constructor(
      * @param name name to use for cache file
      * @return a (possibly shared) instance of the typo database, or null if its data can't be found
      */
-    private operator fun get(
-      client: LintClient,
-      xmlStream: InputStream,
-      name: String,
-    ): TypoLookup? {
-      val cacheDir =
-        client.getCacheDir(null, true) ?: return null // should not happen since create=true above
+    private operator fun get(client: LintClient, xmlStream: InputStream, name: String): TypoLookup? {
+      val cacheDir = client.getCacheDir(null, true) ?: return null // should not happen since create=true above
 
       val binaryData =
         File(
@@ -321,9 +305,7 @@ private constructor(
 
       @Suppress("ConstantConditionIf")
       if (DEBUG_FORCE_REGENERATE_BINARY) {
-        System.err.println(
-          "\nTemporarily regenerating binary data unconditionally \nfrom $xmlStream\nto $binaryData"
-        )
+        System.err.println("\nTemporarily regenerating binary data unconditionally \nfrom $xmlStream\nto $binaryData")
         if (!createCache(client, xmlStream, binaryData)) {
           return null
         }
@@ -341,11 +323,7 @@ private constructor(
       return readData(client, xmlStream, binaryData)
     }
 
-    private fun readData(
-      client: LintClient,
-      xmlStream: InputStream,
-      binaryFile: File?,
-    ): TypoLookup? {
+    private fun readData(client: LintClient, xmlStream: InputStream, binaryFile: File?): TypoLookup? {
       binaryFile ?: return null
 
       if (!binaryFile.exists()) {
@@ -362,10 +340,7 @@ private constructor(
         buffer.rewind()
         for (anExpectedHeader in expectedHeader) {
           if (anExpectedHeader != buffer.get()) {
-            client.log(
-              null,
-              "Incorrect file header: not an typo database cache file, or a corrupt cache file",
-            )
+            client.log(null, "Incorrect file header: not an typo database cache file, or a corrupt cache file")
             return null
           }
         }
@@ -405,10 +380,7 @@ private constructor(
       val lines: Array<String>
       try {
         lines =
-          String(ByteStreams.toByteArray(xmlStream), Charsets.UTF_8)
-            .split("\n".toRegex())
-            .dropLastWhile { it.isEmpty() }
-            .toTypedArray()
+          String(ByteStreams.toByteArray(xmlStream), Charsets.UTF_8).split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
       } catch (e: IOException) {
         client.log(e, "Can't read typo database file")
         return false
@@ -538,14 +510,7 @@ private constructor(
     /** Comparison function: *only* used for ASCII strings. */
     @VisibleForTesting
     @JvmStatic
-    fun compare(
-      data: ByteArray,
-      offset: Int,
-      terminator: Byte,
-      s: CharSequence,
-      begin: Int,
-      initialEnd: Int,
-    ): Int {
+    fun compare(data: ByteArray, offset: Int, terminator: Byte, s: CharSequence, begin: Int, initialEnd: Int): Int {
       var end = initialEnd
       var i = offset
       var j = begin
@@ -606,14 +571,7 @@ private constructor(
     /** Comparison function used for general UTF-8 encoded strings. */
     @VisibleForTesting
     @JvmStatic
-    fun compare(
-      data: ByteArray,
-      offset: Int,
-      terminator: Byte,
-      s: ByteArray,
-      begin: Int,
-      initialEnd: Int,
-    ): Int {
+    fun compare(data: ByteArray, offset: Int, terminator: Byte, s: ByteArray, begin: Int, initialEnd: Int): Int {
       var end = initialEnd
       var i = offset
       var j = begin

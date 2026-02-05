@@ -24,17 +24,11 @@ import com.android.tools.lint.detector.api.formatList
 import java.util.Arrays
 import java.util.EnumSet
 
-abstract class PluralsDatabase(
-  private val languageCodes: Array<String>,
-  private val languageFlags: IntArray,
-  internal val apiLevel: Int,
-) {
+abstract class PluralsDatabase(private val languageCodes: Array<String>, private val languageFlags: IntArray, internal val apiLevel: Int) {
   private val plurals = mutableMapOf<String, EnumSet<Quantity>>()
 
   init {
-    check(languageCodes.size == languageFlags.size) {
-      "Language code list and flag list have different lengths"
-    }
+    check(languageCodes.size == languageFlags.size) { "Language code list and flag list have different lengths" }
   }
 
   fun getRelevant(language: String): EnumSet<Quantity>? {

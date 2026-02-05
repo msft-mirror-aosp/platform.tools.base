@@ -16,7 +16,8 @@
 
 package com.android.tools.render
 
-internal val COMPOSE_CLASSES = listOf(
+internal val COMPOSE_CLASSES =
+  listOf(
     "androidx.compose.ui.tooling.ComposeViewAdapter",
     "androidx.compose.ui.platform.AbstractComposeView",
     "androidx.compose.ui.platform.ComposeView",
@@ -1288,4 +1289,4 @@ internal val COMPOSE_CLASSES = listOf(
     "androidx.compose.runtime.RecomposerErrorInfo",
     "androidx.compose.runtime.Recomposer\$RecomposerErrorState",
     "androidx.compose.runtime.external.kotlinx.collections.immutable.implementations.persistentOrderedSet.PersistentOrderedSetIterator",
-)
+  )

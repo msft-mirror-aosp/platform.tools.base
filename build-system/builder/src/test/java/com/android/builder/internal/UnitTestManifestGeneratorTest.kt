@@ -23,36 +23,32 @@ import org.junit.rules.TemporaryFolder
 
 internal class UnitTestManifestGeneratorTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun testManifestGeneration() {
-        val outputFile = temporaryFolder.newFile("manifest.xml")
-        UnitTestManifestGenerator(
-            outputFile,
-            "com.foo.bar.test",
-            "21",
-            "21",
-            "com.foo.bar",
-            "unitTestRunner"
-        ).generate()
+  @Test
+  fun testManifestGeneration() {
+    val outputFile = temporaryFolder.newFile("manifest.xml")
+    UnitTestManifestGenerator(outputFile, "com.foo.bar.test", "21", "21", "com.foo.bar", "unitTestRunner").generate()
 
-        Truth.assertThat(outputFile.readText()).isEqualTo("""
-    <?xml version="1.0" encoding="utf-8"?>
-    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        package="com.foo.bar.test">
+    Truth.assertThat(outputFile.readText())
+      .isEqualTo(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            package="com.foo.bar.test">
 
-        <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="21" />
+            <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="21" />
 
-        <application android:debuggable="true" />
+            <application android:debuggable="true" />
 
-        <instrumentation android:name="unitTestRunner"
-                         android:targetPackage="com.foo.bar"
-                         android:label="Tests for com.foo.bar"/>
+            <instrumentation android:name="unitTestRunner"
+                             android:targetPackage="com.foo.bar"
+                             android:label="Tests for com.foo.bar"/>
 
-    </manifest>
+        </manifest>
 
-        """.trimIndent())
-    }
+        """
+          .trimIndent()
+      )
+  }
 }

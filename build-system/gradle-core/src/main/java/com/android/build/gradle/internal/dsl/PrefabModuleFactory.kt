@@ -19,11 +19,10 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.NamedDomainObjectFactory
 
-/** Factory to create BuildType object using an [ObjectFactory] to add the DSL methods.  */
-class PrefabModuleFactory(private val dslServices: DslServices) :
-    NamedDomainObjectFactory<com.android.build.api.dsl.Prefab> {
+/** Factory to create BuildType object using an [ObjectFactory] to add the DSL methods. */
+class PrefabModuleFactory(private val dslServices: DslServices) : NamedDomainObjectFactory<com.android.build.api.dsl.Prefab> {
 
-    override fun create(name: String): com.android.build.api.dsl.Prefab {
-        return dslServices.newInstance(PrefabImpl::class.java, name)
-    }
+  override fun create(name: String): com.android.build.api.dsl.Prefab {
+    return dslServices.newInstance(PrefabImpl::class.java, name)
+  }
 }

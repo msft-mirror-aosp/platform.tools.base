@@ -78,33 +78,20 @@ import org.jetbrains.uast.util.isNewArrayWithInitializer
 import org.jetbrains.uast.visitor.UastVisitor
 
 /**
- * Looks for creations of mutable PendingIntents with implicit Intents. This type of object will
- * throw an exception in apps targeting Android 14 and above.
+ * Looks for creations of mutable PendingIntents with implicit Intents. This type of object will throw an exception in apps targeting
+ * Android 14 and above.
  */
 class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames() = PendingIntentUtils.GET_METHOD_NAMES
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (!context.evaluator.isMemberInClass(method, PendingIntentUtils.CLASS)) return
-    val flagsArgument =
-      node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_FLAG) ?: return
+    val flagsArgument = node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_FLAG) ?: return
     val flags = ConstantEvaluator.evaluate(context, flagsArgument) as? Int ?: return
     if (!isNewMutableNonExemptedPendingIntent(flags)) return
-    val intentArgument =
-      node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_INTENT) ?: return
-    if (
-      getIntentTypeForExpression(
-          intentArgument,
-          IntentExpressionInfo(context.evaluator, node, intentArgument),
-        )
-        .isImplicit()
-    ) {
-      val fixes =
-        fix()
-          .alternatives(
-            buildImmutableFixOrNull(context, flagsArgument),
-            buildNoCreateFix(context, flagsArgument),
-          )
+    val intentArgument = node.getArgumentForParameter(PendingIntentUtils.GET_ARGUMENT_POSITION_INTENT) ?: return
+    if (getIntentTypeForExpression(intentArgument, IntentExpressionInfo(context.evaluator, node, intentArgument)).isImplicit()) {
+      val fixes = fix().alternatives(buildImmutableFixOrNull(context, flagsArgument), buildNoCreateFix(context, flagsArgument))
       val incident =
         Incident(
           issue = ISSUE,
@@ -148,15 +135,13 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
         category = Category.SECURITY,
         priority = 5,
         /**
-         * The severity of this issue is reported conditionally. See the overridden `filterIncident`
-         * method.
+         * The severity of this issue is reported conditionally. See the overridden `filterIncident` method.
          * - targetSdk >= 34: ERROR
          * - 23 <= targetSdk < 34: WARNING
          * - targetSdk < 23: not reported
          */
         severity = Severity.ERROR,
-        implementation =
-          Implementation(PendingIntentMutableImplicitDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(PendingIntentMutableImplicitDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
 
@@ -172,27 +157,15 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
 
     // Used for the vararg argumentTypes in JavaEvaluator#methodMatches
     private val INTENT_EXPLICIT_CONSTRUCTOR_ARGS =
-      listOf(
-        arrayOf(CLASS_CONTEXT, TYPE_CLASS),
-        arrayOf(TYPE_STRING, CLASS_URI, CLASS_CONTEXT, TYPE_CLASS),
-      )
+      listOf(arrayOf(CLASS_CONTEXT, TYPE_CLASS), arrayOf(TYPE_STRING, CLASS_URI, CLASS_CONTEXT, TYPE_CLASS))
 
-    private data class IntentExpressionInfo(
-      val javaEvaluator: JavaEvaluator,
-      val call: UCallExpression,
-      val intentArgument: UExpression,
-    )
+    private data class IntentExpressionInfo(val javaEvaluator: JavaEvaluator, val call: UCallExpression, val intentArgument: UExpression)
 
     /**
-     * An intent is implicit if it didn't escape, and both its component and package are null, hence
-     * this class carries that information for further analysis of intent's implicitness before its
-     * use in the PendingIntent method.
+     * An intent is implicit if it didn't escape, and both its component and package are null, hence this class carries that information for
+     * further analysis of intent's implicitness before its use in the PendingIntent method.
      */
-    private data class IntentType(
-      var hasComponent: Boolean,
-      var hasPackage: Boolean,
-      var isEscaped: Boolean = false,
-    ) {
+    private data class IntentType(var hasComponent: Boolean, var hasPackage: Boolean, var isEscaped: Boolean = false) {
       // If an intent is implicit, then it doesn't have a component and a package.
       constructor(isImplicit: Boolean) : this(hasComponent = !isImplicit, hasPackage = !isImplicit)
 
@@ -202,19 +175,15 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
     private fun isNewMutableNonExemptedPendingIntent(flags: Int): Boolean {
       val isFlagNoCreateSet = (flags and PendingIntentUtils.FLAG_NO_CREATE) != 0
       val isFlagMutableSet = (flags and PendingIntentUtils.FLAG_MUTABLE) != 0
-      val isFlagAllowUnsafeImplicitIntentSet =
-        (flags and PendingIntentUtils.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT) != 0
+      val isFlagAllowUnsafeImplicitIntentSet = (flags and PendingIntentUtils.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT) != 0
       return isFlagMutableSet && !isFlagNoCreateSet && !isFlagAllowUnsafeImplicitIntentSet
     }
 
     /**
-     * Retrieves UExpression's intent type by pattern matching the type of the passed UExpression
-     * and calls the corresponding getIntentTypeFor_EXPRESSION_TYPE method
+     * Retrieves UExpression's intent type by pattern matching the type of the passed UExpression and calls the corresponding
+     * getIntentTypeFor_EXPRESSION_TYPE method
      */
-    private fun getIntentTypeForExpression(
-      intentExp: UExpression,
-      intentInfo: IntentExpressionInfo,
-    ): IntentType =
+    private fun getIntentTypeForExpression(intentExp: UExpression, intentInfo: IntentExpressionInfo): IntentType =
       when (val intent = intentExp.skipParenthesizedExprDown()) {
         is UCallExpression -> getIntentTypeForCall(intent, intentInfo)
         is UQualifiedReferenceExpression -> getIntentTypeForQualified(intent, intentInfo)
@@ -224,17 +193,12 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
 
     /**
      * Retrieves UCallExpression's intent type by pattern matching its UastCallKind as follows:
-     * - Constructor: if an intent constructor matches any of the explicit intent constructors
-     *   defined by [INTENT_EXPLICIT_CONSTRUCTOR_ARGS], then it's explicit in its component,
-     *   otherwise implicit overall.
-     * - ArrayInitializers: if the array initializer has any implicit expressions then it's
-     *   implicit, otherwise non-implicit overall, e.g.: `new Intent[] { new Intent(), new
-     *   Intent(context, SomeClass.class) }` is implicit because the first element is implicit.
+     * - Constructor: if an intent constructor matches any of the explicit intent constructors defined by
+     *   [INTENT_EXPLICIT_CONSTRUCTOR_ARGS], then it's explicit in its component, otherwise implicit overall.
+     * - ArrayInitializers: if the array initializer has any implicit expressions then it's implicit, otherwise non-implicit overall, e.g.:
+     *   `new Intent[] { new Intent(), new Intent(context, SomeClass.class) }` is implicit because the first element is implicit.
      */
-    private fun getIntentTypeForCall(
-      intent: UCallExpression,
-      intentInfo: IntentExpressionInfo,
-    ): IntentType {
+    private fun getIntentTypeForCall(intent: UCallExpression, intentInfo: IntentExpressionInfo): IntentType {
       return when (intent.kind) {
         CONSTRUCTOR_CALL -> {
           if (
@@ -254,21 +218,13 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
         }
         NESTED_ARRAY_INITIALIZER,
         NEW_ARRAY_WITH_INITIALIZER -> {
-          IntentType(
-            isImplicit =
-              intent.valueArguments.any { getIntentTypeForExpression(it, intentInfo).isImplicit() }
-          )
+          IntentType(isImplicit = intent.valueArguments.any { getIntentTypeForExpression(it, intentInfo).isImplicit() })
         }
         METHOD_CALL -> {
           if (isWithScopeCall(intent)) {
             getIntentTypeForWithScopeCall(intent, intentInfo)
           } else if (isKotlinCollection(intent)) {
-            IntentType(
-              isImplicit =
-                intent.valueArguments.any {
-                  getIntentTypeForExpression(it, intentInfo).isImplicit()
-                }
-            )
+            IntentType(isImplicit = intent.valueArguments.any { getIntentTypeForExpression(it, intentInfo).isImplicit() })
           } else {
             IntentType(isImplicit = false)
           }
@@ -282,29 +238,22 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
      *
      * An UQualifiedReferenceExpression's intent type consists of the following:
      * 1. Retrieving intent properties from its receiver, i.e. the intent object.
-     * 2. Combining them with actions from all its selectors, i.e. method calls, via
-     *    [getIntentTypeAfterCall]. If any of the selectors is an escape call, the method returns an
-     *    explicit intentType.
+     * 2. Combining them with actions from all its selectors, i.e. method calls, via [getIntentTypeAfterCall]. If any of the selectors is an
+     *    escape call, the method returns an explicit intentType.
      *
      * See examples below:
      * - `Intent().setPackage("android.package")`
-     *     - Here, the intent object `Intent()` is implicit, but the call
-     *       `setPackage("android.package")` is an explicit set method, so overall the expression is
-     *       not an implicit intent.
-     *     - If we add `.setPackage(null)` to the above, then the overall expression will become
-     *       implicit because both component and package are null.
+     *     - Here, the intent object `Intent()` is implicit, but the call `setPackage("android.package")` is an explicit set method, so
+     *       overall the expression is not an implicit intent.
+     *     - If we add `.setPackage(null)` to the above, then the overall expression will become implicit because both component and package
+     *       are null.
      * - `intent.setAction("TEST");` where `intent` is implicit
-     *     - Given that `intent` is implicit and `setAction("TEST")` is not an explicit method, the
-     *       expression is an implicit intent.
+     *     - Given that `intent` is implicit and `setAction("TEST")` is not an explicit method, the expression is an implicit intent.
      * - `intent.foo("TEST");` where `intent` is implicit
-     *     - Given that `intent` is implicit and `foo("TEST")` is not an Intent method, i.e. an
-     *       escape call (we don't know what `foo()` does), so the expression is not an implicit
-     *       intent.
+     *     - Given that `intent` is implicit and `foo("TEST")` is not an Intent method, i.e. an escape call (we don't know what `foo()`
+     *       does), so the expression is not an implicit intent.
      */
-    private fun getIntentTypeForQualified(
-      intent: UQualifiedReferenceExpression,
-      intentInfo: IntentExpressionInfo,
-    ): IntentType {
+    private fun getIntentTypeForQualified(intent: UQualifiedReferenceExpression, intentInfo: IntentExpressionInfo): IntentType {
       var qualifiedChain = intent.getQualifiedChain()
       if (qualifiedChain.isEmpty()) return IntentType(isImplicit = false)
       if (
@@ -325,8 +274,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
 
         val call = c as? UCallExpression ?: continue
         if (isSelectorScopeCall(call)) {
-          intentType =
-            getIntentTypeForSelectorScopeCall(intent, intentObject, intentType, call, intentInfo)
+          intentType = getIntentTypeForSelectorScopeCall(intent, intentObject, intentType, call, intentInfo)
         } else {
           setIntentTypeAfterCallInPlace(intentType, call, intentInfo)
         }
@@ -345,8 +293,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
      *
      * Conditions 2, 3, and 4 are checked by an [IntentSimpleNameAnalyzer].
      *
-     * Below we consider 4 example scenarios where the above conditions are violated. Assume this
-     * class:
+     * Below we consider 4 example scenarios where the above conditions are violated. Assume this class:
      * ```
      * public class TestClass {
      *   Intent mIntent = new Intent();
@@ -359,25 +306,17 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
      *   }
      * }
      * ```
-     * 1. If we use `mIntent` or `intentArg` inside `foo()` then condition 1 for `mIntent` and
-     *    `intentArg` is not satisfied because these variables are defined outside of `foo()`
-     * 2. If we call `intentOne.setPackage("android.package");` before using it in the
-     *    PendingIntent, then condition 2 for `intentOne` is not satisfied because
-     *    `setPackage("android.package")` makes the intent explicit
-     * 3. If we call `intentOne.foo()` then condition 3 is not satisfied because `foo()` is an
-     *    escape method
-     * 4. If we use `intentArray`, then condition 4 is not satisfied because all its elements are
-     *    explicit
+     * 1. If we use `mIntent` or `intentArg` inside `foo()` then condition 1 for `mIntent` and `intentArg` is not satisfied because these
+     *    variables are defined outside of `foo()`
+     * 2. If we call `intentOne.setPackage("android.package");` before using it in the PendingIntent, then condition 2 for `intentOne` is
+     *    not satisfied because `setPackage("android.package")` makes the intent explicit
+     * 3. If we call `intentOne.foo()` then condition 3 is not satisfied because `foo()` is an escape method
+     * 4. If we use `intentArray`, then condition 4 is not satisfied because all its elements are explicit
      */
-    private fun getIntentTypeForSimpleName(
-      intent: USimpleNameReferenceExpression,
-      intentInfo: IntentExpressionInfo,
-    ): IntentType {
+    private fun getIntentTypeForSimpleName(intent: USimpleNameReferenceExpression, intentInfo: IntentExpressionInfo): IntentType {
       val (assign, assignParentUMethod) =
-        findLastAssignmentAndItsParentUMethod(intent, intentInfo.call)
-          ?: return IntentType(isImplicit = false)
-      val intentParentUMethod =
-        intent.getParentOfType(UMethod::class.java) ?: return IntentType(isImplicit = false)
+        findLastAssignmentAndItsParentUMethod(intent, intentInfo.call) ?: return IntentType(isImplicit = false)
+      val intentParentUMethod = intent.getParentOfType(UMethod::class.java) ?: return IntentType(isImplicit = false)
       if (assignParentUMethod != intentParentUMethod) {
         return IntentType(isImplicit = false) // only consider local assigns
       }
@@ -395,38 +334,29 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       // return early if the intent assignment escaped
       if (assignIntentType.isEscaped) return assignIntentType
 
-      val analyzer =
-        IntentSimpleNameAnalyzer(assign, intent, intentInfo, intentArraySize, assignIntentType)
+      val analyzer = IntentSimpleNameAnalyzer(assign, intent, intentInfo, intentArraySize, assignIntentType)
       intentParentUMethod.accept(analyzer)
       return analyzer.getIntentTypeAfterGivenAssignment()
     }
 
     private fun isNewJavaKotlinArrayWithDimensions(exp: UCallExpression): Boolean =
-      exp.isNewArrayWithDimensions() ||
-        exp.isMethodCall() && isArrayOfOrArrayOfNulls(exp, METHOD_ARRAY_OF_NULLS)
+      exp.isNewArrayWithDimensions() || exp.isMethodCall() && isArrayOfOrArrayOfNulls(exp, METHOD_ARRAY_OF_NULLS)
 
     private fun findLastAssignmentAndItsParentUMethod(
       intent: USimpleNameReferenceExpression,
       call: UCallExpression,
     ): Pair<UExpression, UMethod?>? {
-      val assign =
-        findLastAssignment(intent.resolve() as? PsiVariable ?: return null, call)
-          ?.skipParenthesizedExprDown() ?: return null
+      val assign = findLastAssignment(intent.resolve() as? PsiVariable ?: return null, call)?.skipParenthesizedExprDown() ?: return null
       return Pair(assign, assign.getParentOfType(UMethod::class.java))
     }
 
     /**
      * Sets intent type's properties with the action of the call expression in-place.
-     * - For `setComponent(arg1, arg2)` and `setPackage(arg1)`, the intent has a component and a
-     *   package if arg1 is not null respectively.
+     * - For `setComponent(arg1, arg2)` and `setPackage(arg1)`, the intent has a component and a package if arg1 is not null respectively.
      * - For any `setClass` and `setClassName`, the intent has a component.
      * - If the intent hasn't escaped, then we need to check if the current call is an escape call.
      */
-    private fun setIntentTypeAfterCallInPlace(
-      intentType: IntentType,
-      call: UCallExpression,
-      intentInfo: IntentExpressionInfo,
-    ) {
+    private fun setIntentTypeAfterCallInPlace(intentType: IntentType, call: UCallExpression, intentInfo: IntentExpressionInfo) {
       when (call.methodName) {
         METHOD_INTENT_SET_COMPONENT -> intentType.hasComponent = !call.isFirstArgNull()
         METHOD_INTENT_SET_PACKAGE -> intentType.hasPackage = !call.isFirstArgNull()
@@ -438,13 +368,10 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun UCallExpression?.isFirstArgNull(): Boolean =
-      (this?.valueArguments?.getOrNull(0) as? ULiteralExpression)?.isNull ?: false
+    private fun UCallExpression?.isFirstArgNull(): Boolean = (this?.valueArguments?.getOrNull(0) as? ULiteralExpression)?.isNull ?: false
 
-    private fun isIntentMethodCall(
-      call: UCallExpression?,
-      intentInfo: IntentExpressionInfo,
-    ): Boolean = intentInfo.javaEvaluator.isMemberInClass(call?.resolve(), CLASS_INTENT)
+    private fun isIntentMethodCall(call: UCallExpression?, intentInfo: IntentExpressionInfo): Boolean =
+      intentInfo.javaEvaluator.isMemberInClass(call?.resolve(), CLASS_INTENT)
 
     private fun isEscapeCall(call: UCallExpression, intentInfo: IntentExpressionInfo): Boolean =
       !isIntentMethodCall(call, intentInfo) && !isSelectorScopeCall(call) && !isWithScopeCall(call)
@@ -465,10 +392,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun KaSession.isArrayOfOrArrayOfNulls(
-      symbol: KaFunctionSymbol,
-      arrayOfMethodName: String,
-    ): Boolean {
+    private fun KaSession.isArrayOfOrArrayOfNulls(symbol: KaFunctionSymbol, arrayOfMethodName: String): Boolean {
       if (!hasSingleTypeParameter(symbol) { it.isReified }) return false
       if (arrayOfMethodName == METHOD_ARRAY_OF && !hasVarargValueParameterOnly(symbol)) {
         return false
@@ -513,27 +437,19 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       return valueParameters[0].isVararg
     }
 
-    private fun isWithScopeCall(call: UCallExpression): Boolean =
-      call.methodName == "with" && isScopingFunction(call)
+    private fun isWithScopeCall(call: UCallExpression): Boolean = call.methodName == "with" && isScopingFunction(call)
 
     // Only considers lambdas with function calls that resolve to Intent methods because with()
     // returns the lambda result
-    private fun getIntentTypeForWithScopeCall(
-      intent: UCallExpression,
-      intentInfo: IntentExpressionInfo,
-    ): IntentType {
-      val intentObject =
-        intent.getArgumentForParameter(0)?.skipParenthesizedExprDown()
-          ?: return IntentType(isImplicit = false)
+    private fun getIntentTypeForWithScopeCall(intent: UCallExpression, intentInfo: IntentExpressionInfo): IntentType {
+      val intentObject = intent.getArgumentForParameter(0)?.skipParenthesizedExprDown() ?: return IntentType(isImplicit = false)
       val lambdaExp = intent.getArgumentForParameter(1) ?: return IntentType(isImplicit = false)
-      if (!areAllLambdaExpressionsIntentMethodCalls(intent, lambdaExp, intentInfo))
-        return IntentType(isImplicit = false)
+      if (!areAllLambdaExpressionsIntentMethodCalls(intent, lambdaExp, intentInfo)) return IntentType(isImplicit = false)
       val intentObjectType = getIntentTypeForExpression(intentObject, intentInfo)
       return getIntentTypeForLambda(intentObject, intentObjectType, lambdaExp, intentInfo, intent)
     }
 
-    private fun isSelectorScopeCall(call: UCallExpression): Boolean =
-      isApplyAlsoScopeCall(call) || isLetRunScopeCall(call)
+    private fun isSelectorScopeCall(call: UCallExpression): Boolean = isApplyAlsoScopeCall(call) || isLetRunScopeCall(call)
 
     private fun isApplyAlsoScopeCall(call: UCallExpression): Boolean =
       listOf("apply", "also").any { it == call.methodName } && isScopingFunction(call)
@@ -551,10 +467,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       intentInfo: IntentExpressionInfo,
     ): IntentType {
       val lambdaExp = call.valueArguments.getOrNull(0) ?: return IntentType(isImplicit = false)
-      if (
-        isLetRunScopeCall(call) &&
-          !areAllLambdaExpressionsIntentMethodCalls(call, lambdaExp, intentInfo)
-      ) {
+      if (isLetRunScopeCall(call) && !areAllLambdaExpressionsIntentMethodCalls(call, lambdaExp, intentInfo)) {
         return IntentType(isImplicit = false)
       }
       return getIntentTypeForLambda(intentObject, intentType, lambdaExp, intentInfo, intent)
@@ -568,12 +481,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       intent: UExpression,
     ): IntentType {
       val analyzer =
-        IntentDataFlowAnalyzer(
-          startExp = intentObject,
-          endExp = lambdaExp,
-          intentType = intentObjectType,
-          intentInfo = intentInfo,
-        )
+        IntentDataFlowAnalyzer(startExp = intentObject, endExp = lambdaExp, intentType = intentObjectType, intentInfo = intentInfo)
       intent.getParentOfType(UMethod::class.java)?.accept(analyzer)
       return analyzer.getIntentTypeAfterGivenAssignment()
     }
@@ -589,8 +497,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
         val containsOnlyIntentMethodCalls =
           when (realExp) {
             is UCallExpression -> isIntentMethodCall(realExp, intentInfo)
-            is UQualifiedReferenceExpression ->
-              containsQualifiedIntentMethodCalls(call, realExp, intentInfo)
+            is UQualifiedReferenceExpression -> containsQualifiedIntentMethodCalls(call, realExp, intentInfo)
             else -> false
           }
         if (!containsOnlyIntentMethodCalls) return false
@@ -607,8 +514,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
     }
 
     private fun isReferencingContextObject(call: UCallExpression, exp: UExpression): Boolean =
-      (isScopingIt(call) && (exp as? USimpleNameReferenceExpression)?.identifier == "it") ||
-        (isScopingThis(call) && exp is UThisExpression)
+      (isScopingIt(call) && (exp as? USimpleNameReferenceExpression)?.identifier == "it") || (isScopingThis(call) && exp is UThisExpression)
 
     private fun containsQualifiedIntentMethodCalls(
       call: UCallExpression,
@@ -618,23 +524,19 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       val chain = exp.getQualifiedChain()
       if (chain.isEmpty()) return false
       val (head, tail) = chain.headTail()
-      return isReferencingContextObject(call, head) &&
-        tail.all { isIntentMethodCall(it as? UCallExpression, intentInfo) }
+      return isReferencingContextObject(call, head) && tail.all { isIntentMethodCall(it as? UCallExpression, intentInfo) }
     }
 
     /**
      * Helper class for analyzing the data flow of an intent variable to determine if it's implicit.
      *
      * Conditions for an intent variable to be implicit:
-     * - If an intent variable is a single Intent, then it's implicit if after the last assignment
-     *   but before its use, it wasn't made explicit in its component and package, nor escape calls
-     *   were called on the variable.
-     * - If an intent variable is an array of Intents of a given [intentArraySize], then it's
-     *   implicit if any of its elements are implicit. The default value for unassigned indices is
-     *   false, meaning the array won't be flagged if some values aren't assigned.
+     * - If an intent variable is a single Intent, then it's implicit if after the last assignment but before its use, it wasn't made
+     *   explicit in its component and package, nor escape calls were called on the variable.
+     * - If an intent variable is an array of Intents of a given [intentArraySize], then it's implicit if any of its elements are implicit.
+     *   The default value for unassigned indices is false, meaning the array won't be flagged if some values aren't assigned.
      *
-     * For single intent's implementation details, refer to [IntentDataFlowAnalyzer]'s
-     * documentation.
+     * For single intent's implementation details, refer to [IntentDataFlowAnalyzer]'s documentation.
      */
     private data class IntentSimpleNameAnalyzer(
       val lastAssignment: UExpression,
@@ -651,18 +553,14 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       ) {
       private val intentArrayValuesIsImplicit: BooleanArray = BooleanArray(intentArraySize)
 
-      /**
-       * Considers assignments of array values and stores their isImplicit value inside
-       * [intentArrayValuesIsImplicit]
-       */
+      /** Considers assignments of array values and stores their isImplicit value inside [intentArrayValuesIsImplicit] */
       override fun visitArrayAccessExpression(node: UArrayAccessExpression): Boolean {
         if (isIntentAnalyzable() && isMemberOfIntentArray(node)) {
           val parent = node.uastParent
           if (parent is UBinaryExpression && parent.operator == ASSIGN) {
             val index = node.indices.firstOrNull()?.evaluate() as? Int ?: 0
             if (index in 0 until intentArraySize) {
-              intentArrayValuesIsImplicit[index] =
-                getIntentTypeForExpression(parent.rightOperand, intentInfo).isImplicit()
+              intentArrayValuesIsImplicit[index] = getIntentTypeForExpression(parent.rightOperand, intentInfo).isImplicit()
             }
           }
         }
@@ -677,27 +575,24 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
       }
 
       private fun isMemberOfIntentArray(node: UArrayAccessExpression): Boolean =
-        (node.receiver as? USimpleNameReferenceExpression)?.identifier ==
-          intentFinalReference.identifier
+        (node.receiver as? USimpleNameReferenceExpression)?.identifier == intentFinalReference.identifier
     }
 
     /**
      * Helper class for analyzing the data flow of a single intent to determine if it's implicit.
      *
-     * An intent is implicit if after the `startExp` but before `endExp`, it wasn't made explicit in
-     * its component and package, nor escape calls were called on the variable.
+     * An intent is implicit if after the `startExp` but before `endExp`, it wasn't made explicit in its component and package, nor escape
+     * calls were called on the variable.
      *
      * How to use the analyzer:
-     * 1. Start the analysis by calling the analyzer on a method where the intent variable is
-     *    assigned and used.
+     * 1. Start the analysis by calling the analyzer on a method where the intent variable is assigned and used.
      * 2. Retrieve the final result by calling the [getIntentTypeAfterGivenAssignment] method.
      *
      * How the analyzer works:
      * - It starts the analysis from the `startExp` expression.
      * - Then, the analyzer tracks the intentType properties.
-     * - If the intent reference calls an external method or is used by an external method, then at
-     *   that point the analyzer can't consider the intent implicit, so `intentType.isEscaped` is
-     *   set to true.
+     * - If the intent reference calls an external method or is used by an external method, then at that point the analyzer can't consider
+     *   the intent implicit, so `intentType.isEscaped` is set to true.
      * - The analysis is finished when it reaches `endExp`.
      */
     private open class IntentDataFlowAnalyzer(
@@ -725,10 +620,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
         if (!isIgnoredArgument(call, reference)) intentType.isEscaped = true
       }
 
-      /**
-       * Returns the final intent type of the intent. This should be called only after tha analyzer
-       * has finished its analysis.
-       */
+      /** Returns the final intent type of the intent. This should be called only after tha analyzer has finished its analysis. */
       open fun getIntentTypeAfterGivenAssignment(): IntentType = intentType
 
       private fun isPendingIntentGetMethod(call: UCallExpression): Boolean =
@@ -746,10 +638,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
     }
 
     /** Lint fixes related code */
-    private fun buildImmutableFixOrNull(
-      context: JavaContext,
-      flagsArgument: UExpression,
-    ): LintFix? {
+    private fun buildImmutableFixOrNull(context: JavaContext, flagsArgument: UExpression): LintFix? {
       val mutableFlagExpression = findMutableFlagExpression(context, flagsArgument) ?: return null
       return LintFix.create()
         .name("Replace FLAG_MUTABLE with FLAG_IMMUTABLE")
@@ -775,10 +664,7 @@ class PendingIntentMutableImplicitDetector : Detector(), SourceCodeScanner {
         .build()
     }
 
-    private fun findMutableFlagExpression(
-      context: JavaContext,
-      flagsArgument: UExpression,
-    ): UExpression? {
+    private fun findMutableFlagExpression(context: JavaContext, flagsArgument: UExpression): UExpression? {
       var mutableFlagExpression: UExpression? = null
       flagsArgument.accept(
         object : UastVisitor {

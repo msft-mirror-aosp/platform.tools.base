@@ -27,16 +27,18 @@ fun androidManifestXml(
   packageName: String,
   themeName: String,
 ): String {
-  val labelBlock = if (isNewModule) "android:label=\"@string/app_name\""
-  else "android:label=\"@string/title_${activityToLayout(activityClass)}\""
+  val labelBlock =
+    if (isNewModule) "android:label=\"@string/app_name\"" else "android:label=\"@string/title_${activityToLayout(activityClass)}\""
   val launcher = !isLibrary
-  val intentFilterBlock = renderIf(launcher) {"""
+  val intentFilterBlock =
+    renderIf(launcher) {
+      """
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
   """
-  }
+    }
   return """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">

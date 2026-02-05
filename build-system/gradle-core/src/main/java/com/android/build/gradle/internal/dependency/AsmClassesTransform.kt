@@ -47,124 +47,90 @@ import org.gradle.api.tasks.Nested
 
 @CacheableTransform
 abstract class AsmClassesTransform : TransformAction<AsmClassesTransform.Parameters> {
-    companion object {
-        val ATTR_ASM_TRANSFORMED_VARIANT: Attribute<String> =
-            Attribute.of("asm-transformed-variant", String::class.java)
+  companion object {
+    val ATTR_ASM_TRANSFORMED_VARIANT: Attribute<String> = Attribute.of("asm-transformed-variant", String::class.java)
 
-        fun getAttributesForConfig(creationConfig: ComponentCreationConfig)
-                : AndroidAttributes {
-            return AndroidAttributes(
-                mapOf(ATTR_ASM_TRANSFORMED_VARIANT to creationConfig.name)
+    fun getAttributesForConfig(creationConfig: ComponentCreationConfig): AndroidAttributes {
+      return AndroidAttributes(mapOf(ATTR_ASM_TRANSFORMED_VARIANT to creationConfig.name))
+    }
+
+    fun registerAsmTransformForComponent(
+      projectName: String,
+      dependencyHandler: DependencyHandler,
+      creationConfig: ComponentCreationConfig,
+    ) {
+      val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig ?: return
+      if (instrumentationCreationConfig.dependenciesClassesAreInstrumented) {
+        dependencyHandler.registerTransform(AsmClassesTransform::class.java) { spec ->
+          spec.parameters { parameters ->
+            parameters.projectName.set(projectName)
+            parameters.asmApiVersion.set(creationConfig.global.asmApiVersion)
+            parameters.framesComputationMode.set(instrumentationCreationConfig.asmFramesComputationMode)
+            parameters.excludes.set(instrumentationCreationConfig.instrumentation.excludes)
+            parameters.visitorsList.set(instrumentationCreationConfig.registeredDependenciesClassesVisitors)
+            parameters.bootClasspath.set(creationConfig.global.fullBootClasspathProvider)
+            parameters.classesHierarchyBuildService.set(getBuildService(creationConfig.services.buildServiceRegistry))
+            parameters.profilingTransforms.set(
+              if (creationConfig is ApkCreationConfig) {
+                creationConfig.advancedProfilingTransforms
+              } else emptyList()
             )
+          }
+
+          spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
+          spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.ASM_INSTRUMENTED_JARS.type)
+
+          getAttributesForConfig(creationConfig).stringAttributes?.forEach { (name, value) ->
+            spec.from.attribute(name, value)
+            spec.to.attribute(name, value)
+          }
         }
-
-        fun registerAsmTransformForComponent(
-            projectName: String,
-            dependencyHandler: DependencyHandler,
-            creationConfig: ComponentCreationConfig
-        ) {
-            val instrumentationCreationConfig = creationConfig.instrumentationCreationConfig
-                ?: return
-            if (instrumentationCreationConfig.dependenciesClassesAreInstrumented) {
-                dependencyHandler.registerTransform(AsmClassesTransform::class.java) { spec ->
-                    spec.parameters { parameters ->
-                        parameters.projectName.set(projectName)
-                        parameters.asmApiVersion.set(creationConfig.global.asmApiVersion)
-                        parameters.framesComputationMode.set(
-                            instrumentationCreationConfig.asmFramesComputationMode
-                        )
-                        parameters.excludes.set(
-                            instrumentationCreationConfig.instrumentation.excludes
-                        )
-                        parameters.visitorsList.set(
-                            instrumentationCreationConfig.registeredDependenciesClassesVisitors
-                        )
-                        parameters.bootClasspath.set(creationConfig.global.fullBootClasspathProvider)
-                        parameters.classesHierarchyBuildService.set(
-                            getBuildService(creationConfig.services.buildServiceRegistry)
-                        )
-                        parameters.profilingTransforms.set(
-                                if (creationConfig is ApkCreationConfig) {
-                                    creationConfig.advancedProfilingTransforms
-                                } else emptyList()
-                        )
-                    }
-
-                    spec.from.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.CLASSES_JAR.type
-                    )
-                    spec.to.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.ASM_INSTRUMENTED_JARS.type
-                    )
-
-                    getAttributesForConfig(creationConfig)
-                        .stringAttributes?.forEach { (name, value) ->
-                            spec.from.attribute(name, value)
-                            spec.to.attribute(name, value)
-                        }
-                }
-            }
-        }
-
+      }
     }
+  }
 
-    @get:CompileClasspath
-    @get:InputArtifactDependencies
-    abstract val classpath: FileCollection
+  @get:CompileClasspath @get:InputArtifactDependencies abstract val classpath: FileCollection
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val inputArtifact: Provider<FileSystemLocation>
+  @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
-    override fun transform(outputs: TransformOutputs) {
-        //TODO(b/162813654) record transform execution span
-        val inputFile = inputArtifact.get().asFile
+  override fun transform(outputs: TransformOutputs) {
+    // TODO(b/162813654) record transform execution span
+    val inputFile = inputArtifact.get().asFile
 
-        val classesHierarchyResolver = parameters.classesHierarchyBuildService.get()
-            .getClassesHierarchyResolverBuilder()
-            .addDependenciesSources(inputArtifact.get().asFile)
-            .addDependenciesSources(classpath.files)
-            .addDependenciesSources(parameters.bootClasspath.get().map { it.asFile })
-            .build()
+    val classesHierarchyResolver =
+      parameters.classesHierarchyBuildService
+        .get()
+        .getClassesHierarchyResolverBuilder()
+        .addDependenciesSources(inputArtifact.get().asFile)
+        .addDependenciesSources(classpath.files)
+        .addDependenciesSources(parameters.bootClasspath.get().map { it.asFile })
+        .build()
 
-        AsmInstrumentationManager(
-            parameters.visitorsList.get(),
-            parameters.asmApiVersion.get(),
-            classesHierarchyResolver,
-            parameters.classesHierarchyBuildService.get().issueHandler,
-            parameters.framesComputationMode.get(),
-            parameters.excludes.get(),
-            parameters.profilingTransforms.get()
-        ).use {
-            it.instrumentClassesFromJarToJar(
-                    inputFile,
-                    outputs.file(inputFile.name)
-            )
-        }
-    }
+    AsmInstrumentationManager(
+        parameters.visitorsList.get(),
+        parameters.asmApiVersion.get(),
+        classesHierarchyResolver,
+        parameters.classesHierarchyBuildService.get().issueHandler,
+        parameters.framesComputationMode.get(),
+        parameters.excludes.get(),
+        parameters.profilingTransforms.get(),
+      )
+      .use { it.instrumentClassesFromJarToJar(inputFile, outputs.file(inputFile.name)) }
+  }
 
-    interface Parameters : GenericTransformParameters {
-        @get:Internal
-        val asmApiVersion: Property<Int>
+  interface Parameters : GenericTransformParameters {
+    @get:Internal val asmApiVersion: Property<Int>
 
-        @get:Input
-        val framesComputationMode: Property<FramesComputationMode>
+    @get:Input val framesComputationMode: Property<FramesComputationMode>
 
-        @get:Input
-        val excludes: SetProperty<String>
+    @get:Input val excludes: SetProperty<String>
 
-        @get:Nested
-        val visitorsList: ListProperty<AsmClassVisitorFactory<*>>
+    @get:Nested val visitorsList: ListProperty<AsmClassVisitorFactory<*>>
 
-        @get:CompileClasspath
-        val bootClasspath: ListProperty<RegularFile>
+    @get:CompileClasspath val bootClasspath: ListProperty<RegularFile>
 
-        @get:Internal
-        val classesHierarchyBuildService: Property<ClassesHierarchyBuildService>
+    @get:Internal val classesHierarchyBuildService: Property<ClassesHierarchyBuildService>
 
-        @get:Input
-        val profilingTransforms: ListProperty<String>
-    }
+    @get:Input val profilingTransforms: ListProperty<String>
+  }
 }

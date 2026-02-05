@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun movieListKt(
-  packageName: String
-) = """
+fun movieListKt(packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 object MovieList {

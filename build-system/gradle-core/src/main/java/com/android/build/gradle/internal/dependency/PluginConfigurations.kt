@@ -20,35 +20,31 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Usage
 
-/**
- * Scope object that contains all the configurations.
- */
+/** Scope object that contains all the configurations. */
 class PluginConfigurations {
 
-    private val configurations = mutableListOf<Configuration>()
+  private val configurations = mutableListOf<Configuration>()
 
-    fun add(configuration: Configuration): Boolean {
-        return configurations.add(configuration)
-    }
+  fun add(configuration: Configuration): Boolean {
+    return configurations.add(configuration)
+  }
 
-    fun addAll(configurations: Collection<Configuration>) {
-        configurations.forEach(this::add)
-    }
+  fun addAll(configurations: Collection<Configuration>) {
+    configurations.forEach(this::add)
+  }
 
-    fun getByConfigType(configType: AndroidArtifacts.ConsumedConfigType): Configuration {
-        return configurations.find { configuration ->
-            configuration.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == configType.toUsage()
-        } ?: throw IllegalArgumentException(
-            "No configuration found with config ${configType.name} (usage: ${configType.toUsage()})"
-        )
-    }
+  fun getByConfigType(configType: AndroidArtifacts.ConsumedConfigType): Configuration {
+    return configurations.find { configuration ->
+      configuration.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == configType.toUsage()
+    } ?: throw IllegalArgumentException("No configuration found with config ${configType.name} (usage: ${configType.toUsage()})")
+  }
 
-    private fun AndroidArtifacts.ConsumedConfigType.toUsage(): String {
-        return when(this) {
-            AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH -> Usage.JAVA_API
-            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH -> Usage.JAVA_RUNTIME
-            AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH -> Usage.JAVA_RUNTIME
-            else -> error("$name cannot be converted to Usage.")
-        }
+  private fun AndroidArtifacts.ConsumedConfigType.toUsage(): String {
+    return when (this) {
+      AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH -> Usage.JAVA_API
+      AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH -> Usage.JAVA_RUNTIME
+      AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH -> Usage.JAVA_RUNTIME
+      else -> error("$name cannot be converted to Usage.")
     }
+  }
 }

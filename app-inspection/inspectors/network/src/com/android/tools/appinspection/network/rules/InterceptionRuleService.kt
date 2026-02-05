@@ -46,11 +46,7 @@ data class NetworkResponse(
     responseCode: Int,
     responseHeaders: Map<String?, List<String>>,
     responseBody: InputStream,
-  ) : this(
-    responseCode,
-    responseHeaders,
-    InterceptedResponseBody.SuccessfulResponseBody(responseBody),
-  )
+  ) : this(responseCode, responseHeaders, InterceptedResponseBody.SuccessfulResponseBody(responseBody))
 
   constructor(
     responseCode: Int,
@@ -71,10 +67,7 @@ data class NetworkInterceptionMetrics(
   val bodyModified: Boolean = false,
 )
 
-/**
- * A service class that maintains and applies a list of rules that intercept network requests and
- * responses.
- */
+/** A service class that maintains and applies a list of rules that intercept network requests and responses. */
 interface InterceptionRuleService {
 
   /** Intercepts the provided [response] with the current rules. */
@@ -96,16 +89,11 @@ class InterceptionRuleServiceImpl : InterceptionRuleService {
   private var ruleIdList = mutableListOf<Int>()
 
   @Synchronized
-  override fun interceptResponse(
-    connection: NetworkConnection,
-    response: NetworkResponse,
-  ): NetworkResponse =
+  override fun interceptResponse(connection: NetworkConnection, response: NetworkResponse): NetworkResponse =
     ruleIdList
       .mapNotNull { id -> rules[id] }
       .filter { it.isEnabled }
-      .fold(response) { intermediateResponse, rule ->
-        rule.transform(connection, intermediateResponse)
-      }
+      .fold(response) { intermediateResponse, rule -> rule.transform(connection, intermediateResponse) }
 
   @Synchronized
   override fun addRule(ruleId: Int, rule: InterceptionRule) {

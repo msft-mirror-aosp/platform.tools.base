@@ -25,12 +25,11 @@ import org.gradle.api.Incubating
  */
 @Incubating
 interface HasTestFixturesBuilder {
-    /**
-     * Set to `true` if the variant's has test fixtures, `false` otherwise.
-     *
-     * Default value will match [com.android.build.api.dsl.TestFixtures.enable] value
-     * that is set through the extension via
-     * [com.android.build.api.dsl.TestedExtension.testFixtures].
-     */
-    var enableTestFixtures: Boolean
+  /**
+   * Set to `true` if the variant's has test fixtures, `false` otherwise.
+   *
+   * Default value will match [com.android.build.api.dsl.TestFixtures.enable] value that is set through the extension via
+   * [com.android.build.api.dsl.TestedExtension.testFixtures].
+   */
+  var enableTestFixtures: Boolean
 }

@@ -28,7 +28,7 @@ fun RecipeExecutor.contentProviderRecipe(
   className: String,
   authorities: String,
   isExported: Boolean,
-  isEnabled: Boolean
+  isEnabled: Boolean,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
@@ -36,13 +36,12 @@ fun RecipeExecutor.contentProviderRecipe(
   val packageName = moduleData.packageName
   addAllKotlinDependencies(moduleData)
 
-  mergeXml(
-      androidManifestXml(authorities, className, isEnabled,
-                         isExported, packageName), manifestOut.resolve("AndroidManifest.xml"))
-  val contentProvider = when (projectData.language) {
-    Language.Java -> contentProviderJava(className, packageName)
-    Language.Kotlin -> contentProviderKt(className, packageName)
-  }
+  mergeXml(androidManifestXml(authorities, className, isEnabled, isExported, packageName), manifestOut.resolve("AndroidManifest.xml"))
+  val contentProvider =
+    when (projectData.language) {
+      Language.Java -> contentProviderJava(className, packageName)
+      Language.Kotlin -> contentProviderKt(className, packageName)
+    }
   save(contentProvider, srcOut.resolve("${className}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${className}.${ktOrJavaExt}"))

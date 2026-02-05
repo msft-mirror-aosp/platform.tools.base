@@ -19,28 +19,26 @@ package com.android.build.gradle.internal.ndk
 import com.android.build.gradle.internal.core.Abi
 import java.io.File
 
-/**
- * NdkInfo for r14.
- */
+/** NdkInfo for r14. */
 open class NdkR14Info(val root: File) : DefaultNdkInfo(root) {
 
-    override fun getToolchainAbi(abi: String): String {
-        return if (abi == Abi.MIPS.tag) {
-            Abi.MIPS64.tag
-        } else abi
+  override fun getToolchainAbi(abi: String): String {
+    return if (abi == Abi.MIPS.tag) {
+      Abi.MIPS64.tag
+    } else abi
+  }
+
+  override fun validate(): String? {
+    val error = super.validate()
+    if (error != null) {
+      return error
     }
 
-    override fun validate(): String? {
-        val error = super.validate()
-        if (error != null) {
-            return error
-        }
-
-        val sysrootDir = rootDirectory.resolve("sysroot")
-        if (!sysrootDir.isDirectory) {
-            return "$sysrootDir is not a directory."
-        }
-
-        return null
+    val sysrootDir = rootDirectory.resolve("sysroot")
+    if (!sysrootDir.isDirectory) {
+      return "$sysrootDir is not a directory."
     }
+
+    return null
+  }
 }

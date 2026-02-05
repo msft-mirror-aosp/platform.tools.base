@@ -24,6 +24,10 @@ import com.android.testutils.TestInputsGenerator
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -33,209 +37,161 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class JavaPreCompileTaskTest {
 
-    private lateinit var project: Project
-    private lateinit var outputFile: File
+  private lateinit var project: Project
+  private lateinit var outputFile: File
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
-        outputFile = temporaryFolder.root.resolve("outputFile")
-    }
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
+    outputFile = temporaryFolder.root.resolve("outputFile")
+  }
 
-    @Test
-    fun `no annotation processors are present`() {
-        getWorkAction(
-            getAnnotationProcessorArtifacts(jar, directory, nonJarFile),
-            emptyList(),
-            emptyList(),
-            outputFile
-        ).execute()
+  @Test
+  fun `no annotation processors are present`() {
+    getWorkAction(getAnnotationProcessorArtifacts(jar, directory, nonJarFile), emptyList(), emptyList(), outputFile).execute()
 
-        assertThat(getAnnotationProcessorList()).isEmpty()
-    }
+    assertThat(getAnnotationProcessorList()).isEmpty()
+  }
 
-    @Test
-    fun `annotation processors are present`() {
-        getWorkAction(
-            getAnnotationProcessorArtifacts(
-                jarWithAnnotationProcessor,
-                directoryWithAnnotationProcessor,
-                jar,
-                directory,
-                nonJarFile
-            ),
-            emptyList(),
-            emptyList(),
-            outputFile
-        ).execute()
+  @Test
+  fun `annotation processors are present`() {
+    getWorkAction(
+        getAnnotationProcessorArtifacts(jarWithAnnotationProcessor, directoryWithAnnotationProcessor, jar, directory, nonJarFile),
+        emptyList(),
+        emptyList(),
+        outputFile,
+      )
+      .execute()
 
-        assertThat(getAnnotationProcessorList()).containsExactlyEntriesIn(
-            mapOf(
-                jarWithAnnotationProcessor.name to ProcessorInfo.NON_INCREMENTAL_AP,
-                directoryWithAnnotationProcessor.name to ProcessorInfo.NON_INCREMENTAL_AP,
-            )
+    assertThat(getAnnotationProcessorList())
+      .containsExactlyEntriesIn(
+        mapOf(
+          jarWithAnnotationProcessor.name to ProcessorInfo.NON_INCREMENTAL_AP,
+          directoryWithAnnotationProcessor.name to ProcessorInfo.NON_INCREMENTAL_AP,
         )
+      )
+  }
+
+  @Test
+  fun `annotation processor class names are specified`() {
+    getWorkAction(
+        getAnnotationProcessorArtifacts(jarWithAnnotationProcessor, directoryWithAnnotationProcessor, jar, directory, nonJarFile),
+        emptyList(),
+        listOf(ANNOTATION_PROCESSOR_CLASS_NAME),
+        outputFile,
+      )
+      .execute()
+
+    assertThat(getAnnotationProcessorList())
+      .containsExactlyEntriesIn(mapOf(ANNOTATION_PROCESSOR_CLASS_NAME to ProcessorInfo.NON_INCREMENTAL_AP))
+  }
+
+  @Test
+  fun `ksp processors are present`() {
+    val kspProcessorJar = temporaryFolder.newFile()
+    TestInputsGenerator.writeJarWithEmptyEntries(kspProcessorJar.toPath(), listOf(KSP_PROCESSORS_INDICATOR_FILE))
+
+    val kspProcessorDir = temporaryFolder.newFolder()
+    kspProcessorDir.resolve(KSP_PROCESSORS_INDICATOR_FILE).let {
+      it.parentFile.mkdirs()
+      it.createNewFile()
     }
 
-    @Test
-    fun `annotation processor class names are specified`() {
-        getWorkAction(
-            getAnnotationProcessorArtifacts(
-                jarWithAnnotationProcessor,
-                directoryWithAnnotationProcessor,
-                jar,
-                directory,
-                nonJarFile
-            ),
-            emptyList(),
-            listOf(ANNOTATION_PROCESSOR_CLASS_NAME),
-            outputFile
-        ).execute()
+    getWorkAction(emptyList(), getAnnotationProcessorArtifacts(kspProcessorDir, kspProcessorJar), emptyList(), outputFile).execute()
 
-        assertThat(getAnnotationProcessorList()).containsExactlyEntriesIn(
-            mapOf(ANNOTATION_PROCESSOR_CLASS_NAME to ProcessorInfo.NON_INCREMENTAL_AP)
-        )
+    assertThat(getAnnotationProcessorList())
+      .containsExactlyEntriesIn(
+        mapOf(kspProcessorDir.name to ProcessorInfo.KSP_PROCESSOR, kspProcessorJar.name to ProcessorInfo.KSP_PROCESSOR)
+      )
+  }
+
+  @Test
+  fun `annotation processors are ignored in ksp artifacts`() {
+    val kspProcessorJar = temporaryFolder.newFile()
+    TestInputsGenerator.writeJarWithEmptyEntries(kspProcessorJar.toPath(), listOf(KSP_PROCESSORS_INDICATOR_FILE))
+
+    val annotationProcessorDir = temporaryFolder.newFolder()
+    annotationProcessorDir.resolve(ANNOTATION_PROCESSORS_INDICATOR_FILE).let {
+      it.parentFile.mkdirs()
+      it.createNewFile()
     }
 
-    @Test
-    fun `ksp processors are present`() {
-        val kspProcessorJar = temporaryFolder.newFile()
-        TestInputsGenerator.writeJarWithEmptyEntries(
-            kspProcessorJar.toPath(), listOf(KSP_PROCESSORS_INDICATOR_FILE)
-        )
+    getWorkAction(emptyList(), getAnnotationProcessorArtifacts(annotationProcessorDir, kspProcessorJar), emptyList(), outputFile).execute()
 
-        val kspProcessorDir = temporaryFolder.newFolder()
-        kspProcessorDir.resolve(KSP_PROCESSORS_INDICATOR_FILE).let {
-            it.parentFile.mkdirs()
-            it.createNewFile()
+    assertThat(getAnnotationProcessorList()).containsExactlyEntriesIn(mapOf(kspProcessorJar.name to ProcessorInfo.KSP_PROCESSOR))
+  }
+
+  private fun getAnnotationProcessorArtifacts(vararg files: File): List<SerializableArtifact> {
+    val configuration = project.configurations.create("annotationProcessor")
+    project.dependencies.add("annotationProcessor", project.files(files))
+    return configuration.incoming.artifacts.artifacts.map { SerializableArtifact(it) }
+  }
+
+  private fun getWorkAction(
+    annotationProcessorArtifacts: List<SerializableArtifact>,
+    kspProcessorArtifacts: List<SerializableArtifact>,
+    annotationProcessorClassNames: List<String>,
+    annotationProcessorListFile: File,
+  ): JavaPreCompileWorkAction {
+    return object : JavaPreCompileWorkAction() {
+      override fun getParameters(): JavaPreCompileParameters {
+        return object : JavaPreCompileParameters() {
+          override val annotationProcessorArtifacts =
+            project.objects.listProperty(SerializableArtifact::class.java).value(annotationProcessorArtifacts)
+          override val annotationProcessorClassNames = project.objects.listProperty(String::class.java).value(annotationProcessorClassNames)
+          override val annotationProcessorListFile: RegularFileProperty =
+            FakeObjectFactory.factory.fileProperty().fileValue(annotationProcessorListFile)
+          override val kspProcessorArtifacts = project.objects.listProperty(SerializableArtifact::class.java).value(kspProcessorArtifacts)
+          override val projectPath = FakeGradleProperty("projectName")
+          override val taskOwner = FakeGradleProperty("taskOwner")
+          override val workerKey = FakeGradleProperty("workerKey")
+          override val analyticsService: Property<AnalyticsService>
+            get() = FakeGradleProperty(FakeNoOpAnalyticsService())
         }
-
-        getWorkAction(
-            emptyList(), getAnnotationProcessorArtifacts(
-                kspProcessorDir, kspProcessorJar
-            ), emptyList(), outputFile
-        ).execute()
-
-        assertThat(getAnnotationProcessorList()).containsExactlyEntriesIn(
-            mapOf(
-                kspProcessorDir.name to ProcessorInfo.KSP_PROCESSOR,
-                kspProcessorJar.name to ProcessorInfo.KSP_PROCESSOR
-            )
-        )
+      }
     }
+  }
 
-    @Test
-    fun `annotation processors are ignored in ksp artifacts`() {
-        val kspProcessorJar = temporaryFolder.newFile()
-        TestInputsGenerator.writeJarWithEmptyEntries(
-            kspProcessorJar.toPath(), listOf(KSP_PROCESSORS_INDICATOR_FILE)
-        )
+  private fun getAnnotationProcessorList() = readAnnotationProcessorsFromJsonFile(outputFile)
 
-        val annotationProcessorDir = temporaryFolder.newFolder()
-        annotationProcessorDir.resolve(ANNOTATION_PROCESSORS_INDICATOR_FILE).let {
-            it.parentFile.mkdirs()
-            it.createNewFile()
-        }
+  companion object {
 
-        getWorkAction(
-            emptyList(), getAnnotationProcessorArtifacts(
-                annotationProcessorDir, kspProcessorJar
-            ), emptyList(), outputFile
-        ).execute()
+    @JvmStatic @get:ClassRule val temporaryFolder = TemporaryFolder()
 
-        assertThat(getAnnotationProcessorList()).containsExactlyEntriesIn(
-            mapOf(
-                kspProcessorJar.name to ProcessorInfo.KSP_PROCESSOR
-            )
-        )
+    private const val ANNOTATION_PROCESSOR_CLASS_NAME = "com.example.MyAnnotationProcessor"
+
+    private lateinit var directory: File
+    private lateinit var directoryWithAnnotationProcessor: File
+    private lateinit var jar: File
+    private lateinit var jarWithAnnotationProcessor: File
+    private lateinit var nonJarFile: File
+
+    @Suppress("unused")
+    @BeforeClass
+    @JvmStatic
+    fun classSetUp() {
+      directory = temporaryFolder.newFolder("directory")
+
+      directoryWithAnnotationProcessor = temporaryFolder.newFolder("directoryWithAnnotationProcessor")
+      val processorMetaInfFile = File(directoryWithAnnotationProcessor, ANNOTATION_PROCESSORS_INDICATOR_FILE)
+      Files.createParentDirs(processorMetaInfFile)
+      assertThat(processorMetaInfFile.createNewFile()).isTrue()
+
+      jar = temporaryFolder.newFile("jar.jar")
+      ZipOutputStream(FileOutputStream(jar)).use {}
+
+      jarWithAnnotationProcessor = temporaryFolder.newFile("jarWithAnnotationProcessor.jar")
+      ZipOutputStream(FileOutputStream(jarWithAnnotationProcessor)).use { out ->
+        out.putNextEntry(ZipEntry(ANNOTATION_PROCESSORS_INDICATOR_FILE))
+        out.write(ANNOTATION_PROCESSOR_CLASS_NAME.toByteArray())
+        out.closeEntry()
+      }
+
+      nonJarFile = temporaryFolder.newFile("nonJarFile.txt")
+      Files.asCharSink(nonJarFile, Charsets.UTF_8).write("This is not a jar file")
     }
-
-    private fun getAnnotationProcessorArtifacts(vararg files: File): List<SerializableArtifact> {
-        val configuration = project.configurations.create("annotationProcessor")
-        project.dependencies.add("annotationProcessor", project.files(files))
-        return configuration.incoming.artifacts.artifacts.map { SerializableArtifact(it) }
-    }
-
-    private fun getWorkAction(
-        annotationProcessorArtifacts: List<SerializableArtifact>,
-        kspProcessorArtifacts: List<SerializableArtifact>,
-        annotationProcessorClassNames: List<String>,
-        annotationProcessorListFile: File
-    ): JavaPreCompileWorkAction {
-        return object : JavaPreCompileWorkAction() {
-            override fun getParameters(): JavaPreCompileParameters {
-                return object : JavaPreCompileParameters() {
-                    override val annotationProcessorArtifacts =
-                        project.objects.listProperty(SerializableArtifact::class.java)
-                            .value(annotationProcessorArtifacts)
-                    override val annotationProcessorClassNames =
-                        project.objects.listProperty(String::class.java)
-                            .value(annotationProcessorClassNames)
-                    override val annotationProcessorListFile: RegularFileProperty =
-                        FakeObjectFactory.factory.fileProperty()
-                            .fileValue(annotationProcessorListFile)
-                    override val kspProcessorArtifacts =
-                        project.objects.listProperty(SerializableArtifact::class.java)
-                            .value(kspProcessorArtifacts)
-                    override val projectPath = FakeGradleProperty("projectName")
-                    override val taskOwner = FakeGradleProperty("taskOwner")
-                    override val workerKey = FakeGradleProperty("workerKey")
-                    override val analyticsService: Property<AnalyticsService>
-                        get() = FakeGradleProperty(FakeNoOpAnalyticsService())
-                }
-            }
-        }
-    }
-
-    private fun getAnnotationProcessorList() = readAnnotationProcessorsFromJsonFile(outputFile)
-
-    companion object {
-
-        @JvmStatic
-        @get:ClassRule
-        val temporaryFolder = TemporaryFolder()
-
-        private const val ANNOTATION_PROCESSOR_CLASS_NAME = "com.example.MyAnnotationProcessor"
-
-        private lateinit var directory: File
-        private lateinit var directoryWithAnnotationProcessor: File
-        private lateinit var jar: File
-        private lateinit var jarWithAnnotationProcessor: File
-        private lateinit var nonJarFile: File
-
-        @Suppress("unused")
-        @BeforeClass
-        @JvmStatic
-        fun classSetUp() {
-            directory = temporaryFolder.newFolder("directory")
-
-            directoryWithAnnotationProcessor =
-                temporaryFolder.newFolder("directoryWithAnnotationProcessor")
-            val processorMetaInfFile =
-                File(directoryWithAnnotationProcessor, ANNOTATION_PROCESSORS_INDICATOR_FILE)
-            Files.createParentDirs(processorMetaInfFile)
-            assertThat(processorMetaInfFile.createNewFile()).isTrue()
-
-            jar = temporaryFolder.newFile("jar.jar")
-            ZipOutputStream(FileOutputStream(jar)).use { }
-
-            jarWithAnnotationProcessor = temporaryFolder.newFile("jarWithAnnotationProcessor.jar")
-            ZipOutputStream(FileOutputStream(jarWithAnnotationProcessor))
-                .use { out ->
-                    out.putNextEntry(ZipEntry(ANNOTATION_PROCESSORS_INDICATOR_FILE))
-                    out.write(ANNOTATION_PROCESSOR_CLASS_NAME.toByteArray())
-                    out.closeEntry()
-                }
-
-            nonJarFile = temporaryFolder.newFile("nonJarFile.txt")
-            Files.asCharSink(nonJarFile, Charsets.UTF_8).write("This is not a jar file")
-        }
-    }
+  }
 }

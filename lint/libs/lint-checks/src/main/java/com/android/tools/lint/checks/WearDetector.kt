@@ -24,9 +24,7 @@ import org.w3c.dom.Element
 
 private fun isWearFeature(element: Element) =
   element.tagName == SdkConstants.TAG_USES_FEATURE &&
-    element
-      .getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME)
-      .equals(FEATURE_WATCH)
+    element.getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME).equals(FEATURE_WATCH)
 
 private const val FEATURE_WATCH = "android.hardware.type.watch"
 

@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.internal.plugins
 
+import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.ProductFlavor
-import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.AgpDslLockedException
 import com.android.build.gradle.internal.dsl.Lockable
@@ -28,42 +28,41 @@ import org.gradle.api.NamedDomainObjectContainer
 /**
  * Provider of the various containers that the extensions uses.
  *
- * This is using Type parameters as the objects in the container will vary depending on
- * the type of the plugin.
- *
+ * This is using Type parameters as the objects in the container will vary depending on the type of the plugin.
  */
 interface DslContainerProvider<
-        DefaultConfigT : DefaultConfig,
-        BuildTypeT : BuildType,
-        ProductFlavorT : ProductFlavor,
-        SigningConfigT : ApkSigningConfig> {
+  DefaultConfigT : DefaultConfig,
+  BuildTypeT : BuildType,
+  ProductFlavorT : ProductFlavor,
+  SigningConfigT : ApkSigningConfig,
+> {
 
-    val defaultConfig: DefaultConfigT
+  val defaultConfig: DefaultConfigT
 
-    val buildTypeContainer: NamedDomainObjectContainer<BuildTypeT>
-    val productFlavorContainer: NamedDomainObjectContainer<ProductFlavorT>
-    val signingConfigContainer: NamedDomainObjectContainer<SigningConfigT>
+  val buildTypeContainer: NamedDomainObjectContainer<BuildTypeT>
+  val productFlavorContainer: NamedDomainObjectContainer<ProductFlavorT>
+  val signingConfigContainer: NamedDomainObjectContainer<SigningConfigT>
 
-    val sourceSetManager: SourceSetManager
+  val sourceSetManager: SourceSetManager
 
-    fun lock() {
-        (defaultConfig as Lockable).lock()
-        buildTypeContainer.configureEach { (it as Lockable).lock() }
-        productFlavorContainer.configureEach { (it as Lockable).lock() }
-        signingConfigContainer.configureEach { (it as Lockable).lock() }
-        @Suppress("EagerGradleConfiguration") // need to fail when object added.
-        buildTypeContainer.whenObjectAdded { failLocked("build types") }
-        @Suppress("EagerGradleConfiguration") // need to fail when object added.
-        productFlavorContainer.whenObjectAdded { failLocked("product flavors") }
-        @Suppress("EagerGradleConfiguration") // need to fail when object added.
-        signingConfigContainer.whenObjectAdded { failLocked("signing configs") }
-    }
+  fun lock() {
+    (defaultConfig as Lockable).lock()
+    buildTypeContainer.configureEach { (it as Lockable).lock() }
+    productFlavorContainer.configureEach { (it as Lockable).lock() }
+    signingConfigContainer.configureEach { (it as Lockable).lock() }
+    @Suppress("EagerGradleConfiguration") // need to fail when object added.
+    buildTypeContainer.whenObjectAdded { failLocked("build types") }
+    @Suppress("EagerGradleConfiguration") // need to fail when object added.
+    productFlavorContainer.whenObjectAdded { failLocked("product flavors") }
+    @Suppress("EagerGradleConfiguration") // need to fail when object added.
+    signingConfigContainer.whenObjectAdded { failLocked("signing configs") }
+  }
 
-    private fun failLocked(collectionName: String): Nothing  {
-        throw AgpDslLockedException(
-            "It is too late to add new $collectionName\n" +
-                    "They have already been used to configure this project.\n" +
-                    "Consider moving this call to finalizeDsl or during evaluation."
-        );
-    }
+  private fun failLocked(collectionName: String): Nothing {
+    throw AgpDslLockedException(
+      "It is too late to add new $collectionName\n" +
+        "They have already been used to configure this project.\n" +
+        "Consider moving this call to finalizeDsl or during evaluation."
+    )
+  }
 }

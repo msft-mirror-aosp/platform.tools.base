@@ -20,23 +20,16 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class LintChecksInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication { }
-    },
+class LintChecksInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
     deltaConfig = {
-        androidApplication {
-            dependencies {
-                lintChecks(localJar("lint-checks.jar") { addEmptyClasses("com/example/MainClass") })
-            }
-        }
+      androidApplication { dependencies { lintChecks(localJar("lint-checks.jar") { addEmptyClasses("com/example/MainClass") }) } }
     },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 }

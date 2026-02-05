@@ -32,6 +32,7 @@ import com.android.build.gradle.tasks.ProcessApplicationManifest.Companion.getAr
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.manifmerger.ManifestMerger2
 import com.android.utils.FileUtils
+import java.io.File
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
@@ -46,151 +47,130 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
-/**
- * Merges Manifests from libraries that will be included with in fused library.
- */
+/** Merges Manifests from libraries that will be included with in fused library. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST, secondaryTaskCategories = [TaskCategory.MERGING, TaskCategory.FUSING])
 abstract class FusedLibraryManifestMergerTask : ManifestProcessorGlobalTask() {
 
-    @get:Internal
-    abstract val libraryManifests: Property<ArtifactCollection>
+  @get:Internal abstract val libraryManifests: Property<ArtifactCollection>
 
-    @get:OutputFile
-    abstract val mergedFusedLibraryManifest: RegularFileProperty
+  @get:OutputFile abstract val mergedFusedLibraryManifest: RegularFileProperty
 
-    @get:Input
+  @get:Input abstract val namespace: Property<String>
+
+  @get:Input abstract val minSdkVersion: Property<String>
+
+  @get:Input abstract val manifestPlaceholders: MapProperty<String, String>
+
+  @get:Internal abstract val tmpDir: DirectoryProperty
+
+  /* For adding a dependency on the files used in identifierToManifestDependencyFile. */
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  val libraryManifestFiles: FileCollection
+    get() = libraryManifests.get().artifactFiles
+
+  override fun doTaskAction() {
+    FileUtils.cleanOutputDir(tmpDir.get().asFile)
+    workerExecutor.noIsolation().submit(FusedLibraryManifestMergerWorkAction::class.java) {
+      configureParameters(it)
+      it.mainAndroidManifest.set(createTempLibraryManifest(tmpDir.get().asFile, namespace.get()))
+    }
+  }
+
+  protected fun configureParameters(parameters: FusedLibraryManifestMergerParams) {
+    parameters.initializeFromBaseTask(this)
+
+    val identifierToManifestDependencyFile = libraryManifests.get().associate { getArtifactName(it) to it.file }
+    parameters.dependencies.set(identifierToManifestDependencyFile)
+    parameters.namespace.set(namespace)
+    parameters.manifestPlaceholders.set(manifestPlaceholders)
+    parameters.minSdkVersion.set(minSdkVersion)
+    parameters.outMergedManifestLocation.set(mergedFusedLibraryManifest)
+    parameters.reportFile.set(reportFile)
+  }
+
+  abstract class FusedLibraryManifestMergerParams : ProfileAwareWorkAction.Parameters() {
+    abstract val mainAndroidManifest: RegularFileProperty
+    abstract val dependencies: MapProperty<String, File>
     abstract val namespace: Property<String>
-
-    @get:Input
-    abstract val minSdkVersion: Property<String>
-
-    @get:Input
     abstract val manifestPlaceholders: MapProperty<String, String>
+    abstract val minSdkVersion: Property<String>
+    abstract val outMergedManifestLocation: RegularFileProperty
+    abstract val reportFile: RegularFileProperty
+  }
 
-    @get:Internal
-    abstract val tmpDir: DirectoryProperty
+  abstract class FusedLibraryManifestMergerWorkAction : ProfileAwareWorkAction<FusedLibraryManifestMergerParams>() {
 
-    /* For adding a dependency on the files used in identifierToManifestDependencyFile. */
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    val libraryManifestFiles: FileCollection
-        get() = libraryManifests.get().artifactFiles
+    override fun run() {
+      with(parameters!!) {
+        val dependencyManifests = dependencies.get().map { ManifestProviderImpl(it.value, it.key) }
+        mergeManifests(
+          mainManifest = mainAndroidManifest.get().asFile,
+          manifestOverlays = emptyList(),
+          dependencies = dependencyManifests,
+          navigationJsons = emptyList(),
+          featureName = null,
+          packageOverride = namespace.get(),
+          namespace = namespace.get(),
+          profileable = false,
+          versionCode = null,
+          versionName = null,
+          minSdkVersion = minSdkVersion.get(),
+          targetSdkVersion = null,
+          maxSdkVersion = null,
+          testOnly = false,
+          extractNativeLibs = null,
+          outMergedManifestLocation = outMergedManifestLocation.get().asFile.absolutePath,
+          outAaptSafeManifestLocation = null,
+          mergeType = ManifestMerger2.MergeType.LIBRARY,
+          placeHolders = manifestPlaceholders.get(),
+          optionalFeatures = emptyList(),
+          dependencyFeatureNames = emptyList(),
+          generatedLocaleConfigAttribute = null,
+          reportFile = reportFile.get().asFile,
+          logger = LoggerWrapper.getLogger(FusedLibraryManifestMergerTask::class.java),
+        )
+      }
+    }
+  }
 
-    override fun doTaskAction() {
-        FileUtils.cleanOutputDir(tmpDir.get().asFile)
-        workerExecutor.noIsolation().submit(FusedLibraryManifestMergerWorkAction::class.java) {
-            configureParameters(it)
-            it.mainAndroidManifest.set(
-                createTempLibraryManifest(
-                    tmpDir.get().asFile,
-                    namespace.get()
-                )
-            )
-        }
+  class CreationAction(private val creationConfig: FusedLibraryGlobalScope) : GlobalTaskCreationAction<FusedLibraryManifestMergerTask>() {
+
+    override val name: String
+      get() = "mergeManifest"
+
+    override val type: Class<FusedLibraryManifestMergerTask>
+      get() = FusedLibraryManifestMergerTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<FusedLibraryManifestMergerTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryManifestMergerTask::mergedFusedLibraryManifest)
+        .withName(FN_ANDROID_MANIFEST_XML)
+        .on(FusedLibraryInternalArtifactType.MERGED_MANIFEST)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryManifestMergerTask::reportFile)
+        .atLocation(creationConfig.projectLayout.buildDirectory.dir("${SdkConstants.FD_OUTPUTS}/${SdkConstants.FD_LOGS}"))
+        .withName("manifest-merger-$name-report.txt")
+        .on(FusedLibraryInternalArtifactType.MANIFEST_MERGE_REPORT)
     }
 
-    protected fun configureParameters(parameters: FusedLibraryManifestMergerParams) {
-        parameters.initializeFromBaseTask(this)
+    override fun configure(task: FusedLibraryManifestMergerTask) {
+      super.configure(task)
 
-        val identifierToManifestDependencyFile = libraryManifests.get().associate { getArtifactName(it) to it.file }
-        parameters.dependencies.set(identifierToManifestDependencyFile)
-        parameters.namespace.set(namespace)
-        parameters.manifestPlaceholders.set(manifestPlaceholders)
-        parameters.minSdkVersion.set(minSdkVersion)
-        parameters.outMergedManifestLocation.set(mergedFusedLibraryManifest)
-        parameters.reportFile.set(reportFile)
+      val libraryManifests =
+        creationConfig.dependencies.getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactType.MANIFEST,
+        )
+      task.libraryManifests.set(libraryManifests)
+      task.manifestPlaceholders.set(creationConfig.manifestPlaceholders)
+      task.minSdkVersion.setDisallowChanges(creationConfig.minSdkApiLevel.toString())
+      task.namespace.set(creationConfig.namespace)
+      task.tmpDir.setDisallowChanges(creationConfig.projectLayout.buildDirectory.dir("tmp/FusedLibraryManifestMerger"))
     }
-
-    abstract class FusedLibraryManifestMergerParams: ProfileAwareWorkAction.Parameters() {
-        abstract val mainAndroidManifest: RegularFileProperty
-        abstract val dependencies: MapProperty<String, File>
-        abstract val namespace: Property<String>
-        abstract val manifestPlaceholders: MapProperty<String, String>
-        abstract val minSdkVersion: Property<String>
-        abstract val outMergedManifestLocation: RegularFileProperty
-        abstract val reportFile: RegularFileProperty
-    }
-    abstract class FusedLibraryManifestMergerWorkAction
-        : ProfileAwareWorkAction<FusedLibraryManifestMergerParams>() {
-
-        override fun run() {
-            with(parameters!!) {
-                val dependencyManifests =
-                        dependencies.get().map { ManifestProviderImpl(it.value, it.key) }
-                mergeManifests(
-                        mainManifest = mainAndroidManifest.get().asFile,
-                        manifestOverlays = emptyList(),
-                        dependencies = dependencyManifests,
-                        navigationJsons = emptyList(),
-                        featureName = null,
-                        packageOverride = namespace.get(),
-                        namespace = namespace.get(),
-                        profileable = false,
-                        versionCode = null,
-                        versionName = null,
-                        minSdkVersion = minSdkVersion.get(),
-                        targetSdkVersion = null,
-                        maxSdkVersion = null,
-                        testOnly = false,
-                        extractNativeLibs = null,
-                        outMergedManifestLocation = outMergedManifestLocation.get().asFile.absolutePath,
-                        outAaptSafeManifestLocation = null,
-                        mergeType = ManifestMerger2.MergeType.LIBRARY,
-                        placeHolders = manifestPlaceholders.get(),
-                        optionalFeatures = emptyList(),
-                        dependencyFeatureNames = emptyList(),
-                        generatedLocaleConfigAttribute = null,
-                        reportFile = reportFile.get().asFile,
-                        logger = LoggerWrapper.getLogger(FusedLibraryManifestMergerTask::class.java)
-                )
-            }
-        }
-    }
-
-    class CreationAction(private val creationConfig: FusedLibraryGlobalScope) :
-        GlobalTaskCreationAction<FusedLibraryManifestMergerTask>() {
-
-        override val name: String
-            get() = "mergeManifest"
-
-        override val type: Class<FusedLibraryManifestMergerTask>
-            get() = FusedLibraryManifestMergerTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryManifestMergerTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryManifestMergerTask::mergedFusedLibraryManifest
-            ).withName(FN_ANDROID_MANIFEST_XML)
-                    .on(FusedLibraryInternalArtifactType.MERGED_MANIFEST)
-
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryManifestMergerTask::reportFile
-            ).atLocation(
-                    creationConfig.projectLayout.buildDirectory
-                            .dir("${SdkConstants.FD_OUTPUTS}/${SdkConstants.FD_LOGS}")
-            ).withName("manifest-merger-$name-report.txt")
-                    .on(FusedLibraryInternalArtifactType.MANIFEST_MERGE_REPORT)
-        }
-
-        override fun configure(task: FusedLibraryManifestMergerTask) {
-            super.configure(task)
-
-            val libraryManifests = creationConfig.dependencies.getArtifactCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                AndroidArtifacts.ArtifactType.MANIFEST
-            )
-            task.libraryManifests.set(libraryManifests)
-            task.manifestPlaceholders.set(creationConfig.manifestPlaceholders)
-            task.minSdkVersion.setDisallowChanges(creationConfig.minSdkApiLevel.toString())
-            task.namespace.set(creationConfig.namespace)
-            task.tmpDir.setDisallowChanges(
-                    creationConfig.projectLayout.buildDirectory.dir("tmp/FusedLibraryManifestMerger")
-            )
-        }
-    }
+  }
 }

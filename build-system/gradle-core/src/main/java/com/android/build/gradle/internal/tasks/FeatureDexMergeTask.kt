@@ -31,69 +31,52 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * A task merging dex files in dynamic feature modules into a single artifact type.
- */
+/** A task merging dex files in dynamic feature modules into a single artifact type. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING, secondaryTaskCategories = [TaskCategory.MERGING])
 abstract class FeatureDexMergeTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val dexDirs: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val dexDirs: ConfigurableFileCollection
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(
-            FeatureDexMergeWorkAction::class.java
-        ) {
-            it.initializeFromBaseTask(this)
-            it.dexDirs.from(dexDirs)
-            it.outputDir.set(outputDir)
-        }
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(FeatureDexMergeWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.dexDirs.from(dexDirs)
+      it.outputDir.set(outputDir)
+    }
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<FeatureDexMergeTask, ApkCreationConfig>(creationConfig) {
+    override val name = computeTaskName("featureDexMerge")
+    override val type = FeatureDexMergeTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<FeatureDexMergeTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FeatureDexMergeTask::outputDir)
+        .on(InternalArtifactType.FEATURE_PUBLISHED_DEX)
     }
 
-    class CreationAction(
-        creationConfig: ApkCreationConfig
-    ) : VariantTaskCreationAction<FeatureDexMergeTask, ApkCreationConfig>(
-        creationConfig
-    ) {
-        override val name = computeTaskName("featureDexMerge")
-        override val type = FeatureDexMergeTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FeatureDexMergeTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig
-                .artifacts
-                .setInitialProvider(taskProvider, FeatureDexMergeTask::outputDir)
-                .on(InternalArtifactType.FEATURE_PUBLISHED_DEX)
-        }
-
-        override fun configure(task: FeatureDexMergeTask) {
-            super.configure(task)
-            task.dexDirs.from(creationConfig.artifacts.getAll(InternalMultipleArtifactType.DEX))
-            task.outputs.doNotCacheIf(
-                "This is a copy paste task, so the cacheability overhead could outweigh its benefit"
-            ) { true }
-        }
+    override fun configure(task: FeatureDexMergeTask) {
+      super.configure(task)
+      task.dexDirs.from(creationConfig.artifacts.getAll(InternalMultipleArtifactType.DEX))
+      task.outputs.doNotCacheIf("This is a copy paste task, so the cacheability overhead could outweigh its benefit") { true }
     }
+  }
 }
 
-abstract class FeatureDexMergeWorkAction
-    : ProfileAwareWorkAction<FeatureDexMergeWorkAction.Params>()
-{
-    abstract class Params: ProfileAwareWorkAction.Parameters() {
-        abstract val dexDirs: ConfigurableFileCollection
-        abstract val outputDir: DirectoryProperty
-    }
+abstract class FeatureDexMergeWorkAction : ProfileAwareWorkAction<FeatureDexMergeWorkAction.Params>() {
+  abstract class Params : ProfileAwareWorkAction.Parameters() {
+    abstract val dexDirs: ConfigurableFileCollection
+    abstract val outputDir: DirectoryProperty
+  }
 
-    override fun run() {
-        val inputFiles = parameters.dexDirs.asFileTree.files
-        val outputFolder = parameters.outputDir.get().asFile
-        inputFiles.forEachIndexed { index, file ->
-            file.copyTo(outputFolder.resolve("$index.dex"))
-        }
-    }
+  override fun run() {
+    val inputFiles = parameters.dexDirs.asFileTree.files
+    val outputFolder = parameters.outputDir.get().asFile
+    inputFiles.forEachIndexed { index, file -> file.copyTo(outputFolder.resolve("$index.dex")) }
+  }
 }

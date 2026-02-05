@@ -41,8 +41,6 @@ enum class CmdSet(val id: Int) {
 
     private val map = CmdSet.values().associateBy(CmdSet::id)
 
-    @JvmStatic
-    fun fromInt(value: Int) =
-      CmdSet.map[value] ?: throw IllegalStateException("No CmdSet for $value")
+    @JvmStatic fun fromInt(value: Int) = CmdSet.map[value] ?: throw IllegalStateException("No CmdSet for $value")
   }
 }

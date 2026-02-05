@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun shaderCpp(): String {
-    return """
+  return """
 #include "Shader.h"
 
 #include "AndroidOut.h"
@@ -175,7 +175,7 @@ void Shader::setProjectionMatrix(float *projectionMatrix) const {
 }
 
 fun shaderH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_SHADER_H
 #define ANDROIDGLINVESTIGATIONS_SHADER_H
 

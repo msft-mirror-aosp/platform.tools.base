@@ -19,27 +19,16 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.artifacts.dsl.DependencyCollector
 
-/**
- * DSL element to add dependencies to an [AgpTestSuite]
- */
+/** DSL element to add dependencies to an [AgpTestSuite] */
 @Incubating
 interface AgpTestSuiteDependencies {
 
-    /**
-     * Returns a [DependencyCollector] that collects the set of compile-only dependencies.
-     */
-    @get:Incubating
-    val compileOnly: DependencyCollector
+  /** Returns a [DependencyCollector] that collects the set of compile-only dependencies. */
+  @get:Incubating val compileOnly: DependencyCollector
 
-    /**
-     * Returns a []DependencyCollector] that collects the set of implementation dependencies.
-     */
-    @get:Incubating
-    val implementation: DependencyCollector
+  /** Returns a []DependencyCollector] that collects the set of implementation dependencies. */
+  @get:Incubating val implementation: DependencyCollector
 
-    /**
-     * Returns a [DependencyCollector] that collects the set of runtime-only dependencies.
-     */
-    @get:Incubating
-    val runtimeOnly: DependencyCollector
+  /** Returns a [DependencyCollector] that collects the set of runtime-only dependencies. */
+  @get:Incubating val runtimeOnly: DependencyCollector
 }

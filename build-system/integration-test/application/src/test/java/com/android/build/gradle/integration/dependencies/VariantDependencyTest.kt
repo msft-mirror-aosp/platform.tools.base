@@ -25,32 +25,26 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getSingleOutputFile
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.Variant
 import com.android.builder.model.v2.models.AndroidProject
 import com.google.common.collect.Sets
+import java.nio.file.Paths
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Paths
 
 class VariantDependencyTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.noBuildFile())
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-        .disableBuiltInKotlin()
-        .withHeap("2048m")
-        .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).disableBuiltInKotlin().withHeap("2048m").create()
 
-     lateinit var androidProject: AndroidProject
+  lateinit var androidProject: AndroidProject
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     configurations {
@@ -82,91 +76,86 @@ class VariantDependencyTest : ModelComparator() {
                     freeLollipopDebugImplementation "androidx.leanback:leanback:1.0.0"
                     paidIcsImplementation "androidx.appcompat:appcompat:1.6.1"
                 }
-            """.trimIndent())
+            """
+        .trimIndent(),
+    )
 
-        project.execute("clean", "assemble")
-        androidProject = project.modelV2().fetchModels().container.getProject().androidProject!!
+    project.execute("clean", "assemble")
+    androidProject = project.modelV2().fetchModels().container.getProject().androidProject!!
+  }
+
+  @Test
+  fun `test lollipop VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues()
+
+    with(result.fetchModels(variantName = "freeLollipopDebug"))
+      .compareVariantDependencies(goldenFile = "freeLollipopDebug_VariantDependencies")
+    with(result.fetchModels(variantName = "freeLollipopRelease"))
+      .compareVariantDependencies(goldenFile = "freeLollipopRelease_VariantDependencies")
+    with(result.fetchModels(variantName = "paidLollipopRelease"))
+      .compareVariantDependencies(goldenFile = "paidLollipopRelease_VariantDependencies")
+    with(result.fetchModels(variantName = "freeLollipopRelease"))
+      .compareVariantDependencies(goldenFile = "freeLollipopRelease_VariantDependencies")
+  }
+
+  @Test
+  fun `test ics VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues()
+
+    with(result.fetchModels(variantName = "paidIcsDebug")).compareVariantDependencies(goldenFile = "paidIcsDebug_VariantDependencies")
+    with(result.fetchModels(variantName = "paidIcsRelease")).compareVariantDependencies(goldenFile = "paidIcsRelease_VariantDependencies")
+    with(result.fetchModels(variantName = "freeIcsDebug")).compareVariantDependencies(goldenFile = "freeIcsDebug_VariantDependencies")
+    with(result.fetchModels(variantName = "freeIcsRelease")).compareVariantDependencies(goldenFile = "freeIcsRelease_VariantDependencies")
+  }
+
+  @Test
+  fun buildVariantSpecificDependency() {
+    // check that the dependency was added by looking for a res file coming from the
+    // dependency.
+    checkApkForContent("freeLollipopDebug", "res/drawable/lb_background.xml")
+  }
+
+  @Test
+  fun buildMultiFlavorDependency() {
+    // check that the dependency was added by looking for a res file coming from the
+    // dependency.
+    val fullResPath = "res/anim/abc_fade_in.xml"
+    checkApkForContent("paidIcsDebug", fullResPath)
+    if (project.getIntermediateFile(InternalArtifactType.OPTIMIZED_PROCESSED_RES.getFolderName()).exists()) {
+      checkApkForContent("paidIcsRelease", "res/y4.xml")
+    } else {
+      checkApkForContent("paidIcsRelease", fullResPath)
     }
+  }
 
-    @Test
-    fun `test lollipop VariantDependencies model`() {
-        val result = project.modelV2().ignoreSyncIssues()
+  @Test
+  fun buildDefaultDependency() {
+    // make sure that the other variants do not include any file from the variant-specific
+    // and multi-flavor dependencies.
+    val paths: Set<String?> = Sets.newHashSet("res/anim/abc_fade_in.xml", "res/drawable/lb_background.xml")
+    checkApkForMissingContent("paidLollipopDebug", paths)
+    checkApkForMissingContent("paidLollipopRelease", paths)
+    checkApkForMissingContent("freeLollipopRelease", paths)
+    checkApkForMissingContent("freeIcsDebug", paths)
+    checkApkForMissingContent("freeIcsRelease", paths)
+  }
 
-        with(result.fetchModels(variantName = "freeLollipopDebug")).compareVariantDependencies(goldenFile = "freeLollipopDebug_VariantDependencies")
-        with(result.fetchModels(variantName = "freeLollipopRelease")).compareVariantDependencies(goldenFile = "freeLollipopRelease_VariantDependencies")
-        with(result.fetchModels(variantName = "paidLollipopRelease")).compareVariantDependencies(goldenFile = "paidLollipopRelease_VariantDependencies")
-        with(result.fetchModels(variantName = "freeLollipopRelease")).compareVariantDependencies(goldenFile = "freeLollipopRelease_VariantDependencies")
-    }
+  @Test
+  fun modelVariantCount() {
+    TruthHelper.assertThat(androidProject.variants.size).named("variants").isEqualTo(8)
+  }
 
-    @Test
-    fun `test ics VariantDependencies model`() {
-        val result = project.modelV2().ignoreSyncIssues()
+  private fun checkApkForContent(variantName: String, checkFilePath: String) {
+    // use the model to get the output APK!
+    val variant: Variant = androidProject.getVariantByName(variantName)
+    val apk = Paths.get(variant.getSingleOutputFile())
+    ZipSubject.assertThat(apk) { entries().contains(checkFilePath) }
+  }
 
-        with(result.fetchModels(variantName = "paidIcsDebug")).compareVariantDependencies(goldenFile = "paidIcsDebug_VariantDependencies")
-        with(result.fetchModels(variantName = "paidIcsRelease")).compareVariantDependencies(goldenFile = "paidIcsRelease_VariantDependencies")
-        with(result.fetchModels(variantName = "freeIcsDebug")).compareVariantDependencies(goldenFile = "freeIcsDebug_VariantDependencies")
-        with(result.fetchModels(variantName = "freeIcsRelease")).compareVariantDependencies(goldenFile = "freeIcsRelease_VariantDependencies")
-    }
-
-    @Test
-    fun buildVariantSpecificDependency() {
-        // check that the dependency was added by looking for a res file coming from the
-        // dependency.
-        checkApkForContent("freeLollipopDebug", "res/drawable/lb_background.xml")
-    }
-
-    @Test
-    fun buildMultiFlavorDependency() {
-        // check that the dependency was added by looking for a res file coming from the
-        // dependency.
-        val fullResPath = "res/anim/abc_fade_in.xml"
-        checkApkForContent("paidIcsDebug", fullResPath)
-        if (project.getIntermediateFile(InternalArtifactType.OPTIMIZED_PROCESSED_RES.getFolderName()).exists()) {
-            checkApkForContent("paidIcsRelease", "res/y4.xml")
-        } else {
-            checkApkForContent("paidIcsRelease", fullResPath)
-        }
-    }
-
-    @Test
-    fun buildDefaultDependency() {
-        // make sure that the other variants do not include any file from the variant-specific
-        // and multi-flavor dependencies.
-        val paths: Set<String?> = Sets.newHashSet(
-            "res/anim/abc_fade_in.xml",
-            "res/drawable/lb_background.xml"
-        )
-        checkApkForMissingContent("paidLollipopDebug", paths)
-        checkApkForMissingContent("paidLollipopRelease", paths)
-        checkApkForMissingContent("freeLollipopRelease", paths)
-        checkApkForMissingContent("freeIcsDebug", paths)
-        checkApkForMissingContent("freeIcsRelease", paths)
-    }
-
-    @Test
-    fun modelVariantCount() {
-        TruthHelper.assertThat(androidProject.variants.size).named("variants").isEqualTo(8)
-    }
-
-    private fun checkApkForContent(
-        variantName: String, checkFilePath: String
-    ) {
-        // use the model to get the output APK!
-        val variant: Variant = androidProject.getVariantByName(variantName)
-        val apk = Paths.get(variant.getSingleOutputFile())
-        ZipSubject.assertThat(apk) {
-            entries().contains(checkFilePath)
-        }
-    }
-
-    private fun checkApkForMissingContent(
-        variantName: String, checkFilePath: Set<String?>
-    ) {
-        // use the model to get the output APK!
-        val variant: Variant = androidProject.getVariantByName(variantName)
-        val apk = Paths.get(variant.getSingleOutputFile())
-        ZipSubject.assertThat(apk) {
-            entries().containsNoneIn(checkFilePath)
-        }
-    }
+  private fun checkApkForMissingContent(variantName: String, checkFilePath: Set<String?>) {
+    // use the model to get the output APK!
+    val variant: Variant = androidProject.getVariantByName(variantName)
+    val apk = Paths.get(variant.getSingleOutputFile())
+    ZipSubject.assertThat(apk) { entries().containsNoneIn(checkFilePath) }
+  }
 }

@@ -26,14 +26,9 @@ import com.android.tools.lint.detector.api.Severity
 import java.io.File
 import org.junit.Assert.fail
 
-class TestConfiguration(private val task: TestLintTask, configurations: ConfigurationHierarchy) :
-  Configuration(configurations) {
+class TestConfiguration(private val task: TestLintTask, configurations: ConfigurationHierarchy) : Configuration(configurations) {
 
-  override fun getDefinedSeverity(
-    issue: Issue,
-    source: Configuration,
-    visibleDefault: Severity,
-  ): Severity {
+  override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity {
     val override = overrideSeverity(task, issue, visibleDefault)
     if (override != null) {
       return override
@@ -50,15 +45,10 @@ class TestConfiguration(private val task: TestLintTask, configurations: Configur
       }
     }
 
-    return if (task.checkedIssues.contains(issue)) getNonIgnoredSeverity(visibleDefault, issue)
-    else Severity.IGNORE
+    return if (task.checkedIssues.contains(issue)) getNonIgnoredSeverity(visibleDefault, issue) else Severity.IGNORE
   }
 
-  override fun addConfiguredIssues(
-    targetMap: MutableMap<String, Severity>,
-    registry: IssueRegistry,
-    specificOnly: Boolean,
-  ) {
+  override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {
     parent?.addConfiguredIssues(targetMap, registry, specificOnly)
 
     for (issue in registry.issues) {
@@ -86,8 +76,7 @@ class TestConfiguration(private val task: TestLintTask, configurations: Configur
     overrides?.addConfiguredIssues(targetMap, registry, specificOnly)
   }
 
-  override fun ignore(context: Context, issue: Issue, location: Location?, message: String) =
-    fail("Not supported in tests.")
+  override fun ignore(context: Context, issue: Issue, location: Location?, message: String) = fail("Not supported in tests.")
 
   override var baselineFile: File?
     get() = null

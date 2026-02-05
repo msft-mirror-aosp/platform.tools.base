@@ -33,31 +33,42 @@ fun contentListFragmentJava(
   objectKindPlural: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
   val layoutName = "fragment_${itemListLayout}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false);"
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     ${layoutToViewBindingClass(itemListContentLayout)} binding =
       ${layoutToViewBindingClass(itemListContentLayout)}.inflate(LayoutInflater.from(parent.getContext()), parent, false);
     return new ViewHolder(binding);
-  """ else """
+  """
+    else
+      """
     View view = LayoutInflater.from(parent.getContext())
       .inflate(R.layout.${itemListContentLayout}, parent, false);
     return new ViewHolder(view);
   """
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     ViewHolder(${layoutToViewBindingClass(itemListContentLayout)} binding) {
       super(binding.getRoot());
       mIdView = binding.idText;
       mContentView = binding.content;
     }
-  """ else """
+  """
+    else
+      """
     ViewHolder(View view) {
       super(view);
       mIdView = view.findViewById(R.id.id_text);
@@ -146,7 +157,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = itemListLayout,
-          parentView = "view")};
+          parentView = "view",)};
 
         // Leaving this not using view binding as it relies on if the view is visible the current
         // layout configuration (layout, layout-sw600dp)

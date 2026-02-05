@@ -26,26 +26,17 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 
-/**
- * Class providing configuration-cache compatible way to check if analytics are enabled.
- */
+/** Class providing configuration-cache compatible way to check if analytics are enabled. */
 abstract class AnalyticsEnabledValueSource : ValueSource<Boolean, AnalyticsEnabledValueSource.Params> {
-    override fun obtain(): Boolean {
-        AnalyticsSettings.initialize(
-            LoggerWrapper.getLogger(AnalyticsEnabledValueSource::class.java)
-        )
-        return AnalyticsSettings.optedIn || parameters.profileJsonEnabled.get()
-    }
+  override fun obtain(): Boolean {
+    AnalyticsSettings.initialize(LoggerWrapper.getLogger(AnalyticsEnabledValueSource::class.java))
+    return AnalyticsSettings.optedIn || parameters.profileJsonEnabled.get()
+  }
 
-    interface Params: ValueSourceParameters {
-        val profileJsonEnabled: Property<Boolean>
-    }
+  interface Params : ValueSourceParameters {
+    val profileJsonEnabled: Property<Boolean>
+  }
 }
 
-fun analyticsEnabledProvider(
-    providerFactory: ProviderFactory,
-    profileJsonEnabled: Boolean
-): Provider<Boolean> =
-    providerFactory.of(AnalyticsEnabledValueSource::class.java) {
-        it.parameters.profileJsonEnabled.set(profileJsonEnabled)
-    }
+fun analyticsEnabledProvider(providerFactory: ProviderFactory, profileJsonEnabled: Boolean): Provider<Boolean> =
+  providerFactory.of(AnalyticsEnabledValueSource::class.java) { it.parameters.profileJsonEnabled.set(profileJsonEnabled) }

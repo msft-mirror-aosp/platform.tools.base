@@ -25,23 +25,17 @@ import java.util.zip.ZipEntry
  *
  * This is returned by [ZipSubject.zipEntry]
  */
-class ZipEntrySubject internal constructor(
-    metadata: FailureMetadata,
-    actual: ZipEntry
-): Subject<ZipEntrySubject, ZipEntry>(metadata, actual) {
+class ZipEntrySubject internal constructor(metadata: FailureMetadata, actual: ZipEntry) :
+  Subject<ZipEntrySubject, ZipEntry>(metadata, actual) {
 
-    companion object {
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun zipEntries(): Factory<ZipEntrySubject, ZipEntry> {
-            return Factory<ZipEntrySubject, ZipEntry> { metadata, actual ->
-                ZipEntrySubject(metadata, actual)
-            }
-        }
+  companion object {
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun zipEntries(): Factory<ZipEntrySubject, ZipEntry> {
+      return Factory<ZipEntrySubject, ZipEntry> { metadata, actual -> ZipEntrySubject(metadata, actual) }
     }
+  }
 
-    fun hasCompressionMethod(method: Int) {
-        check("hasCompressionMethod()").that(actual().method).isEqualTo(method)
-    }
+  fun hasCompressionMethod(method: Int) {
+    check("hasCompressionMethod()").that(actual().method).isEqualTo(method)
+  }
 }

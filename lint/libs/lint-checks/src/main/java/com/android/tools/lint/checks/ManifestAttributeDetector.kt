@@ -33,8 +33,7 @@ import org.w3c.dom.Element
 /**
  * Reports manifest attributes in `<activity-alias>` that have no effect.
  *
- * Specifically, reports attributes that are valid for `<activity>`, but have no effect when used on
- * `<activity-alias>`.
+ * Specifically, reports attributes that are valid for `<activity>`, but have no effect when used on `<activity-alias>`.
  *
  * We could report additional manifest attributes in the future (hence the generic name).
  *

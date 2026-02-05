@@ -34,11 +34,7 @@ private const val DEVICE_DEX_PATH = "/data/local/tmp/test-classes-dex.jar"
 private const val JDWP_PORT = 54321
 private const val PUSH_COMMAND = "%s push %s %s"
 private const val LAUNCH_COMMAND =
-  "%s shell dalvikvm" +
-    " -classpath %s" +
-    " -XjdwpProvider:adbconnection" +
-    " -XjdwpOptions:server=y" +
-    " MainKt -android %s"
+  "%s shell dalvikvm" + " -classpath %s" + " -XjdwpProvider:adbconnection" + " -XjdwpOptions:server=y" + " MainKt -android %s"
 private const val PORT_FORWARD_COMMAND = "%s forward tcp:%d jdwp:%d"
 
 /**
@@ -60,15 +56,14 @@ internal class AndroidEngine(serialNumber: String? = null) : Engine("dex") {
 
   /**
    * Starts a debugger:
-   * 1. Launch process using `dalvikvm`. The process will wait for a `<newline>` before starting the
-   *    test.
+   * 1. Launch process using `dalvikvm`. The process will wait for a `<newline>` before starting the test.
    * 2. Monitor the output from `dalvik` and extract the PID of the launched process
    * 3. Using the pid, set up port forwarding. TODO: Find a way to find a safe unused port
    * 4. Attach a debugger
    * 5. Suspend the process because `dalvik` doesn't support `suspend`
    * 6. Send a `<newline>` to the process. It is still suspended.
-   * 7. The debugger is now ready. Note that unlike other engines, we do not expect a `VMStartEvent`
-   *    here so do not call [Debugger.waitForStart]
+   * 7. The debugger is now ready. Note that unlike other engines, we do not expect a `VMStartEvent` here so do not call
+   *    [Debugger.waitForStart]
    */
   override suspend fun startDebugger(mainClass: String): Debugger {
     val scope = CoroutineScope(SupervisorJob())
@@ -98,11 +93,7 @@ internal class AndroidEngine(serialNumber: String? = null) : Engine("dex") {
     process.outputStream.writer().use { it.write("\n") }
 
     // Step 7
-    return DebuggerWithResources(
-      debugger,
-      Closeable { scope.cancel() },
-      Closeable { if (process.isAlive) process.destroyForcibly() },
-    )
+    return DebuggerWithResources(debugger, Closeable { scope.cancel() }, Closeable { if (process.isAlive) process.destroyForcibly() })
   }
 
   private suspend fun waitForPid(process: Process, scope: CoroutineScope): Int {

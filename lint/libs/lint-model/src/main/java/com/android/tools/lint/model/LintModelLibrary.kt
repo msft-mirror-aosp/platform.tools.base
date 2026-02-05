@@ -21,8 +21,8 @@ import java.io.File
 /** A library. */
 interface LintModelLibrary : Comparable<LintModelLibrary> {
   /**
-   * Whether this library is provided ("compileOnly" in Gradle), meaning that it should not be
-   * packed with the app or library; it will be provided in the running container.
+   * Whether this library is provided ("compileOnly" in Gradle), meaning that it should not be packed with the app or library; it will be
+   * provided in the running container.
    */
   val provided: Boolean
 
@@ -54,10 +54,7 @@ interface LintModelExternalLibrary : LintModelLibrary {
   /** The actual resolved Maven coordinates of this library. */
   val resolvedCoordinates: LintModelMavenName
 
-  /**
-   * The directory containing the partial results of lint analysis on the library, or null if no
-   * lint analysis was done.
-   */
+  /** The directory containing the partial results of lint analysis on the library, or null if no lint analysis was done. */
   val partialResultsDir: File?
 }
 

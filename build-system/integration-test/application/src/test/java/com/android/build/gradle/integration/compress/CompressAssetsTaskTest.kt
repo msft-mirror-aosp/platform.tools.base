@@ -31,68 +31,53 @@ import org.junit.Test
 
 class CompressAssetsTaskTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        buildFileType = BuildFileType.KTS
-        androidApplication {
-            android {
-                compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-                namespace = "com.example"
-            }
-            pluginCallbacks += MyAppCallback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      buildFileType = BuildFileType.KTS
+      androidApplication {
+        android {
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+          namespace = "com.example"
         }
-        gradleProperties {
-            add("org.gradle.jvmargs", "-Xmx1G -XX:MaxMetaspaceSize=1G")
-        }
+        pluginCallbacks += MyAppCallback::class.java
+      }
+      gradleProperties { add("org.gradle.jvmargs", "-Xmx1G -XX:MaxMetaspaceSize=1G") }
     }
 
-    class MyAppCallback : ApplicationComponentCallback {
+  class MyAppCallback : ApplicationComponentCallback {
 
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.onVariants(
-                androidComponents.selector()
-                    .withBuildType("debug")
-            ) { variant ->
-                val prepareAssetsTask =
-                    project.tasks.register(
-                        "${variant.name}PrepareAssets",
-                        CompressTestPrepareAssetsTask::class.java
-                    )
-                variant.sources.assets?.addGeneratedSourceDirectory(
-                    prepareAssetsTask,
-                    CompressTestPrepareAssetsTask::outputDirectory
-                )
-            }
-        }
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+        val prepareAssetsTask = project.tasks.register("${variant.name}PrepareAssets", CompressTestPrepareAssetsTask::class.java)
+        variant.sources.assets?.addGeneratedSourceDirectory(prepareAssetsTask, CompressTestPrepareAssetsTask::outputDirectory)
+      }
     }
+  }
 
-    // regression for b/405676717
-    @Test
-    fun outOfMemory() {
-        rule.build.executor.run(":app:compressDebugAssets")
-    }
+  // regression for b/405676717
+  @Test
+  fun outOfMemory() {
+    rule.build.executor.run(":app:compressDebugAssets")
+  }
 }
 
 abstract class CompressTestPrepareAssetsTask : DefaultTask() {
 
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    @TaskAction
-    fun generate() {
-        val assetFile = outputDirectory.get().file("asset.data").asFile
-        assetFile.delete()
-        val random = java.util.Random(123)
-        val bytes = ByteArray(1_000_000)
-        // generating 1gb of data
-        assetFile.outputStream().use { outputStream ->
-            repeat(1000) {
-                random.nextBytes(bytes)
-                outputStream.write(bytes)
-            }
-        }
+  @TaskAction
+  fun generate() {
+    val assetFile = outputDirectory.get().file("asset.data").asFile
+    assetFile.delete()
+    val random = java.util.Random(123)
+    val bytes = ByteArray(1_000_000)
+    // generating 1gb of data
+    assetFile.outputStream().use { outputStream ->
+      repeat(1000) {
+        random.nextBytes(bytes)
+        outputStream.write(bytes)
+      }
     }
+  }
 }

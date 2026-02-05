@@ -25,68 +25,45 @@ import java.util.function.Consumer
  *
  * This provides custom content validation, in a different way than [ZipSubject] does.
  *
- * Note that this is actually not a Truth [javax.security.auth.Subject]. This combines
- * 2 actual subjects ([ClassesSubject] and [ResourcesSubject]) in a single class to represent
- * a Jar.
+ * Note that this is actually not a Truth [javax.security.auth.Subject]. This combines 2 actual subjects ([ClassesSubject] and
+ * [ResourcesSubject]) in a single class to represent a Jar.
  */
 @SubjectDsl
-class JarSubject internal constructor(
-    private val code: ClassesSubject,
-    private val resources: ResourcesSubject
-) {
+class JarSubject internal constructor(private val code: ClassesSubject, private val resources: ResourcesSubject) {
 
-    companion object {
-        fun assertThat(path: Path, action: JarSubject.() -> Unit) {
-            SimpleZip(path).use { zip ->
-                action(
-                    JarSubject(
-                        JarWithClassesSubject.assertThat(zip),
-                        JarWithJavaResourcesSubject.assertThat(zip)
-                    )
-                )
-            }
-        }
-
-        fun assertThat(file: File, action: JarSubject.() -> Unit) {
-            assertThat(file.toPath(), action)
-        }
+  companion object {
+    fun assertThat(path: Path, action: JarSubject.() -> Unit) {
+      SimpleZip(path).use { zip -> action(JarSubject(JarWithClassesSubject.assertThat(zip), JarWithJavaResourcesSubject.assertThat(zip))) }
     }
 
-    /**
-     * Returns a [ClassesSubject] for the classes inside this jar
-     */
-    fun classes(): ClassesSubject = code
-
-    /**
-     * Applies the action to the [ClassesSubject] returned by [classes]
-     */
-    fun classes(action: ClassesSubject.() -> Unit) {
-        action(classes())
+    fun assertThat(file: File, action: JarSubject.() -> Unit) {
+      assertThat(file.toPath(), action)
     }
+  }
 
-    /**
-     * Applies the action to the [ClassesSubject] returned by [classes]
-     */
-    fun classes(action: Consumer<ClassesSubject>) {
-        action.accept(classes())
-    }
+  /** Returns a [ClassesSubject] for the classes inside this jar */
+  fun classes(): ClassesSubject = code
 
-    /**
-     * Returns a [ResourcesSubject] for the resources inside this jar
-     */
-    fun resources(): ResourcesSubject = resources
+  /** Applies the action to the [ClassesSubject] returned by [classes] */
+  fun classes(action: ClassesSubject.() -> Unit) {
+    action(classes())
+  }
 
-    /**
-     * Applies the action to the [ResourcesSubject] returned by [resources]
-     */
-    fun resources(action: ResourcesSubject.() -> Unit) {
-        action(resources())
-    }
+  /** Applies the action to the [ClassesSubject] returned by [classes] */
+  fun classes(action: Consumer<ClassesSubject>) {
+    action.accept(classes())
+  }
 
-    /**
-     * Applies the action to the [ResourcesSubject] returned by [resources]
-     */
-    fun resources(action: Consumer<ResourcesSubject>) {
-        action.accept(resources())
-    }
+  /** Returns a [ResourcesSubject] for the resources inside this jar */
+  fun resources(): ResourcesSubject = resources
+
+  /** Applies the action to the [ResourcesSubject] returned by [resources] */
+  fun resources(action: ResourcesSubject.() -> Unit) {
+    action(resources())
+  }
+
+  /** Applies the action to the [ResourcesSubject] returned by [resources] */
+  fun resources(action: Consumer<ResourcesSubject>) {
+    action.accept(resources())
+  }
 }

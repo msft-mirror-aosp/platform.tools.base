@@ -27,7 +27,8 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-/** Injector to inject inner class to represent tensor group. It generates class with following format:
+/**
+ * Injector to inject inner class to represent tensor group. It generates class with following format:
  * <pre>
  *    public class TensorGroupName {
  *        private Type tensor1;
@@ -45,58 +46,53 @@ import javax.lang.model.element.Modifier
  * </pre>
  */
 class GroupClassInjector : CodeInjector<TypeSpec.Builder, ModelInfo> {
-    override fun inject(classBuilder: TypeSpec.Builder, modelInfo: ModelInfo) {
-        for (tensorGroupInfo in modelInfo.outputTensorGroups) {
-            val builder = TypeSpec.classBuilder(tensorGroupInfo.identifierName.usLocaleCapitalize())
-            builder.addModifiers(Modifier.PUBLIC)
+  override fun inject(classBuilder: TypeSpec.Builder, modelInfo: ModelInfo) {
+    for (tensorGroupInfo in modelInfo.outputTensorGroups) {
+      val builder = TypeSpec.classBuilder(tensorGroupInfo.identifierName.usLocaleCapitalize())
+      builder.addModifiers(Modifier.PUBLIC)
 
-            val tensorInfos: List<TensorInfo> =
-                modelInfo.outputs.filter { tensorGroupInfo.tensorNames.contains(it.name) }
+      val tensorInfos: List<TensorInfo> = modelInfo.outputs.filter { tensorGroupInfo.tensorNames.contains(it.name) }
 
-            // Add constructor.
-            val constructorBuilder = MethodSpec.constructorBuilder()
-                .addModifiers(Modifier.PRIVATE)
-            for (tensorInfo in tensorInfos) {
-                constructorBuilder.addParameter(getGroupClassParameterType(tensorInfo), tensorInfo.identifierName)
-                constructorBuilder.addStatement("this.\$L = \$L", tensorInfo.identifierName, tensorInfo.identifierName)
-            }
-            builder.addMethod(constructorBuilder.build())
+      // Add constructor.
+      val constructorBuilder = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE)
+      for (tensorInfo in tensorInfos) {
+        constructorBuilder.addParameter(getGroupClassParameterType(tensorInfo), tensorInfo.identifierName)
+        constructorBuilder.addStatement("this.\$L = \$L", tensorInfo.identifierName, tensorInfo.identifierName)
+      }
+      builder.addMethod(constructorBuilder.build())
 
-            // Add data fields.
-            for (tensorInfo in tensorInfos) {
-                val fieldSpec =
-                    FieldSpec.builder(getGroupClassParameterType(tensorInfo), tensorInfo.identifierName)
-                        .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                        .build()
-                builder.addField(fieldSpec)
-            }
+      // Add data fields.
+      for (tensorInfo in tensorInfos) {
+        val fieldSpec =
+          FieldSpec.builder(getGroupClassParameterType(tensorInfo), tensorInfo.identifierName)
+            .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+            .build()
+        builder.addField(fieldSpec)
+      }
 
-            // Add getter methods
-            for (tensorInfo in tensorInfos) {
-                val methodSpecBuilder = MethodSpec.methodBuilder(
-                    MlNames.formatGetterName(
-                        tensorInfo.identifierName, getTypeName(tensorInfo)
-                    )
-                )
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(getGroupClassParameterType(tensorInfo))
-                    .addAnnotation(ClassNames.NON_NULL)
-                    .addStatement("return \$L", tensorInfo.identifierName)
-                builder.addMethod(methodSpecBuilder.build())
-            }
+      // Add getter methods
+      for (tensorInfo in tensorInfos) {
+        val methodSpecBuilder =
+          MethodSpec.methodBuilder(MlNames.formatGetterName(tensorInfo.identifierName, getTypeName(tensorInfo)))
+            .addModifiers(Modifier.PUBLIC)
+            .returns(getGroupClassParameterType(tensorInfo))
+            .addAnnotation(ClassNames.NON_NULL)
+            .addStatement("return \$L", tensorInfo.identifierName)
+        builder.addMethod(methodSpecBuilder.build())
+      }
 
-            classBuilder.addType(builder.build())
-        }
+      classBuilder.addType(builder.build())
     }
+  }
 
-    private companion object {
-        fun getTypeName(tensorInfo: TensorInfo): String {
-            return when {
-                tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS -> "String"
-                tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX -> "RectF"
-                tensorInfo.dataType == TensorInfo.DataType.FLOAT32 -> "Float"
-                else -> "Int"
-            }
-        }
+  private companion object {
+    fun getTypeName(tensorInfo: TensorInfo): String {
+      return when {
+        tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS -> "String"
+        tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX -> "RectF"
+        tensorInfo.dataType == TensorInfo.DataType.FLOAT32 -> "Float"
+        else -> "Int"
+      }
     }
+  }
 }

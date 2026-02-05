@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -33,30 +33,41 @@ fun contentListFragmentKt(
   itemListLayout: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val layoutName = "fragment_${itemListLayout}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false)"
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     val binding = ${layoutToViewBindingClass(itemListContentLayout)}.inflate(LayoutInflater.from(parent.context), parent, false)
     return ViewHolder(binding)
-  """ else """
+  """
+    else
+      """
     val view = LayoutInflater.from(parent.context)
       .inflate(R.layout.${itemListContentLayout}, parent, false)
     return ViewHolder(view)
   """
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     inner class ViewHolder(binding: ${layoutToViewBindingClass(itemListContentLayout)}) : RecyclerView.ViewHolder(binding.root) {
       val idView: TextView = binding.idText
       val contentView: TextView = binding.content
     }
-  """ else """
+  """
+    else
+      """
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
       val idView: TextView = view.findViewById(R.id.id_text)
       val contentView: TextView = view.findViewById(R.id.content)
@@ -144,7 +155,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = itemListLayout,
-          parentView = "view")}
+          parentView = "view",)}
 
         // Leaving this not using view binding as it relies on if the view is visible the current
         // layout configuration (layout, layout-sw600dp)

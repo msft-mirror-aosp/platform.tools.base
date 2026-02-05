@@ -31,14 +31,17 @@ fun contentDetailFragmentJava(
   objectKind: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val layoutName = "fragment_${detailNameLayout}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
       View rootView = binding.getRoot();
-  """ else "View rootView = inflater.inflate(R.layout.fragment_${detailNameLayout}, container, false);"
+  """
+    else "View rootView = inflater.inflate(R.layout.fragment_${detailNameLayout}, container, false);"
 
   return """
 package ${packageName};
@@ -119,7 +122,7 @@ ${renderIf(isViewBindingSupported) {"""
         mTextView = ${findViewById(
             Language.Java,
             isViewBindingSupported = isViewBindingSupported,
-            id = detailNameLayout)};
+            id = detailNameLayout,)};
 
         // Show the placeholder content as text in a TextView & in the toolbar if available.
         updateContent();

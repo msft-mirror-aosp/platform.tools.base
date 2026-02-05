@@ -1213,10 +1213,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.android.tools.r8_8.2.47",
-    pom = "repository/com/android/tools/r8/8.2.47/r8-8.2.47.pom",
+    name = "com.android.tools.r8_8.13.19",
+    pom = "repository/com/android/tools/r8/8.13.19/r8-8.13.19.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/r8/8.2.47",
+    repo_path = "com/android/tools/r8/8.13.19",
     visibility = ["//visibility:public"],
 )
 
@@ -1224,12 +1224,12 @@ maven_import(
     name = "com.android.tools.r8",
     classifiers = [],
     jars = [
-        "repository/com/android/tools/r8/8.2.47/r8-8.2.47.jar"
+        "repository/com/android/tools/r8/8.13.19/r8-8.13.19.jar"
     ],
     original_deps = [],
-    pom = "repository/com/android/tools/r8/8.2.47/r8-8.2.47.pom",
+    pom = "repository/com/android/tools/r8/8.13.19/r8-8.13.19.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/r8/8.2.47",
+    repo_path = "com/android/tools/r8/8.13.19",
     visibility = ["//visibility:public"],
 )
 
@@ -11384,10 +11384,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_9.2.1",
-    pom = "repository/org/gradle/gradle-tooling-api/9.2.1/gradle-tooling-api-9.2.1.pom",
+    name = "org.gradle.gradle-tooling-api_9.3.1",
+    pom = "repository/org/gradle/gradle-tooling-api/9.3.1/gradle-tooling-api-9.3.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.2.1",
+    repo_path = "org/gradle/gradle-tooling-api/9.3.1",
     deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
@@ -11398,7 +11398,7 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/9.2.1/gradle-tooling-api-9.2.1.jar"
+        "repository/org/gradle/gradle-tooling-api/9.3.1/gradle-tooling-api-9.3.1.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
@@ -11406,9 +11406,9 @@ maven_import(
     original_deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/9.2.1/gradle-tooling-api-9.2.1.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/9.3.1/gradle-tooling-api-9.3.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.2.1",
+    repo_path = "org/gradle/gradle-tooling-api/9.3.1",
     visibility = ["//visibility:public"],
 )
 
@@ -11511,35 +11511,35 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jacoco.org.jacoco.agent_0.8.13",
-    pom = "repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13.pom",
+    name = "org.jacoco.org.jacoco.agent_0.8.14",
+    pom = "repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.agent/0.8.13",
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    repo_path = "org/jacoco/org.jacoco.agent/0.8.14",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "org.jacoco.org.jacoco.agent",
     classifiers = [],
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     jars = [
-        "repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13.jar"
+        "repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13.pom",
+    pom = "repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.agent/0.8.13",
+    repo_path = "org/jacoco/org.jacoco.agent/0.8.14",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jacoco.org.jacoco.build_0.8.13",
-    pom = "repository/org/jacoco/org.jacoco.build/0.8.13/org.jacoco.build-0.8.13.pom",
+    name = "org.jacoco.org.jacoco.build_0.8.14",
+    pom = "repository/org/jacoco/org.jacoco.build/0.8.14/org.jacoco.build-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.build/0.8.13",
+    repo_path = "org/jacoco/org.jacoco.build/0.8.14",
     deps = [
-        "org.ow2.asm.asm-bom_9.8",
+        "org.ow2.asm.asm-bom_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11551,24 +11551,24 @@ maven_import(
         "org.ow2.asm.asm-bom",
     ],
     original_deps = [
-        "org.ow2.asm.asm-bom_9.8",
+        "org.ow2.asm.asm-bom_9.9",
     ],
-    pom = "repository/org/jacoco/org.jacoco.build/0.8.13/org.jacoco.build-0.8.13.pom",
+    pom = "repository/org/jacoco/org.jacoco.build/0.8.14/org.jacoco.build-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.build/0.8.13",
+    repo_path = "org/jacoco/org.jacoco.build/0.8.14",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jacoco.org.jacoco.core_0.8.13",
-    pom = "repository/org/jacoco/org.jacoco.core/0.8.13/org.jacoco.core-0.8.13.pom",
+    name = "org.jacoco.org.jacoco.core_0.8.14",
+    pom = "repository/org/jacoco/org.jacoco.core/0.8.14/org.jacoco.core-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.core/0.8.13",
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    repo_path = "org/jacoco/org.jacoco.core/0.8.14",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-commons_9.8",
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-commons_9.9",
+        "org.ow2.asm.asm-tree_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11576,9 +11576,9 @@ maven_artifact(
 maven_import(
     name = "org.jacoco.org.jacoco.core",
     classifiers = [],
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     jars = [
-        "repository/org/jacoco/org.jacoco.core/0.8.13/org.jacoco.core-0.8.13.jar"
+        "repository/org/jacoco/org.jacoco.core/0.8.14/org.jacoco.core-0.8.14.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
@@ -11586,24 +11586,24 @@ maven_import(
         "org.ow2.asm.asm-tree",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-commons_9.8",
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-commons_9.9",
+        "org.ow2.asm.asm-tree_9.9",
     ],
-    pom = "repository/org/jacoco/org.jacoco.core/0.8.13/org.jacoco.core-0.8.13.pom",
+    pom = "repository/org/jacoco/org.jacoco.core/0.8.14/org.jacoco.core-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.core/0.8.13",
+    repo_path = "org/jacoco/org.jacoco.core/0.8.14",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jacoco.org.jacoco.report_0.8.13",
-    pom = "repository/org/jacoco/org.jacoco.report/0.8.13/org.jacoco.report-0.8.13.pom",
+    name = "org.jacoco.org.jacoco.report_0.8.14",
+    pom = "repository/org/jacoco/org.jacoco.report/0.8.14/org.jacoco.report-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.report/0.8.13",
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    repo_path = "org/jacoco/org.jacoco.report/0.8.14",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     deps = [
-        "org.jacoco.org.jacoco.core_0.8.13",
+        "org.jacoco.org.jacoco.core_0.8.14",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11611,19 +11611,19 @@ maven_artifact(
 maven_import(
     name = "org.jacoco.org.jacoco.report",
     classifiers = [],
-    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
     jars = [
-        "repository/org/jacoco/org.jacoco.report/0.8.13/org.jacoco.report-0.8.13.jar"
+        "repository/org/jacoco/org.jacoco.report/0.8.14/org.jacoco.report-0.8.14.jar"
     ],
     exports = [
         "org.jacoco.org.jacoco.core",
     ],
     original_deps = [
-        "org.jacoco.org.jacoco.core_0.8.13",
+        "org.jacoco.org.jacoco.core_0.8.14",
     ],
-    pom = "repository/org/jacoco/org.jacoco.report/0.8.13/org.jacoco.report-0.8.13.pom",
+    pom = "repository/org/jacoco/org.jacoco.report/0.8.14/org.jacoco.report-0.8.14.pom",
     repo_root_path = "repository",
-    repo_path = "org/jacoco/org.jacoco.report/0.8.13",
+    repo_path = "org/jacoco/org.jacoco.report/0.8.14",
     visibility = ["//visibility:public"],
 )
 
@@ -14300,13 +14300,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-analysis_9.8",
-    pom = "repository/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.pom",
+    name = "org.ow2.asm.asm-analysis_9.9",
+    pom = "repository/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-analysis/9.8",
+    repo_path = "org/ow2/asm/asm-analysis/9.9",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm-tree_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14316,25 +14316,25 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.jar"
+        "repository/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.jar"
     ],
     exports = [
         "org.ow2.asm.asm-tree",
     ],
     original_deps = [
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm-tree_9.9",
     ],
-    pom = "repository/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.pom",
+    pom = "repository/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-analysis/9.8",
+    repo_path = "org/ow2/asm/asm-analysis/9.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-bom_9.8",
-    pom = "repository/org/ow2/asm/asm-bom/9.8/asm-bom-9.8.pom",
+    name = "org.ow2.asm.asm-bom_9.9",
+    pom = "repository/org/ow2/asm/asm-bom/9.9/asm-bom-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-bom/9.8",
+    repo_path = "org/ow2/asm/asm-bom/9.9",
     parent = "org.ow2.ow2_1.5.1",
     visibility = ["//visibility:public"],
 )
@@ -14344,21 +14344,21 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     original_deps = [],
-    pom = "repository/org/ow2/asm/asm-bom/9.8/asm-bom-9.8.pom",
+    pom = "repository/org/ow2/asm/asm-bom/9.9/asm-bom-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-bom/9.8",
+    repo_path = "org/ow2/asm/asm-bom/9.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-commons_9.8",
-    pom = "repository/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.pom",
+    name = "org.ow2.asm.asm-commons_9.9",
+    pom = "repository/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-commons/9.8",
+    repo_path = "org/ow2/asm/asm-commons/9.9",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-tree_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14368,30 +14368,30 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.jar"
+        "repository/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
         "org.ow2.asm.asm-tree",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-tree_9.9",
     ],
-    pom = "repository/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.pom",
+    pom = "repository/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-commons/9.8",
+    repo_path = "org/ow2/asm/asm-commons/9.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-tree_9.8",
-    pom = "repository/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.pom",
+    name = "org.ow2.asm.asm-tree_9.9",
+    pom = "repository/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-tree/9.8",
+    repo_path = "org/ow2/asm/asm-tree/9.9",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.8",
+        "org.ow2.asm.asm_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14401,30 +14401,30 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar"
+        "repository/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.8",
+        "org.ow2.asm.asm_9.9",
     ],
-    pom = "repository/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.pom",
+    pom = "repository/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-tree/9.8",
+    repo_path = "org/ow2/asm/asm-tree/9.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-util_9.8",
-    pom = "repository/org/ow2/asm/asm-util/9.8/asm-util-9.8.pom",
+    name = "org.ow2.asm.asm-util_9.9",
+    pom = "repository/org/ow2/asm/asm-util/9.9/asm-util-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-util/9.8",
+    repo_path = "org/ow2/asm/asm-util/9.9",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-tree_9.8",
-        "org.ow2.asm.asm-analysis_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-tree_9.9",
+        "org.ow2.asm.asm-analysis_9.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14434,7 +14434,7 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar"
+        "repository/org/ow2/asm/asm-util/9.9/asm-util-9.9.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
@@ -14442,21 +14442,21 @@ maven_import(
         "org.ow2.asm.asm-analysis",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.8",
-        "org.ow2.asm.asm-tree_9.8",
-        "org.ow2.asm.asm-analysis_9.8",
+        "org.ow2.asm.asm_9.9",
+        "org.ow2.asm.asm-tree_9.9",
+        "org.ow2.asm.asm-analysis_9.9",
     ],
-    pom = "repository/org/ow2/asm/asm-util/9.8/asm-util-9.8.pom",
+    pom = "repository/org/ow2/asm/asm-util/9.9/asm-util-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-util/9.8",
+    repo_path = "org/ow2/asm/asm-util/9.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm_9.8",
-    pom = "repository/org/ow2/asm/asm/9.8/asm-9.8.pom",
+    name = "org.ow2.asm.asm_9.9",
+    pom = "repository/org/ow2/asm/asm/9.9/asm-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm/9.8",
+    repo_path = "org/ow2/asm/asm/9.9",
     parent = "org.ow2.ow2_1.5.1",
     visibility = ["//visibility:public"],
 )
@@ -14466,12 +14466,12 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm/9.8/asm-9.8.jar"
+        "repository/org/ow2/asm/asm/9.9/asm-9.9.jar"
     ],
     original_deps = [],
-    pom = "repository/org/ow2/asm/asm/9.8/asm-9.8.pom",
+    pom = "repository/org/ow2/asm/asm/9.9/asm-9.9.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm/9.8",
+    repo_path = "org/ow2/asm/asm/9.9",
     visibility = ["//visibility:public"],
 )
 
@@ -41525,12 +41525,42 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha01",
+    deps = [
+        "androidx.collection.collection-jvm_1.4.5",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.tracing.tracing-perfetto-handshake_1.0.0-beta02",
     pom = "repository/androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02/tracing-perfetto-handshake-1.0.0-beta02.pom",
     repo_root_path = "repository",
     repo_path = "androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02",
     deps = [
         "androidx.annotation.annotation_1.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.tracing.tracing-wire-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha01",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+        "com.squareup.wire.wire-runtime-jvm_5.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.7.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -44897,6 +44927,17 @@ maven_artifact(
     pom = "repository/com/android/fused-library/com.android.fused-library.gradle.plugin/9.0.0-beta01/com.android.fused-library.gradle.plugin-9.0.0-beta01.pom",
     repo_root_path = "repository",
     repo_path = "com/android/fused-library/com.android.fused-library.gradle.plugin/9.0.0-beta01",
+    deps = [
+        "com.android.tools.build.gradle_9.0.0-beta01",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.0.0-beta01",
+    pom = "repository/com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.0.0-beta01/com.android.kotlin.multiplatform.library.gradle.plugin-9.0.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.0.0-beta01",
     deps = [
         "com.android.tools.build.gradle_9.0.0-beta01",
     ],
@@ -65577,6 +65618,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.r8_8.2.47",
+    pom = "repository/com/android/tools/r8/8.2.47/r8-8.2.47.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/r8/8.2.47",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.r8_8.5.35",
     pom = "repository/com/android/tools/r8/8.5.35/r8-8.5.35.pom",
     repo_root_path = "repository",
@@ -76020,6 +76069,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.squareup.okio.okio-jvm_3.9.1",
+    pom = "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/okio/okio-jvm/3.9.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.squareup.okio.okio_1.15.0",
     pom = "repository/com/squareup/okio/okio/1.15.0/okio-1.15.0.pom",
     repo_root_path = "repository",
@@ -76141,6 +76201,18 @@ maven_artifact(
     repo_path = "com/squareup/retrofit2/retrofit/2.9.0",
     deps = [
         "com.squareup.okhttp3.okhttp_3.14.9",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.wire.wire-runtime-jvm_5.4.0",
+    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
+    deps = [
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -81159,6 +81231,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.gradle.gradle-tooling-api_9.2.1",
+    pom = "repository/org/gradle/gradle-tooling-api/9.2.1/gradle-tooling-api-9.2.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/gradle-tooling-api/9.2.1",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.hamcrest.hamcrest-core_2.2",
     pom = "repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.pom",
     repo_root_path = "repository",
@@ -81220,6 +81303,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jacoco.org.jacoco.agent_0.8.13",
+    pom = "repository/org/jacoco/org.jacoco.agent/0.8.13/org.jacoco.agent-0.8.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.agent/0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jacoco.org.jacoco.agent_0.8.7",
     pom = "repository/org/jacoco/org.jacoco.agent/0.8.7/org.jacoco.agent-0.8.7.pom",
     repo_root_path = "repository",
@@ -81275,6 +81367,20 @@ maven_artifact(
         "org.jacoco.org.jacoco.core_0.8.13",
         "org.jacoco.org.jacoco.report_0.8.13",
         "org.jacoco.org.jacoco.agent_0.8.13",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.ant_0.8.14",
+    pom = "repository/org/jacoco/org.jacoco.ant/0.8.14/org.jacoco.ant-0.8.14.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.ant/0.8.14",
+    parent = "org.jacoco.org.jacoco.build_0.8.14",
+    deps = [
+        "org.jacoco.org.jacoco.core_0.8.14",
+        "org.jacoco.org.jacoco.report_0.8.14",
+        "org.jacoco.org.jacoco.agent_0.8.14",
     ],
     visibility = ["//visibility:public"],
 )
@@ -81345,6 +81451,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jacoco.org.jacoco.core_0.8.13",
+    pom = "repository/org/jacoco/org.jacoco.core/0.8.13/org.jacoco.core-0.8.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.core/0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    deps = [
+        "org.ow2.asm.asm_9.8",
+        "org.ow2.asm.asm-commons_9.8",
+        "org.ow2.asm.asm-tree_9.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jacoco.org.jacoco.core_0.8.7",
     pom = "repository/org/jacoco/org.jacoco.core/0.8.7/org.jacoco.core-0.8.7.pom",
     repo_root_path = "repository",
@@ -81404,6 +81524,18 @@ maven_artifact(
     parent = "org.jacoco.org.jacoco.build_0.8.12",
     deps = [
         "org.jacoco.org.jacoco.core_0.8.12",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.report_0.8.13",
+    pom = "repository/org/jacoco/org.jacoco.report/0.8.13/org.jacoco.report-0.8.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.report/0.8.13",
+    parent = "org.jacoco.org.jacoco.build_0.8.13",
+    deps = [
+        "org.jacoco.org.jacoco.core_0.8.13",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82097,6 +82229,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/1.9.23",
     deps = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin_1.9.23",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.20",
+    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.20/org.jetbrains.kotlin.multiplatform.gradle.plugin-2.1.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87364,6 +87507,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.2.21",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.21/kotlin-reflect-2.2.21.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.2.21",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-reflect_2.3.20-Beta1",
     pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.20-Beta1/kotlin-reflect-2.3.20-Beta1.pom",
     repo_root_path = "repository",
@@ -88915,6 +89069,14 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.2.20/kotlin-stdlib-common-2.2.20.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.2.20",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.2.21",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.2.21/kotlin-stdlib-common-2.2.21.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.2.21",
     visibility = ["//visibility:public"],
 )
 
@@ -90502,6 +90664,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.25/kotlin-stdlib-1.9.25.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/1.9.25",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.0.0/kotlin-stdlib-2.0.0.pom",
     repo_root_path = "repository",
@@ -90616,6 +90789,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.20-RC/kotlin-stdlib-2.2.20-RC.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.2.20-RC",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.21/kotlin-stdlib-2.2.21.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.2.21",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],
@@ -93501,6 +93685,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-analysis_9.8",
+    pom = "repository/org/ow2/asm/asm-analysis/9.8/asm-analysis-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-analysis/9.8",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm-tree_9.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-bom_9.6",
     pom = "repository/org/ow2/asm/asm-bom/9.6/asm-bom-9.6.pom",
     repo_root_path = "repository",
@@ -93514,6 +93710,15 @@ maven_artifact(
     pom = "repository/org/ow2/asm/asm-bom/9.7/asm-bom-9.7.pom",
     repo_root_path = "repository",
     repo_path = "org/ow2/asm/asm-bom/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm-bom_9.8",
+    pom = "repository/org/ow2/asm/asm-bom/9.8/asm-bom-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-bom/9.8",
     parent = "org.ow2.ow2_1.5.1",
     visibility = ["//visibility:public"],
 )
@@ -93652,6 +93857,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-commons_9.8",
+    pom = "repository/org/ow2/asm/asm-commons/9.8/asm-commons-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-commons/9.8",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.8",
+        "org.ow2.asm.asm-tree_9.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-tree_5.1",
     pom = "repository/org/ow2/asm/asm-tree/5.1/asm-tree-5.1.pom",
     repo_root_path = "repository",
@@ -93779,6 +93997,18 @@ maven_artifact(
     parent = "org.ow2.ow2_1.5.1",
     deps = [
         "org.ow2.asm.asm_9.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm-tree_9.8",
+    pom = "repository/org/ow2/asm/asm-tree/9.8/asm-tree-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-tree/9.8",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.8",
     ],
     visibility = ["//visibility:public"],
 )
@@ -93920,6 +94150,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-util_9.8",
+    pom = "repository/org/ow2/asm/asm-util/9.8/asm-util-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-util/9.8",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.8",
+        "org.ow2.asm.asm-tree_9.8",
+        "org.ow2.asm.asm-analysis_9.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm_5.1",
     pom = "repository/org/ow2/asm/asm/5.1/asm-5.1.pom",
     repo_root_path = "repository",
@@ -94032,6 +94276,15 @@ maven_artifact(
     pom = "repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.pom",
     repo_root_path = "repository",
     repo_path = "org/ow2/asm/asm/9.7.1",
+    parent = "org.ow2.ow2_1.5.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm_9.8",
+    pom = "repository/org/ow2/asm/asm/9.8/asm-9.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm/9.8",
     parent = "org.ow2.ow2_1.5.1",
     visibility = ["//visibility:public"],
 )
@@ -97582,6 +97835,13 @@ maven_artifact(
     pom = "repository/org/jacoco/org.jacoco.build/0.8.12/org.jacoco.build-0.8.12.pom",
     repo_root_path = "repository",
     repo_path = "org/jacoco/org.jacoco.build/0.8.12",
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.build_0.8.13",
+    pom = "repository/org/jacoco/org.jacoco.build/0.8.13/org.jacoco.build-0.8.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.build/0.8.13",
 )
 
 maven_artifact(

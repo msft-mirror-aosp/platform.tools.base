@@ -46,12 +46,7 @@ import com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.a
 import com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.app_package.ui.login.loginViewModelJava
 import com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.app_package.ui.login.loginViewModelKt
 
-fun RecipeExecutor.loginFragmentRecipe(
-  moduleData: ModuleTemplateData,
-  fragmentClass: String,
-  layoutName: String,
-  packageName: String
-) {
+fun RecipeExecutor.loginFragmentRecipe(moduleData: ModuleTemplateData, fragmentClass: String, layoutName: String, packageName: String) {
 
   val (projectData, srcOut, resOut, _) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -70,82 +65,94 @@ fun RecipeExecutor.loginFragmentRecipe(
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
   save(
     fragmentLoginXml(fragmentClass, moduleData.apis.minApi.apiLevel, packageName, useAndroidX),
-    resOut.resolve("layout/${layoutName}.xml")
+    resOut.resolve("layout/${layoutName}.xml"),
   )
 
   val isViewBinndingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val loginFragment = when (projectData.language) {
-    Language.Java -> loginFragmentJava(
-      fragmentClass = fragmentClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBinndingSupported
-    )
-    Language.Kotlin -> loginFragmentKt(
-      fragmentClass = fragmentClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBinndingSupported
-    )
-  }
+  val loginFragment =
+    when (projectData.language) {
+      Language.Java ->
+        loginFragmentJava(
+          fragmentClass = fragmentClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBinndingSupported,
+        )
+      Language.Kotlin ->
+        loginFragmentKt(
+          fragmentClass = fragmentClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBinndingSupported,
+        )
+    }
   save(loginFragment, srcOut.resolve("ui/login/${fragmentClass}.${ktOrJavaExt}"))
 
-  val loginViewModel = when (projectData.language) {
-    Language.Java -> loginViewModelJava(packageName, useAndroidX)
-    Language.Kotlin -> loginViewModelKt(packageName, useAndroidX)
-  }
+  val loginViewModel =
+    when (projectData.language) {
+      Language.Java -> loginViewModelJava(packageName, useAndroidX)
+      Language.Kotlin -> loginViewModelKt(packageName, useAndroidX)
+    }
   save(loginViewModel, srcOut.resolve("ui/login/LoginViewModel.${ktOrJavaExt}"))
 
-  val loginViewModelFactory = when (projectData.language) {
-    Language.Java -> loginViewModelFactoryJava(packageName, useAndroidX)
-    Language.Kotlin -> loginViewModelFactoryKt(packageName, useAndroidX)
-  }
+  val loginViewModelFactory =
+    when (projectData.language) {
+      Language.Java -> loginViewModelFactoryJava(packageName, useAndroidX)
+      Language.Kotlin -> loginViewModelFactoryKt(packageName, useAndroidX)
+    }
   save(loginViewModelFactory, srcOut.resolve("ui/login/LoginViewModelFactory.${ktOrJavaExt}"))
 
-  val loggedInUser = when (projectData.language) {
-    Language.Java -> loggedInUserJava(packageName)
-    Language.Kotlin -> loggedInUserKt(packageName)
-  }
+  val loggedInUser =
+    when (projectData.language) {
+      Language.Java -> loggedInUserJava(packageName)
+      Language.Kotlin -> loggedInUserKt(packageName)
+    }
   save(loggedInUser, srcOut.resolve("data/model/LoggedInUser.${ktOrJavaExt}"))
 
-  val loginDataSource = when (projectData.language) {
-    Language.Java -> loginDataSourceJava(packageName)
-    Language.Kotlin -> loginDataSourceKt(packageName)
-  }
+  val loginDataSource =
+    when (projectData.language) {
+      Language.Java -> loginDataSourceJava(packageName)
+      Language.Kotlin -> loginDataSourceKt(packageName)
+    }
   save(loginDataSource, srcOut.resolve("data/LoginDataSource.${ktOrJavaExt}"))
 
-  val loginRepository = when (projectData.language) {
-    Language.Java -> loginRepositoryJava(packageName)
-    Language.Kotlin -> loginRepositoryKt(packageName)
-  }
+  val loginRepository =
+    when (projectData.language) {
+      Language.Java -> loginRepositoryJava(packageName)
+      Language.Kotlin -> loginRepositoryKt(packageName)
+    }
   save(loginRepository, srcOut.resolve("data/LoginRepository.${ktOrJavaExt}"))
 
-  val result = when (projectData.language) {
-    Language.Java -> resultJava(packageName)
-    Language.Kotlin -> resultKt(packageName)
-  }
+  val result =
+    when (projectData.language) {
+      Language.Java -> resultJava(packageName)
+      Language.Kotlin -> resultKt(packageName)
+    }
   save(result, srcOut.resolve("data/Result.${ktOrJavaExt}"))
 
-  val loginFormState = when (projectData.language) {
-    Language.Java -> loginFormStateJava(packageName, useAndroidX)
-    Language.Kotlin -> loginFormStateKt(packageName)
-  }
+  val loginFormState =
+    when (projectData.language) {
+      Language.Java -> loginFormStateJava(packageName, useAndroidX)
+      Language.Kotlin -> loginFormStateKt(packageName)
+    }
   save(loginFormState, srcOut.resolve("ui/login/LoginFormState.${ktOrJavaExt}"))
 
-  val loginResult = when (projectData.language) {
-    Language.Java -> loginResultJava(packageName, useAndroidX)
-    Language.Kotlin -> loginResultKt(packageName)
-  }
+  val loginResult =
+    when (projectData.language) {
+      Language.Java -> loginResultJava(packageName, useAndroidX)
+      Language.Kotlin -> loginResultKt(packageName)
+    }
   save(loginResult, srcOut.resolve("ui/login/LoginResult.${ktOrJavaExt}"))
 
-  val loggedInUserView = when (projectData.language) {
-    Language.Java -> loggedInUserViewJava(packageName)
-    Language.Kotlin -> loggedInUserViewKt(packageName)
-  }
+  val loggedInUserView =
+    when (projectData.language) {
+      Language.Java -> loggedInUserViewJava(packageName)
+      Language.Kotlin -> loggedInUserViewKt(packageName)
+    }
   save(loggedInUserView, srcOut.resolve("ui/login/LoggedInUserView.${ktOrJavaExt}"))
 
   open(srcOut.resolve("ui/login/${fragmentClass}.${ktOrJavaExt}"))

@@ -17,185 +17,140 @@
 package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
-import org.junit.Rule
-import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.fail
+import org.junit.Rule
+import org.junit.Test
 
 class TextureTargetedAssetPackTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidJavaApplication {
-            android {
-                assetPacks += listOf(":level1")
-                bundle {
-                    texture {
-                        enableSplit = true
-                        defaultFormat = "etc2"
-                    }
-                }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidJavaApplication {
+        android {
+          assetPacks += listOf(":level1")
+          bundle {
+            texture {
+              enableSplit = true
+              defaultFormat = "etc2"
             }
+          }
         }
-        assetPack(":level1") {
-            assetPack {
-                packName.set("level1")
-                dynamicDelivery {
-                    deliveryType.set("install-time")
-                }
-            }
-            files {
-                add(
-                    "src/main/assets/commonFile.txt",
-                    """This is an asset file for level 1."""
-                )
-                add(
-                    "src/main/assets/textures#tcf_astc/astc.txt",
-                    """ASTC texture"""
-                )
-                add(
-                    "src/main/assets/textures#tcf_etc2/etc2.txt",
-                    """ETC2 texture"""
-                )
-            }
+      }
+      assetPack(":level1") {
+        assetPack {
+          packName.set("level1")
+          dynamicDelivery { deliveryType.set("install-time") }
         }
+        files {
+          add("src/main/assets/commonFile.txt", """This is an asset file for level 1.""")
+          add("src/main/assets/textures#tcf_astc/astc.txt", """ASTC texture""")
+          add("src/main/assets/textures#tcf_etc2/etc2.txt", """ETC2 texture""")
+        }
+      }
     }
 
-    @Test
-    fun buildDebugApksForRecentAstcDevice() {
-        val build = rule.build
-        val app = build.androidApplication()
+  @Test
+  fun buildDebugApksForRecentAstcDevice() {
+    val build = rule.build
+    val app = build.androidApplication()
 
-        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
-        val jsonFile = getJsonFile(27, true)
+    val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
+    val jsonFile = getJsonFile(27, true)
 
-        build
-            .executor
-            .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
-            .run("app:$apkFromBundleTaskName")
+    build.executor.with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString()).run("app:$apkFromBundleTaskName")
 
-        // Fetch the build output model.
-        val apkFolder = app.locateApkFolderViaModel("debug")
-        assertThat(apkFolder).isDirectory()
+    // Fetch the build output model.
+    val apkFolder = app.locateApkFolderViaModel("debug")
+    assertThat(apkFolder).isDirectory()
 
-        // Verify the installed apks.
-        val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
-        Truth.assertThat(apkFileArray.toList()).named("APK List")
-            .containsExactly(
-                "level1-master.apk",
-                "level1-astc.apk",
-                "base-master.apk"
-            )
+    // Verify the installed apks.
+    val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
+    Truth.assertThat(apkFileArray.toList()).named("APK List").containsExactly("level1-master.apk", "level1-astc.apk", "base-master.apk")
 
-        // Verify the content of the asset-pack apks.
-        val level1MasterApk = File(apkFolder, "level1-master.apk")
-        Zip(level1MasterApk).use {
-            Truth.assertThat(it.entries.map { it.toString() })
-                .contains("/assets/commonFile.txt")
-        }
+    // Verify the content of the asset-pack apks.
+    val level1MasterApk = File(apkFolder, "level1-master.apk")
+    Zip(level1MasterApk).use { Truth.assertThat(it.entries.map { it.toString() }).contains("/assets/commonFile.txt") }
 
-        val level1AstcApk = File(apkFolder, "level1-astc.apk")
-        Zip(level1AstcApk).use {
-            Truth.assertThat(it.entries.map { it.toString() })
-                .contains("/assets/textures/astc.txt")
-        }
+    val level1AstcApk = File(apkFolder, "level1-astc.apk")
+    Zip(level1AstcApk).use { Truth.assertThat(it.entries.map { it.toString() }).contains("/assets/textures/astc.txt") }
+  }
+
+  @Test
+  fun buildDebugApksForRecentEtc2Device() {
+    val build = rule.build
+    val app = build.androidApplication()
+
+    val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
+    val jsonFile = getJsonFile(27, false)
+
+    build.executor.with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString()).run("app:$apkFromBundleTaskName")
+
+    // Fetch the build output model.
+    val apkFolder = app.locateApkFolderViaModel("debug")
+    assertThat(apkFolder).isDirectory()
+
+    // Verify the installed apks.
+    val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
+    Truth.assertThat(apkFileArray.toList()).named("APK List").containsExactly("level1-master.apk", "level1-etc2.apk", "base-master.apk")
+
+    // Verify the content of the asset-pack apks.
+    val level1MasterApk = File(apkFolder, "level1-master.apk")
+    Zip(level1MasterApk).use { Truth.assertThat(it.entries.map { it.toString() }).contains("/assets/commonFile.txt") }
+
+    val level1Etc2Apk = File(apkFolder, "level1-etc2.apk")
+    Zip(level1Etc2Apk).use { Truth.assertThat(it.entries.map { it.toString() }).contains("/assets/textures/etc2.txt") }
+  }
+
+  @Test
+  fun buildStandaloneDebugApksForPreLDevice() {
+    val build = rule.build
+    val app = build.androidApplication()
+
+    val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
+    val jsonFile = getJsonFile(18, false)
+
+    build.executor.with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString()).run("app:$apkFromBundleTaskName")
+
+    // Fetch the build output model.
+    val apkFolder = app.locateApkFolderViaModel("debug")
+    assertThat(apkFolder).isDirectory()
+
+    // Verify the installed standalone apk.
+    val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
+    Truth.assertThat(apkFileArray.toList()).named("APK List").containsExactly("standalone-etc2.apk")
+
+    val standaloneEtc2Apk = File(apkFolder, "standalone-etc2.apk")
+    Zip(standaloneEtc2Apk).use {
+      Truth.assertThat(it.entries.map { it.toString() }).containsAllOf("/assets/commonFile.txt", "/assets/textures/etc2.txt")
     }
+  }
 
-    @Test
-    fun buildDebugApksForRecentEtc2Device() {
-        val build = rule.build
-        val app = build.androidApplication()
+  private fun getJsonFile(api: Int, supportsAstc: Boolean): Path {
+    val tempFile = Files.createTempFile("", "texture-target-asset-pack-app-test")
+    val glExtension = if (supportsAstc) "GL_KHR_texture_compression_astc_ldr" else ""
 
-        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
-        val jsonFile = getJsonFile(27, false)
-
-        build
-            .executor
-            .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
-            .run("app:$apkFromBundleTaskName")
-
-        // Fetch the build output model.
-        val apkFolder = app.locateApkFolderViaModel("debug")
-        assertThat(apkFolder).isDirectory()
-
-        // Verify the installed apks.
-        val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
-        Truth.assertThat(apkFileArray.toList()).named("APK List")
-            .containsExactly(
-                "level1-master.apk",
-                "level1-etc2.apk",
-                "base-master.apk"
-            )
-
-        // Verify the content of the asset-pack apks.
-        val level1MasterApk = File(apkFolder, "level1-master.apk")
-        Zip(level1MasterApk).use {
-            Truth.assertThat(it.entries.map { it.toString() })
-                .contains("/assets/commonFile.txt")
-        }
-
-        val level1Etc2Apk = File(apkFolder, "level1-etc2.apk")
-        Zip(level1Etc2Apk).use {
-            Truth.assertThat(it.entries.map { it.toString() })
-                .contains("/assets/textures/etc2.txt")
-        }
-    }
-
-    @Test
-    fun buildStandaloneDebugApksForPreLDevice() {
-        val build = rule.build
-        val app = build.androidApplication()
-
-        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
-        val jsonFile = getJsonFile(18, false)
-
-        build
-            .executor
-            .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
-            .run("app:$apkFromBundleTaskName")
-
-        // Fetch the build output model.
-        val apkFolder = app.locateApkFolderViaModel("debug")
-        assertThat(apkFolder).isDirectory()
-
-        // Verify the installed standalone apk.
-        val apkFileArray = apkFolder.list() ?: fail("No Files at $apkFolder")
-        Truth.assertThat(apkFileArray.toList()).named("APK List")
-            .containsExactly("standalone-etc2.apk")
-
-        val standaloneEtc2Apk = File(apkFolder, "standalone-etc2.apk")
-        Zip(standaloneEtc2Apk).use {
-            Truth.assertThat(it.entries.map { it.toString() })
-                .containsAllOf(
-                    "/assets/commonFile.txt",
-                    "/assets/textures/etc2.txt"
-                )
-        }
-    }
-
-    private fun getJsonFile(api: Int, supportsAstc: Boolean): Path {
-        val tempFile = Files.createTempFile("", "texture-target-asset-pack-app-test")
-        val glExtension = if (supportsAstc) "GL_KHR_texture_compression_astc_ldr" else ""
-
-        Files.write(
-            tempFile, listOf(
-                """{ "supportedAbis": [ "X86", "ARMEABI_V7A" ],
+    Files.write(
+      tempFile,
+      listOf(
+        """{ "supportedAbis": [ "X86", "ARMEABI_V7A" ],
                   |  "supportedLocales": [ "en", "fr" ],
                   |  "screenDensity": 480,
                   |  "deviceFeatures": ["reqGlEsVersion=0x30000"],
                   |  "glExtensions": ["$glExtension", "GL_EXT_debug_marker"],
                   |  "sdkVersion": $api
-                  |  }""".trimMargin()
-            )
-        )
+                  |  }"""
+          .trimMargin()
+      ),
+    )
 
-        return tempFile
-    }
+    return tempFile
+  }
 }

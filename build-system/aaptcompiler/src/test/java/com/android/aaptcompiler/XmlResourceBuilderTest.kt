@@ -6,11 +6,7 @@ import org.junit.Test
 
 class XmlResourceBuilderTest {
 
-  private val fakeFile = ResourceFile(
-    parseNameOrFail("layout/foo"),
-    ConfigDescription(),
-    Source(""),
-    ResourceFile.Type.ProtoXml)
+  private val fakeFile = ResourceFile(parseNameOrFail("layout/foo"), ConfigDescription(), Source(""), ResourceFile.Type.ProtoXml)
 
   @Test
   fun testBasicXmlFlattening() {
@@ -20,14 +16,15 @@ class XmlResourceBuilderTest {
      *   android:layout_height="match_parent"
      *   android:orientation="vertical"/>
      */
-    val proto = XmlResourceBuilder(fakeFile)
-      .startElement("LinearLayout", "")
-      .addNamespaceDeclaration("http://schemas.android.com/apk/res/android", "android")
-      .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "match_parent")
-      .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "match_parent")
-      .endElement()
-      .build()
-      .xmlProto
+    val proto =
+      XmlResourceBuilder(fakeFile)
+        .startElement("LinearLayout", "")
+        .addNamespaceDeclaration("http://schemas.android.com/apk/res/android", "android")
+        .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "match_parent")
+        .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "match_parent")
+        .endElement()
+        .build()
+        .xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     val root = proto.getElement()
@@ -42,13 +39,11 @@ class XmlResourceBuilderTest {
     Truth.assertThat(attributes).hasSize(2)
     val attribute1 = attributes[0]
     Truth.assertThat(attribute1.getName()).isEqualTo("layout_width")
-    Truth.assertThat(attribute1.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(attribute1.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(attribute1.getValue()).isEqualTo("match_parent")
     val attribute2 = attributes[1]
     Truth.assertThat(attribute2.getName()).isEqualTo("layout_height")
-    Truth.assertThat(attribute2.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(attribute2.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(attribute2.getValue()).isEqualTo("match_parent")
     Truth.assertThat(root.getChildList()).hasSize(0)
   }
@@ -77,32 +72,32 @@ class XmlResourceBuilderTest {
      * </LinearLayout>
      */
 
-    val proto = XmlResourceBuilder(fakeFile)
-      .startElement("LinearLayout", "")
-      .addNamespaceDeclaration("http://schemas.android.com/apk/res/android", "android")
-      .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "match_parent")
-      .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "match_parent")
-      .startElement("TextView", "")
-      .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute(
-        "text", "http://schemas.android.com/apk/res/android", "@string/connect_request")
-      .endElement()
-      .startElement("Button", "")
-      .addAttribute("id", "http://schemas.android.com/apk/res/android", "@+id/confirm")
-      .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute("text", "http://schemas.android.com/apk/res/android", "@string/confirm_button")
-      .endElement()
-      .startElement("Button", "")
-      .addAttribute("id", "http://schemas.android.com/apk/res/android", "@+id/cancel")
-      .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
-      .addAttribute("text", "http://schemas.android.com/apk/res/android", "@string/cancel_button")
-      .endElement()
-      .endElement()
-      .build()
-      .xmlProto
+    val proto =
+      XmlResourceBuilder(fakeFile)
+        .startElement("LinearLayout", "")
+        .addNamespaceDeclaration("http://schemas.android.com/apk/res/android", "android")
+        .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "match_parent")
+        .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "match_parent")
+        .startElement("TextView", "")
+        .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("text", "http://schemas.android.com/apk/res/android", "@string/connect_request")
+        .endElement()
+        .startElement("Button", "")
+        .addAttribute("id", "http://schemas.android.com/apk/res/android", "@+id/confirm")
+        .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("text", "http://schemas.android.com/apk/res/android", "@string/confirm_button")
+        .endElement()
+        .startElement("Button", "")
+        .addAttribute("id", "http://schemas.android.com/apk/res/android", "@+id/cancel")
+        .addAttribute("layout_width", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("layout_height", "http://schemas.android.com/apk/res/android", "wrap_content")
+        .addAttribute("text", "http://schemas.android.com/apk/res/android", "@string/cancel_button")
+        .endElement()
+        .endElement()
+        .build()
+        .xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     val root = proto.getElement()
@@ -117,13 +112,11 @@ class XmlResourceBuilderTest {
     Truth.assertThat(attributes).hasSize(2)
     val attribute1 = attributes[0]
     Truth.assertThat(attribute1.getName()).isEqualTo("layout_width")
-    Truth.assertThat(attribute1.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(attribute1.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(attribute1.getValue()).isEqualTo("match_parent")
     val attribute2 = attributes[1]
     Truth.assertThat(attribute2.getName()).isEqualTo("layout_height")
-    Truth.assertThat(attribute2.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(attribute2.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(attribute2.getValue()).isEqualTo("match_parent")
     val childList = root.getChildList()
     Truth.assertThat(childList).hasSize(3)
@@ -137,18 +130,15 @@ class XmlResourceBuilderTest {
     Truth.assertThat(child1Attributes).hasSize(3)
     val child1Attr1 = child1Attributes[0]
     Truth.assertThat(child1Attr1.getName()).isEqualTo("layout_width")
-    Truth.assertThat(child1Attr1.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child1Attr1.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child1Attr1.getValue()).isEqualTo("wrap_content")
     val child1Attr2 = child1Attributes[1]
     Truth.assertThat(child1Attr2.getName()).isEqualTo("layout_height")
-    Truth.assertThat(child1Attr2.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child1Attr2.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child1Attr2.getValue()).isEqualTo("wrap_content")
     val child1Attr3 = child1Attributes[2]
     Truth.assertThat(child1Attr3.getName()).isEqualTo("text")
-    Truth.assertThat(child1Attr3.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child1Attr3.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child1Attr3.getValue()).isEqualTo("@string/connect_request")
 
     Truth.assertThat(childList[1].hasElement()).isTrue()
@@ -160,23 +150,19 @@ class XmlResourceBuilderTest {
     Truth.assertThat(child2Attributes).hasSize(4)
     val child2Attr1 = child2Attributes[0]
     Truth.assertThat(child2Attr1.getName()).isEqualTo("id")
-    Truth.assertThat(child2Attr1.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child2Attr1.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child2Attr1.getValue()).isEqualTo("@+id/confirm")
     val child2Attr2 = child2Attributes[1]
     Truth.assertThat(child2Attr2.getName()).isEqualTo("layout_width")
-    Truth.assertThat(child2Attr2.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child2Attr2.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child2Attr2.getValue()).isEqualTo("wrap_content")
     val child2Attr3 = child2Attributes[2]
     Truth.assertThat(child2Attr3.getName()).isEqualTo("layout_height")
-    Truth.assertThat(child2Attr3.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child2Attr3.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child2Attr3.getValue()).isEqualTo("wrap_content")
     val child2Attr4 = child2Attributes[3]
     Truth.assertThat(child2Attr4.getName()).isEqualTo("text")
-    Truth.assertThat(child2Attr4.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child2Attr4.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child2Attr4.getValue()).isEqualTo("@string/confirm_button")
 
     Truth.assertThat(childList[2].hasElement()).isTrue()
@@ -188,23 +174,19 @@ class XmlResourceBuilderTest {
     Truth.assertThat(child3Attributes).hasSize(4)
     val child3Attr1 = child3Attributes[0]
     Truth.assertThat(child3Attr1.getName()).isEqualTo("id")
-    Truth.assertThat(child3Attr1.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child3Attr1.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child3Attr1.getValue()).isEqualTo("@+id/cancel")
     val child3Attr2 = child3Attributes[1]
     Truth.assertThat(child3Attr2.getName()).isEqualTo("layout_width")
-    Truth.assertThat(child3Attr2.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child3Attr2.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child3Attr2.getValue()).isEqualTo("wrap_content")
     val child3Attr3 = child3Attributes[2]
     Truth.assertThat(child3Attr3.getName()).isEqualTo("layout_height")
-    Truth.assertThat(child3Attr3.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child3Attr3.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child3Attr3.getValue()).isEqualTo("wrap_content")
     val child3Attr4 = child3Attributes[3]
     Truth.assertThat(child3Attr4.getName()).isEqualTo("text")
-    Truth.assertThat(child3Attr4.getNamespaceUri())
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    Truth.assertThat(child3Attr4.getNamespaceUri()).isEqualTo("http://schemas.android.com/apk/res/android")
     Truth.assertThat(child3Attr4.getValue()).isEqualTo("@string/cancel_button")
   }
 
@@ -213,12 +195,7 @@ class XmlResourceBuilderTest {
     /*
      * <test>text</test>
      */
-    var proto = XmlResourceBuilder(fakeFile)
-      .startElement("test", "")
-      .addText("text")
-      .endElement()
-      .build()
-      .xmlProto
+    var proto = XmlResourceBuilder(fakeFile).startElement("test", "").addText("text").endElement().build().xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     var root = proto.getElement()
@@ -239,12 +216,7 @@ class XmlResourceBuilderTest {
      *   continued here.
      * </test>
      */
-    proto = XmlResourceBuilder(fakeFile)
-      .startElement("test", "")
-      .addText("\nText that is\n continued here.")
-      .endElement()
-      .build()
-      .xmlProto
+    proto = XmlResourceBuilder(fakeFile).startElement("test", "").addText("\nText that is\n continued here.").endElement().build().xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     root = proto.getElement()
@@ -265,14 +237,15 @@ class XmlResourceBuilderTest {
      *   broken by comment.
      * </test>
      */
-    proto = XmlResourceBuilder(fakeFile)
-      .startElement("test", "")
-      .addText("Text that is")
-      .addComment()
-      .addText("broken by comment.")
-      .endElement()
-      .build()
-      .xmlProto
+    proto =
+      XmlResourceBuilder(fakeFile)
+        .startElement("test", "")
+        .addText("Text that is")
+        .addComment()
+        .addText("broken by comment.")
+        .endElement()
+        .build()
+        .xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     root = proto.getElement()
@@ -294,15 +267,16 @@ class XmlResourceBuilderTest {
      *   broken by child.
      * </test>
      */
-    proto = XmlResourceBuilder(fakeFile)
-      .startElement("test", "")
-      .addText("Text that is")
-      .startElement("child", "")
-      .endElement()
-      .addText("broken by child.")
-      .endElement()
-      .build()
-      .xmlProto
+    proto =
+      XmlResourceBuilder(fakeFile)
+        .startElement("test", "")
+        .addText("Text that is")
+        .startElement("child", "")
+        .endElement()
+        .addText("broken by child.")
+        .endElement()
+        .build()
+        .xmlProto
 
     Truth.assertThat(proto.hasElement()).isTrue()
     root = proto.getElement()
@@ -335,8 +309,7 @@ class XmlResourceBuilderTest {
     val builder = XmlResourceBuilder(fakeFile)
     val nsContext = builder.namespaceContext
 
-    builder.startElement("LinearLayout", "")
-      .addNamespaceDeclaration("androidOuter", "android")
+    builder.startElement("LinearLayout", "").addNamespaceDeclaration("androidOuter", "android")
 
     Truth.assertThat(nsContext.namespacePrefixes()).isEqualTo(setOf("android"))
     Truth.assertThat(nsContext.uriForPrefix("android")).isEqualTo("androidOuter")
@@ -354,13 +327,13 @@ class XmlResourceBuilderTest {
     Truth.assertThat(nsContext.namespacePrefixes()).isEqualTo(setOf("android"))
     Truth.assertThat(nsContext.uriForPrefix("android")).isEqualTo("androidOuter")
 
-    builder.startElement("ListView2", "")
-      .addNamespaceDeclaration("androidInner2", "android")
+    builder.startElement("ListView2", "").addNamespaceDeclaration("androidInner2", "android")
 
     Truth.assertThat(nsContext.namespacePrefixes()).isEqualTo(setOf("android"))
     Truth.assertThat(nsContext.uriForPrefix("android")).isEqualTo("androidInner2")
 
-    builder.startElement("View", "")
+    builder
+      .startElement("View", "")
       .addNamespaceDeclaration("androidInnerInner", "android")
       .addNamespaceDeclaration("something/something", "something")
 

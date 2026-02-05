@@ -20,15 +20,15 @@ import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEA
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 
 object JdwpPacketBuilders {
-    object Commands {
-        fun vmIdSizes(packetId: Int): JdwpPacketView {
-            return JdwpPacketView.Command(
-                id = packetId,
-                length = PACKET_HEADER_LENGTH,
-                cmdSet = JdwpCommands.CmdSet.SET_VM.value,
-                cmd = JdwpCommands.VmCmd.CMD_VM_IDSIZES.value,
-                payload = EmptyAdbInputChannel()
-            )
-        }
+  object Commands {
+    fun vmIdSizes(packetId: Int): JdwpPacketView {
+      return JdwpPacketView.Command(
+        id = packetId,
+        length = PACKET_HEADER_LENGTH,
+        cmdSet = JdwpCommands.CmdSet.SET_VM.value,
+        cmd = JdwpCommands.VmCmd.CMD_VM_IDSIZES.value,
+        payload = EmptyAdbInputChannel(),
+      )
     }
+  }
 }

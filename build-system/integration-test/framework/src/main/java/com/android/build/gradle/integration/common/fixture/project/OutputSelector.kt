@@ -23,24 +23,18 @@ package com.android.build.gradle.integration.common.fixture.project
  */
 interface OutputSelector {
 
-    val fromIntermediates: Boolean
-        get() = false
+  val fromIntermediates: Boolean
+    get() = false
 
-    /** Returns a new instance with a new project name */
-    fun withName(name: String): OutputSelector
+  /** Returns a new instance with a new project name */
+  fun withName(name: String): OutputSelector
 
-    /**
-     * The overridden project name
-     */
-    val name: String?
+  /** The overridden project name */
+  val name: String?
 
-    /**
-     * Returns the filename of the output file for the given selection.
-     */
-    fun getFileName(projectName: String): String
+  /** Returns the filename of the output file for the given selection. */
+  fun getFileName(projectName: String): String
 
-    /**
-     * Returns the path segments between the output folder and the filename
-     */
-    fun getPath(): String
+  /** Returns the path segments between the output folder and the filename */
+  fun getPath(): String
 }

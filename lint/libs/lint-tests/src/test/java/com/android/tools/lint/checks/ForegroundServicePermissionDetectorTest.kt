@@ -29,8 +29,7 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
   }
 
   /**
-   * foregroundServiceType permission check is only effective when targetSdkVersion >=34. Lower
-   * targetSdkVersion does not check permission.
+   * foregroundServiceType permission check is only effective when targetSdkVersion >=34. Lower targetSdkVersion does not check permission.
    */
   fun testTargetSdkVersion33() {
     lint()
@@ -73,8 +72,8 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
   }
 
   /**
-   * If permission "android.permission.FOREGROUND_SERVICE" is missing, foreground service is not
-   * allowed, no need to check individual permission if any foregroundServiceType is present.
+   * If permission "android.permission.FOREGROUND_SERVICE" is missing, foreground service is not allowed, no need to check individual
+   * permission if any foregroundServiceType is present.
    */
   fun testMissingForegroundServicePermission() {
     lint()
@@ -735,10 +734,7 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
-  /**
-   * Test foregroundServiceType="camera" Original name:
-   * testForegroundServiceTypeCameraMissingPermissions()
-   */
+  /** Test foregroundServiceType="camera" Original name: testForegroundServiceTypeCameraMissingPermissions() */
   fun testDocumentationExample() {
     lint()
       .files(

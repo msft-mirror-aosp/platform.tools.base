@@ -19,63 +19,48 @@ package com.android.build.gradle.integration.dexing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.google.common.truth.Truth.assertThat
-import junit.framework.Assert.fail
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class IncrementalDexingArtifactTransformTest {
 
-    // create app module, and force multidex
-    val app = MinimalSubProject.app("com.example.test")
-        .appendToBuild("""
-            android.defaultConfig.minSdkVersion  29
-        """.trimIndent())
-    val lib = MinimalSubProject.lib("com.example.lib")
+  // create app module, and force multidex
+  val app =
+    MinimalSubProject.app("com.example.test")
+      .appendToBuild(
+        """
+        android.defaultConfig.minSdkVersion  29
+        """
+          .trimIndent()
+      )
+  val lib = MinimalSubProject.lib("com.example.lib")
 
-    val testApp = MultiModuleTestProject.builder()
-        .subproject(":app", app)
-        .subproject(":lib", lib)
-        .dependency(app, lib)
-        .build()
+  val testApp = MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build()
 
+  @Rule @JvmField val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @Rule
-    @JvmField
-    val project =
-        GradleTestProject.builder().fromTestApp(
-            testApp
-        ).create()
+  @Test
+  fun testIncrementalBuildWithFileDeletion() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("lib").buildFile,
+      """
+      android {
+          buildFeatures {
+              buildConfig = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    val result = project.executor().run("assembleDebug")
+    TestFileUtils.searchAndReplace(project.getSubproject("lib").buildFile, "com.example.lib", "com.example.lib.a")
+    project.executor().run("assembleDebug")
+    val transformedBinaries = project.getSubproject(":lib").buildDir.resolve(".transforms")
 
-    @Test
-    fun testIncrementalBuildWithFileDeletion() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("lib").buildFile,
-            """
-                android {
-                    buildFeatures {
-                        buildConfig = true
-                    }
-                }
-            """.trimIndent()
-        )
-        val result = project.executor().run("assembleDebug")
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("lib").buildFile,
-            "com.example.lib",
-            "com.example.lib.a")
-        project.executor().run("assembleDebug")
-        val transformedBinaries =
-            project.getSubproject(":lib").buildDir.resolve(".transforms")
-
-        val dexCount = transformedBinaries.walk(FileWalkDirection.TOP_DOWN).count {
-            it.name == "BuildConfig.dex"
-        }
-        // there should only be 1 BuildConfig.dex file
-        assertThat(dexCount == 1).isTrue()
-    }
+    val dexCount = transformedBinaries.walk(FileWalkDirection.TOP_DOWN).count { it.name == "BuildConfig.dex" }
+    // there should only be 1 BuildConfig.dex file
+    assertThat(dexCount == 1).isTrue()
+  }
 }

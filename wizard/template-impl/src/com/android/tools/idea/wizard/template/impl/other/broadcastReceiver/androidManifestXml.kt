@@ -16,12 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.broadcastReceiver
 
-fun androidManifestXml(
-  className: String,
-  isEnabled: Boolean,
-  isExported: Boolean,
-  packageName: String
-) = """
+fun androidManifestXml(className: String, isEnabled: Boolean, isExported: Boolean, packageName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>

@@ -127,12 +127,7 @@ class LanguageLevelTest : AbstractCheckTest() {
             psiFile.accept(
               object : JavaRecursiveElementVisitor() {
                 override fun visitRecordHeader(recordHeader: PsiRecordHeader) {
-                  context.report(
-                    TEST_ISSUE,
-                    recordHeader,
-                    context.getLocation(recordHeader),
-                    "Java record found",
-                  )
+                  context.report(TEST_ISSUE, recordHeader, context.getLocation(recordHeader), "Java record found")
                 }
               }
             )
@@ -142,12 +137,7 @@ class LanguageLevelTest : AbstractCheckTest() {
         override fun visitMethod(node: UMethod) {
           val psi = node.javaPsi
           if (psi.containingClass?.isRecord != true) return
-          context.report(
-            TEST_ISSUE,
-            psi,
-            context.getLocation(psi),
-            "Java record augmented member found",
-          )
+          context.report(TEST_ISSUE, psi, context.getLocation(psi), "Java record augmented member found")
         }
       }
     }

@@ -42,7 +42,8 @@ import java.io.File
 val modalBottomSheetTemplate
   get() = template {
     name = "Modal Bottom Sheet"
-    description = "Creates a new modal bottom sheet fragment containing a list that can be rendered as a grid. Compatible back to API level $MIN_API"
+    description =
+      "Creates a new modal bottom sheet fragment containing a list that can be rendered as a grid. Compatible back to API level $MIN_API"
     minApi = MIN_API
     category = Category.Fragment
     formFactor = FormFactor.Mobile
@@ -66,11 +67,12 @@ val modalBottomSheetTemplate
       loggable = true
     }
 
-    val columnCount = enumParameter<ColumnCount> {
-      name = "Column Count"
-      default = ColumnCount.`1 (List)`
-      help = "The number of columns in the grid"
-    }
+    val columnCount =
+      enumParameter<ColumnCount> {
+        name = "Column Count"
+        default = ColumnCount.`1 (List)`
+        help = "The number of columns in the grid"
+      }
 
     val itemLayout = stringParameter {
       name = "Object content layout file name"
@@ -95,13 +97,20 @@ val modalBottomSheetTemplate
       EnumWidget(columnCount),
       TextFieldWidget(itemLayout),
       TextFieldWidget(listLayout),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("modal-bottom-sheet").resolve("template_modal_bottom_sheet_fragment.png") }
 
     recipe = { data: TemplateData ->
-      modalBottomSheetRecipe(data as ModuleTemplateData, packageName.value, objectKind.value, fragmentClass.value, columnCount.value,
-                             itemLayout.value, listLayout.value)
+      modalBottomSheetRecipe(
+        data as ModuleTemplateData,
+        packageName.value,
+        objectKind.value,
+        fragmentClass.value,
+        columnCount.value,
+        itemLayout.value,
+        listLayout.value,
+      )
     }
   }

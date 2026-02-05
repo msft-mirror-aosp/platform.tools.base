@@ -19,8 +19,8 @@ package com.android.tools.lint.detector.api
 import java.util.EnumSet
 
 /**
- * Desugaring is an operation to post process the compiled code to transform operations to work on
- * older API levels. For example, lambdas are converted into anonymous inner classes.
+ * Desugaring is an operation to post process the compiled code to transform operations to work on older API levels. For example, lambdas
+ * are converted into anonymous inner classes.
  */
 enum class Desugaring(val constant: Int) {
   /** Lambdas. */
@@ -42,37 +42,16 @@ enum class Desugaring(val constant: Int) {
   JAVA_8_LIBRARY(DESUGARING_JAVA_8_LIBRARY);
 
   companion object {
-    /**
-     * No desugaring in effect. (Note however that R8 will always perform some built-in ones, such
-     * as Objects.requireNonNull etc.)
-     */
+    /** No desugaring in effect. (Note however that R8 will always perform some built-in ones, such as Objects.requireNonNull etc.) */
     @JvmField val NONE: Set<Desugaring> = EnumSet.noneOf(Desugaring::class.java)
 
-    /**
-     * Default assumed desugaring (used in all recent versions of Gradle, Bazel, etc); does not
-     * include [JAVA_8_LIBRARY]
-     */
-    @JvmField
-    val DEFAULT: Set<Desugaring> =
-      EnumSet.of(
-        LAMBDAS,
-        METHOD_REFERENCES,
-        TYPE_ANNOTATIONS,
-        INTERFACE_METHODS,
-        TRY_WITH_RESOURCES,
-      )
+    /** Default assumed desugaring (used in all recent versions of Gradle, Bazel, etc); does not include [JAVA_8_LIBRARY] */
+    @JvmField val DEFAULT: Set<Desugaring> = EnumSet.of(LAMBDAS, METHOD_REFERENCES, TYPE_ANNOTATIONS, INTERFACE_METHODS, TRY_WITH_RESOURCES)
 
     /** Full desugaring. */
     @JvmField
     val FULL: Set<Desugaring> =
-      EnumSet.of(
-        LAMBDAS,
-        METHOD_REFERENCES,
-        TYPE_ANNOTATIONS,
-        INTERFACE_METHODS,
-        TRY_WITH_RESOURCES,
-        JAVA_8_LIBRARY,
-      )
+      EnumSet.of(LAMBDAS, METHOD_REFERENCES, TYPE_ANNOTATIONS, INTERFACE_METHODS, TRY_WITH_RESOURCES, JAVA_8_LIBRARY)
 
     fun fromConstant(constant: Int): Desugaring {
       return when (constant) {

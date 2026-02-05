@@ -18,41 +18,30 @@ package com.android.build.gradle.internal.cxx.attribution
 
 import com.android.testutils.TestResources
 import com.google.common.truth.Truth
+import java.io.File
+import java.util.zip.GZIPInputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.util.zip.GZIPInputStream
 
 class BuildAttributionUtilsTest {
 
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun `dolphin build attribution test`() {
-        val zipFile =
-            TestResources.getFile("/com/android/build/gradle/internal/cxx/attribution/dolphin-build-attribution.zip")
-        val expectedTraceFile =
-            TestResources.getFile("/com/android/build/gradle/internal/cxx/attribution/dolphin-build-attribution.json.gz")
-        val outputFile = tmp.newFile("output.json.gz")
-        generateChromeTrace(zipFile, outputFile)
-        assertTraceFilesAreTheSame(
-            expectedZipFile = expectedTraceFile,
-            outputZipFile = outputFile
-        )
+  @Test
+  fun `dolphin build attribution test`() {
+    val zipFile = TestResources.getFile("/com/android/build/gradle/internal/cxx/attribution/dolphin-build-attribution.zip")
+    val expectedTraceFile = TestResources.getFile("/com/android/build/gradle/internal/cxx/attribution/dolphin-build-attribution.json.gz")
+    val outputFile = tmp.newFile("output.json.gz")
+    generateChromeTrace(zipFile, outputFile)
+    assertTraceFilesAreTheSame(expectedZipFile = expectedTraceFile, outputZipFile = outputFile)
+  }
+
+  private fun assertTraceFilesAreTheSame(expectedZipFile: File, outputZipFile: File) {
+    fun getFirstElement(file: File): ByteArray {
+      return GZIPInputStream(file.inputStream().buffered()).use { zipFile -> zipFile.readAllBytes() }
     }
 
-    private fun assertTraceFilesAreTheSame(
-        expectedZipFile: File,
-        outputZipFile: File
-    ) {
-        fun getFirstElement(file: File): ByteArray {
-            return GZIPInputStream(file.inputStream().buffered()).use { zipFile ->
-                zipFile.readAllBytes()
-            }
-        }
-
-        Truth.assertThat(getFirstElement(outputZipFile)).isEqualTo(getFirstElement(expectedZipFile))
-    }
+    Truth.assertThat(getFirstElement(outputZipFile)).isEqualTo(getFirstElement(expectedZipFile))
+  }
 }

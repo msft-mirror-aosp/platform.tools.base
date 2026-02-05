@@ -44,119 +44,109 @@ import com.android.utils.cxx.CxxDiagnosticCode.NINJA_GENERIC_ERROR
 import com.google.common.annotations.VisibleForTesting
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule.NativeBuildSystemType.NINJA
+import java.io.File
 import org.gradle.api.tasks.Internal
 import org.gradle.process.ExecOperations
-import java.io.File
 
-/**
- * This is the "custom" metadata generator. It consumes build.ninja produced by a user script or
- * program.
- */
-internal class NinjaMetadataGenerator(
-    abi: CxxAbiModel,
-    @get:Internal override val variantBuilder: GradleBuildVariant.Builder?
-) : ExternalNativeJsonGenerator(abi, variantBuilder) {
-    val configureScript = abi.variant.module.configureScript!!
-    val variant = abi.variant
+/** This is the "custom" metadata generator. It consumes build.ninja produced by a user script or program. */
+internal class NinjaMetadataGenerator(abi: CxxAbiModel, @get:Internal override val variantBuilder: GradleBuildVariant.Builder?) :
+  ExternalNativeJsonGenerator(abi, variantBuilder) {
+  val configureScript = abi.variant.module.configureScript!!
+  val variant = abi.variant
 
-    init {
-        variantBuilder?.nativeBuildSystemType = NINJA
+  init {
+    variantBuilder?.nativeBuildSystemType = NINJA
+  }
+
+  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+
+    if (!abi.configurationArguments.any { it.contains(abi.name) }) {
+      errorln(
+        NINJA_CONFIGURE_INVALID_ARGUMENTS,
+        "android.${variant}.externalNativeBuild.ninja.arguments must be " +
+          "specified and at least one argument must reference ${NDK_ABI.ref} " +
+          "[${abi.name}] " +
+          "args:[${abi.configurationArguments.joinToString(", ")}]",
+      )
+      return
     }
-    override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
 
-        if (!abi.configurationArguments.any { it.contains(abi.name) } ) {
-            errorln(NINJA_CONFIGURE_INVALID_ARGUMENTS,
-                "android.${variant}.externalNativeBuild.ninja.arguments must be " +
-                        "specified and at least one argument must reference ${NDK_ABI.ref} " +
-                        "[${abi.name}] " +
-                        "args:[${abi.configurationArguments.joinToString(", ")}]")
-            return
-        }
+    // Clear prior build outputs
+    abi.ninjaBuildFile.delete()
+    abi.ninjaBuildLocationFile.delete()
+    abi.additionalProjectFilesIndexFile.delete()
+    abi.symbolFolderIndexFile.delete()
+    abi.buildFileIndexFile.delete()
+    abi.compileCommandsJsonFile.delete()
+    abi.compileCommandsJsonBinFile.delete()
 
-        // Clear prior build outputs
-        abi.ninjaBuildFile.delete()
-        abi.ninjaBuildLocationFile.delete()
-        abi.additionalProjectFilesIndexFile.delete()
-        abi.symbolFolderIndexFile.delete()
-        abi.buildFileIndexFile.delete()
-        abi.compileCommandsJsonFile.delete()
-        abi.compileCommandsJsonBinFile.delete()
-
-        PassThroughRecordingLoggingEnvironment().use { logger ->
-            // Execute tool to generate build.ninja or build.ninja.txt
-            val result = abi.executeProcess(
-                processType = ExecuteProcessType.CONFIGURE_PROCESS,
-                command = getProcessBuilder(abi),
-                ops = ops,
-                processStderr = ::reportErrors,
-                processStdout = ::reportErrors
-            )
-
-            // Check to make sure the tool generated build.ninja or build.ninja.txt
-            if (!abi.ninjaBuildFile.isFile && !abi.ninjaBuildLocationFile.isFile) {
-                if (logger.errors.isEmpty()) {
-                    // No errors were recognized by reportErrors(...) so dump STDOUT and STDERR to
-                    // lifecycle in the hope that there is information there the user can use to
-                    // diagnose the problem.
-                    result.stdout.forEachLine { lifecycleln(it) }
-                    result.stderr.forEachLine { lifecycleln(it) }
-                }
-                errorln(
-                    BUILD_NINJA_NOT_GENERATED,
-                    "Expected Ninja configure script '${abi.variant.module.configureScript!!.name} " +
-                            "${abi.configurationArguments.joinToString(" ")}' " +
-                            "to generate '${abi.ninjaBuildFile}' or '${abi.ninjaBuildLocationFile}"
-                )
-                return
-            }
-        }
-
-        // Build expected metadata
-        val config = adaptNinjaToCxxBuild(
-            ninjaBuildFile = abi.ninjaBuildFile,
-            abi = abi.name,
-            cxxBuildFolder = abi.ninjaBuildFile.parentFile,
-            createNinjaCommand = abi::createNinjaCommand,
-            compileCommandsJsonBin = abi.compileCommandsJsonBinFile
+    PassThroughRecordingLoggingEnvironment().use { logger ->
+      // Execute tool to generate build.ninja or build.ninja.txt
+      val result =
+        abi.executeProcess(
+          processType = ExecuteProcessType.CONFIGURE_PROCESS,
+          command = getProcessBuilder(abi),
+          ops = ops,
+          processStderr = ::reportErrors,
+          processStdout = ::reportErrors,
         )
-        writeNativeBuildMiniConfigValueToJsonFile(abi.jsonFile, config)
 
-        // Metadata generators are expected to produce additional_project_files.txt even if it's
-        // empty. This file contains a newline separated list of filenames that are known by the
-        // build system and considered to be part of the project. For CMake projects, these are
-        // files that CMake knows about but that don't end up in the build.ninja file. Typically,
-        // these are like bitmaps or esoteric sources like Fortran.
-        if (!abi.additionalProjectFilesIndexFile.isFile) {
-            abi.additionalProjectFilesIndexFile.parentFile.mkdirs()
-            abi.additionalProjectFilesIndexFile.writeText("")
+      // Check to make sure the tool generated build.ninja or build.ninja.txt
+      if (!abi.ninjaBuildFile.isFile && !abi.ninjaBuildLocationFile.isFile) {
+        if (logger.errors.isEmpty()) {
+          // No errors were recognized by reportErrors(...) so dump STDOUT and STDERR to
+          // lifecycle in the hope that there is information there the user can use to
+          // diagnose the problem.
+          result.stdout.forEachLine { lifecycleln(it) }
+          result.stderr.forEachLine { lifecycleln(it) }
         }
+        errorln(
+          BUILD_NINJA_NOT_GENERATED,
+          "Expected Ninja configure script '${abi.variant.module.configureScript!!.name} " +
+            "${abi.configurationArguments.joinToString(" ")}' " +
+            "to generate '${abi.ninjaBuildFile}' or '${abi.ninjaBuildLocationFile}",
+        )
+        return
+      }
     }
 
-    override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
-        return createExecuteProcessCommand(configureScript)
-            .copy(useScript = true)
-            .addArgs(abi.configurationArguments)
-    }
+    // Build expected metadata
+    val config =
+      adaptNinjaToCxxBuild(
+        ninjaBuildFile = abi.ninjaBuildFile,
+        abi = abi.name,
+        cxxBuildFolder = abi.ninjaBuildFile.parentFile,
+        createNinjaCommand = abi::createNinjaCommand,
+        compileCommandsJsonBin = abi.compileCommandsJsonBinFile,
+      )
+    writeNativeBuildMiniConfigValueToJsonFile(abi.jsonFile, config)
 
-    override fun checkPrefabConfig() { }
-
-    private fun reportErrors(file : File) {
-        file.forEachLine { line ->
-            if (isError(line)) errorln(NINJA_GENERIC_ERROR, line)
-        }
+    // Metadata generators are expected to produce additional_project_files.txt even if it's
+    // empty. This file contains a newline separated list of filenames that are known by the
+    // build system and considered to be part of the project. For CMake projects, these are
+    // files that CMake knows about but that don't end up in the build.ninja file. Typically,
+    // these are like bitmaps or esoteric sources like Fortran.
+    if (!abi.additionalProjectFilesIndexFile.isFile) {
+      abi.additionalProjectFilesIndexFile.parentFile.mkdirs()
+      abi.additionalProjectFilesIndexFile.writeText("")
     }
+  }
+
+  override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
+    return createExecuteProcessCommand(configureScript).copy(useScript = true).addArgs(abi.configurationArguments)
+  }
+
+  override fun checkPrefabConfig() {}
+
+  private fun reportErrors(file: File) {
+    file.forEachLine { line -> if (isError(line)) errorln(NINJA_GENERIC_ERROR, line) }
+  }
 }
 
 /**
- * Check whether an output line from an arbitrary user-written tool contains an error message.
- * Currently, it recognizes errors produced by MSBuild.
+ * Check whether an output line from an arbitrary user-written tool contains an error message. Currently, it recognizes errors produced by
+ * MSBuild.
  */
-@VisibleForTesting
-fun isError(line : String) = errorMatchers.any { it.matches(line) }
+@VisibleForTesting fun isError(line: String) = errorMatchers.any { it.matches(line) }
 
-private val errorMatchers = listOf(
-    Regex(".*: error :.*"),
-    Regex(".*: error [a-zA-Z0-9]*:.*"),
-)
-
-
+private val errorMatchers = listOf(Regex(".*: error :.*"), Regex(".*: error [a-zA-Z0-9]*:.*"))

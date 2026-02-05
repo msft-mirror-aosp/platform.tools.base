@@ -23,54 +23,47 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.file.RegularFileProperty
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledDexingTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: Dexing = mock()
+  private val delegate: Dexing = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledDexing by lazy {
-        AnalyticsEnabledDexing(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledDexing by lazy { AnalyticsEnabledDexing(delegate, stats) }
 
-    @Test
-    fun testMultiDexKeepProguard() {
-        val returnValue = mock<RegularFileProperty>()
-        whenever(delegate.multiDexKeepProguard).thenReturn(returnValue)
-        Truth.assertThat(proxy.multiDexKeepProguard).isEqualTo(returnValue)
+  @Test
+  fun testMultiDexKeepProguard() {
+    val returnValue = mock<RegularFileProperty>()
+    whenever(delegate.multiDexKeepProguard).thenReturn(returnValue)
+    Truth.assertThat(proxy.multiDexKeepProguard).isEqualTo(returnValue)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MULTI_DEX_KEEP_PROGUARD_VALUE)
-        verify(delegate, times(1))
-            .multiDexKeepProguard
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MULTI_DEX_KEEP_PROGUARD_VALUE)
+    verify(delegate, times(1)).multiDexKeepProguard
+    verifyNoMoreInteractions(delegate)
+  }
 
-    @Test
-    fun testMultiDexKeepFile() {
-        val returnValue = mock<RegularFileProperty>()
-        whenever(delegate.multiDexKeepFile).thenReturn(returnValue)
-        Truth.assertThat(proxy.multiDexKeepFile).isEqualTo(returnValue)
+  @Test
+  fun testMultiDexKeepFile() {
+    val returnValue = mock<RegularFileProperty>()
+    whenever(delegate.multiDexKeepFile).thenReturn(returnValue)
+    Truth.assertThat(proxy.multiDexKeepFile).isEqualTo(returnValue)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.MULTI_DEX_KEEP_FILE_VALUE)
-        verify(delegate, times(1))
-            .multiDexKeepFile
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MULTI_DEX_KEEP_FILE_VALUE)
+    verify(delegate, times(1)).multiDexKeepFile
+    verifyNoMoreInteractions(delegate)
+  }
 }

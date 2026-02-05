@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("GoldenFileUtils")
+
 package com.android.testutils
 
 import com.google.common.io.Resources
@@ -25,64 +26,57 @@ import java.nio.file.Path
 /**
  * Represents a Golden file for some test case.
  *
- * The golden file is expected to be a java resource at [resourcePath],
- * in a source root located at [resourceRootWorkspacePath].
+ * The golden file is expected to be a java resource at [resourcePath], in a source root located at [resourceRootWorkspacePath].
  *
- * It is expected to have a test that calls [assertUpToDate], and
- * optionally a convenience class with a main method that calls [update].
- * If such a class is provided, it should be passed to [assertUpToDate]
- * to make the error message as helpful as possible.
+ * It is expected to have a test that calls [assertUpToDate], and optionally a convenience class with a main method that calls [update]. If
+ * such a class is provided, it should be passed to [assertUpToDate] to make the error message as helpful as possible.
  *
  * See `GoldenFileTest` for an example.
  */
 class GoldenFile(
-    private val resourceRootWorkspacePath: String,
-    private val resourcePath: String,
-    private val actualCallable: () -> List<String>) {
-    private class State (val expected: List<String>, val actual: List<String>) {
-        val diff: String by lazy {
-            TestUtils.getDiff(expected.toTypedArray(), actual.toTypedArray())
-        }
+  private val resourceRootWorkspacePath: String,
+  private val resourcePath: String,
+  private val actualCallable: () -> List<String>,
+) {
+  private class State(val expected: List<String>, val actual: List<String>) {
+    val diff: String by lazy { TestUtils.getDiff(expected.toTypedArray(), actual.toTypedArray()) }
+  }
+
+  private fun getState(): State =
+    State(expected = Resources.readLines(Resources.getResource(resourcePath), Charsets.UTF_8), actual = actualCallable.invoke())
+
+  @JvmOverloads
+  fun assertUpToDate(updater: Class<*>? = null) {
+    getState().apply {
+      if (expected == actual) {
+        return
+      }
+      throw AssertionError(
+        "Golden file ${resourcePath.substringAfterLast('/')} is not up to date.\nEither:\n" +
+          "  (a) The change that caused this file to be out of date must be reverted, or\n" +
+          "  (b) The following diff must be applied" +
+          "${if (updater != null) " by running ${updater.canonicalName}.main() from within Idea" else " to '$resourceRootWorkspacePath/$resourcePath'"}:\n" +
+          diff
+      )
     }
+  }
 
-    private fun getState(): State = State(
-        expected = Resources.readLines(Resources.getResource(resourcePath), Charsets.UTF_8),
-        actual = actualCallable.invoke()
-    )
+  @JvmOverloads
+  fun update(print: (String) -> Unit = { kotlin.io.print(it) }, getWorkspaceRoot: () -> Path = { TestUtils.getWorkspaceRoot() }) {
+    getState().apply {
+      if (expected == actual) {
+        print("No diff to apply to $resourceRootWorkspacePath/$resourcePath")
+        return
+      }
 
-    @JvmOverloads
-    fun assertUpToDate(updater: Class<*>? = null) {
-        getState().apply {
-            if (expected == actual) {
-                return
-            }
-            throw AssertionError(
-                "Golden file ${resourcePath.substringAfterLast('/')} is not up to date.\nEither:\n" +
-                        "  (a) The change that caused this file to be out of date must be reverted, or\n" +
-                        "  (b) The following diff must be applied" +
-                        "${if (updater != null) " by running ${updater.canonicalName}.main() from within Idea" else " to '$resourceRootWorkspacePath/$resourcePath'"}:\n" +
-                        diff
-            )
-        }
+      val actualFile = getWorkspaceRoot().resolve(resourceRootWorkspacePath).resolve(resourcePath)
+      if (expected != Files.readAllLines(actualFile)) {
+        throw IOException(
+          "Workspace file $resourceRootWorkspacePath/$resourcePath content different from corresponding resource, aborting update"
+        )
+      }
+      Files.write(actualFile, actual)
+      print("Applied diff\n$diff")
     }
-
-    @JvmOverloads
-    fun update(
-            print: (String) -> Unit = { kotlin.io.print(it) },
-            getWorkspaceRoot: () -> Path = { TestUtils.getWorkspaceRoot() }) {
-        getState().apply {
-            if (expected == actual) {
-                print("No diff to apply to $resourceRootWorkspacePath/$resourcePath")
-                return
-            }
-
-            val actualFile = getWorkspaceRoot().resolve(resourceRootWorkspacePath).resolve(resourcePath)
-            if (expected !=  Files.readAllLines(actualFile)) {
-                throw IOException("Workspace file $resourceRootWorkspacePath/$resourcePath content different from corresponding resource, aborting update")
-            }
-            Files.write(actualFile, actual)
-            print("Applied diff\n$diff")
-        }
-    }
+  }
 }
-

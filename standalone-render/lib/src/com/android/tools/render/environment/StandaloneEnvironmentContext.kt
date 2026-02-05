@@ -31,8 +31,6 @@ import com.android.tools.rendering.RenderProblem
 import com.android.tools.rendering.api.EnvironmentContext
 import com.android.tools.rendering.api.IncludeReference
 import com.android.tools.rendering.api.NavGraphResolver
-import com.android.tools.rendering.classloading.ModuleClassLoader
-import com.android.tools.rendering.classloading.ModuleClassLoaderManager
 import com.android.tools.rendering.parsers.RenderXmlFile
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
 import com.android.tools.rendering.security.RenderSecurityManager
@@ -42,55 +40,48 @@ import com.intellij.psi.PsiFile
 
 /** [EnvironmentContext] for the CLI case with no UI. */
 class StandaloneEnvironmentContext(
-    private val project: Project,
-    val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
-    override val downloadableFontCacheService: DownloadableFontCacheService
+  private val project: Project,
+  val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
+  override val downloadableFontCacheService: DownloadableFontCacheService,
 ) : EnvironmentContext {
-    private val crashReporter = ConsoleCrashReporter()
-    override val layoutlibContext: LayoutlibContext = object : LayoutlibContext {
-        override fun hasLayoutlibCrash(): Boolean = false
-        override fun register(layoutlib: LayoutLibrary) { }
+  private val crashReporter = ConsoleCrashReporter()
+  override val layoutlibContext: LayoutlibContext =
+    object : LayoutlibContext {
+      override fun hasLayoutlibCrash(): Boolean = false
+
+      override fun register(layoutlib: LayoutLibrary) {}
     }
 
-    override val actionFixFactory: RenderProblem.ActionFixFactory =
-        RenderProblem.ActionFixFactory { _ -> HtmlLinkManager.Action { } }
+  override val actionFixFactory: RenderProblem.ActionFixFactory = RenderProblem.ActionFixFactory { _ -> HtmlLinkManager.Action {} }
 
-    override fun reportMissingSdkDependency(logger: IRenderLogger) { }
+  override fun reportMissingSdkDependency(logger: IRenderLogger) {}
 
-    override fun createIncludeReference(
-        xmlFile: RenderXmlFile,
-        resolver: RenderResources
-    ): IncludeReference = IncludeReference.NONE
+  override fun createIncludeReference(xmlFile: RenderXmlFile, resolver: RenderResources): IncludeReference = IncludeReference.NONE
 
-    /** Not used in the Compose standalone rendering. TODO(): implement for general rendering */
-    override fun getFileText(fileName: String): String? = null
+  /** Not used in the Compose standalone rendering. TODO(): implement for general rendering */
+  override fun getFileText(fileName: String): String? = null
 
-    override fun getXmlFile(filePath: PathString): RenderXmlFile =
-        RenderXmlFileSnapshot(project, filePath)
+  override fun getXmlFile(filePath: PathString): RenderXmlFile = RenderXmlFileSnapshot(project, filePath)
 
-    override fun getNavGraphResolver(resourceResolver: ResourceResolver): NavGraphResolver =
-        NavGraphResolver { null }
+  override fun getNavGraphResolver(resourceResolver: ResourceResolver): NavGraphResolver = NavGraphResolver { null }
 
-    override fun createRenderSecurityManager(
-        projectPath: String?,
-        platform: AndroidPlatform?
-    ): RenderSecurityManager {
-        val sdkLocationPath = platform?.sdkData?.location?.toString()!!
-        return object : RenderSecurityManager(sdkLocationPath, projectPath, false, emptyArray(), { true }) { }
-    }
+  override fun createRenderSecurityManager(projectPath: String?, platform: AndroidPlatform?): RenderSecurityManager {
+    val sdkLocationPath = platform?.sdkData?.location?.toString()!!
+    return object : RenderSecurityManager(sdkLocationPath, projectPath, false, emptyArray(), { true }) {}
+  }
 
-    // This is only to be called from RenderErrorContributor and never in the standalone rendering
-    override fun getOriginalFile(psiFile: PsiFile): PsiFile {
-        throw UnsupportedOperationException("Should not be called in standalone rendering")
-    }
+  // This is only to be called from RenderErrorContributor and never in the standalone rendering
+  override fun getOriginalFile(psiFile: PsiFile): PsiFile {
+    throw UnsupportedOperationException("Should not be called in standalone rendering")
+  }
 
-    override fun getCrashReporter(): CrashReporter = crashReporter
+  override fun getCrashReporter(): CrashReporter = crashReporter
 
-    override fun createCrashReport(t: Throwable): CrashReport = ThrowableCrashReport(t)
+  override fun createCrashReport(t: Throwable): CrashReport = ThrowableCrashReport(t)
 
-    override fun isInTest(): Boolean = false
+  override fun isInTest(): Boolean = false
 
-    override val useRBytecodeParser: Boolean = true
+  override val useRBytecodeParser: Boolean = true
 
-    override fun cleanLayoutlibNativeMemory() {}
+  override fun cleanLayoutlibNativeMemory() {}
 }

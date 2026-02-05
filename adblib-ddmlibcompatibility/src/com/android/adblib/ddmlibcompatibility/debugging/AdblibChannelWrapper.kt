@@ -19,42 +19,38 @@ import com.android.adblib.AdbChannel
 import com.android.adblib.read
 import com.android.adblib.write
 import com.android.ddmlib.SimpleConnectedSocket
-import kotlinx.coroutines.runBlocking
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.runBlocking
 
 /** Wraps {@link AdbChannel} and provides a way to perform blocking reads/writes with timeout. */
-internal class AdblibChannelWrapper(
-    val channel: AdbChannel
-) : SimpleConnectedSocket {
+internal class AdblibChannelWrapper(val channel: AdbChannel) : SimpleConnectedSocket {
 
-    private var closed = false
+  private var closed = false
 
-    override fun read(dst: ByteBuffer, timeoutMs: Long): Int =
-        runBlocking {
-            try {
-                channel.read(dst, timeoutMs, TimeUnit.MILLISECONDS)
-            } catch (e: TimeoutException) {
-                0
-            }
-        }
-
-    override fun write(dst: ByteBuffer, timeoutMs: Long): Int =
-        runBlocking {
-            try {
-                channel.write(dst, timeoutMs, TimeUnit.MILLISECONDS)
-            } catch (e: TimeoutException) {
-                0
-            }
-        }
-
-    override fun isOpen(): Boolean {
-        return !closed
+  override fun read(dst: ByteBuffer, timeoutMs: Long): Int = runBlocking {
+    try {
+      channel.read(dst, timeoutMs, TimeUnit.MILLISECONDS)
+    } catch (e: TimeoutException) {
+      0
     }
+  }
 
-    override fun close() {
-        closed = true
-        channel.close()
+  override fun write(dst: ByteBuffer, timeoutMs: Long): Int = runBlocking {
+    try {
+      channel.write(dst, timeoutMs, TimeUnit.MILLISECONDS)
+    } catch (e: TimeoutException) {
+      0
     }
+  }
+
+  override fun isOpen(): Boolean {
+    return !closed
+  }
+
+  override fun close() {
+    closed = true
+    channel.close()
+  }
 }

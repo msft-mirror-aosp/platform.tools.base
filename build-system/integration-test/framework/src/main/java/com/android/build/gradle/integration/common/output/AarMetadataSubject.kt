@@ -21,42 +21,35 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
-import java.io.File
 import java.nio.file.Path
 
-class AarMetadataSubject internal constructor(
-    metadata: FailureMetadata,
-    actual: AarMetadataReader
-): Subject<AarMetadataSubject, AarMetadataReader>(metadata, actual) {
+class AarMetadataSubject internal constructor(metadata: FailureMetadata, actual: AarMetadataReader) :
+  Subject<AarMetadataSubject, AarMetadataReader>(metadata, actual) {
 
-    companion object {
-        fun assertThat(path: Path, action: AarMetadataSubject.() -> Unit) {
-            action(assertAbout(aarmetadatas()).that(AarMetadataReader.load(path.toFile())))
-        }
-
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun aarmetadatas(): Factory<AarMetadataSubject, AarMetadataReader> {
-            return Factory<AarMetadataSubject, AarMetadataReader> { metadata, actual ->
-                AarMetadataSubject(metadata, actual)
-            }
-        }
+  companion object {
+    fun assertThat(path: Path, action: AarMetadataSubject.() -> Unit) {
+      action(assertAbout(aarmetadatas()).that(AarMetadataReader.load(path.toFile())))
     }
 
-    fun formatVersion(): StringSubject = check("formatVersion()").that(actual().aarFormatVersion)
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun aarmetadatas(): Factory<AarMetadataSubject, AarMetadataReader> {
+      return Factory<AarMetadataSubject, AarMetadataReader> { metadata, actual -> AarMetadataSubject(metadata, actual) }
+    }
+  }
 
-    fun metadataVersion(): StringSubject = check("metadataVersion()").that(actual().aarMetadataVersion)
+  fun formatVersion(): StringSubject = check("formatVersion()").that(actual().aarFormatVersion)
 
-    fun minCompileSdk(): StringSubject = check("minCompileSdk()").that(actual().minCompileSdk)
+  fun metadataVersion(): StringSubject = check("metadataVersion()").that(actual().aarMetadataVersion)
 
-    fun minCompileSdkExtension(): StringSubject = check("minCompileSdkExtension()").that(actual().minCompileSdkExtension)
+  fun minCompileSdk(): StringSubject = check("minCompileSdk()").that(actual().minCompileSdk)
 
-    fun minAgpVersion(): StringSubject = check("minAgpVersion()").that(actual().minAgpVersion)
+  fun minCompileSdkExtension(): StringSubject = check("minCompileSdkExtension()").that(actual().minCompileSdkExtension)
 
-    fun forceCompileSdkPreview(): StringSubject = check("forceCompileSdkPreview()").that(actual().forceCompileSdkPreview)
+  fun minAgpVersion(): StringSubject = check("minAgpVersion()").that(actual().minAgpVersion)
 
-    fun coreLibraryDesugaringEnabled(): StringSubject = check("coreLibraryDesugaringEnabled()").that(actual().coreLibraryDesugaringEnabled)
+  fun forceCompileSdkPreview(): StringSubject = check("forceCompileSdkPreview()").that(actual().forceCompileSdkPreview)
 
-    fun desugarJdkLibId(): StringSubject = check("desugarJdkLibId()").that(actual().desugarJdkLibId)
+  fun coreLibraryDesugaringEnabled(): StringSubject = check("coreLibraryDesugaringEnabled()").that(actual().coreLibraryDesugaringEnabled)
+
+  fun desugarJdkLibId(): StringSubject = check("desugarJdkLibId()").that(actual().desugarJdkLibId)
 }

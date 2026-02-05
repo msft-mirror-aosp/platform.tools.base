@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.typeKt() = """
+fun ArchStarterActivityTemplateVariables.typeKt() =
+  """
 package $themePackage
 
 import androidx.compose.material3.Typography

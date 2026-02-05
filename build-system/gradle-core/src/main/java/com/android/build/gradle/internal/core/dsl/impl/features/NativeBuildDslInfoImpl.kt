@@ -32,66 +32,59 @@ import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.builder.core.ComponentType
 
 class NativeBuildDslInfoImpl(
-    private val componentType: ComponentType,
-    private val defaultConfig: DefaultConfig,
-    private val buildTypeObj: BuildType,
-    private val productFlavorList: List<ProductFlavor>,
-    private val extension: CommonExtension
-): NativeBuildDslInfo {
+  private val componentType: ComponentType,
+  private val defaultConfig: DefaultConfig,
+  private val buildTypeObj: BuildType,
+  private val productFlavorList: List<ProductFlavor>,
+  private val extension: CommonExtension,
+) : NativeBuildDslInfo {
 
-    override val ndkConfig: MergedNdkConfig = MergedNdkConfig()
-    override val externalNativeBuildOptions = MergedExternalNativeBuildOptions()
+  override val ndkConfig: MergedNdkConfig = MergedNdkConfig()
+  override val externalNativeBuildOptions = MergedExternalNativeBuildOptions()
 
-    override val externalNativeExperimentalProperties: Map<String, Any>
-        get() {
-            // merge global and variant properties
-            val mergedProperties = mutableMapOf<String, Any>()
-            mergedProperties.putAll(extension.externalNativeBuild.experimentalProperties)
-            mergedProperties.putAll(
-                externalNativeBuildOptions.externalNativeExperimentalProperties
-            )
-            return mergedProperties
-        }
-
-    init {
-        mergeOptions()
+  override val externalNativeExperimentalProperties: Map<String, Any>
+    get() {
+      // merge global and variant properties
+      val mergedProperties = mutableMapOf<String, Any>()
+      mergedProperties.putAll(extension.externalNativeBuild.experimentalProperties)
+      mergedProperties.putAll(externalNativeBuildOptions.externalNativeExperimentalProperties)
+      return mergedProperties
     }
 
-    private fun mergeOptions() {
-        computeMergedOptions(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            ndkConfig,
-            { ndk as CoreNdkOptions },
-            { ndk as CoreNdkOptions }
-        )
-        computeMergedOptions(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            externalNativeBuildOptions,
-            { externalNativeBuild as CoreExternalNativeBuildOptions },
-            { externalNativeBuild as CoreExternalNativeBuildOptions }
-        )
+  init {
+    mergeOptions()
+  }
+
+  private fun mergeOptions() {
+    computeMergedOptions(defaultConfig, buildTypeObj, productFlavorList, ndkConfig, { ndk as CoreNdkOptions }, { ndk as CoreNdkOptions })
+    computeMergedOptions(
+      defaultConfig,
+      buildTypeObj,
+      productFlavorList,
+      externalNativeBuildOptions,
+      { externalNativeBuild as CoreExternalNativeBuildOptions },
+      { externalNativeBuild as CoreExternalNativeBuildOptions },
+    )
+  }
+
+  override val isJniDebuggable: Boolean
+    get() = buildTypeObj.isJniDebuggable
+
+  override val nativeBuildSystem: NativeBuiltType?
+    get() {
+      if (externalNativeExperimentalProperties.ninja.path != null) return NativeBuiltType.NINJA
+      if (extension.externalNativeBuild.ndkBuild.path != null) return NativeBuiltType.NDK_BUILD
+      if (extension.externalNativeBuild.cmake.path != null) return NativeBuiltType.CMAKE
+      return null
     }
 
-    override val isJniDebuggable: Boolean
-        get() = buildTypeObj.isJniDebuggable
+  override val userDefinedAbis: Set<String>
+    get() = if (componentType.isDynamicFeature) setOf() else ndkConfig.abiFilters
 
-    override val nativeBuildSystem: NativeBuiltType?
-        get() {
-            if (externalNativeExperimentalProperties.ninja.path != null) return NativeBuiltType.NINJA
-            if (extension.externalNativeBuild.ndkBuild.path != null) return NativeBuiltType.NDK_BUILD
-            if (extension.externalNativeBuild.cmake.path != null) return NativeBuiltType.CMAKE
-            return null
-        }
-
-    override val userDefinedAbis: Set<String>
-        get() = if (componentType.isDynamicFeature) setOf() else ndkConfig.abiFilters
-
-    override val supportedAbis: Set<String>
-        get() = if (componentType.isDynamicFeature) setOf() else {
-            ndkConfig.abiFilters.takeIf { it.isNotEmpty() } ?: Abi.getDefaultSupportedAbis().toSet()
-        }
+  override val supportedAbis: Set<String>
+    get() =
+      if (componentType.isDynamicFeature) setOf()
+      else {
+        ndkConfig.abiFilters.takeIf { it.isNotEmpty() } ?: Abi.getDefaultSupportedAbis().toSet()
+      }
 }

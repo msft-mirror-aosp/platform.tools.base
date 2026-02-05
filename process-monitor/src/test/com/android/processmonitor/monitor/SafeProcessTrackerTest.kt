@@ -29,67 +29,48 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-/**
- * Tests for [SafeProcessTracker]
- */
+/** Tests for [SafeProcessTracker] */
 class SafeProcessTrackerTest {
 
-    @Test
-    fun trackerThrows_collectionSucceeds(): Unit = runBlocking {
-        val tracker = TestProcessTracker(throws = true, ProcessAdded(1, "id", "name"))
-        val safeProcessTracker = SafeProcessTracker(tracker, "Error", FakeAdbLoggerFactory().logger)
+  @Test
+  fun trackerThrows_collectionSucceeds(): Unit = runBlocking {
+    val tracker = TestProcessTracker(throws = true, ProcessAdded(1, "id", "name"))
+    val safeProcessTracker = SafeProcessTracker(tracker, "Error", FakeAdbLoggerFactory().logger)
 
-        assertThat(safeProcessTracker.trackProcesses().toList())
-            .containsExactly(ProcessAdded(1, "id", "name"))
-    }
+    assertThat(safeProcessTracker.trackProcesses().toList()).containsExactly(ProcessAdded(1, "id", "name"))
+  }
 
-    /**
-     * Verifies that a merged throwing tracker does not terminate the merged flow.
-     *
-     * The test is not strictly needed because the contract of [merge] combined with the behavior
-     * in [trackerThrows_collectionSucceeds] already guarantees this, but it serves to demonstrate
-     * our use case.
-     *
-     */
-    @Suppress("OPT_IN_USAGE") // runTest is experimental
-    @Test
-    fun mergedTrackers_oneThrowsOtherSucceeds_collectionSucceeds(): Unit = runTest {
-        val tracker = TestProcessTracker(
-            throws = false,
-            ProcessAdded(1, "id1", "name1"),
-            ProcessAdded(2, "id2", "name2")
-        )
-        val throwingTracker = TestProcessTracker(
-            throws = true,
-            ProcessAdded(3, "id3", "name3")
-        )
-        val safeTracker =
-            SafeProcessTracker(throwingTracker, "Error", FakeAdbLoggerFactory().logger)
+  /**
+   * Verifies that a merged throwing tracker does not terminate the merged flow.
+   *
+   * The test is not strictly needed because the contract of [merge] combined with the behavior in [trackerThrows_collectionSucceeds]
+   * already guarantees this, but it serves to demonstrate our use case.
+   */
+  @Suppress("OPT_IN_USAGE") // runTest is experimental
+  @Test
+  fun mergedTrackers_oneThrowsOtherSucceeds_collectionSucceeds(): Unit = runTest {
+    val tracker = TestProcessTracker(throws = false, ProcessAdded(1, "id1", "name1"), ProcessAdded(2, "id2", "name2"))
+    val throwingTracker = TestProcessTracker(throws = true, ProcessAdded(3, "id3", "name3"))
+    val safeTracker = SafeProcessTracker(throwingTracker, "Error", FakeAdbLoggerFactory().logger)
 
-        val flow = merge(safeTracker.trackProcesses(), tracker.trackProcesses())
+    val flow = merge(safeTracker.trackProcesses(), tracker.trackProcesses())
 
-        assertThat(flow.toList()).containsExactly(
-            ProcessAdded(1, "id1", "name1"),
-            ProcessAdded(2, "id2", "name2"),
-            ProcessAdded(3, "id3", "name3"),
-        )
-    }
+    assertThat(flow.toList())
+      .containsExactly(ProcessAdded(1, "id1", "name1"), ProcessAdded(2, "id2", "name2"), ProcessAdded(3, "id3", "name3"))
+  }
 
-    private class TestProcessTracker(
-        private val throws: Boolean,
-        vararg val events: ProcessEvent
-    ) : ProcessTracker {
+  private class TestProcessTracker(private val throws: Boolean, vararg val events: ProcessEvent) : ProcessTracker {
 
-        override fun trackProcesses(): Flow<ProcessEvent> {
-            return flow {
-                events.forEach {
-                    emit(it)
-                    delay(1000)
-                }
-                if (throws) {
-                    throw RuntimeException()
-                }
-            }
+    override fun trackProcesses(): Flow<ProcessEvent> {
+      return flow {
+        events.forEach {
+          emit(it)
+          delay(1000)
         }
+        if (throws) {
+          throw RuntimeException()
+        }
+      }
     }
+  }
 }

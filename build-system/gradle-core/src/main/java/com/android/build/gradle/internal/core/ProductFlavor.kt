@@ -19,5 +19,5 @@ package com.android.build.gradle.internal.core
 import com.android.build.api.dsl.ProductFlavor
 
 data class ProductFlavor(val dimension: String, val name: String) {
-    constructor(flavor: ProductFlavor): this(flavor.dimension!!, flavor.name)
+  constructor(flavor: ProductFlavor) : this(flavor.dimension!!, flavor.name)
 }

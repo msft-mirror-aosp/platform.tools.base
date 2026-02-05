@@ -25,7 +25,8 @@ fun appBarXml(
   simpleLayoutName: String,
   themeNameAppBarOverlay: String,
   themeNamePopupOverlay: String,
-  useAndroidX: Boolean) =
+  useAndroidX: Boolean,
+) =
   """<?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

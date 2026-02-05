@@ -22,87 +22,64 @@ import com.android.processmonitor.agenttracker.AgentProcessTrackerConfig
 import com.android.processmonitor.common.ProcessTracker
 import com.android.processmonitor.monitor.testing.FakeProcessTracker
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Path
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import java.nio.file.Path
 
-/**
- * Tests for [com.android.processmonitor.monitor.BaseProcessTrackerFactory]
- */
+/** Tests for [com.android.processmonitor.monitor.BaseProcessTrackerFactory] */
 class BaseProcessTrackerFactoryTest {
 
-    @Test
-    fun withAgentConfig_usesAgentProcessTracker(): Unit = runBlocking {
-        val factory =
-            TestBaseProcessTrackerFactory(AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
-        val device = TestDevice("device1", 30, "x86")
+  @Test
+  fun withAgentConfig_usesAgentProcessTracker(): Unit = runBlocking {
+    val factory = TestBaseProcessTrackerFactory(AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
+    val device = TestDevice("device1", 30, "x86")
 
-        val tracker = factory.createProcessTracker(device) as? MergedProcessTracker
-        assertThat(tracker?.trackers?.map { it::class })
-            .containsExactly(
-                FakeProcessTracker::class,
-                SafeProcessTracker::class,
-            )
-        assertThat(tracker?.trackers?.first { it is SafeProcessTracker }.toString())
-            .isEqualTo("SafeProcessTracker(AgentProcessTracker)")
-    }
+    val tracker = factory.createProcessTracker(device) as? MergedProcessTracker
+    assertThat(tracker?.trackers?.map { it::class }).containsExactly(FakeProcessTracker::class, SafeProcessTracker::class)
+    assertThat(tracker?.trackers?.first { it is SafeProcessTracker }.toString()).isEqualTo("SafeProcessTracker(AgentProcessTracker)")
+  }
 
-    @Test
-    fun withAgentConfig_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-        val factory =
-            TestBaseProcessTrackerFactory(AgentProcessTrackerConfig(Path.of("agent"), 1) { false })
-        val device = TestDevice("device1", 30, "x86")
+  @Test
+  fun withAgentConfig_doesNotUseAgentProcessTracker(): Unit = runBlocking {
+    val factory = TestBaseProcessTrackerFactory(AgentProcessTrackerConfig(Path.of("agent"), 1) { false })
+    val device = TestDevice("device1", 30, "x86")
 
-        val tracker = factory.createProcessTracker(device)
+    val tracker = factory.createProcessTracker(device)
 
-        assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
-    }
+    assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
+  }
 
-    @Test
-    fun withoutAgentConfig_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-        val factory = TestBaseProcessTrackerFactory(agentConfig = null)
-        val device = TestDevice("device1", 30, "x86")
+  @Test
+  fun withApiUnder21_doesNotUseAgentProcessTracker(): Unit = runBlocking {
+    val factory = TestBaseProcessTrackerFactory(agentConfig = AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
+    val device = TestDevice("device1", 20, "x86")
 
-        val tracker = factory.createProcessTracker(device)
+    val tracker = factory.createProcessTracker(device)
 
-        assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
-    }
+    assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
+  }
 
-    @Test
-    fun withApiUnder21_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-        val factory = TestBaseProcessTrackerFactory(agentConfig = null)
-        val device = TestDevice("device1", 20, "x86")
+  @Test
+  fun withoutAbi_doesNotUseAgentProcessTracker(): Unit = runBlocking {
+    val factory = TestBaseProcessTrackerFactory(agentConfig = AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
+    val device = TestDevice("device1", 33, null)
 
-        val tracker = factory.createProcessTracker(device)
+    val tracker = factory.createProcessTracker(device)
 
-        assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
-    }
+    assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
+  }
 
-    @Test
-    fun withoutAbi_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-        val factory = TestBaseProcessTrackerFactory(agentConfig = null)
-        val device = TestDevice("device1", 33, null)
+  private class TestDevice(val serialNumber: String, val apiLevel: Int, val abi: String?)
 
-        val tracker = factory.createProcessTracker(device)
+  private inner class TestBaseProcessTrackerFactory(agentConfig: AgentProcessTrackerConfig) :
+    BaseProcessTrackerFactory<TestDevice>(AdbSession.create(AdbSessionHost()), agentConfig, FakeAdbLoggerFactory().logger) {
 
-        assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
-    }
+    override fun createMainTracker(device: TestDevice): ProcessTracker = FakeProcessTracker()
 
-    private class TestDevice(val serialNumber: String, val apiLevel: Int, val abi: String?)
+    override suspend fun getDeviceApiLevel(device: TestDevice): Int = device.apiLevel
 
-    private inner class TestBaseProcessTrackerFactory(agentConfig: AgentProcessTrackerConfig?) :
-        BaseProcessTrackerFactory<TestDevice>(
-            AdbSession.create(AdbSessionHost()),
-            agentConfig,
-            FakeAdbLoggerFactory().logger
-        ) {
+    override suspend fun getDeviceAbi(device: TestDevice): String? = device.abi
 
-        override fun createMainTracker(device: TestDevice): ProcessTracker = FakeProcessTracker()
-
-        override suspend fun getDeviceApiLevel(device: TestDevice): Int = device.apiLevel
-
-        override suspend fun getDeviceAbi(device: TestDevice): String? = device.abi
-
-        override fun getDeviceSerialNumber(device: TestDevice): String = device.serialNumber
-    }
+    override fun getDeviceSerialNumber(device: TestDevice): String = device.serialNumber
+  }
 }

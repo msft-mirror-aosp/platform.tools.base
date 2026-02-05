@@ -83,13 +83,7 @@ class NamespaceDetector : ResourceXmlDetector() {
             ) {
               var fix: LintFix? = null
               if (value.startsWith("https://")) {
-                fix =
-                  fix()
-                    .replace()
-                    .text("https")
-                    .with("http")
-                    .name("Replace with http://${value.substring(8)}")
-                    .build()
+                fix = fix().replace().text("https").with("http").name("Replace with http://${value.substring(8)}").build()
               }
               context.report(
                 TYPO,
@@ -101,28 +95,12 @@ class NamespaceDetector : ResourceXmlDetector() {
               )
             }
             continue
+          } else if (value != AUTO_URI && value.contains("auto") && value.startsWith("http://schemas.android.com/")) {
+            context.report(RES_AUTO, attribute, context.getValueLocation(attribute), "Suspicious namespace: Did you mean `$AUTO_URI`?")
           } else if (
-            value != AUTO_URI &&
-              value.contains("auto") &&
-              value.startsWith("http://schemas.android.com/")
+            value == TOOLS_URI && (prefix == XMLNS_ANDROID || prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
           ) {
-            context.report(
-              RES_AUTO,
-              attribute,
-              context.getValueLocation(attribute),
-              "Suspicious namespace: Did you mean `$AUTO_URI`?",
-            )
-          } else if (
-            value == TOOLS_URI &&
-              (prefix == XMLNS_ANDROID ||
-                prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
-          ) {
-            context.report(
-              TYPO,
-              attribute,
-              context.getValueLocation(attribute),
-              "Suspicious namespace and prefix combination",
-            )
+            context.report(TYPO, attribute, context.getValueLocation(attribute), "Suspicious namespace and prefix combination")
           }
 
           if (!context.isEnabled(TYPO)) {
@@ -141,8 +119,7 @@ class NamespaceDetector : ResourceXmlDetector() {
                   TYPO,
                   attribute,
                   context.getValueLocation(attribute),
-                  "Possible typo in URL: was `\"$value\"`, should " +
-                    "probably be `\"$correctUri\"`",
+                  "Possible typo in URL: was `\"$value\"`, should " + "probably be `\"$correctUri\"`",
                 )
               }
             }
@@ -171,8 +148,7 @@ class NamespaceDetector : ResourceXmlDetector() {
               TYPO,
               attribute,
               context.getValueLocation(attribute),
-              "Unexpected namespace URI bound to the `\"android\"` " +
-                "prefix, was `$value`, expected `$ANDROID_URI`",
+              "Unexpected namespace URI bound to the `\"android\"` " + "prefix, was `$value`, expected `$ANDROID_URI`",
             )
           }
         } else if (
@@ -181,12 +157,7 @@ class NamespaceDetector : ResourceXmlDetector() {
               prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
         ) {
           val attribute = item as Attr
-          context.report(
-            TYPO,
-            attribute,
-            context.getValueLocation(attribute),
-            "Suspicious namespace and prefix combination",
-          )
+          context.report(TYPO, attribute, context.getValueLocation(attribute), "Suspicious namespace and prefix combination")
         }
       }
     }
@@ -195,8 +166,7 @@ class NamespaceDetector : ResourceXmlDetector() {
       val project = context.project
       val checkCustomAttrs =
         project.resourceNamespace == ResourceNamespace.RES_AUTO &&
-          (context.isEnabled(CUSTOM_VIEW) && project.isLibrary ||
-            context.isEnabled(RES_AUTO) && project.isGradleProject)
+          (context.isEnabled(CUSTOM_VIEW) && project.isLibrary || context.isEnabled(RES_AUTO) && project.isGradleProject)
 
       if (checkCustomAttrs) {
         checkCustomNamespace(context, root)
@@ -208,12 +178,7 @@ class NamespaceDetector : ResourceXmlDetector() {
         val namespaces = unusedNamespaces
         if (namespaces != null && !namespaces.isEmpty()) {
           for ((prefix, attribute) in namespaces) {
-            context.report(
-              UNUSED,
-              attribute,
-              context.getLocation(attribute),
-              "Unused namespace `$prefix`",
-            )
+            context.report(UNUSED, attribute, context.getLocation(attribute), "Unused namespace `$prefix`")
           }
         }
       }
@@ -269,13 +234,7 @@ class NamespaceDetector : ResourceXmlDetector() {
         if (redundant) {
 
           val fix = fix().name("Delete namespace").set().remove(name).build()
-          context.report(
-            REDUNDANT,
-            attribute,
-            context.getLocation(attribute),
-            "This namespace declaration is redundant",
-            fix,
-          )
+          context.report(REDUNDANT, attribute, context.getLocation(attribute), "This namespace declaration is redundant", fix)
         }
       }
     }
@@ -307,8 +266,7 @@ class NamespaceDetector : ResourceXmlDetector() {
               CUSTOM_VIEW,
               attribute,
               context.getValueLocation(attribute),
-              "When using a custom namespace attribute in a library " +
-                "project, use the namespace `\"$AUTO_URI\"` instead",
+              "When using a custom namespace attribute in a library " + "project, use the namespace `\"$AUTO_URI\"` instead",
             )
           }
         }
@@ -318,12 +276,7 @@ class NamespaceDetector : ResourceXmlDetector() {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        NamespaceDetector::class.java,
-        Scope.MANIFEST_AND_RESOURCE_SCOPE,
-        Scope.RESOURCE_FILE_SCOPE,
-        Scope.MANIFEST_SCOPE,
-      )
+      Implementation(NamespaceDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.RESOURCE_FILE_SCOPE, Scope.MANIFEST_SCOPE)
 
     /** Typos in the namespace. */
     @JvmField

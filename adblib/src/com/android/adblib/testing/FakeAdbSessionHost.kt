@@ -19,14 +19,13 @@ import com.android.adblib.AdbSessionHost
 
 class FakeAdbSessionHost : AdbSessionHost() {
 
-    override val loggerFactory = FakeAdbLoggerFactory()
+  override val loggerFactory = FakeAdbLoggerFactory()
 
-    override val timeProvider: FakeNanoTimeProvider = FakeNanoTimeProvider()
+  override val timeProvider: FakeNanoTimeProvider = FakeNanoTimeProvider()
 
-    override val usageTracker: FakeAdbUsageTracker = FakeAdbUsageTracker()
+  override val usageTracker: FakeAdbUsageTracker = FakeAdbUsageTracker()
 
-    override val processRunner: FakeProcessRunner = FakeProcessRunner()
+  override val processRunner: FakeProcessRunner = FakeProcessRunner()
 
-    override fun close() {
-    }
+  override fun close() {}
 }

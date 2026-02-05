@@ -21,18 +21,17 @@ import org.junit.Test
 
 internal class ClangKeySegmentKtTest {
 
-    @Test
-    fun basic() {
-        checkExpect("")
-        checkExpect("x86_64-android/", "--target=x86_64-none-linux-android")
-        checkExpect("-O0/", "-O0")
-        checkExpect("x86_64-android/-O0/", "--target=x86_64-none-linux-android", "-O0")
-    }
+  @Test
+  fun basic() {
+    checkExpect("")
+    checkExpect("x86_64-android/", "--target=x86_64-none-linux-android")
+    checkExpect("-O0/", "-O0")
+    checkExpect("x86_64-android/-O0/", "--target=x86_64-none-linux-android", "-O0")
+  }
 
-    private fun checkExpect(expect : String, vararg flagArray : String) {
-        val flags = flagArray.toList()
-        val result = computeClangKeySegment(flags)
-        assertThat(result).isEqualTo(expect)
-    }
-
+  private fun checkExpect(expect: String, vararg flagArray: String) {
+    val flags = flagArray.toList()
+    val result = computeClangKeySegment(flags)
+    assertThat(result).isEqualTo(expect)
+  }
 }

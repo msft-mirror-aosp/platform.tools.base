@@ -20,15 +20,15 @@ import com.android.builder.errors.IssueReporter
 
 interface DependencyGraphBuilder {
 
-    fun createDependencies(
-        modelBuilder: DependencyModelBuilder<*>,
-        artifactCollectionsProvider: ArtifactCollectionsInputs,
-        withFullDependency: Boolean,
-        ignoreUnexpectedArtifactTypes: Boolean,
-        issueReporter: IssueReporter
-    )
+  fun createDependencies(
+    modelBuilder: DependencyModelBuilder<*>,
+    artifactCollectionsProvider: ArtifactCollectionsInputs,
+    withFullDependency: Boolean,
+    ignoreUnexpectedArtifactTypes: Boolean,
+    issueReporter: IssueReporter,
+  )
 }
 
 fun getDependencyGraphBuilder(): DependencyGraphBuilder {
-    return ArtifactDependencyGraph()
+  return ArtifactDependencyGraph()
 }

@@ -84,25 +84,14 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
         }
       }
     }
-    val location =
-      if (superTypeNode != null) context.getNameLocation(superTypeNode)
-      else context.getNameLocation(declaration)
+    val location = if (superTypeNode != null) context.getNameLocation(superTypeNode) else context.getNameLocation(declaration)
     val widgetName = superClass.name ?: return
-    val suggested =
-      findAppCompatDelegate(context, widgetName)?.qualifiedName
-        ?: getAppCompatDelegate(widgetName, false)
+    val suggested = findAppCompatDelegate(context, widgetName)?.qualifiedName ?: getAppCompatDelegate(widgetName, false)
     val message = "This custom view should extend `$suggested` instead"
     val actionLabel = "Extend AppCompat widget instead"
     val fix =
       if (superTypeNode != null) { // Can't quickfix without accurate node location
-        fix()
-          .name(actionLabel)
-          .sharedName(actionLabel)
-          .replace()
-          .all()
-          .with(suggested)
-          .autoFix()
-          .build()
+        fix().name(actionLabel).sharedName(actionLabel).replace().all().with(suggested).autoFix().build()
       } else {
         null
       }
@@ -130,8 +119,7 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
         priority = 4,
         severity = Severity.ERROR,
         androidSpecific = true,
-        implementation =
-          Implementation(AppCompatCustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(AppCompatCustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
 
     private fun getAppCompatDelegate(widgetName: String, androidx: Boolean): String {
@@ -184,10 +172,7 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
   }
 }
 
-/**
- * Returns true if this project depends on app compat (whether the old android support library
- * version, or the new AndroidX one).
- */
+/** Returns true if this project depends on app compat (whether the old android support library version, or the new AndroidX one). */
 fun Project.dependsOnAppCompat(returnIfUnknown: Boolean = false): Boolean {
   return dependsOn(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) ?: return returnIfUnknown
 }

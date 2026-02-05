@@ -19,20 +19,15 @@ package com.android.manifmerger
 /**
  * An interface that provides strategy to merge XmlDocuments.
  *
- * @param T a type that represents different types of XmlElements, instances of that type
- *        define how XmlElements can be merged together
+ * @param T a type that represents different types of XmlElements, instances of that type define how XmlElements can be merged together
  */
 internal interface DocumentModel<T> {
-    /**
-     * @return a XmlElement type based on its tag/name
-     */
-    fun fromXmlSimpleName(name: String): T
+  /** @return a XmlElement type based on its tag/name */
+  fun fromXmlSimpleName(name: String): T
 
-    /**
-     * @return a tag/name of XmlElement based on its type
-     */
-    fun toXmlName(type: T): String
+  /** @return a tag/name of XmlElement based on its type */
+  fun toXmlName(type: T): String
 
-    // This should ideally be a property of AttributeModel
-    fun autoRejectConflicts(): Boolean
+  // This should ideally be a property of AttributeModel
+  fun autoRejectConflicts(): Boolean
 }

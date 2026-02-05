@@ -17,18 +17,12 @@
 package com.android.build.gradle.internal.utils
 
 import com.android.build.api.variant.ApkInstallGroup
-import org.gradle.api.file.RegularFile
 
-/**
- * ApkInstallGroup for SDKs.
- */
-interface SdkApkInstallGroup: ApkInstallGroup {
-    /**
-     * Sdk from which the installable Apks are derived from.
-     */
-    val sourceSdk: String
+/** ApkInstallGroup for SDKs. */
+interface SdkApkInstallGroup : ApkInstallGroup {
+  /** Sdk from which the installable Apks are derived from. */
+  val sourceSdk: String
 
-    override val description: String
-        get() = "Source Sdk: $sourceSdk"
+  override val description: String
+    get() = "Source Sdk: $sourceSdk"
 }
-

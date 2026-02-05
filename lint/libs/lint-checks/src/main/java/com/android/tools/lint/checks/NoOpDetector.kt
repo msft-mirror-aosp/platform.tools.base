@@ -139,10 +139,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
     private val MAX_CALL_DEPTH = if (LintClient.isStudio) 1 else 2
     /** Maximum depth of the AST tree it will search when looking for side effects */
     private val MAX_RECURSION_DEPTH = if (LintClient.isStudio) 5 else 10
-    /**
-     * When analyzing a block such as a method, the maximum number of statements it will consider
-     * when looking for side effects
-     */
+    /** When analyzing a block such as a method, the maximum number of statements it will consider when looking for side effects */
     private val MAX_STATEMENT_COUNT = if (LintClient.isStudio) 8 else 20
 
     private fun hasSideEffect(node: UExpression?, depth: Int = 0, callDepth: Int = 0): Boolean {
@@ -219,10 +216,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
           }
         }
         is UTryExpression -> {
-          if (
-            hasSideEffect(node.tryClause, depth + 1, callDepth) ||
-              hasSideEffect(node.finallyClause, depth + 1, callDepth)
-          ) {
+          if (hasSideEffect(node.tryClause, depth + 1, callDepth) || hasSideEffect(node.finallyClause, depth + 1, callDepth)) {
             return true
           }
         }
@@ -251,8 +245,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
     /**
      * Is the given [name] a likely getter name, such as `getFoo` or `isBar` ?
      *
-     * We don't consider "get" by itself to be a getter name; it needs to be a prefix for a named
-     * property.
+     * We don't consider "get" by itself to be a getter name; it needs to be a prefix for a named property.
      */
     private fun isGetterName(name: String): Boolean {
       val length = name.length
@@ -317,9 +310,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
             }
           }
 
-          if (
-            isExpressionValueUnused(node) && !expectsSideEffect(context, node) && !isUnit(resolved)
-          ) {
+          if (isExpressionValueUnused(node) && !expectsSideEffect(context, node) && !isUnit(resolved)) {
             report(context, node, node.identifier)
           }
         }
@@ -340,13 +331,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
           }
 
           if (resolved is PsiMethod) {
-            checkCall(
-              null,
-              node,
-              selector.identifier,
-              resolved,
-              resolved.containingClass?.qualifiedName,
-            )
+            checkCall(null, node, selector.identifier, resolved, resolved.containingClass?.qualifiedName)
           } else {
             if (isExpressionValueUnused(selector) && !expectsSideEffect(context, selector)) {
               report(context, selector, selector.identifier)
@@ -357,11 +342,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
 
       override fun visitLiteralExpression(node: ULiteralExpression) {
         if (isExpressionValueUnused(node) && !expectsSideEffect(context, node)) {
-          report(
-            context,
-            node,
-            node.sourcePsi?.text ?: node.value?.toString() ?: node.asSourceString(),
-          )
+          report(context, node, node.sourcePsi?.text ?: node.value?.toString() ?: node.asSourceString())
         }
       }
 
@@ -379,13 +360,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
       private fun checkCall(call: UCallExpression, node: UQualifiedReferenceExpression) {
         val method = call.resolve()
         method?.name?.let { methodName ->
-          checkCall(
-            call,
-            node,
-            call.methodIdentifier?.name ?: methodName,
-            method,
-            method.containingClass?.qualifiedName,
-          )
+          checkCall(call, node, call.methodIdentifier?.name ?: methodName, method, method.containingClass?.qualifiedName)
         }
         if (method == null) {
           // Unresolved by UAST, but perhaps due to the lack of way to represent the resolution
@@ -407,15 +382,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
         containingClassFqName: String?,
       ) {
         // "Pure" methods are methods without side effects
-        if (
-          !isPureMethod(
-            context,
-            call ?: node,
-            method,
-            method?.name ?: callName,
-            containingClassFqName,
-          )
-        ) {
+        if (!isPureMethod(context, call ?: node, method, method?.name ?: callName, containingClassFqName)) {
           return
         }
 
@@ -517,10 +484,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
           return false
         }
       "getValue" ->
-        if (
-          method.isIn("androidx.compose.runtime.State", context) ||
-            method.isIn("androidx.compose.runtime.MutableState", context)
-        ) {
+        if (method.isIn("androidx.compose.runtime.State", context) || method.isIn("androidx.compose.runtime.MutableState", context)) {
           return false
         }
       // getCount() on a Cursor is often used to force the cursor to execute the query
@@ -572,28 +536,20 @@ class NoOpDetector : Detector(), SourceCodeScanner {
       JAVA_LANG_NUMBER -> return true
       JAVA_LANG_CHARACTER -> {
         // All methods are immutable except for one which copies into an array
-        return (methodName != "toChars" ||
-          method != null && method.parameterList.parameters.none { it.type is PsiArrayType })
+        return (methodName != "toChars" || method != null && method.parameterList.parameters.none { it.type is PsiArrayType })
       }
       // Use CommonClassNames.JAVA_NET_URI and JAVA_NET_URL once we update to latest prebuilts
       "java.net.URI" -> return true
       "java.net.URL" -> {
         // getContent despite name is shorthand for openConnection().getContent()
-        return methodName != "getContent" &&
-          !methodName.startsWith("set") &&
-          !methodName.startsWith("open")
+        return methodName != "getContent" && !methodName.startsWith("set") && !methodName.startsWith("open")
       }
       "android.database.sqlite.SQLiteOpenHelper",
-      "androidx.sqlite.db.SupportSQLiteOpenHelper" ->
-        return false // the "getters" like getWritableDatabase etc have side effects
+      "androidx.sqlite.db.SupportSQLiteOpenHelper" -> return false // the "getters" like getWritableDatabase etc have side effects
       in KOTLIN_PRIMITIVES -> return true
     }
 
-    if (
-      isGetterName(methodName) &&
-        isGetter(method) &&
-        ASSUME_PURE_GETTERS.getValue(context.configuration)
-    ) {
+    if (isGetterName(methodName) && isGetter(method) && ASSUME_PURE_GETTERS.getValue(context.configuration)) {
       if (context.evaluator.isStatic(method)) {
         // Calls to static methods called get tend to be used for intentional
         // initialization -- for example, getInstance() etc.
@@ -661,11 +617,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
         return true
       }
 
-      if (
-        containingMethod.uAnnotations.any {
-          it.qualifiedName == "androidx.compose.runtime.Composable"
-        }
-      ) {
+      if (containingMethod.uAnnotations.any { it.qualifiedName == "androidx.compose.runtime.Composable" }) {
         // In composable functions special rules apply
         return true
       }
@@ -679,11 +631,7 @@ class NoOpDetector : Detector(), SourceCodeScanner {
 
   private fun isGetter(psiMethod: PsiMethod?): Boolean {
     if (psiMethod == null) return false
-    if (
-      psiMethod.isConstructor ||
-        psiMethod.hasParameters() ||
-        psiMethod.returnType == PsiTypes.voidType()
-    ) {
+    if (psiMethod.isConstructor || psiMethod.hasParameters() || psiMethod.returnType == PsiTypes.voidType()) {
       return false
     }
     if (psiMethod.throwsList.referenceElements.isNotEmpty()) {
@@ -736,16 +684,12 @@ class NoOpDetector : Detector(), SourceCodeScanner {
     return false
   }
 
-  /**
-   * Is the given [method] a method from [java.nio.Buffer] ? These use getter-naming but have side
-   * effects.
-   */
+  /** Is the given [method] a method from [java.nio.Buffer] ? These use getter-naming but have side effects. */
   private fun isBufferMethod(context: JavaContext, method: PsiMethod?) =
     method != null && context.evaluator.isMemberInSubClassOf(method, "java.nio.Buffer")
 
   private fun report(context: JavaContext, expression: UElement, name: String) {
-    val message =
-      "This ${if (expression is UCallExpression) "call result" else "reference"} is unused: $name"
+    val message = "This ${if (expression is UCallExpression) "call result" else "reference"} is unused: $name"
     context.report(ISSUE, expression, context.getLocation(expression), message)
   }
 }

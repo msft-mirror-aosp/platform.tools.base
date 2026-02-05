@@ -21,18 +21,18 @@ import com.android.build.gradle.internal.core.dsl.impl.SigningConfigResolver
 import com.android.build.gradle.options.ProjectOptions
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that produces APKs.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that produces APKs.
  */
-interface ApkProducingComponentDslInfo: ConsumableComponentDslInfo {
+interface ApkProducingComponentDslInfo : ConsumableComponentDslInfo {
 
-    val dexingDslInfo: DexingDslInfo
+  val dexingDslInfo: DexingDslInfo
 
-    val isDebuggable: Boolean
+  val isDebuggable: Boolean
 
-    /**
-     * Holds all SigningConfig information from the DSL and/or [ProjectOptions].
-     * Will resolve config as soon as all changes been done and variant is created.
-     */
-    val signingConfigResolver: SigningConfigResolver?
+  /**
+   * Holds all SigningConfig information from the DSL and/or [ProjectOptions]. Will resolve config as soon as all changes been done and
+   * variant is created.
+   */
+  val signingConfigResolver: SigningConfigResolver?
 }

@@ -28,34 +28,19 @@ abstract class FakeArtTooling : ArtTooling {
   private val entryHooks = mutableMapOf<String, ArtTooling.EntryHook>()
   private val exitHooks = mutableMapOf<String, ArtTooling.ExitHook<*>>()
 
-  override fun registerEntryHook(
-    originClass: Class<*>,
-    originMethod: String,
-    entryHook: ArtTooling.EntryHook,
-  ) {
+  override fun registerEntryHook(originClass: Class<*>, originMethod: String, entryHook: ArtTooling.EntryHook) {
     entryHooks["${originClass.name}:$originMethod"] = entryHook
   }
 
-  override fun <T> registerExitHook(
-    originClass: Class<*>,
-    originMethod: String,
-    exitHook: ArtTooling.ExitHook<T>,
-  ) {
+  override fun <T> registerExitHook(originClass: Class<*>, originMethod: String, exitHook: ArtTooling.ExitHook<T>) {
     exitHooks["${originClass.name}:$originMethod"] = exitHook
   }
 
-  fun triggerEntryHook(
-    originClass: Class<*>,
-    originMethod: String,
-    thisObject: Any?,
-    args: List<Any>,
-  ) {
+  fun triggerEntryHook(originClass: Class<*>, originMethod: String, thisObject: Any?, args: List<Any>) {
     entryHooks["${originClass.name}:$originMethod"]!!.onEntry(thisObject, args)
   }
 
   fun <T> triggerExitHook(originClass: Class<*>, originMethod: String, obj: T): T {
-    return (exitHooks.filterKeys { it == "${originClass.name}:$originMethod" }.values.first()
-        as ArtTooling.ExitHook<T>)
-      .onExit(obj)
+    return (exitHooks.filterKeys { it == "${originClass.name}:$originMethod" }.values.first() as ArtTooling.ExitHook<T>).onExit(obj)
   }
 }

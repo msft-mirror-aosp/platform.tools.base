@@ -17,7 +17,6 @@ package com.android.tools.deploy.liveedit
 
 import java.util.function.Supplier
 
-var static : Int = 0
+var static: Int = 0
 
-fun create() : Supplier<Int> = Supplier{ static }
-
+fun create(): Supplier<Int> = Supplier { static }

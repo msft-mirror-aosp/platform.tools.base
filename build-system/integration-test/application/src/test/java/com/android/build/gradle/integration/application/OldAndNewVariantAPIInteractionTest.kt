@@ -24,16 +24,17 @@ import org.junit.Rule
 import org.junit.Test
 
 class OldAndNewVariantAPIInteractionTest {
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app"))
-        .withPluginManagementBlock(true)
-        .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app")).withPluginManagementBlock(true).create()
 
-    @Test
-    fun testOldAndNewJavaOptions() {
-        project.buildFile.delete()
+  @Test
+  fun testOldAndNewJavaOptions() {
+    project.buildFile.delete()
 
-        project.file("build.gradle.kts").writeText("""
+    project
+      .file("build.gradle.kts")
+      .writeText(
+        """
             apply(from = "../commonHeader.gradle")
             plugins {
                 id("com.android.application")
@@ -119,20 +120,28 @@ class OldAndNewVariantAPIInteractionTest {
                     oldApiArgumentProviders.set(javaCompileOptions.annotationProcessorOptions.compilerArgumentProviders)
                 }
             }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run("readVariantObjects").stdout.use {
-                assertThat(it).contains("""Read NEW variant object:
+    project
+      .executor()
+      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .with(BooleanOption.USE_NEW_DSL, false)
+      .run("readVariantObjects")
+      .stdout
+      .use {
+        assertThat(it)
+          .contains(
+            """Read NEW variant object:
 classNames = [className-SetByNewApi, className-SetByOldApi]
 arguments = {argument-SetByNewApi, argument-SetByOldApi}
 argumentProviders = {argumentProvider-SetByNewApi, argumentProvider-SetByOldApi}
 Read OLD variant object:
 classNames = [className-SetByNewApi, className-SetByOldApi]
 arguments = {argument-SetByNewApi, argument-SetByOldApi}
-argumentProviders = {argumentProvider-SetByNewApi, argumentProvider-SetByOldApi}""")
-        }
-    }
+argumentProviders = {argumentProvider-SetByNewApi, argumentProvider-SetByOldApi}"""
+          )
+      }
+  }
 }

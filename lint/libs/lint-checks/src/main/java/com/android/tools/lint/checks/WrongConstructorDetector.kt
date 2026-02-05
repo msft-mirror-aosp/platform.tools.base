@@ -34,8 +34,7 @@ import org.jetbrains.uast.UMethod
 /** Finds methods which look like constructors but aren't */
 class WrongConstructorDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(WrongConstructorDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WrongConstructorDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -81,12 +80,7 @@ class WrongConstructorDetector : Detector(), SourceCodeScanner {
         @Suppress("UElementAsPsi") // UClass should get a name property
         val className = containingClass.name ?: return
         if (className == node.name) {
-          context.report(
-            ISSUE,
-            node,
-            context.getLocation(node),
-            "Method ${node.name} looks like a constructor but is a normal method",
-          )
+          context.report(ISSUE, node, context.getLocation(node), "Method ${node.name} looks like a constructor but is a normal method")
         }
       }
     }

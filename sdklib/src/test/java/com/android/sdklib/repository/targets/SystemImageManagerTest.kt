@@ -55,10 +55,7 @@ class SystemImageManagerTest {
 
     assertEquals("x86", img.primaryAbiType)
     assertEquals("google", img.addonVendor!!.id)
-    assertEquals(
-      sdkRoot.resolve("add-ons/addon-google_tv_addon-google-13/images/x86/"),
-      img.location,
-    )
+    assertEquals(sdkRoot.resolve("add-ons/addon-google_tv_addon-google-13/images/x86/"), img.location)
     assertEquals("google_tv_addon", img.tag.id)
   }
 
@@ -114,38 +111,38 @@ class SystemImageManagerTest {
         write(
           "sdk.properties",
           """
-                sdk.ant.templates.revision=1
-                sdk.skin.default=WXGA
+          sdk.ant.templates.revision=1
+          sdk.skin.default=WXGA
 
-                """
+          """
             .trimIndent(),
         )
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns2:sdk-repository xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                                  xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                                  xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                                  xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-                <localPackage path="platforms;android-13" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns2:platformDetailsType">
-                    <api-level>13</api-level>
-                    <layoutlib api="4"/>
-                  </type-details>
-                  <revision>
-                    <major>1</major>
-                  </revision>
-                  <display-name>API 13: Android 3.2 (Honeycomb)</display-name>
-                  <dependencies>
-                    <dependency path="tools">
-                      <min-revision>
-                        <major>12</major>
-                      </min-revision>
-                    </dependency>
-                  </dependencies>
-                </localPackage>
-              </ns2:sdk-repository>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:sdk-repository xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
+                              xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
+                              xmlns:ns4="http://schemas.android.com/repository/android/common/01"
+                              xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
+            <localPackage path="platforms;android-13" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns2:platformDetailsType">
+                <api-level>13</api-level>
+                <layoutlib api="4"/>
+              </type-details>
+              <revision>
+                <major>1</major>
+              </revision>
+              <display-name>API 13: Android 3.2 (Honeycomb)</display-name>
+              <dependencies>
+                <dependency path="tools">
+                  <min-revision>
+                    <major>12</major>
+                  </min-revision>
+                </dependency>
+              </dependencies>
+            </localPackage>
+          </ns2:sdk-repository>
           """
             .trimIndent(),
         )
@@ -158,32 +155,32 @@ class SystemImageManagerTest {
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns5:sdk-addon xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                             xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                             xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                             xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-                <localPackage path="add-ons;addon-google_tv_addon-google-13" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
-                    <api-level>13</api-level>
-                    <vendor>
-                      <id>google</id>
-                      <display>Google Inc.</display>
-                    </vendor>
-                    <tag>
-                      <id>google_tv_addon</id>
-                      <display>Google TV Addon</display>
-                    </tag>
-                    <default-skin>720p</default-skin>
-                  </type-details>
-                  <revision>
-                    <major>1</major>
-                    <minor>0</minor>
-                    <micro>0</micro>
-                  </revision>
-                  <display-name>Google TV Addon, Android 13</display-name>
-                </localPackage>
-              </ns5:sdk-addon>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns5:sdk-addon xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
+                         xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
+                         xmlns:ns4="http://schemas.android.com/repository/android/common/01"
+                         xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
+            <localPackage path="add-ons;addon-google_tv_addon-google-13" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
+                <api-level>13</api-level>
+                <vendor>
+                  <id>google</id>
+                  <display>Google Inc.</display>
+                </vendor>
+                <tag>
+                  <id>google_tv_addon</id>
+                  <display>Google TV Addon</display>
+                </tag>
+                <default-skin>720p</default-skin>
+              </type-details>
+              <revision>
+                <major>1</major>
+                <minor>0</minor>
+                <micro>0</micro>
+              </revision>
+              <display-name>Google TV Addon, Android 13</display-name>
+            </localPackage>
+          </ns5:sdk-addon>
           """
             .trimIndent(),
         )
@@ -206,26 +203,26 @@ class SystemImageManagerTest {
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                               xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                               xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                               xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-                <localPackage path="system-images;android-23;default;x86" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
-                    <api-level>23</api-level>
-                    <tag>
-                      <id>default</id>
-                      <display>Default</display>
-                    </tag>
-                    <abi>x86</abi>
-                  </type-details>
-                  <revision>
-                    <major>5</major>
-                  </revision>
-                  <display-name>Intel x86 Atom System Image</display-name>
-                </localPackage>
-              </ns3:sdk-sys-img>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
+                           xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
+                           xmlns:ns4="http://schemas.android.com/repository/android/common/01"
+                           xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
+            <localPackage path="system-images;android-23;default;x86" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
+                <api-level>23</api-level>
+                <tag>
+                  <id>default</id>
+                  <display>Default</display>
+                </tag>
+                <abi>x86</abi>
+              </type-details>
+              <revision>
+                <major>5</major>
+              </revision>
+              <display-name>Intel x86 Atom System Image</display-name>
+            </localPackage>
+          </ns3:sdk-sys-img>
           """
             .trimIndent(),
         )
@@ -240,30 +237,30 @@ class SystemImageManagerTest {
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                               xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                               xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                               xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-                <localPackage path="system-images;android-23;google_apis;x86_64" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
-                    <api-level>23</api-level>
-                    <tag>
-                      <id>google_apis</id>
-                      <display>Google APIs</display>
-                    </tag>
-                    <vendor>
-                      <id>google</id>
-                      <display>Google Inc.</display>
-                    </vendor>
-                    <abi>x86_64</abi>
-                  </type-details>
-                  <revision>
-                    <major>9</major>
-                  </revision>
-                  <display-name>Google APIs Intel x86 Atom_64 System Image</display-name>
-                </localPackage>
-              </ns3:sdk-sys-img>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
+                           xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
+                           xmlns:ns4="http://schemas.android.com/repository/android/common/01"
+                           xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
+            <localPackage path="system-images;android-23;google_apis;x86_64" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
+                <api-level>23</api-level>
+                <tag>
+                  <id>google_apis</id>
+                  <display>Google APIs</display>
+                </tag>
+                <vendor>
+                  <id>google</id>
+                  <display>Google Inc.</display>
+                </vendor>
+                <abi>x86_64</abi>
+              </type-details>
+              <revision>
+                <major>9</major>
+              </revision>
+              <display-name>Google APIs Intel x86 Atom_64 System Image</display-name>
+            </localPackage>
+          </ns3:sdk-sys-img>
           """
             .trimIndent(),
         )
@@ -277,37 +274,37 @@ class SystemImageManagerTest {
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
-                              xmlns:ns12="http://schemas.android.com/sdk/android/repo/sys-img2/04">
-                <localPackage path="system-images;android-35;google_apis_playstore_tablet;x86_64" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns12:sysImgDetailsType">
-                    <api-level>35</api-level>
-                    <extension-level>13</extension-level>
-                    <base-extension>true</base-extension>
-                    <tag>
-                      <id>google_apis_playstore</id>
-                      <display>Google Play</display>
-                    </tag>
-                    <tag>
-                      <id>tablet</id>
-                      <display>Tablet</display>
-                    </tag>
-                    <vendor>
-                      <id>google</id>
-                      <display>Google Inc.</display>
-                    </vendor>
-                    <abi>x86_64</abi>
-                    <abis>x86_64</abis>
-                    <abis>x86</abis>
-                    <translatedAbis>arm64-v8a</translatedAbis>
-                  </type-details>
-                  <revision>
-                    <major>7</major>
-                  </revision>
-                  <display-name>Google Play ARM 64 v8a System Image</display-name>
-                </localPackage>
-              </ns2:repository>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:ns12="http://schemas.android.com/sdk/android/repo/sys-img2/04">
+            <localPackage path="system-images;android-35;google_apis_playstore_tablet;x86_64" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns12:sysImgDetailsType">
+                <api-level>35</api-level>
+                <extension-level>13</extension-level>
+                <base-extension>true</base-extension>
+                <tag>
+                  <id>google_apis_playstore</id>
+                  <display>Google Play</display>
+                </tag>
+                <tag>
+                  <id>tablet</id>
+                  <display>Tablet</display>
+                </tag>
+                <vendor>
+                  <id>google</id>
+                  <display>Google Inc.</display>
+                </vendor>
+                <abi>x86_64</abi>
+                <abis>x86_64</abis>
+                <abis>x86</abis>
+                <translatedAbis>arm64-v8a</translatedAbis>
+              </type-details>
+              <revision>
+                <major>7</major>
+              </revision>
+              <display-name>Google Play ARM 64 v8a System Image</display-name>
+            </localPackage>
+          </ns2:repository>
           """
             .trimIndent(),
         )
@@ -322,33 +319,33 @@ class SystemImageManagerTest {
         write(
           "package.xml",
           """
-              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-              <ns5:sdk-addon xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                             xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                             xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                             xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-                <localPackage path="add-ons;addon-google_apis-google-13" obsolete="false">
-                  <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
-                    <api-level>13</api-level>
-                    <vendor>
-                      <id>google</id>
-                      <display>Google Inc.</display>
-                    </vendor>
-                    <tag>
-                      <id>google_apis</id>
-                      <display>
-                        Google APIs
-                      </display>
-                    </tag>
-                  </type-details>
-                  <revision>
-                    <major>1</major>
-                    <minor>0</minor>
-                    <micro>0</micro>
-                  </revision>
-                  <display-name>Google APIs, Android 13</display-name>
-                </localPackage>
-              </ns5:sdk-addon>
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns5:sdk-addon xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
+                         xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
+                         xmlns:ns4="http://schemas.android.com/repository/android/common/01"
+                         xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
+            <localPackage path="add-ons;addon-google_apis-google-13" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
+                <api-level>13</api-level>
+                <vendor>
+                  <id>google</id>
+                  <display>Google Inc.</display>
+                </vendor>
+                <tag>
+                  <id>google_apis</id>
+                  <display>
+                    Google APIs
+                  </display>
+                </tag>
+              </type-details>
+              <revision>
+                <major>1</major>
+                <minor>0</minor>
+                <micro>0</micro>
+              </revision>
+              <display-name>Google APIs, Android 13</display-name>
+            </localPackage>
+          </ns5:sdk-addon>
           """
             .trimIndent(),
         )

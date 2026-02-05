@@ -19,20 +19,15 @@ package com.android.tools.usb.parser
 import com.android.tools.usb.UsbDevice
 import java.io.InputStream
 import java.util.Collections
-import java.util.concurrent.CompletableFuture
 
-/**
- * Converts command output to List of UsbDevices
- */
+/** Converts command output to List of UsbDevices */
 interface OutputParser {
-    fun parse(output: InputStream) : List<UsbDevice>
+  fun parse(output: InputStream): List<UsbDevice>
 }
 
-/**
- * Placeholder parser that returns an empty list.
- */
+/** Placeholder parser that returns an empty list. */
 class EmptyParser : OutputParser {
-    override fun parse(output: InputStream): List<UsbDevice> {
-        return Collections.emptyList()
-    }
+  override fun parse(output: InputStream): List<UsbDevice> {
+    return Collections.emptyList()
+  }
 }

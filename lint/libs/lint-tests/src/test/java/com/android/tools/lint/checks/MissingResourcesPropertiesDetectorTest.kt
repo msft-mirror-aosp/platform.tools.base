@@ -29,14 +29,14 @@ class MissingResourcesPropertiesDetectorTest : AbstractCheckTest() {
         gradle(
             "build.gradle",
             """
-               apply plugin: 'com.android.application'
+            apply plugin: 'com.android.application'
 
-               android {
-                 androidResources {
-                   generateLocaleConfig true
-                 }
-               }
-           """
+            android {
+              androidResources {
+                generateLocaleConfig true
+              }
+            }
+            """
               .trimIndent(),
           )
           .indented()
@@ -44,10 +44,10 @@ class MissingResourcesPropertiesDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            build.gradle:5: Warning: Missing resources.properties file [MissingResourcesProperties]
-                generateLocaleConfig true
-                ~~~~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
+        build.gradle:5: Warning: Missing resources.properties file [MissingResourcesProperties]
+            generateLocaleConfig true
+            ~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
         """
           .trimIndent()
       )
@@ -58,14 +58,14 @@ class MissingResourcesPropertiesDetectorTest : AbstractCheckTest() {
         gradle(
             "build.gradle",
             """
-              apply plugin: 'com.android.application'
+            apply plugin: 'com.android.application'
 
-              android {
-                androidResources {
-                  generateLocaleConfig true
-                }
+            android {
+              androidResources {
+                generateLocaleConfig true
               }
-          """
+            }
+            """
               .trimIndent(),
           )
           .indented(),

@@ -37,25 +37,25 @@ import org.junit.Before
 import org.junit.Test
 
 class UsbDeviceCollectorTest {
-    lateinit var collector : UsbDeviceCollector
+  lateinit var collector: UsbDeviceCollector
 
-    @Before
-    fun setup() {
-        collector = UsbDeviceCollectorImpl()
-    }
+  @Before
+  fun setup() {
+    collector = UsbDeviceCollectorImpl()
+  }
 
-    @Test
-    fun testMacSupported() {
-        assertTrue(collector.isSupported("Mac 10"))
-    }
+  @Test
+  fun testMacSupported() {
+    assertTrue(collector.isSupported("Mac 10"))
+  }
 
-    @Test
-    fun testWindowsSupported() {
-        assertTrue(collector.isSupported("Windows 8"))
-    }
+  @Test
+  fun testWindowsSupported() {
+    assertTrue(collector.isSupported("Windows 8"))
+  }
 
-    @Test
-    fun testLinuxSupported() {
-        assertTrue(collector.isSupported("Linux"))
-    }
+  @Test
+  fun testLinuxSupported() {
+    assertTrue(collector.isSupported("Linux"))
+  }
 }

@@ -39,7 +39,7 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
   activityClass: String,
   layoutName: String,
   packageName: String,
-  navGraphName: String
+  navGraphName: String,
 ) {
   val (projectData, srcOut, resOut) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -58,14 +58,7 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     addDependency("com.android.support:support-vector-drawable:${appCompatVersion}.+")
   }
 
-  generateManifest(
-    moduleData,
-    activityClass,
-    packageName,
-    isLauncher,
-    hasNoActionBar = false,
-    generateActivityTitle = true
-  )
+  generateManifest(moduleData, activityClass, packageName, isLauncher, hasNoActionBar = false, generateActivityTitle = true)
 
   val language = projectData.language
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
@@ -77,7 +70,8 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     applicationPackage = projectData.applicationPackage,
     fragmentPrefix = "home",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   saveFragmentAndViewModel(
     resOut = resOut,
     srcOut = srcOut,
@@ -86,7 +80,8 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     applicationPackage = projectData.applicationPackage,
     fragmentPrefix = "dashboard",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   saveFragmentAndViewModel(
     resOut = resOut,
     srcOut = srcOut,
@@ -95,18 +90,14 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     applicationPackage = projectData.applicationPackage,
     fragmentPrefix = "notifications",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   navigationDependencies(generateKotlin, useAndroidX, moduleData.apis.appCompatVersion)
   if (generateKotlin) {
     setJavaKotlinCompileOptions(true)
   }
 
-  save(
-    mobileNavigationXml(
-      navGraphName = navGraphName,
-      packageName = packageName),
-    resOut.resolve("navigation/${navGraphName}.xml")
-  )
+  save(mobileNavigationXml(navGraphName = navGraphName, packageName = packageName), resOut.resolve("navigation/${navGraphName}.xml"))
   open(resOut.resolve("navigation/${navGraphName}.xml"))
 
   copy(File("bottom-navigation-activity").resolve("drawable"), resOut.resolve("drawable"))
@@ -114,34 +105,34 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
   // navHostFragmentId needs to be unique, thus appending layoutName since it's
   // guaranteed to be unique
   val navHostFragmentId = "nav_host_fragment_${layoutName}"
-  val mainActivity = when (projectData.language) {
-    Language.Java -> mainActivityJava(
-      activityClass = activityClass,
-      layoutName = layoutName,
-      navHostFragmentId = navHostFragmentId,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> mainActivityKt(
-      activityClass = activityClass,
-      layoutName = layoutName,
-      navHostFragmentId = navHostFragmentId,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val mainActivity =
+    when (projectData.language) {
+      Language.Java ->
+        mainActivityJava(
+          activityClass = activityClass,
+          layoutName = layoutName,
+          navHostFragmentId = navHostFragmentId,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        mainActivityKt(
+          activityClass = activityClass,
+          layoutName = layoutName,
+          navHostFragmentId = navHostFragmentId,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
 
   save(mainActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
   save(
-    navigationActivityMainXml(
-      navGraphName = navGraphName,
-      navHostFragmentId = navHostFragmentId,
-      useAndroidX = useAndroidX
-    ), resOut.resolve("layout/${layoutName}.xml")
+    navigationActivityMainXml(navGraphName = navGraphName, navHostFragmentId = navHostFragmentId, useAndroidX = useAndroidX),
+    resOut.resolve("layout/${layoutName}.xml"),
   )
 
   mergeXml(dimensXml(), resOut.resolve("values/dimens.xml"))

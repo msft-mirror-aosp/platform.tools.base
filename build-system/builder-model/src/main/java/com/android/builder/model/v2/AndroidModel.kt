@@ -16,7 +16,5 @@
 
 package com.android.builder.model.v2
 
-/**
- * Base interface for all model interfaces.
- */
+/** Base interface for all model interfaces. */
 interface AndroidModel

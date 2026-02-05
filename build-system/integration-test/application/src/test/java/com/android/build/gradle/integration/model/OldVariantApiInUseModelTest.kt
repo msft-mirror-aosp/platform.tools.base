@@ -24,35 +24,27 @@ import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
 import org.junit.Test
 
-class OldVariantApiInUseModelTest : ReferenceModelComparator(
+class OldVariantApiInUseModelTest :
+  ReferenceModelComparator(
     referenceConfig = {
-        androidApplication {
-        }
-        gradleProperties {
-            add(BooleanOption.ENABLE_PROFILE_JSON, true)
-        }
+      androidApplication {}
+      gradleProperties { add(BooleanOption.ENABLE_PROFILE_JSON, true) }
     },
     deltaConfig = {
-        androidApplication {
-            pluginCallbacks += OldVariantApiCallback::class.java
-        }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, false)
-        }
+      androidApplication { pluginCallbacks += OldVariantApiCallback::class.java }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    class OldVariantApiCallback : LegacyApplicationCallback {
-        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-            // Accessing applicationVariants triggers the use of the old API. The block can be empty.
-            extension.applicationVariants.configureEach {}
-        }
+  class OldVariantApiCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      // Accessing applicationVariants triggers the use of the old API. The block can be empty.
+      extension.applicationVariants.configureEach {}
     }
+  }
 }

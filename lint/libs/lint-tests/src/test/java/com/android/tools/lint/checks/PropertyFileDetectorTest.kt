@@ -142,10 +142,10 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
     task.networkData(
       "https://maven.google.com/master-index.xml",
       """
-            <metadata>
-              <com.android.tools.build/>
-            </metadata>
-            """
+      <metadata>
+        <com.android.tools.build/>
+      </metadata>
+      """
         .trimIndent(),
     )
     task.networkData(
@@ -209,10 +209,7 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
             systemProp.http.proxyPassword=something
                                           ~~~~~~~~~
             0 errors, 1 warnings"""
-    lint()
-      .files(source("gradle.properties", "systemProp.http.proxyPassword=something\n"))
-      .run()
-      .expect(expected)
+    lint().files(source("gradle.properties", "systemProp.http.proxyPassword=something\n")).run().expect(expected)
   }
 
   fun testPasswords2() {

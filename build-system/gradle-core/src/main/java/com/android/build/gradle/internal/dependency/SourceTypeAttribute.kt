@@ -25,14 +25,12 @@ import org.gradle.api.attributes.DocsType
 private const val FAKE_SOURCE = "fake-sources"
 
 fun configureSourceTypeAttribute(project: Project) {
-    project.dependencies.attributesSchema.attribute(DocsType.DOCS_TYPE_ATTRIBUTE).also {
-        it.compatibilityRules.add(SourceTypeCompatibilityRule::class.java)
-    }
+  project.dependencies.attributesSchema.attribute(DocsType.DOCS_TYPE_ATTRIBUTE).also {
+    it.compatibilityRules.add(SourceTypeCompatibilityRule::class.java)
+  }
 }
 
 class SourceTypeCompatibilityRule : AttributeCompatibilityRule<DocsType> {
-    override fun execute(details: CompatibilityCheckDetails<DocsType>) = with(details) {
-        if (consumerValue?.name == DocsType.SOURCES && producerValue?.name == FAKE_SOURCE)
-            compatible()
-    }
+  override fun execute(details: CompatibilityCheckDetails<DocsType>) =
+    with(details) { if (consumerValue?.name == DocsType.SOURCES && producerValue?.name == FAKE_SOURCE) compatible() }
 }

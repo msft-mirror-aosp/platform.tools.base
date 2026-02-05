@@ -25,22 +25,20 @@ import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImp
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A [JdwpProcessPropertiesCollector] is responsible for collecting properties of
- * a given [JdwpProcess] in a [StateFlow] of [JdwpProcessProperties].
+ * A [JdwpProcessPropertiesCollector] is responsible for collecting properties of a given [JdwpProcess] in a [StateFlow] of
+ * [JdwpProcessProperties].
  */
 interface JdwpProcessPropertiesCollector {
 
-    /**
-     * The [JdwpProcess] this collector applies to
-     */
-    val process: JdwpProcess
+  /** The [JdwpProcess] this collector applies to */
+  val process: JdwpProcess
 
-    /**
-     * A [StateFlow] of [JdwpProcessProperties] that describes the current process information.
-     *
-     * Note: once process has exited, the flow stops being updated.
-     */
-    val stateFlow: StateFlow<JdwpProcessProperties>
+  /**
+   * A [StateFlow] of [JdwpProcessProperties] that describes the current process information.
+   *
+   * Note: once process has exited, the flow stops being updated.
+   */
+  val stateFlow: StateFlow<JdwpProcessProperties>
 }
 
 /**
@@ -49,16 +47,16 @@ interface JdwpProcessPropertiesCollector {
  * Note: once the process [JdwpProcess.scope] has completed, the flow stops being updated.
  */
 val JdwpProcess.jdwpPropertiesCollector: JdwpProcessPropertiesCollector
-    get() = this.cache.getOrPut(jdwpProcessPropertiesCollectorKey) {
-        if (this is AbstractJdwpProcessDelegateProvider) {
-            JdwpProcessPropertiesCollectorDelegate(this, this)
-        } else {
-            JdwpProcessPropertiesCollectorImpl(this)
-        }
+  get() =
+    this.cache.getOrPut(jdwpProcessPropertiesCollectorKey) {
+      if (this is AbstractJdwpProcessDelegateProvider) {
+        JdwpProcessPropertiesCollectorDelegate(this, this)
+      } else {
+        JdwpProcessPropertiesCollectorImpl(this)
+      }
     }
 
-private val jdwpProcessPropertiesCollectorKey =
-    CoroutineScopeCache.Key<JdwpProcessPropertiesCollector>("jdwpProcessPropertiesCollectorKey")
+private val jdwpProcessPropertiesCollectorKey = CoroutineScopeCache.Key<JdwpProcessPropertiesCollector>("jdwpProcessPropertiesCollectorKey")
 
 /**
  * A [StateFlow] of [JdwpProcessProperties] that describes the current process information.
@@ -66,7 +64,7 @@ private val jdwpProcessPropertiesCollectorKey =
  * Note: once [scope] has completed, the flow stops being updated.
  */
 val JdwpProcess.propertiesFlow: StateFlow<JdwpProcessProperties>
-    get() = jdwpPropertiesCollector.stateFlow
+  get() = jdwpPropertiesCollector.stateFlow
 
 /**
  * Returns a snapshot of the current [JdwpProcessProperties] for this process.
@@ -76,18 +74,13 @@ val JdwpProcess.propertiesFlow: StateFlow<JdwpProcessProperties>
  * @see JdwpProcess.propertiesFlow
  */
 val JdwpProcess.properties: JdwpProcessProperties
-    get() = propertiesFlow.value
+  get() = propertiesFlow.value
 
-/**
- * Similar to [isAppInfoSupported], but also checks
- * [PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE]
- */
+/** Similar to [isAppInfoSupported], but also checks [PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE] */
 internal suspend fun ConnectedDevice.useAppInfoForProcessProperties(): Boolean {
-    return cache.getOrPutSuspending(useAppInfoKey) {
-        session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE)
-                && isAppInfoSupported()
-    }
+  return cache.getOrPutSuspending(useAppInfoKey) {
+    session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) && isAppInfoSupported()
+  }
 }
 
 private val useAppInfoKey = CoroutineScopeCache.Key<Boolean>("useAppInfoKey")
-

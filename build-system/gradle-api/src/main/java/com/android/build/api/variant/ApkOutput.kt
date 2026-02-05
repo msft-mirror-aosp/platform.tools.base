@@ -17,19 +17,13 @@
 package com.android.build.api.variant
 
 /**
- * Provides an ordered collection of APK batches, each intended for local installation,
- * facilitating staged installations.
+ * Provides an ordered collection of APK batches, each intended for local installation, facilitating staged installations.
  *
  * An instance of [ApkOutput] can be obtained via [ApplicationVariant.outputProviders]
  *
  * See example at [ApkOutputProviders]
- *
  */
 interface ApkOutput {
-    /**
-     * Returns an ordered collection of co-installable APK batches targeted for a specific
-     * device.
-     *
-     */
-    val apkInstallGroups: List<ApkInstallGroup>
+  /** Returns an ordered collection of co-installable APK batches targeted for a specific device. */
+  val apkInstallGroups: List<ApkInstallGroup>
 }

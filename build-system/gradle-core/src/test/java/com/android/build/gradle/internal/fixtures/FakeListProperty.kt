@@ -16,123 +16,116 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.util.function.BiFunction
 import org.gradle.api.Transformer
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
-import java.util.function.BiFunction
 
-class FakeListProperty<T>(
-    private val values: MutableList<T>? = null
-): ListProperty<T> {
+class FakeListProperty<T>(private val values: MutableList<T>? = null) : ListProperty<T> {
 
-    override fun get(): List<T> = values ?: listOf()
+  override fun get(): List<T> = values ?: listOf()
 
+  override fun getOrNull(): List<T>? = values
 
-    override fun getOrNull(): List<T>? = values
-    override fun filter(spec: Spec<in MutableList<T>>): Provider<MutableList<T>> {
-        TODO("Not yet implemented")
-    }
+  override fun filter(spec: Spec<in MutableList<T>>): Provider<MutableList<T>> {
+    TODO("Not yet implemented")
+  }
 
-    override fun getOrElse(p0: List<T>): List<T> = values ?: p0
+  override fun getOrElse(p0: List<T>): List<T> = values ?: p0
 
-    override fun <S : Any?> map(p0: Transformer<out S, in List<T>>): Provider<S> {
-        return FakeGradleProvider<S> {
-            p0.transform(get())
-        }
-    }
+  override fun <S : Any?> map(p0: Transformer<out S, in List<T>>): Provider<S> {
+    return FakeGradleProvider<S> { p0.transform(get()) }
+  }
 
-    override fun <S : Any?> flatMap(p0: Transformer<out Provider<out S>, in MutableList<T>>): Provider<S> {
-        TODO("Not yet implemented")
-    }
+  override fun <S : Any?> flatMap(p0: Transformer<out Provider<out S>, in MutableList<T>>): Provider<S> {
+    TODO("Not yet implemented")
+  }
 
-    override fun isPresent(): Boolean = true
+  override fun isPresent(): Boolean = true
 
-    override fun orElse(p0: MutableList<T>): Provider<MutableList<T>> {
-        TODO("Not yet implemented")
-    }
+  override fun orElse(p0: MutableList<T>): Provider<MutableList<T>> {
+    TODO("Not yet implemented")
+  }
 
-    override fun orElse(p0: Provider<out MutableList<T>>): Provider<MutableList<T>> {
-        TODO("Not yet implemented")
-    }
+  override fun orElse(p0: Provider<out MutableList<T>>): Provider<MutableList<T>> {
+    TODO("Not yet implemented")
+  }
 
-    override fun <U : Any?, R : Any?> zip(
-        p0: Provider<U>,
-        p1: BiFunction<in MutableList<T>, in U, out R>
-    ): Provider<R> {
-        TODO("Not yet implemented")
-    }
+  override fun <U : Any?, R : Any?> zip(p0: Provider<U>, p1: BiFunction<in MutableList<T>, in U, out R>): Provider<R> {
+    TODO("Not yet implemented")
+  }
 
-    override fun finalizeValue() {
-        TODO("Not yet implemented")
-    }
+  override fun finalizeValue() {
+    TODO("Not yet implemented")
+  }
 
-    override fun finalizeValueOnRead() {
-        TODO("Not yet implemented")
-    }
+  override fun finalizeValueOnRead() {
+    TODO("Not yet implemented")
+  }
 
-    override fun disallowChanges() {
-        TODO("Not yet implemented")
-    }
+  override fun disallowChanges() {
+    TODO("Not yet implemented")
+  }
 
-    override fun disallowUnsafeRead() {
-        TODO("Not yet implemented")
-    }
+  override fun disallowUnsafeRead() {
+    TODO("Not yet implemented")
+  }
 
-    override fun unset(): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun unset(): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 
-    override fun unsetConvention(): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun unsetConvention(): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 
-    override fun set(p0: MutableIterable<T>?) {
-        TODO("Not yet implemented")
-    }
+  override fun set(p0: MutableIterable<T>?) {
+    TODO("Not yet implemented")
+  }
 
-    override fun set(p0: Provider<out MutableIterable<T>>) {
-        TODO("Not yet implemented")
-    }
+  override fun set(p0: Provider<out MutableIterable<T>>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun value(p0: MutableIterable<T>?): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun value(p0: MutableIterable<T>?): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 
-    override fun value(p0: Provider<out MutableIterable<T>>): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun value(p0: Provider<out MutableIterable<T>>): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 
-    override fun empty(): ListProperty<T> {
-        values?.clear()
-        return this
-    }
+  override fun empty(): ListProperty<T> {
+    values?.clear()
+    return this
+  }
 
-    override fun add(p0: T) {
-        values?.add(p0)
-    }
+  override fun add(p0: T) {
+    values?.add(p0)
+  }
 
-    override fun add(p0: Provider<out T>) {
-        TODO("Not yet implemented")
-    }
+  override fun add(p0: Provider<out T>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun addAll(vararg p0: T) {
-        TODO("Not yet implemented")
-    }
+  override fun addAll(vararg p0: T) {
+    TODO("Not yet implemented")
+  }
 
-    override fun addAll(p0: MutableIterable<T>) {
-        TODO("Not yet implemented")
-    }
+  override fun addAll(p0: MutableIterable<T>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun addAll(p0: Provider<out MutableIterable<T>>) {
-        TODO("Not yet implemented")
-    }
+  override fun addAll(p0: Provider<out MutableIterable<T>>) {
+    TODO("Not yet implemented")
+  }
 
-    override fun convention(p0: MutableIterable<T>?): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun convention(p0: MutableIterable<T>?): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 
-    override fun convention(p0: Provider<out MutableIterable<T>>): ListProperty<T> {
-        TODO("Not yet implemented")
-    }
+  override fun convention(p0: Provider<out MutableIterable<T>>): ListProperty<T> {
+    TODO("Not yet implemented")
+  }
 }

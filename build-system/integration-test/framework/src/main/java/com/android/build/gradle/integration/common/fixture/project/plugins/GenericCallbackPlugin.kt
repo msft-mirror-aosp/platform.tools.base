@@ -21,35 +21,28 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [GenericCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [GenericCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [GenericCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [GenericCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class GenericCallbackPlugin: Plugin<Project> {
+abstract class GenericCallbackPlugin : Plugin<Project> {
 
-    override fun apply(target: Project) {
-        handleProject(target)
-    }
+  override fun apply(target: Project) {
+    handleProject(target)
+  }
 
-    abstract fun handleProject(
-        project: Project,
-    )
+  abstract fun handleProject(project: Project)
 }
 
 /**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of any type.
+ * interface to implement to provide custom plugin logic to a [GradleRule] project of any type.
  *
- * Unlike other [PluginCallback], this one does not handle any extension. This also means that
- * the plugin is always active and does not respond to any other specific plugin being
- * applied
+ * Unlike other [PluginCallback], this one does not handle any extension. This also means that the plugin is always active and does not
+ * respond to any other specific plugin being applied
  */
-interface GenericCallback: PluginCallback {
-    fun handleProject(
-        project: Project,
-    )
+interface GenericCallback : PluginCallback {
+  fun handleProject(project: Project)
 }

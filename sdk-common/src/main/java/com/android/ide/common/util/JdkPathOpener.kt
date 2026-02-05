@@ -21,27 +21,23 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 
 /**
- * Implementation of [PathOpener] that understands the standard filesystems provided by the JDK.
- * API consumers normally do not need to reference this directly, since it is included as part of
- * [FileSystemRegistry] by default.
+ * Implementation of [PathOpener] that understands the standard filesystems provided by the JDK. API consumers normally do not need to
+ * reference this directly, since it is included as part of [FileSystemRegistry] by default.
  */
 object JdkPathOpener : PathOpener {
-    override fun recognizes(path: PathString): Boolean = path.toPath() != null
+  override fun recognizes(path: PathString): Boolean = path.toPath() != null
 
-    override fun isRegularFile(path: PathString): Boolean =
-        path.toPath()?.let { Files.isRegularFile(it) } ?: false
+  override fun isRegularFile(path: PathString): Boolean = path.toPath()?.let { Files.isRegularFile(it) } ?: false
 
-    override fun open(path: PathString): InputStream {
-        try {
-            return path.toPath()?.let { Files.newInputStream(it) }
-                ?: throw FileNotFoundException(path.toString())
-        } catch (e: NoSuchFileException) {
-            // Translate the nio exception type to an io exception type, as promised by the
-            // contract on the base class method.
-            throw FileNotFoundException(path.toString())
-        }
+  override fun open(path: PathString): InputStream {
+    try {
+      return path.toPath()?.let { Files.newInputStream(it) } ?: throw FileNotFoundException(path.toString())
+    } catch (e: NoSuchFileException) {
+      // Translate the nio exception type to an io exception type, as promised by the
+      // contract on the base class method.
+      throw FileNotFoundException(path.toString())
     }
+  }
 
-    override fun isDirectory(path: PathString): Boolean =
-        path.toPath()?.let { Files.isDirectory(it) } ?: false
+  override fun isDirectory(path: PathString): Boolean = path.toPath()?.let { Files.isDirectory(it) } ?: false
 }

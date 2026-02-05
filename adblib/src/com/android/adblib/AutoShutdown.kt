@@ -16,38 +16,33 @@
 package com.android.adblib
 
 /**
- * An [AutoCloseable] object that may need a "normal" asynchronous termination ([shutdown] method)
- * in addition to a "synchronous" cancellation/termination ([close] method).
- *
- * * [shutdown] is a `suspend` function that allows the object to invoke a coroutine
- * (e.g. to clean-up or perform final async i/o) without blocking the main
- * thread. [shutdown], being a coroutine, maybe be cancelled at any time.
- *
- * * [close] is meant to perform an immediate cleanup (e.g. cancel all pending async I/O),
- * and should be called even in the presence of coroutine cancellation/exception.
+ * An [AutoCloseable] object that may need a "normal" asynchronous termination ([shutdown] method) in addition to a "synchronous"
+ * cancellation/termination ([close] method).
+ * * [shutdown] is a `suspend` function that allows the object to invoke a coroutine (e.g. to clean-up or perform final async i/o) without
+ *   blocking the main thread. [shutdown], being a coroutine, maybe be cancelled at any time.
+ * * [close] is meant to perform an immediate cleanup (e.g. cancel all pending async I/O), and should be called even in the presence of
+ *   coroutine cancellation/exception.
  */
 interface AutoShutdown : AutoCloseable {
-    /**
-     * Shuts down this resource, performing any remaining async. work required for "normal"
-     * termination.
-     *
-     * Note: If an exception is thrown during [shutdown], the [close] should still be
-     * called to ensure any remaining resource cleanup if necessary.
-     */
-    suspend fun shutdown()
+  /**
+   * Shuts down this resource, performing any remaining async. work required for "normal" termination.
+   *
+   * Note: If an exception is thrown during [shutdown], the [close] should still be called to ensure any remaining resource cleanup if
+   * necessary.
+   */
+  suspend fun shutdown()
 }
 
 /**
- * Executes the given [block] function on this [AutoShutdown] resource, then executes
- * [AutoShutdown.shutdown] on success, and then executes [java.lang.AutoCloseable.close]
- * whether an exception is thrown or not.
+ * Executes the given [block] function on this [AutoShutdown] resource, then executes [AutoShutdown.shutdown] on success, and then executes
+ * [java.lang.AutoCloseable.close] whether an exception is thrown or not.
  */
-suspend inline fun <T: AutoShutdown, R> T.useShutdown(block: (T) -> R): R {
-    // Call `close` unconditionally
-    return use {
-        block(this).also {
-            // Call `shutdown` only on successful termination of `block`
-            shutdown()
-        }
+suspend inline fun <T : AutoShutdown, R> T.useShutdown(block: (T) -> R): R {
+  // Call `close` unconditionally
+  return use {
+    block(this).also {
+      // Call `shutdown` only on successful termination of `block`
+      shutdown()
     }
+  }
 }

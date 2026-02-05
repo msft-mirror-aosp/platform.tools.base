@@ -18,50 +18,49 @@ package com.android.build.gradle.internal.utils
 
 import com.android.repository.Revision
 
-/**
- * Utils for checking desugar library requirements from AAR metadata
- */
-
+/** Utils for checking desugar library requirements from AAR metadata */
 fun checkDesugarJdkVariant(
-    variantFromAar: String,
-    variantFromConsumer: String,
-    errorMessages: MutableList<String>,
-    dependency: String,
-    projectPath: String,
+  variantFromAar: String,
+  variantFromConsumer: String,
+  errorMessages: MutableList<String>,
+  dependency: String,
+  projectPath: String,
 ) {
-    val parsedVariantFromAar = parseDesugarJdkVariant(variantFromAar)
-    val parsedVariantFromConsumer = parseDesugarJdkVariant(variantFromConsumer)
-    if (parsedVariantFromAar.priority > parsedVariantFromConsumer.priority) {
-        errorMessages.add(
-            """
+  val parsedVariantFromAar = parseDesugarJdkVariant(variantFromAar)
+  val parsedVariantFromConsumer = parseDesugarJdkVariant(variantFromConsumer)
+  if (parsedVariantFromAar.priority > parsedVariantFromConsumer.priority) {
+    errorMessages.add(
+      """
                         Dependency '$dependency' requires desugar_jdk_libs flavor to be at least
                         $variantFromAar for $projectPath, which is currently $variantFromConsumer
 
                         See https://d.android.com/r/tools/api-desugaring-flavors
                         for more details.
-                    """.trimIndent()
-        )
-    }
+                    """
+        .trimIndent()
+    )
+  }
 }
 
 fun checkDesugarJdkVersion(
-    versionFromAar: String,
-    versionFromConsumer: String,
-    errorMessages: MutableList<String>,
-    dependency: String,
-    projectPath: String,
+  versionFromAar: String,
+  versionFromConsumer: String,
+  errorMessages: MutableList<String>,
+  dependency: String,
+  projectPath: String,
 ) {
-    val parsedVersionFromAar = Revision.parseRevision(versionFromAar)
-    val parsedVersionFromConsumer = Revision.parseRevision(versionFromConsumer)
-    if (parsedVersionFromAar > parsedVersionFromConsumer) {
-        errorMessages.add(
-            """
+  val parsedVersionFromAar = Revision.parseRevision(versionFromAar)
+  val parsedVersionFromConsumer = Revision.parseRevision(versionFromConsumer)
+  if (parsedVersionFromAar > parsedVersionFromConsumer) {
+    errorMessages.add(
+      """
                         Dependency '$dependency' requires desugar_jdk_libs version to be
                         $versionFromAar or above for $projectPath, which is currently $versionFromConsumer
 
                         See https://d.android.com/studio/build/library-desugaring for more
                         details.
-                    """.trimIndent()
-        )
-    }
+                    """
+        .trimIndent()
+    )
+  }
 }

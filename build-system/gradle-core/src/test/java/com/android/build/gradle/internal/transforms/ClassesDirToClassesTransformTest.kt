@@ -32,47 +32,36 @@ import org.junit.rules.TemporaryFolder
 
 class ClassesDirToClassesTransformTest {
 
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun `test inputDir contains class files only`() {
-        val inputDir = tmp.newFolder().also {
-            it.resolve("A.class").createNewFile()
-        }
+  @Test
+  fun `test inputDir contains class files only`() {
+    val inputDir = tmp.newFolder().also { it.resolve("A.class").createNewFile() }
 
-        val output = FakeTransformOutputs(tmp)
-        val transform = TestClassesDirToClassesTransform(
-            FakeGradleProvider(FakeGradleDirectory(inputDir))
-        )
-        transform.transform(output)
+    val output = FakeTransformOutputs(tmp)
+    val transform = TestClassesDirToClassesTransform(FakeGradleProvider(FakeGradleDirectory(inputDir)))
+    transform.transform(output)
 
-        assertThat(output.outputDirectory.path).isEqualTo(inputDir.path)
-    }
+    assertThat(output.outputDirectory.path).isEqualTo(inputDir.path)
+  }
 
-    @Test
-    fun `test inputDir contains a single jar only`() {
-        val inputDir = tmp.newFolder().also {
-            it.resolve("A.jar").createNewFile()
-        }
+  @Test
+  fun `test inputDir contains a single jar only`() {
+    val inputDir = tmp.newFolder().also { it.resolve("A.jar").createNewFile() }
 
-        val output = FakeTransformOutputs(tmp)
-        val transform = TestClassesDirToClassesTransform(
-            FakeGradleProvider(FakeGradleDirectory(inputDir))
-        )
-        transform.transform(output)
+    val output = FakeTransformOutputs(tmp)
+    val transform = TestClassesDirToClassesTransform(FakeGradleProvider(FakeGradleDirectory(inputDir)))
+    transform.transform(output)
 
-        assertThat(output.outputFile.path).isEqualTo(inputDir.resolve("A.jar").path)
-    }
+    assertThat(output.outputFile.path).isEqualTo(inputDir.resolve("A.jar").path)
+  }
 }
 
-private class TestClassesDirToClassesTransform(
-    override val inputArtifact: Provider<FileSystemLocation>
-) : ClassesDirToClassesTransform() {
+private class TestClassesDirToClassesTransform(override val inputArtifact: Provider<FileSystemLocation>) : ClassesDirToClassesTransform() {
 
-    override fun getParameters(): GenericTransformParameters {
-        return object : GenericTransformParameters {
-            override val projectName: Property<String> = FakeGradleProperty("projectName")
-        }
+  override fun getParameters(): GenericTransformParameters {
+    return object : GenericTransformParameters {
+      override val projectName: Property<String> = FakeGradleProperty("projectName")
     }
+  }
 }

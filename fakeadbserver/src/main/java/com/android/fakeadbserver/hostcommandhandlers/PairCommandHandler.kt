@@ -20,41 +20,31 @@ import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 import java.util.UUID
 
-/** Simulates the behavior of the `pair` command  */
+/** Simulates the behavior of the `pair` command */
 class PairCommandHandler : SimpleHostCommandHandler("pair") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        val separatorIndex = args.indexOf(":")
-        if (separatorIndex < 0) {
-            // See https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/sockets.cpp;l=809;bpv=1;bpt=1
-            writeFailResponse(responseSocket.getOutputStream(), "unknown host service")
-        }
-        val password = args.substring(0, separatorIndex)
-        val deviceAddress = args.substring(separatorIndex + 1)
-        val mdnsServices = fakeAdbServer.mdnsServicesCopy.get()
-
-        val service = mdnsServices.firstOrNull { service ->
-            "${service.deviceAddress.hostString}:${service.deviceAddress.port}" == deviceAddress
-        }
-        if (service == null) {
-            // See https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/adb_wifi.cpp;l=233
-            writeOkayResponse(
-                responseSocket.getOutputStream(),
-                "Failed: Unable to start pairing client."
-            )
-        } else {
-            // See https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/adb_wifi.cpp;l=249
-            writeOkayResponse(
-                responseSocket.getOutputStream(),
-                "Successfully paired to $deviceAddress [guid=${UUID.randomUUID()}]\n"
-            )
-        }
-        return false
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    val separatorIndex = args.indexOf(":")
+    if (separatorIndex < 0) {
+      // See
+      // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/sockets.cpp;l=809;bpv=1;bpt=1
+      writeFailResponse(responseSocket.getOutputStream(), "unknown host service")
     }
+    val password = args.substring(0, separatorIndex)
+    val deviceAddress = args.substring(separatorIndex + 1)
+    val mdnsServices = fakeAdbServer.mdnsServicesCopy.get()
 
+    val service =
+      mdnsServices.firstOrNull { service -> "${service.deviceAddress.hostString}:${service.deviceAddress.port}" == deviceAddress }
+    if (service == null) {
+      // See
+      // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/adb_wifi.cpp;l=233
+      writeOkayResponse(responseSocket.getOutputStream(), "Failed: Unable to start pairing client.")
+    } else {
+      // See
+      // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/adb_wifi.cpp;l=249
+      writeOkayResponse(responseSocket.getOutputStream(), "Successfully paired to $deviceAddress [guid=${UUID.randomUUID()}]\n")
+    }
+    return false
+  }
 }

@@ -22,9 +22,6 @@ package com.android.build.api.variant
  * This is implemented by select subtypes of [VariantBuilder].
  */
 interface HasUnitTestBuilder {
-    /**
-     * Set to `true` if the variant's has any unit tests, false otherwise. Value is [Boolean#True]
-     * by default.
-     */
-    var enableUnitTest: Boolean
+  /** Set to `true` if the variant's has any unit tests, false otherwise. Value is [Boolean#True] by default. */
+  var enableUnitTest: Boolean
 }

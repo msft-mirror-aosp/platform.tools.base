@@ -25,18 +25,15 @@ import java.util.concurrent.ExecutionException
 /**
  * Same as [Cache.get] but in case of exceptions unwraps the [ExecutionException] layer.
  *
- * This is useful if the loader can throw "special" exceptions like ProcessCanceledException
- * in the IDE.
+ * This is useful if the loader can throw "special" exceptions like ProcessCanceledException in the IDE.
  */
-fun <K: Any, V: Any> Cache<K, V>.getAndUnwrap(key: K, loader: () -> V): V {
+fun <K : Any, V : Any> Cache<K, V>.getAndUnwrap(key: K, loader: () -> V): V {
   try {
     return get(key, loader)
-  }
-  catch (e: ExecutionException) {
+  } catch (e: ExecutionException) {
     Throwables.throwIfUnchecked(e.cause!!)
     throw UncheckedExecutionException(e.cause!!)
-  }
-  catch (e: UncheckedExecutionException) {
+  } catch (e: UncheckedExecutionException) {
     Throwables.throwIfUnchecked(e.cause!!)
     throw e
   }

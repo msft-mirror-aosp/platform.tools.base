@@ -23,43 +23,35 @@ import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
 
 open class AnalyticsEnabledJUnitEngineSpec(
-    private val delegate: JUnitEngineSpec,
-    val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): JUnitEngineSpec {
+  private val delegate: JUnitEngineSpec,
+  val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+) : JUnitEngineSpec {
 
-    override val inputs: List<AgpTestSuiteInputParameters>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE
-            return delegate.inputs
-        }
-
-    override val includeEngines: MutableSet<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_BUILDER_INCLUDE_ENGINES_VALUE
-            return delegate.includeEngines
-        }
-
-    override fun addInputProperty(propertyName: String, propertyValue: String) {
-        stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-            VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE
-        delegate.addInputProperty(propertyName, propertyValue)
+  override val inputs: List<AgpTestSuiteInputParameters>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE
+      return delegate.inputs
     }
 
-    override fun addInputProperty(
-        propertyName: String,
-        propertyValue: Provider<String>
-    ) {
-        stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-            VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE
-        delegate.addInputProperty(propertyName, propertyValue)
+  override val includeEngines: MutableSet<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_INCLUDE_ENGINES_VALUE
+      return delegate.includeEngines
     }
 
-    override val enginesDependencies: DependencyCollector
-        get()  {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_BUILDER_ENGINE_DEPENDENCIES_VALUE
-            return delegate.enginesDependencies
-        }
+  override fun addInputProperty(propertyName: String, propertyValue: String) {
+    stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE
+    delegate.addInputProperty(propertyName, propertyValue)
+  }
+
+  override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+    stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE
+    delegate.addInputProperty(propertyName, propertyValue)
+  }
+
+  override val enginesDependencies: DependencyCollector
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_ENGINE_DEPENDENCIES_VALUE
+      return delegate.enginesDependencies
+    }
 }

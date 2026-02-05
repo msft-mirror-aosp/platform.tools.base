@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("AndroidProjectUtilsV2")
+
 package com.android.build.gradle.integration.common.utils
 
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
@@ -31,67 +32,62 @@ import java.io.File
 
 /**
  * Returns a Variant object from a given name
+ *
  * @param name the name of the variant to return
  * @return the matching variant or null if not found
  */
 fun AndroidProject.findVariantByName(name: String): Variant? {
-    for (item in variants) {
-        if (name == item.name) {
-            return item
-        }
+  for (item in variants) {
+    if (name == item.name) {
+      return item
     }
+  }
 
-    return null
+  return null
 }
 
 fun BasicAndroidProject.getVariantByName(name: String): BasicVariant {
-    return searchForExistingItem(variants, name, BasicVariant::name, "Variant")
+  return searchForExistingItem(variants, name, BasicVariant::name, "Variant")
 }
 
 fun AndroidProject.getVariantByName(name: String): Variant {
-    return searchForExistingItem(variants, name, Variant::name, "Variant")
+  return searchForExistingItem(variants, name, Variant::name, "Variant")
 }
 
 fun AndroidProject.getDebugVariant() = getVariantByName("debug")
 
 fun AndroidDsl.getSigningConfig(name: String): SigningConfig =
-    searchForExistingItem(signingConfigs, name, SigningConfig::name, "SigningConfig")
+  searchForExistingItem(signingConfigs, name, SigningConfig::name, "SigningConfig")
 
-fun AndroidDsl.getProductFlavor(name: String): ProductFlavor =
-    searchForExistingItem(productFlavors, name, { it.name }, "ProductFlavor")
+fun AndroidDsl.getProductFlavor(name: String): ProductFlavor = searchForExistingItem(productFlavors, name, { it.name }, "ProductFlavor")
 
-fun AndroidDsl.getBuildType(name: String): BuildType =
-    searchForExistingItem(buildTypes, name, { it.name }, "BuildType")
+fun AndroidDsl.getBuildType(name: String): BuildType = searchForExistingItem(buildTypes, name, { it.name }, "BuildType")
 
 fun ModelContainerV2.ModelInfo.findTestedBuildType(): String? {
-    if (androidProject == null || basicAndroidProject == null) return null
+  if (androidProject == null || basicAndroidProject == null) return null
 
-    val variantWithTest =
-        androidProject.variants.singleOrNull { it.testedTargetVariant != null } ?: return null
+  val variantWithTest = androidProject.variants.singleOrNull { it.testedTargetVariant != null } ?: return null
 
-    return basicAndroidProject.getVariantByName(variantWithTest.name).buildType
+  return basicAndroidProject.getVariantByName(variantWithTest.name).buildType
 }
 
 fun Variant.getBundleLocation(): File {
-    val bundleInfo =
-        this.mainArtifact.bundleInfo
-            ?: throw RuntimeException("Variant $name does not have BundleInfo in its main artifact model")
-    val output =
-        BuiltArtifactsLoaderImpl.loadFromFile(bundleInfo.bundleTaskOutputListingFile)
-            ?: throw RuntimeException("Failed to load bundleTaskOutputListingFile at ${bundleInfo.bundleTaskOutputListingFile}")
-    // for bundle there should be a single output
-    val element = output.elements.single()
-    return File(element.outputFile)
+  val bundleInfo =
+    this.mainArtifact.bundleInfo ?: throw RuntimeException("Variant $name does not have BundleInfo in its main artifact model")
+  val output =
+    BuiltArtifactsLoaderImpl.loadFromFile(bundleInfo.bundleTaskOutputListingFile)
+      ?: throw RuntimeException("Failed to load bundleTaskOutputListingFile at ${bundleInfo.bundleTaskOutputListingFile}")
+  // for bundle there should be a single output
+  val element = output.elements.single()
+  return File(element.outputFile)
 }
 
 fun Variant.getApkLocations(): List<File> {
-    val bundleInfo =
-        this.mainArtifact.bundleInfo
-            ?: throw RuntimeException("Variant $name does not have BundleInfo in its main artifact model")
-    val output =
-        BuiltArtifactsLoaderImpl.loadFromFile(bundleInfo.apkFromBundleTaskOutputListingFile)
-            ?: throw RuntimeException("Failed to load bundleTaskOutputListingFile at ${bundleInfo.apkFromBundleTaskOutputListingFile}")
-    // for apk there should be a one or more outputs
-    return output.elements.map { File(it.outputFile) }
-
+  val bundleInfo =
+    this.mainArtifact.bundleInfo ?: throw RuntimeException("Variant $name does not have BundleInfo in its main artifact model")
+  val output =
+    BuiltArtifactsLoaderImpl.loadFromFile(bundleInfo.apkFromBundleTaskOutputListingFile)
+      ?: throw RuntimeException("Failed to load bundleTaskOutputListingFile at ${bundleInfo.apkFromBundleTaskOutputListingFile}")
+  // for apk there should be a one or more outputs
+  return output.elements.map { File(it.outputFile) }
 }

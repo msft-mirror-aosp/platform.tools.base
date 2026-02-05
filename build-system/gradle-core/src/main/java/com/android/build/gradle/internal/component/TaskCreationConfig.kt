@@ -14,41 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.component;
+package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.utils.appendCapitalized
 
-/**
- * Basic configuration for creating [org.gradle.api.Task]s
- */
+/** Basic configuration for creating [org.gradle.api.Task]s */
 interface TaskCreationConfig {
 
-    /**
-     * Name of the user visible concept like the variant or a test suite source that will
-     * be used to create tasks' names from.
-     */
-    val name: String
+  /** Name of the user visible concept like the variant or a test suite source that will be used to create tasks' names from. */
+  val name: String
 
-    val services: TaskCreationServices
+  val services: TaskCreationServices
 
-    /**
-     * Deprecated, only to support old variant API.
-     */
-    val taskContainer: MutableTaskContainer
+  /** Deprecated, only to support old variant API. */
+  val taskContainer: MutableTaskContainer
 
-    /**
-     * [com.android.build.api.artifact.Artifacts] instance that can be used to lookup or register
-     * new artifacts. This instance is bound to the component or test suites source it was created
-     * for.
-     */
-    val artifacts: ArtifactsImpl
+  /**
+   * [com.android.build.api.artifact.Artifacts] instance that can be used to lookup or register new artifacts. This instance is bound to the
+   * component or test suites source it was created for.
+   */
+  val artifacts: ArtifactsImpl
 
-    fun computeTaskNameInternal(prefix: String, suffix: String): String =
-        prefix.appendCapitalized(name, suffix)
+  fun computeTaskNameInternal(prefix: String, suffix: String): String = prefix.appendCapitalized(name, suffix)
 
-    fun computeTaskNameInternal(prefix: String): String =
-        prefix.appendCapitalized(name)
+  fun computeTaskNameInternal(prefix: String): String = prefix.appendCapitalized(name)
 }

@@ -18,84 +18,77 @@ package com.android.tools.agent.appinspection.util
 
 import com.android.tools.agent.appinspection.testutils.MainLooperRule
 import com.google.common.truth.Truth.assertThat
+import kotlin.random.Random
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
-import kotlin.random.Random
 
 class ThreadUtilsTest {
 
-    @get:Rule
-    val mainLooperRule = MainLooperRule()
+  @get:Rule val mainLooperRule = MainLooperRule()
 
-    @Test
-    fun canCreateInspectorThreads() {
-        val inspectorThreads = listOf(
-            ThreadUtils.newThread {
-                ThreadUtils.assertOffMainThread()
-            },
-            ThreadUtils.newThread {
-                ThreadUtils.assertOffMainThread()
-            }
-        )
+  @Test
+  fun canCreateInspectorThreads() {
+    val inspectorThreads =
+      listOf(ThreadUtils.newThread { ThreadUtils.assertOffMainThread() }, ThreadUtils.newThread { ThreadUtils.assertOffMainThread() })
 
-        // New thread is created each time
-        assertThat(inspectorThreads.toSet()).hasSize(2)
+    // New thread is created each time
+    assertThat(inspectorThreads.toSet()).hasSize(2)
 
-        val testThread = Thread.currentThread()
-        assertThat(inspectorThreads).doesNotContain(testThread)
+    val testThread = Thread.currentThread()
+    assertThat(inspectorThreads).doesNotContain(testThread)
 
-        inspectorThreads.forEach { it.start() }
-        inspectorThreads.forEach { it.join() }
-    }
+    inspectorThreads.forEach { it.start() }
+    inspectorThreads.forEach { it.join() }
+  }
 
-    @Test
-    fun assertsWork() {
-        ThreadUtils.assertOffMainThread()
+  @Test
+  fun assertsWork() {
+    ThreadUtils.assertOffMainThread()
+    try {
+      ThreadUtils.assertOnMainThread()
+      fail()
+    } catch (ignored: Exception) {}
+
+    ThreadUtils.runOnMainThread {
+        ThreadUtils.assertOnMainThread()
         try {
-            ThreadUtils.assertOnMainThread()
-            fail()
-        }
-        catch (ignored: Exception) {
-        }
+          ThreadUtils.assertOffMainThread()
+          fail()
+        } catch (ignored: Exception) {}
+      }
+      .get() // Wait for main thread to finish
+  }
 
-        ThreadUtils.runOnMainThread {
-            ThreadUtils.assertOnMainThread()
-            try {
-                ThreadUtils.assertOffMainThread()
-                fail()
-            }
-            catch (ignored: Exception) {
-            }
-        }.get() // Wait for main thread to finish
-    }
+  @Test
+  fun canRunOnMainThreadFromBackgroundThread() {
+    ThreadUtils.assertOffMainThread()
 
-    @Test
-    fun canRunOnMainThreadFromBackgroundThread() {
-        ThreadUtils.assertOffMainThread()
+    val testValue: Any = Random.nextInt() // Just use any value, doesn't matter
+    val result =
+      ThreadUtils.runOnMainThread {
+        ThreadUtils.assertOnMainThread()
+        testValue
+      }
+
+    assertThat(result.get()).isEqualTo(testValue)
+  }
+
+  @Test
+  fun canRunOnMainThreadWithinMainThread() {
+    ThreadUtils.assertOffMainThread()
+    ThreadUtils.runOnMainThread {
+        ThreadUtils.assertOnMainThread()
 
         val testValue: Any = Random.nextInt() // Just use any value, doesn't matter
-        val result = ThreadUtils.runOnMainThread {
+        val result =
+          ThreadUtils.runOnMainThread {
             ThreadUtils.assertOnMainThread()
             testValue
-        }
+          }
 
         assertThat(result.get()).isEqualTo(testValue)
-    }
-
-    @Test
-    fun canRunOnMainThreadWithinMainThread() {
-        ThreadUtils.assertOffMainThread()
-        ThreadUtils.runOnMainThread {
-            ThreadUtils.assertOnMainThread()
-
-            val testValue: Any = Random.nextInt() // Just use any value, doesn't matter
-            val result = ThreadUtils.runOnMainThread {
-                ThreadUtils.assertOnMainThread()
-                testValue
-            }
-
-            assertThat(result.get()).isEqualTo(testValue)
-        }.get() // Force wait until finished
-    }
+      }
+      .get() // Force wait until finished
+  }
 }

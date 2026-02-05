@@ -15,27 +15,18 @@
  */
 package com.android.adblib
 
-/**
- * Representation of a forward socket connection. See [AdbHostServices.forward] and
- * [AdbHostServices.listForward].
- */
+/** Representation of a forward socket connection. See [AdbHostServices.forward] and [AdbHostServices.listForward]. */
 data class ForwardSocketInfo(
-    /**
-     * The serial number of the device that the [local] socket  forwards to.
-     */
-    val deviceSerial: String,
-    /**
-     * The [SocketSpec] corresponding to the server socket connection on the local machine.
-     */
-    val local: SocketSpec,
-    /**
-     * The [SocketSpec] corresponding to the socket to open on the remote device.
-     */
-    val remote: SocketSpec
+  /** The serial number of the device that the [local] socket forwards to. */
+  val deviceSerial: String,
+  /** The [SocketSpec] corresponding to the server socket connection on the local machine. */
+  val local: SocketSpec,
+  /** The [SocketSpec] corresponding to the socket to open on the remote device. */
+  val remote: SocketSpec,
 )
 
 /**
- * The representation of the list of [forward socket entries][ForwardSocketInfo] maintained by the ADB host.
- * See [AdbHostServices.listForward].
+ * The representation of the list of [forward socket entries][ForwardSocketInfo] maintained by the ADB host. See
+ * [AdbHostServices.listForward].
  */
 typealias ForwardSocketList = ListWithErrors<ForwardSocketInfo>

@@ -21,33 +21,26 @@ import org.gradle.api.Incubating
 @Incubating
 interface TestTaskContext {
 
-    /**
-     * [AgpTestSuiteTarget] name the [org.gradle.api.tasks.testing.Test] task is targeting.
-     */
-    @get:Incubating
-    val targetName: String
+  /** [AgpTestSuiteTarget] name the [org.gradle.api.tasks.testing.Test] task is targeting. */
+  @get:Incubating val targetName: String
 
-    /**
-     * Suite name the [org.gradle.api.tasks.testing.Test] task is testing.
-     *
-     * TODO : Maybe replace with TestSuite Variant object once the variant interfaces become
-     * public.
-     */
-    @get:Incubating
-    val suiteName: String
+  /**
+   * Suite name the [org.gradle.api.tasks.testing.Test] task is testing.
+   *
+   * TODO : Maybe replace with TestSuite Variant object once the variant interfaces become public.
+   */
+  @get:Incubating val suiteName: String
 
-    /**
-     * Targeted variant the [org.gradle.api.tasks.testing.Test] task is running against.
-     *
-     * TODO: Replace with [com.android.build.api.variant.Component] ?
-     */
-    @get:Incubating
-    val targetedVariant: String
+  /**
+   * Targeted variant the [org.gradle.api.tasks.testing.Test] task is running against.
+   *
+   * TODO: Replace with [com.android.build.api.variant.Component] ?
+   */
+  @get:Incubating val targetedVariant: String
 
-    /**
-     * Returns the list of devices this [org.gradle.api.tasks.testing.Test] task targets. In case the test runs on the host
-     * machine, the list will be empty.
-     */
-    @get:Incubating
-    val targetedDevices: Collection<String>
+  /**
+   * Returns the list of devices this [org.gradle.api.tasks.testing.Test] task targets. In case the test runs on the host machine, the list
+   * will be empty.
+   */
+  @get:Incubating val targetedDevices: Collection<String>
 }

@@ -16,11 +16,9 @@
 
 package com.android.tools.backup
 
-/**
- * Represents the type of backup to generate during a backup and restore instrumentation test.
- */
+/** Represents the type of backup to generate during a backup and restore instrumentation test. */
 enum class TestBackupType {
-    DEVICE_TO_DEVICE,
-    CLOUD_UNENCRYPTED,
-    CLOUD_ENCRYPTED,
+  DEVICE_TO_DEVICE,
+  CLOUD_UNENCRYPTED,
+  CLOUD_ENCRYPTED,
 }

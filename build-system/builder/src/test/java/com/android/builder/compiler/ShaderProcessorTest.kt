@@ -17,31 +17,29 @@
 package com.android.builder.compiler
 
 import com.android.builder.internal.compiler.ShaderProcessor
+import java.io.File
 import org.hamcrest.core.StringStartsWith.startsWith
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.io.File
 
 class ShaderProcessorTest {
 
-    @JvmField
-    @Rule
-    var expectedEx: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var expectedEx: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testFakeNdkPath() {
-        expectedEx.expect(IllegalStateException::class.java)
-        expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
-        val file = File("/fake/path")
-        ShaderProcessor.getGlslcLocation(file, null)
-    }
+  @Test
+  fun testFakeNdkPath() {
+    expectedEx.expect(IllegalStateException::class.java)
+    expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
+    val file = File("/fake/path")
+    ShaderProcessor.getGlslcLocation(file, null)
+  }
 
-    @Test
-    fun testFileAsNdkPath() {
-        expectedEx.expect(IllegalStateException::class.java)
-        expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
-        val file = File.createTempFile("some","file")
-        ShaderProcessor.getGlslcLocation(file, null)
-    }
+  @Test
+  fun testFileAsNdkPath() {
+    expectedEx.expect(IllegalStateException::class.java)
+    expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
+    val file = File.createTempFile("some", "file")
+    ShaderProcessor.getGlslcLocation(file, null)
+  }
 }

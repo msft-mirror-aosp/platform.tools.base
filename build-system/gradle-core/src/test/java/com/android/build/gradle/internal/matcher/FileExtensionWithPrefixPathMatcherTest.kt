@@ -18,61 +18,48 @@ package com.android.build.gradle.internal.matcher
 
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
-/**
- * Tests for [FileExtensionWithPrefixPathMatcher]
- */
+/** Tests for [FileExtensionWithPrefixPathMatcher] */
 class FileExtensionWithPrefixPathMatcherTest {
 
-    @Test
-    fun testPatternMatching() {
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/META-INF/services/*.xml").matches()).isTrue()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/META-INF/*.xml").matches()).isTrue()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/META-INF/services/*.xml_2").matches()).isTrue()
+  @Test
+  fun testPatternMatching() {
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/META-INF/services/*.xml").matches()).isTrue()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/META-INF/*.xml").matches()).isTrue()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/META-INF/services/*.xml_2").matches()).isTrue()
 
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/META-INF/services/**").matches()).isFalse()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("META-INF/services/**").matches()).isFalse()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("*.xml").matches()).isFalse()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/*.xml").matches()).isFalse()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/META-INF/*").matches()).isFalse()
-        Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern
-            .matcher("/*xml").matches()).isFalse()
-    }
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/META-INF/services/**").matches()).isFalse()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("META-INF/services/**").matches()).isFalse()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("*.xml").matches()).isFalse()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/*.xml").matches()).isFalse()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/META-INF/*").matches()).isFalse()
+    Truth.assertThat(FileExtensionWithPrefixPathMatcher.pattern.matcher("/*xml").matches()).isFalse()
+  }
 
-    @Test
-    fun testCrossingFolderBoundaryPrefixMatching() {
-        val matcher = FileExtensionWithPrefixPathMatcher.factory().pattern()
-            .matcher("/META-INF/services/*.xml")
-        val pathMatcher = FileExtensionWithPrefixPathMatcher.factory().build(matcher)
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.xml"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("META-INF/services/foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.bar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo"))).isFalse()
-    }
+  @Test
+  fun testCrossingFolderBoundaryPrefixMatching() {
+    val matcher = FileExtensionWithPrefixPathMatcher.factory().pattern().matcher("/META-INF/services/*.xml")
+    val pathMatcher = FileExtensionWithPrefixPathMatcher.factory().build(matcher)
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.xml"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("META-INF/services/foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.bar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo"))).isFalse()
+  }
 
-    @Test
-    fun testSingleFolderPrefixMatching() {
-        val matcher = FileExtensionWithPrefixPathMatcher.factory().pattern()
-            .matcher("/META-INF/*.xml")
-        val pathMatcher = FileExtensionWithPrefixPathMatcher.factory().build(matcher)
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.xml"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("META-INF/foo.xml"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.bar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/META-INF/foo"))).isFalse()
-    }
+  @Test
+  fun testSingleFolderPrefixMatching() {
+    val matcher = FileExtensionWithPrefixPathMatcher.factory().pattern().matcher("/META-INF/*.xml")
+    val pathMatcher = FileExtensionWithPrefixPathMatcher.factory().build(matcher)
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.xml"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/services/foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("META-INF/foo.xml"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/foo.bar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/META-INF/foo"))).isFalse()
+  }
 }

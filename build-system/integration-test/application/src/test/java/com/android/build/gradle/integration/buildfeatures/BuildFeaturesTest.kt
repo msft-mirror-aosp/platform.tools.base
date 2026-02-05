@@ -19,54 +19,44 @@ package com.android.build.gradle.integration.buildfeatures
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.test.assertNotNull
 
 @RunWith(Parameterized::class)
 class BuildFeaturesTest(private val buildFeature: String) {
 
-    companion object {
-        @Parameterized.Parameters(name = "feature={0}")
-        @JvmStatic
-        fun data() = arrayOf(
-            arrayOf("renderScript"),
-            arrayOf("aidl"),
-            arrayOf("dataBinding")
-        )
-    }
+  companion object {
+    @Parameterized.Parameters(name = "feature={0}")
+    @JvmStatic
+    fun data() = arrayOf(arrayOf("renderScript"), arrayOf("aidl"), arrayOf("dataBinding"))
+  }
 
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    val app = MinimalSubProject.app("com.example.test")
-        .appendToBuild("""
+  val app =
+    MinimalSubProject.app("com.example.test")
+      .appendToBuild(
+        """
 android {
     buildFeatures {
         $buildFeature = false
     }
 }
-    """)
+    """
+      )
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .build()
-        ).create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
-    /**
-     * Test to ensure the model is property populated when [buildFeature] is disabled.
-     */
-    @Test
-    fun `$buildFeature DisabledTest`() {
-        assertNotNull(project)
-        project.execute("clean", "lintDebug")
-    }
+  /** Test to ensure the model is property populated when [buildFeature] is disabled. */
+  @Test
+  fun `$buildFeature DisabledTest`() {
+    assertNotNull(project)
+    project.execute("clean", "lintDebug")
+  }
 }

@@ -20,36 +20,34 @@ import com.android.build.api.variant.ComponentBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-/**
- * Superclass for all analytics enabled implementations.
- */
-abstract class AnalyticsEnabledComponentBuilder(
-    open val delegate: ComponentBuilder,
-    protected val stats: GradleBuildVariant.Builder
-) : ComponentBuilder {
+/** Superclass for all analytics enabled implementations. */
+abstract class AnalyticsEnabledComponentBuilder(open val delegate: ComponentBuilder, protected val stats: GradleBuildVariant.Builder) :
+  ComponentBuilder {
 
-    @Suppress("OverridingDeprecatedMember")
-    override var enabled: Boolean
-        get() = delegate.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLED_VALUE
-            delegate.enable = value
-        }
+  @Suppress("OverridingDeprecatedMember")
+  override var enabled: Boolean
+    get() = delegate.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    override var enable: Boolean
-        get() = delegate.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLED_VALUE
-            delegate.enable = value
-        }
+  override var enable: Boolean
+    get() = delegate.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    override val name: String
-        get() = delegate.name
+  override val name: String
+    get() = delegate.name
 
-    override val buildType: String?
-        get() = delegate.buildType
-    override val productFlavors: List<Pair<String, String>>
-        get() = delegate.productFlavors
-    override val flavorName: String?
-        get() = delegate.flavorName
+  override val buildType: String?
+    get() = delegate.buildType
+
+  override val productFlavors: List<Pair<String, String>>
+    get() = delegate.productFlavors
+
+  override val flavorName: String?
+    get() = delegate.flavorName
 }

@@ -19,23 +19,23 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DependenciesInfo
+import com.android.build.api.variant.AndroidVersion
 import com.android.build.gradle.internal.core.dsl.features.DeviceTestOptionsDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOptionsDslInfoImpl
-import com.android.build.api.variant.AndroidVersion
 import com.android.builder.core.DefaultApiVersion
 
-class GlobalVariantBuilderConfigImpl(
-    private val extension: CommonExtension
-) : GlobalVariantBuilderConfig {
+class GlobalVariantBuilderConfigImpl(private val extension: CommonExtension) : GlobalVariantBuilderConfig {
 
-    override val dependenciesInfo: DependenciesInfo
-        get() = (extension as? ApplicationExtension)?.dependenciesInfo
-            ?: throw RuntimeException("Access to dependenciesInfo on a non Application variant")
+  override val dependenciesInfo: DependenciesInfo
+    get() =
+      (extension as? ApplicationExtension)?.dependenciesInfo
+        ?: throw RuntimeException("Access to dependenciesInfo on a non Application variant")
 
-    override val deviceTestOptions: DeviceTestOptionsDslInfo
-        get() = DeviceTestOptionsDslInfoImpl(extension)
+  override val deviceTestOptions: DeviceTestOptionsDslInfo
+    get() = DeviceTestOptionsDslInfoImpl(extension)
 
-    override val compileSdk: AndroidVersion?
-        get() = extension.compileSdk?.let(::AndroidVersionImpl)
-            ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
+  override val compileSdk: AndroidVersion?
+    get() =
+      extension.compileSdk?.let(::AndroidVersionImpl)
+        ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
 }

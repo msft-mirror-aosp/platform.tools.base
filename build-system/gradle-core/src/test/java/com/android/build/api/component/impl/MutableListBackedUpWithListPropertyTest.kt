@@ -22,46 +22,46 @@ import org.junit.Test
 
 internal class MutableListBackedUpWithListPropertyTest {
 
-    val target = MutableListBackedUpWithListProperty(FakeListProperty(ArrayList<String>()), "Test")
+  val target = MutableListBackedUpWithListProperty(FakeListProperty(ArrayList<String>()), "Test")
 
-    @Test
-    fun get() {
-        target.add("Foo")
-        target.add("Bar")
-        Truth.assertThat(target).containsExactly("Foo", "Bar")
-    }
+  @Test
+  fun get() {
+    target.add("Foo")
+    target.add("Bar")
+    Truth.assertThat(target).containsExactly("Foo", "Bar")
+  }
 
-    @Test
-    fun getSize() {
-        target.add("Foo")
-        target.add("Bar")
-        Truth.assertThat(target).hasSize(2)
-    }
+  @Test
+  fun getSize() {
+    target.add("Foo")
+    target.add("Bar")
+    Truth.assertThat(target).hasSize(2)
+  }
 
-    @Test
-    fun clear() {
-        target.add("Foo")
-        target.clear()
-        target.add("Bar")
-        Truth.assertThat(target).containsExactly("Bar")
-    }
+  @Test
+  fun clear() {
+    target.add("Foo")
+    target.clear()
+    target.add("Bar")
+    Truth.assertThat(target).containsExactly("Bar")
+  }
 
-    @Test
-    fun listIterator() {
-        target.add("Foo")
-        target.add("Bar")
-        target.add("FooBar")
-        val iterator = target.listIterator()
-        Truth.assertThat(iterator.next()).isEqualTo("Foo")
-        Truth.assertThat(iterator.next()).isEqualTo("Bar")
-        Truth.assertThat(iterator.next()).isEqualTo("FooBar")
-        Truth.assertThat(iterator.hasNext()).isFalse()
-    }
+  @Test
+  fun listIterator() {
+    target.add("Foo")
+    target.add("Bar")
+    target.add("FooBar")
+    val iterator = target.listIterator()
+    Truth.assertThat(iterator.next()).isEqualTo("Foo")
+    Truth.assertThat(iterator.next()).isEqualTo("Bar")
+    Truth.assertThat(iterator.next()).isEqualTo("FooBar")
+    Truth.assertThat(iterator.hasNext()).isFalse()
+  }
 
-    @Test
-    fun testToString() {
-        target.add("Foo")
-        target.add("Bar")
-        Truth.assertThat(target.toString()).isEqualTo("[Foo, Bar]")
-    }
+  @Test
+  fun testToString() {
+    target.add("Foo")
+    target.add("Bar")
+    Truth.assertThat(target.toString()).isEqualTo("[Foo, Bar]")
+  }
 }

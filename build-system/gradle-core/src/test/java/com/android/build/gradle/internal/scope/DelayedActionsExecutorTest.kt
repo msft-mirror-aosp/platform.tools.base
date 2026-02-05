@@ -21,24 +21,24 @@ import org.junit.Test
 
 class DelayedActionsExecutorTest {
 
-    @Test
-    fun orderTest() {
-        val actions = DelayedActionsExecutor();
-        var i = 0;
-        actions.addAction {
-            assertThat(i).isEqualTo(0)
-            i++
-        }
-        actions.addAction {
-            assertThat(i).isEqualTo(1)
-            i++
-        }
-        actions.addAction {
-            assertThat(i).isEqualTo(2)
-            i++;
-        }
-        assertThat(i).isEqualTo(0)
-        actions.runAll()
-        assertThat(i).isEqualTo(3)
+  @Test
+  fun orderTest() {
+    val actions = DelayedActionsExecutor()
+    var i = 0
+    actions.addAction {
+      assertThat(i).isEqualTo(0)
+      i++
     }
+    actions.addAction {
+      assertThat(i).isEqualTo(1)
+      i++
+    }
+    actions.addAction {
+      assertThat(i).isEqualTo(2)
+      i++
+    }
+    assertThat(i).isEqualTo(0)
+    actions.runAll()
+    assertThat(i).isEqualTo(3)
+  }
 }

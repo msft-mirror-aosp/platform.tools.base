@@ -30,26 +30,24 @@ import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledAssetsTestSuiteSourceTestSet {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteSourceSet.Assets = mock()
+  private val delegate: TestSuiteSourceSet.Assets = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledAssetsTestSuiteSourceSet by lazy {
-        object: AnalyticsEnabledAssetsTestSuiteSourceSet(delegate, stats) {
-            override val type: TestSuiteSourceType
-                get() = TestSuiteSourceType.ASSETS
-        }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledAssetsTestSuiteSourceSet by lazy {
+    object : AnalyticsEnabledAssetsTestSuiteSourceSet(delegate, stats) {
+      override val type: TestSuiteSourceType
+        get() = TestSuiteSourceType.ASSETS
     }
+  }
 
-    @Test
-    fun testGet() {
-        proxy.get()
+  @Test
+  fun testGet() {
+    proxy.get()
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_ASSETS_VALUE)
-        verify(delegate).get()
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_ASSETS_VALUE)
+    verify(delegate).get()
+  }
 }

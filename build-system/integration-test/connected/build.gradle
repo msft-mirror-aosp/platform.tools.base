@@ -28,7 +28,6 @@ dependencies {
     testImplementation project(':base:builder')
     testImplementation project(':base:builder-model')
     testImplementation libs.com.android.tools.sdkCommon
-    testImplementation project(':base:testing-infrastructure:device-pool:device-provider')
     testImplementation libs.com.android.tools.testutils
     testImplementation project(':base:gradle-api')
     testImplementation project(':base:perf-logger')

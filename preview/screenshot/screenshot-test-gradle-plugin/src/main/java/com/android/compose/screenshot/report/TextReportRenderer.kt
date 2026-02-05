@@ -24,42 +24,26 @@ import java.io.OutputStreamWriter
 import java.io.UncheckedIOException
 import java.io.Writer
 
-/**
- * Custom TextReportRenderer based on Gradle's TextReportRenderer
- */
+/** Custom TextReportRenderer based on Gradle's TextReportRenderer */
 abstract class TextReportRenderer<T> {
 
-    /**
-     * Renders the report for the given model to a writer.
-     */
-    @Throws(Exception::class)
-    protected abstract fun writeTo(model: T, out: Writer)
+  /** Renders the report for the given model to a writer. */
+  @Throws(Exception::class) protected abstract fun writeTo(model: T, out: Writer)
 
-    /**
-     * Renders the report for the given model to a file.
-     */
-    open fun writeTo(model: T, file: File) {
-        try {
-            val parentFile: File = file.getParentFile()
-            if (!parentFile.mkdirs() && !parentFile.isDirectory()) {
-                throw IOException(String.format("Unable to create directory '%s'", parentFile))
-            } else {
-                val writer =
-                    BufferedWriter(OutputStreamWriter(FileOutputStream(file), "utf-8"))
-                writer.use {
-                    writeTo(model, it)
-                }
-            }
-        } catch (e: IOException) {
-            throw UncheckedIOException(
-                "Failed to write text report to file '${file.absolutePath}'.",
-                e
-            )
-        } catch (e: Exception) {
-            throw RuntimeException(
-                "Unexpected error while rendering report to '${file.absolutePath}'.",
-                e
-            )
-        }
+  /** Renders the report for the given model to a file. */
+  open fun writeTo(model: T, file: File) {
+    try {
+      val parentFile: File = file.getParentFile()
+      if (!parentFile.mkdirs() && !parentFile.isDirectory()) {
+        throw IOException(String.format("Unable to create directory '%s'", parentFile))
+      } else {
+        val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(file), "utf-8"))
+        writer.use { writeTo(model, it) }
+      }
+    } catch (e: IOException) {
+      throw UncheckedIOException("Failed to write text report to file '${file.absolutePath}'.", e)
+    } catch (e: Exception) {
+      throw RuntimeException("Unexpected error while rendering report to '${file.absolutePath}'.", e)
     }
+  }
 }

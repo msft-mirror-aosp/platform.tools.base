@@ -24,11 +24,7 @@ import kotlinx.coroutines.*
 
 private const val SLEEP_TIME_MS: Long = 100
 
-open class ProcessRunner
-protected constructor(
-  private val processArgs: Array<String>,
-  private val processEnv: Array<String>,
-) {
+open class ProcessRunner protected constructor(private val processArgs: Array<String>, private val processEnv: Array<String>) {
   private val processName = processArgs[0].substringAfterLast("/")
   private val input = mutableListOf<String>()
   private val error = mutableListOf<String>()
@@ -50,11 +46,7 @@ protected constructor(
 
   protected fun exitValue() = process.exitValue()
 
-  private suspend fun listen(
-    streamName: String,
-    stream: InputStream,
-    storage: MutableList<String>,
-  ) {
+  private suspend fun listen(streamName: String, stream: InputStream, storage: MutableList<String>) {
     try {
       stream.bufferedReader().use { reader ->
         while (!reader.ready()) {
@@ -73,37 +65,25 @@ protected constructor(
   }
 
   /**
-   * Wait for a specific string to be retrieved from the server. This function waits forever if
-   * given string statement has not been found.
+   * Wait for a specific string to be retrieved from the server. This function waits forever if given string statement has not been found.
    */
   @JvmOverloads
-  fun waitForInput(statement: String, timeoutMs: Long = LONG_TIMEOUT_MS): Boolean =
-    containsStatement(input, statement, timeoutMs)
+  fun waitForInput(statement: String, timeoutMs: Long = LONG_TIMEOUT_MS): Boolean = containsStatement(input, statement, timeoutMs)
 
   @JvmOverloads
-  fun waitForError(statement: String, timeoutMs: Long = LONG_TIMEOUT_MS): Boolean =
-    containsStatement(error, statement, timeoutMs)
+  fun waitForError(statement: String, timeoutMs: Long = LONG_TIMEOUT_MS): Boolean = containsStatement(error, statement, timeoutMs)
 
-  @JvmOverloads
-  fun waitForInput(pattern: Pattern, timeoutMs: Long = LONG_TIMEOUT_MS): String? =
-    waitForInput(pattern.toRegex(), timeoutMs)
+  @JvmOverloads fun waitForInput(pattern: Pattern, timeoutMs: Long = LONG_TIMEOUT_MS): String? = waitForInput(pattern.toRegex(), timeoutMs)
 
   /**
-   * @param regex that defines a pattern to match in the output. The pattern should define a group
-   *   named `result` as the returned element from the input. <br></br> Input:
-   *   transport.service.address=127.0.0.1:34801 <br></br> Pattern:
+   * @param regex that defines a pattern to match in the output. The pattern should define a group named `result` as the returned element
+   *   from the input. <br></br> Input: transport.service.address=127.0.0.1:34801 <br></br> Pattern:
    *   (.*)(transport.service.address=)(?<result>.*) <br></br> Return: 127.0.0.1:34801
    * @return The value found in the result named group, or null if no value found. </result>
    */
-  @JvmOverloads
-  fun waitForInput(regex: Regex, timeoutMs: Long = LONG_TIMEOUT_MS): String? =
-    containsStatement(input, regex, timeoutMs)
+  @JvmOverloads fun waitForInput(regex: Regex, timeoutMs: Long = LONG_TIMEOUT_MS): String? = containsStatement(input, regex, timeoutMs)
 
-  private fun containsStatement(
-    storage: List<String>,
-    statement: String,
-    timeoutMs: Long,
-  ): Boolean {
+  private fun containsStatement(storage: List<String>, statement: String, timeoutMs: Long): Boolean {
     val regex = Regex("(.*)(?<result>" + Regex.escape(statement) + ")(.*)")
     return (containsStatement(storage, regex, timeoutMs) != null)
   }

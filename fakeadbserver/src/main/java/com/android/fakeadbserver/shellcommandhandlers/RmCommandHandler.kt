@@ -21,25 +21,23 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class RmCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "rm"
-) {
+class RmCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "rm") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
 
-        if (shellCommandArgs == null) {
-            shellCommandOutput.writeStderr("rm: Needs 1 argument (see \"rm --help\")")
-            return
-        }
-        val parameters = shellCommandArgs.split(" ")
-        device.deleteFile(parameters.last())
+    if (shellCommandArgs == null) {
+      shellCommandOutput.writeStderr("rm: Needs 1 argument (see \"rm --help\")")
+      return
     }
+    val parameters = shellCommandArgs.split(" ")
+    device.deleteFile(parameters.last())
+  }
 }

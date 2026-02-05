@@ -23,29 +23,25 @@ package com.android.build.api.variant
  */
 interface ComponentIdentity {
 
-    /**
-     * Component's name.
-     */
-    val name: String
+  /** Component's name. */
+  val name: String
 
-    /**
-     * Build type name.
-     */
-    val buildType: String?
+  /** Build type name. */
+  val buildType: String?
 
-    /**
-     * List of flavor names.
-     *
-     * The order is properly sorted based on the associated dimension order.
-     */
-    val productFlavors: List<Pair<String, String>>
+  /**
+   * List of flavor names.
+   *
+   * The order is properly sorted based on the associated dimension order.
+   */
+  val productFlavors: List<Pair<String, String>>
 
-    /**
-     * The multi-flavor name of the variant.
-     *
-     * This does not include the build type. If no flavors are present, this will return null
-     *
-     * The full name of the variant is queried via [name].
-     */
-    val flavorName: String?
+  /**
+   * The multi-flavor name of the variant.
+   *
+   * This does not include the build type. If no flavors are present, this will return null
+   *
+   * The full name of the variant is queried via [name].
+   */
+  val flavorName: String?
 }

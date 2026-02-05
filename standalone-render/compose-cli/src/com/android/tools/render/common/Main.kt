@@ -22,39 +22,37 @@ import com.intellij.openapi.util.Disposer
 import java.io.File
 
 fun main(args: Array<String>) {
-    if (args.isEmpty()) {
-        println("Path to the preview rendering settings file is missing.")
-        return
-    }
-    try {
-        renderPreview(File(args[0]))
-    } finally {
-        Disposer.dispose(IJFramework)
-    }
+  if (args.isEmpty()) {
+    println("Path to the preview rendering settings file is missing.")
+    return
+  }
+  try {
+    renderPreview(File(args[0]))
+  } finally {
+    Disposer.dispose(IJFramework)
+  }
 }
 
 private fun renderPreview(previewRenderingJson: File) {
-    val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
-    val previewRenderingResult = try {
-        Renderer(
-            previewRendering.fontsPath,
-            previewRendering.resourceApkPath,
-            previewRendering.namespace,
-            previewRendering.classPath,
-            previewRendering.projectClassPath,
-            previewRendering.layoutlibPath,
-        ).use { renderer ->
-            val screenshotResults = previewRendering.screenshots.flatMap {
-                renderer.render(it, previewRendering.outputFolder)
-            }.sortedBy { it.imagePath }
-            PreviewRenderingResult(globalError = null, screenshotResults)
+  val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
+  val previewRenderingResult =
+    try {
+      Renderer(
+          previewRendering.fontsPath,
+          previewRendering.resourceApkPath,
+          previewRendering.namespace,
+          previewRendering.classPath,
+          previewRendering.projectClassPath,
+          previewRendering.layoutlibPath,
+        )
+        .use { renderer ->
+          val screenshotResults =
+            previewRendering.screenshots.flatMap { renderer.render(it, previewRendering.outputFolder) }.sortedBy { it.imagePath }
+          PreviewRenderingResult(globalError = null, screenshotResults)
         }
     } catch (t: Throwable) {
-        PreviewRenderingResult(t.stackTraceToString(), emptyList())
+      PreviewRenderingResult(t.stackTraceToString(), emptyList())
     }
 
-    writePreviewRenderingResult(
-        File(previewRendering.resultsFilePath).writer(),
-        previewRenderingResult,
-    )
+  writePreviewRenderingResult(File(previewRendering.resultsFilePath).writer(), previewRenderingResult)
 }

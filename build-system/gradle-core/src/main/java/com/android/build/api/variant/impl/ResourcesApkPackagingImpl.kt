@@ -19,16 +19,12 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.Packaging
 import com.android.build.gradle.internal.services.VariantServices
 
-class ResourcesApkPackagingImpl(
-    dslPackaging: Packaging,
-    variantServices: VariantServices
-) : ResourcesPackagingImpl(dslPackaging, variantServices) {
+class ResourcesApkPackagingImpl(dslPackaging: Packaging, variantServices: VariantServices) :
+  ResourcesPackagingImpl(dslPackaging, variantServices) {
 
-    override val excludes =
-        variantServices.setPropertyOf(String::class.java) {
-            // exclude .kotlin_module files from APKs (b/152898926)
-            getBaseExcludes().plus("/META-INF/*.kotlin_module")
-        }
+  override val excludes =
+    variantServices.setPropertyOf(String::class.java) {
+      // exclude .kotlin_module files from APKs (b/152898926)
+      getBaseExcludes().plus("/META-INF/*.kotlin_module")
+    }
 }
-
-

@@ -29,11 +29,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
-class BlameFile
-internal constructor(
-  private val nodes: MutableMap<String, BlameNode>,
-  private val actions: Actions?,
-) {
+class BlameFile internal constructor(private val nodes: MutableMap<String, BlameNode>, private val actions: Actions?) {
 
   private fun findBlameNode(element: Element): BlameNode? {
     val key = getNodeKey(element)
@@ -117,11 +113,7 @@ internal constructor(
     return null
   }
 
-  private fun findElementOrAttribute(
-    client: LintClient,
-    element: Element,
-    attribute: Attr?,
-  ): Pair<File, Node>? {
+  private fun findElementOrAttribute(client: LintClient, element: Element, attribute: Attr?): Pair<File, Node>? {
     val blameNode = findBlameNode(element) ?: return null
 
     var location: String? = null

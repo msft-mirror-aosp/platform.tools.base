@@ -20,6 +20,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.junit.Before
@@ -29,76 +30,61 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 
 class QemuExecutorTest {
-    @get:Rule
-    val tmpFolder = TemporaryFolder()
+  @get:Rule val tmpFolder = TemporaryFolder()
 
-    private val logger: ILogger = mock()
+  private val logger: ILogger = mock()
 
-    private val processBuilder: ProcessBuilder = mock()
+  private val processBuilder: ProcessBuilder = mock()
 
-    private val process: Process = mock()
+  private val process: Process = mock()
 
-    private val emulatorDirectoryProvider: Provider<Directory> = mock()
+  private val emulatorDirectoryProvider: Provider<Directory> = mock()
 
-    private val emulatorDirectory: Directory = mock()
+  private val emulatorDirectory: Directory = mock()
 
-    lateinit var qcowFile: File
-    lateinit var emulatorFolder: File
-    lateinit var qemuImageExecutable: File
-    lateinit var deviceDirectory: File
-    lateinit var snapshotFile: File
+  lateinit var qcowFile: File
+  lateinit var emulatorFolder: File
+  lateinit var qemuImageExecutable: File
+  lateinit var deviceDirectory: File
+  lateinit var snapshotFile: File
 
-    @Before
-    fun setup() {
-        whenever(processBuilder.start()).thenReturn(process)
-        whenever(process.waitFor(any(), any())).thenReturn(true)
+  @Before
+  fun setup() {
+    whenever(processBuilder.start()).thenReturn(process)
+    whenever(process.waitFor(any(), any())).thenReturn(true)
 
-        deviceDirectory = tmpFolder.newFolder()
-        qcowFile = deviceDirectory.resolve("test.qcow2").also {
-            it.writeText("""hello""")
-        }
-        snapshotFile = FileUtils.mkdirs(
-            FileUtils.join(deviceDirectory, "snapshots", "default_boot"))
+    deviceDirectory = tmpFolder.newFolder()
+    qcowFile = deviceDirectory.resolve("test.qcow2").also { it.writeText("""hello""") }
+    snapshotFile = FileUtils.mkdirs(FileUtils.join(deviceDirectory, "snapshots", "default_boot"))
 
-        emulatorFolder = tmpFolder.newFolder()
-        qemuImageExecutable = emulatorFolder.resolve("qemu-img")
+    emulatorFolder = tmpFolder.newFolder()
+    qemuImageExecutable = emulatorFolder.resolve("qemu-img")
 
-        whenever(emulatorDirectoryProvider.get()).thenReturn(emulatorDirectory)
-        whenever(emulatorDirectory.asFile).thenReturn(emulatorFolder)
-    }
+    whenever(emulatorDirectoryProvider.get()).thenReturn(emulatorDirectory)
+    whenever(emulatorDirectory.asFile).thenReturn(emulatorFolder)
+  }
 
-    @Test
-    fun testDeleteSnapshot() {
-        val capturedArgs: MutableList<List<String>> = mutableListOf()
+  @Test
+  fun testDeleteSnapshot() {
+    val capturedArgs: MutableList<List<String>> = mutableListOf()
 
-        val executor = QemuExecutor(
-            emulatorDirectoryProvider
-        ) { argList ->
-            capturedArgs.add(argList)
-            processBuilder
-        }
+    val executor =
+      QemuExecutor(emulatorDirectoryProvider) { argList ->
+        capturedArgs.add(argList)
+        processBuilder
+      }
 
-        assertThat(snapshotFile).exists()
+    assertThat(snapshotFile).exists()
 
-        executor.deleteSnapshot(
-            "testDevice",
-            deviceDirectory,
-            "default_boot",
-            logger
-        )
+    executor.deleteSnapshot("testDevice", deviceDirectory, "default_boot", logger)
 
-        assertThat(capturedArgs).hasSize(1)
-        assertThat(capturedArgs[0]).containsExactly(
-            qemuImageExecutable.absolutePath,
-            "snapshot",
-            "-d",
-            "default_boot",
-            qcowFile.absolutePath
-        ).inOrder()
+    assertThat(capturedArgs).hasSize(1)
+    assertThat(capturedArgs[0])
+      .containsExactly(qemuImageExecutable.absolutePath, "snapshot", "-d", "default_boot", qcowFile.absolutePath)
+      .inOrder()
 
-        assertThat(snapshotFile).doesNotExist()
-    }
+    assertThat(snapshotFile).doesNotExist()
+  }
 }

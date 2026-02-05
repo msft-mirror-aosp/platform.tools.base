@@ -16,9 +16,10 @@
 package com.android.ide.common.fonts
 
 enum class FontSource {
-    SYSTEM, // The font is a system font i.e. one of the 8 predefined fonts in the Android platform.
-    PROJECT, // The font is a reference to a font created in a font resource file in the project.
-    DOWNLOADABLE, // The font is a reference to a font in a font directory from a specific font provider (e.g. Google Fonts).
-    LOOKUP, // Fake font family used to lookup the real font reference.
-    HEADER        // Fake font family used in UI to refer to a header in a list of fonts.
+  SYSTEM, // The font is a system font i.e. one of the 8 predefined fonts in the Android platform.
+  PROJECT, // The font is a reference to a font created in a font resource file in the project.
+  DOWNLOADABLE, // The font is a reference to a font in a font directory from a specific font
+  // provider (e.g. Google Fonts).
+  LOOKUP, // Fake font family used to lookup the real font reference.
+  HEADER, // Fake font family used in UI to refer to a header in a list of fonts.
 }

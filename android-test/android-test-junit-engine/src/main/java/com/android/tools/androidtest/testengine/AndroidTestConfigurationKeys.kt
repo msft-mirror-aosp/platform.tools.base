@@ -16,67 +16,41 @@
 
 package com.android.tools.androidtest.testengine
 
-/**
- * Configuration parameter keys for [AndroidTestEngine].
- */
+/** Configuration parameter keys for [AndroidTestEngine]. */
 object AndroidTestConfigurationKeys {
-    /**
-     * Path to the ADB executable.
-     */
-    const val ADB_PATH = "android-test.adb-path"
+  /** Path to the ADB executable. */
+  const val ADB_PATH = "android-test.adb-path"
 
-    /**
-     * Path to the AAPT executable.
-     */
-    const val AAPT_PATH = "android-test.aapt-path"
+  /** Path to the AAPT executable. */
+  const val AAPT_PATH = "android-test.aapt-path"
 
-    /**
-     * The serial number of the device to run tests on.
-     */
-    const val DEVICE_SERIAL = "android-test.device-serial"
+  /** The serial number of the device to run tests on. */
+  const val DEVICE_SERIAL = "android-test.device-serial"
 
-    /**
-     * The API level of the target device.
-     */
-    const val DEVICE_API_LEVEL = "android-test.device-api-level"
+  /** The API level of the target device. */
+  const val DEVICE_API_LEVEL = "android-test.device-api-level"
 
-    /**
-     * Timeout in milliseconds for APK installation.
-     */
-    const val INSTALL_TIMEOUT_MS = "android-test.install-timeout-ms"
+  /** Timeout in milliseconds for APK installation. */
+  const val INSTALL_TIMEOUT_MS = "android-test.install-timeout-ms"
 
-    /**
-     * Comma-separated list of paths to the APKs to be tested.
-     */
-    const val TESTED_APKS = "android-test.tested-apks"
+  /** Comma-separated list of paths to the APKs to be tested. */
+  const val TESTED_APKS = "android-test.tested-apks"
 
-    /**
-     * Comma-separated list of paths to the test APKs.
-     */
-    const val TEST_APKS = "android-test.test-apks"
+  /** Comma-separated list of paths to the test APKs. */
+  const val TEST_APKS = "android-test.test-apks"
 
-    /**
-     * Comma-separated list of paths to utility APKs to be installed before testing.
-     */
-    const val TEST_UTIL_APKS = "android-test.test-util-apks"
+  /** Comma-separated list of paths to utility APKs to be installed before testing. */
+  const val TEST_UTIL_APKS = "android-test.test-util-apks"
 
-    /**
-     * Comma-separated list of options to pass to `adb install`.
-     */
-    const val APK_INSTALL_OPTIONS = "android-test.apk-install-options"
+  /** Comma-separated list of options to pass to `adb install`. */
+  const val APK_INSTALL_OPTIONS = "android-test.apk-install-options"
 
-    /**
-     * Whether to uninstall the APKs from the device after tests have finished.
-     */
-    const val UNINSTALL_AFTER_TESTS = "android-test.uninstall-after-tests"
+  /** Whether to uninstall the APKs from the device after tests have finished. */
+  const val UNINSTALL_AFTER_TESTS = "android-test.uninstall-after-tests"
 
-    /**
-     * The fully qualified class name of the instrumentation runner to use.
-     */
-    const val INSTRUMENTATION_RUNNER_CLASS = "android-test.instrumentation-runner-class"
+  /** The fully qualified class name of the instrumentation runner to use. */
+  const val INSTRUMENTATION_RUNNER_CLASS = "android-test.instrumentation-runner-class"
 
-    /**
-     * The package ID of the instrumentation target.
-     */
-    const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
+  /** The package ID of the instrumentation target. */
+  const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
 }

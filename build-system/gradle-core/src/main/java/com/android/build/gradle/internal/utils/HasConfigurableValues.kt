@@ -24,66 +24,56 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 
 fun ConfigurableFileCollection.fromDisallowChanges(vararg arg: Any) {
-    from(*arg)
-    disallowChanges()
+  from(*arg)
+  disallowChanges()
 }
 
 fun <T : Any> Property<T>.setDisallowChanges(value: T?) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
 fun <T : Any> Property<T>.setDisallowChanges(value: Provider<out T>) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
 fun <T : Any> ListProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
 fun <T : Any> ListProperty<T>.setDisallowChanges(value: Iterable<T>?) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
-fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Provider<Map<K,V>>) {
-    set(map)
-    disallowChanges()
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Provider<Map<K, V>>) {
+  set(map)
+  disallowChanges()
 }
 
-fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Map<K,V>?) {
-    set(map)
-    disallowChanges()
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Map<K, V>?) {
+  set(map)
+  disallowChanges()
 }
 
 fun <T : Any> SetProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
 fun <T : Any> SetProperty<T>.setDisallowChanges(value: Iterable<T>?) {
-    set(value)
-    disallowChanges()
+  set(value)
+  disallowChanges()
 }
 
-fun <T : Any> ListProperty<T>.setDisallowChanges(
-    value: Provider<out Iterable<T>>?,
-    handleNullable: ListProperty<T>.() -> Unit
-) {
-    value?.let {
-        set(value)
-    } ?: handleNullable()
-    disallowChanges()
+fun <T : Any> ListProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>?, handleNullable: ListProperty<T>.() -> Unit) {
+  value?.let { set(value) } ?: handleNullable()
+  disallowChanges()
 }
 
-fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(
-    map: Provider<Map<K,V>>?,
-    handleNullable: MapProperty<K, V>.() -> Unit
-) {
-    map?.let {
-        set(map)
-    } ?: handleNullable()
-    disallowChanges()
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Provider<Map<K, V>>?, handleNullable: MapProperty<K, V>.() -> Unit) {
+  map?.let { set(map) } ?: handleNullable()
+  disallowChanges()
 }

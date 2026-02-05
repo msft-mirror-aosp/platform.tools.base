@@ -29,65 +29,71 @@ import org.junit.runners.Parameterized
 @RunWith(FilterableParameterized::class)
 class ProjectNoJavaSourcesTest(val testProject: MinimalSubProject) {
 
-    companion object {
-        @Parameterized.Parameters
-        @JvmStatic
-        fun parameters() =
-            listOf(MinimalSubProject.app("com.test"), MinimalSubProject.lib("com.test"))
-    }
+  companion object {
+    @Parameterized.Parameters @JvmStatic fun parameters() = listOf(MinimalSubProject.app("com.test"), MinimalSubProject.lib("com.test"))
+  }
 
-    @get: Rule
-    val project = GradleTestProject.builder().fromTestApp(
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
         testProject.appendToBuild(
-            """
-            android.buildFeatures.buildConfig = false
-        """.trimIndent()
+          """
+          android.buildFeatures.buildConfig = false
+          """
+            .trimIndent()
         )
-    ).create()
+      )
+      .create()
 
-    @Test
-    fun testBuild() {
-        executor().run("assemble", "assembleDebugAndroidTest")
-        Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }
-            .toList()).named("list of Java sources").isEmpty()
-    }
+  @Test
+  fun testBuild() {
+    executor().run("assemble", "assembleDebugAndroidTest")
+    Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }.toList())
+      .named("list of Java sources")
+      .isEmpty()
+  }
 
-    @Test
-    fun testMinified() {
-        project.buildFile.appendText(
-            """
-            android {
-              buildTypes {
-                debug {
-                  minifyEnabled true
-                }
-              }
-            }
-        """.trimIndent()
-        )
-        executor().run("assemble", "assembleDebugAndroidTest")
-        Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }
-            .toList()).named("list of Java sources").isEmpty()
-    }
+  @Test
+  fun testMinified() {
+    project.buildFile.appendText(
+      """
+      android {
+        buildTypes {
+          debug {
+            minifyEnabled true
+          }
+        }
+      }
+      """
+        .trimIndent()
+    )
+    executor().run("assemble", "assembleDebugAndroidTest")
+    Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }.toList())
+      .named("list of Java sources")
+      .isEmpty()
+  }
 
-    @Test
-    fun testLegacyMultidex() {
-        project.buildFile.appendText(
-            """
-            android {
-              defaultConfig {
-                minSdkVersion 19
-                multiDexEnabled = true
-              }
-            }
-        """.trimIndent()
-        )
-        executor().run("assemble", "assembleDebugAndroidTest")
-        Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }
-            .toList()).named("list of Java sources").isEmpty()
-    }
+  @Test
+  fun testLegacyMultidex() {
+    project.buildFile.appendText(
+      """
+      android {
+        defaultConfig {
+          minSdkVersion 19
+          multiDexEnabled = true
+        }
+      }
+      """
+        .trimIndent()
+    )
+    executor().run("assemble", "assembleDebugAndroidTest")
+    Truth.assertThat(project.projectDir.resolve("src").walk().filter { it.extension == "java" }.toList())
+      .named("list of Java sources")
+      .isEmpty()
+  }
 
-    private fun executor() : GradleTaskExecutor {
-        return project.executor()
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
 }

@@ -28,63 +28,47 @@ import org.gradle.declarative.dsl.model.annotations.Restricted
  */
 interface Bundle {
 
-    val abi: BundleAbi
+  val abi: BundleAbi
 
-    val density: BundleDensity
+  val density: BundleDensity
 
-    val language: BundleLanguage
+  val language: BundleLanguage
 
-    val texture: BundleTexture
+  val texture: BundleTexture
 
-    @get:Incubating
-    @Deprecated("Use deviceGroup instead")
-    val deviceTier: BundleDeviceTier
+  @get:Incubating @Deprecated("Use deviceGroup instead") val deviceTier: BundleDeviceTier
 
-    @get:Incubating
-    val deviceGroup: BundleDeviceGroup
+  @get:Incubating val deviceGroup: BundleDeviceGroup
 
-    @get:Incubating
-    val codeTransparency: BundleCodeTransparency
+  @get:Incubating val codeTransparency: BundleCodeTransparency
 
-    val storeArchive: BundleStoreArchive
+  val storeArchive: BundleStoreArchive
 
-    @get:Incubating
-    @get:Restricted
-    val integrityConfigDir: DirectoryProperty
+  @get:Incubating @get:Restricted val integrityConfigDir: DirectoryProperty
 
-    @get:Incubating
-    val countrySet: BundleCountrySet
+  @get:Incubating val countrySet: BundleCountrySet
 
-    @get:Incubating
-    val aiModelVersion: BundleAiModelVersion
+  @get:Incubating val aiModelVersion: BundleAiModelVersion
 
-    @get:Incubating
-    @get:Restricted
-    val deviceTargetingConfig: RegularFileProperty
+  @get:Incubating @get:Restricted val deviceTargetingConfig: RegularFileProperty
 
-    fun abi(action: BundleAbi.() -> Unit)
+  fun abi(action: BundleAbi.() -> Unit)
 
-    fun density(action: BundleDensity.() -> Unit)
+  fun density(action: BundleDensity.() -> Unit)
 
-    fun language(action: BundleLanguage.() -> Unit)
+  fun language(action: BundleLanguage.() -> Unit)
 
-    fun texture(action: BundleTexture.() -> Unit)
+  fun texture(action: BundleTexture.() -> Unit)
 
-    @Incubating
-    @Deprecated("Use deviceGroup instead")
-    fun deviceTier(action: BundleDeviceTier.() -> Unit)
+  @Incubating @Deprecated("Use deviceGroup instead") fun deviceTier(action: BundleDeviceTier.() -> Unit)
 
-    @Incubating
-    fun deviceGroup(action: BundleDeviceGroup.() -> Unit)
+  @Incubating fun deviceGroup(action: BundleDeviceGroup.() -> Unit)
 
-    @Incubating
-    fun codeTransparency(action: BundleCodeTransparency.() -> Unit)
+  @Incubating fun codeTransparency(action: BundleCodeTransparency.() -> Unit)
 
-    fun storeArchive(action: BundleStoreArchive.() -> Unit)
+  fun storeArchive(action: BundleStoreArchive.() -> Unit)
 
-    @Incubating
-    fun countrySet(action: BundleCountrySet.() -> Unit)
+  @Incubating fun countrySet(action: BundleCountrySet.() -> Unit)
 
-    @Incubating
-    fun aiModelVersion(action: BundleAiModelVersion.() -> Unit)
+  @Incubating fun aiModelVersion(action: BundleAiModelVersion.() -> Unit)
 }

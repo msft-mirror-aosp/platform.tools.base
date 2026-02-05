@@ -104,12 +104,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkParameterPermission(
-    context: JavaContext,
-    signature: String,
-    method: PsiMethod,
-    argument: UExpression,
-  ) {
+  private fun checkParameterPermission(context: JavaContext, signature: String, method: PsiMethod, argument: UExpression) {
     var operation: PermissionFinder.Operation? = null
 
     if (PERMISSION_ANNOTATION_READ.isEquals(signature)) {
@@ -132,19 +127,14 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   /**
-   * A "conditional" requirement means that there are some conditions for whether the permission
-   * requirement applies, which isn't encoded in the annotation. However, we know of a couple of
-   * cases which we can check here. This method looks up the given permission requirement found for
-   * the given called method and checks whether the condition it's listing is met.
+   * A "conditional" requirement means that there are some conditions for whether the permission requirement applies, which isn't encoded in
+   * the annotation. However, we know of a couple of cases which we can check here. This method looks up the given permission requirement
+   * found for the given called method and checks whether the condition it's listing is met.
    *
-   * We should audit all the conditional permissions and consider adding some extra metadata
-   * annotations, such as requiring a targetSdkVersion, right into the API to avoid hardcoding here.
+   * We should audit all the conditional permissions and consider adding some extra metadata annotations, such as requiring a
+   * targetSdkVersion, right into the API to avoid hardcoding here.
    */
-  private fun conditionMet(
-    context: JavaContext,
-    requirement: PermissionRequirement,
-    method: PsiMethod?,
-  ): Boolean {
+  private fun conditionMet(context: JavaContext, requirement: PermissionRequirement, method: PsiMethod?): Boolean {
     method ?: return false
 
     if (isExactAlarmRequirement(requirement, context, method)) {
@@ -161,18 +151,13 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return false
   }
 
-  private fun isExactAlarmRequirement(
-    requirement: PermissionRequirement,
-    context: JavaContext,
-    method: PsiMethod?,
-  ): Boolean {
+  private fun isExactAlarmRequirement(requirement: PermissionRequirement, context: JavaContext, method: PsiMethod?): Boolean {
     return requirement.isSingle &&
       requirement.toString() == "android.permission.SCHEDULE_EXACT_ALARM" &&
       context.evaluator.isMemberInClass(method, "android.app.AlarmManager")
   }
 
-  private fun PermissionRequirement.needsNotifyPermission(): Boolean =
-    contains(POST_NOTIFICATIONS_PERMISSION)
+  private fun PermissionRequirement.needsNotifyPermission(): Boolean = contains(POST_NOTIFICATIONS_PERMISSION)
 
   private fun checkPermission(
     context: JavaContext,
@@ -201,8 +186,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (!requirement.isSatisfied(permissions)) {
       // See if it looks like we're holding the permission implicitly by @RequirePermission
       // annotations in the surrounding context
-      val localPermissionRequirements =
-        getLocalPermissions(node, requirement.needsNotifyPermission())
+      val localPermissionRequirements = getLocalPermissions(node, requirement.needsNotifyPermission())
       permissions = mergePermissions(permissions, localPermissionRequirements)
       if (!requirement.isSatisfied(permissions)) {
         val operation: PermissionFinder.Operation
@@ -235,9 +219,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
         // Report locations on the call, not just the flown parameter
         var location = context.getLocation(node)
-        val expressionNode =
-          if (node is UCallExpression) node
-          else node.getParentOfType(UCallExpression::class.java, true)
+        val expressionNode = if (node is UCallExpression) node else node.getParentOfType(UCallExpression::class.java, true)
         if (expressionNode != null && node !== expressionNode) {
           val callIdentifier = expressionNode.methodIdentifier
           if (callIdentifier != null && callIdentifier != node) {
@@ -306,10 +288,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           // recently added (listed in TARGET_33_CONDITIONAL_PERMISSIONS) where we make the
           // assumption
           // that the specific condition is "targetSdkVersion >= 33", which we can check.
-          if (
-            missingPermissions.size == 1 &&
-              TARGET_33_CONDITIONAL_PERMISSIONS.contains(missingPermissions.first())
-          ) {
+          if (missingPermissions.size == 1 && TARGET_33_CONDITIONAL_PERMISSIONS.contains(missingPermissions.first())) {
             constraint = targetSdkAtLeast(33)
           } else {
             return
@@ -331,10 +310,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
           // Store local permissions too
           if (localPermissionRequirements.isNotEmpty()) {
-            map.put(
-              KEY_LOCAL_PERMISSION,
-              localPermissionRequirements.joinToString(separator = ";") { it.serialize() },
-            )
+            map.put(KEY_LOCAL_PERMISSION, localPermissionRequirements.joinToString(separator = ";") { it.serialize() })
           }
           context.report(incident, map)
         }
@@ -351,9 +327,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   ) {
     if (requirement.isRevocable(manifestPermissions) && requirement.lastApplicableApi >= 23) {
       // Revocable permissions only apply when targeting 23 and above.
-      if (
-        context.driver.isGlobalAnalysis() && context.mainProject.targetSdkVersion.featureLevel < 23
-      ) {
+      if (context.driver.isGlobalAnalysis() && context.mainProject.targetSdkVersion.featureLevel < 23) {
         return
       }
 
@@ -364,8 +338,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (!handlesMissingPermission) {
 
         // See if the requirement is passed on via surrounding requires permissions
-        val localPermissionRequirements =
-          getLocalPermissions(node, requirement.needsNotifyPermission())
+        val localPermissionRequirements = getLocalPermissions(node, requirement.needsNotifyPermission())
         val localRequirements =
           mergePermissions(
             PermissionHolder.SetPermissionLookup(
@@ -414,16 +387,9 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun getMissingMessage(
-    messageFormat: String,
-    requirement: PermissionRequirement,
-    permissions: PermissionHolder,
-  ): String {
+  private fun getMissingMessage(messageFormat: String, requirement: PermissionRequirement, permissions: PermissionHolder): String {
     return String.format(messageFormat, requirement.describeMissingPermissions(permissions))
-      .replace(
-        "carrier privileges",
-        "carrier privileges (see TelephonyManager#hasCarrierPrivileges)",
-      )
+      .replace("carrier privileges", "carrier privileges (see TelephonyManager#hasCarrierPrivileges)")
   }
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
@@ -464,10 +430,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return true
   }
 
-  private fun getLocalPermissions(
-    node: UElement,
-    isNotifyPermission: Boolean,
-  ): List<PermissionRequirement> {
+  private fun getLocalPermissions(node: UElement, isNotifyPermission: Boolean): List<PermissionRequirement> {
     // Accumulate @RequirePermissions available in the local context
     val method = node.getParentOfType(UMethod::class.java, true) ?: return emptyList()
     val methodAnnotation =
@@ -497,10 +460,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return requirements
   }
 
-  private fun mergePermissions(
-    permissions: PermissionHolder,
-    requirements: List<PermissionRequirement>,
-  ): PermissionHolder {
+  private fun mergePermissions(permissions: PermissionHolder, requirements: List<PermissionRequirement>): PermissionHolder {
     var merged = permissions
     for (requirement in requirements) {
       merged = PermissionHolder.SetPermissionLookup.join(merged, requirement)
@@ -509,15 +469,13 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   /**
-   * Visitor which looks through a method, up to a given call (the one requiring a permission) and
-   * checks whether it's preceded by a call to checkPermission or checkCallingPermission or
-   * enforcePermission etc.
+   * Visitor which looks through a method, up to a given call (the one requiring a permission) and checks whether it's preceded by a call to
+   * checkPermission or checkCallingPermission or enforcePermission etc.
    *
-   * Currently it only looks for the presence of this check; it does not perform flow analysis to
-   * determine whether the check actually affects program flow up to the permission call, or whether
-   * the check permission is checking for permissions sufficient to satisfy the permission
-   * requirement of the target call, or whether the check return value (== PERMISSION_GRANTED vs !=
-   * PERMISSION_GRANTED) is handled correctly, etc.
+   * Currently it only looks for the presence of this check; it does not perform flow analysis to determine whether the check actually
+   * affects program flow up to the permission call, or whether the check permission is checking for permissions sufficient to satisfy the
+   * permission requirement of the target call, or whether the check return value (== PERMISSION_GRANTED vs != PERMISSION_GRANTED) is
+   * handled correctly, etc.
    */
   private class CheckPermissionVisitor(private val mTarget: UElement) : AbstractUastVisitor() {
     private var mChecksPermission: Boolean = false
@@ -540,11 +498,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
 
       val name = node.methodName
-      if (
-        name != null &&
-          (name.startsWith("check") || name.startsWith("enforce")) &&
-          name.endsWith("Permission")
-      ) {
+      if (name != null && (name.startsWith("check") || name.startsWith("enforce")) && name.endsWith("Permission")) {
         mChecksPermission = true
         mDone = true
       }
@@ -565,13 +519,9 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
   private var mPermissions: PermissionHolder? = null
 
-  private fun getPermissions(
-    context: Context,
-    accessMergedManifest: Boolean = false,
-  ): PermissionHolder {
+  private fun getPermissions(context: Context, accessMergedManifest: Boolean = false): PermissionHolder {
     return mPermissions
-      ?: if (accessMergedManifest || context.isGlobalAnalysis())
-        createMergedManifestPermissionHolder(context).also { mPermissions = it }
+      ?: if (accessMergedManifest || context.isGlobalAnalysis()) createMergedManifestPermissionHolder(context).also { mPermissions = it }
       else createLocalPermissionHolder(context).also { mPermissions = it }
   }
 
@@ -606,11 +556,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (manifest != null) {
       for (element in XmlUtils.getSubTags(manifest.documentElement)) {
         val nodeName = element.nodeName
-        if (
-          TAG_USES_PERMISSION == nodeName ||
-            TAG_USES_PERMISSION_SDK_23 == nodeName ||
-            TAG_USES_PERMISSION_SDK_M == nodeName
-        ) {
+        if (TAG_USES_PERMISSION == nodeName || TAG_USES_PERMISSION_SDK_23 == nodeName || TAG_USES_PERMISSION_SDK_M == nodeName) {
           val name = element.getAttributeNS(ANDROID_URI, ATTR_NAME)
           if (name.isNotEmpty()) {
             permissions.add(name)
@@ -626,12 +572,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
       }
     }
-    return PermissionHolder.SetPermissionLookup(
-      permissions,
-      revocable,
-      minSdkVersion,
-      targetSdkVersion,
-    )
+    return PermissionHolder.SetPermissionLookup(permissions, revocable, minSdkVersion, targetSdkVersion)
   }
 
   private var mIsAndroidThingsProject: Boolean? = null
@@ -674,15 +615,14 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     const val KEY_MESSAGE = "message"
     const val KEY_OPERATOR = "operator"
 
-    private val IMPLEMENTATION =
-      Implementation(PermissionDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(PermissionDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     private const val THINGS_LIBRARY = "com.google.android.things"
     const val AOSP_PERMISSION_ANNOTATION = "android.annotation.RequiresPermission"
 
     /**
-     * These permissions are required if (1) the `targetSdkVersion` is >= 33, and (2) the permission
-     * requirement is marked conditional and includes one of these permissions as one of its terms.
+     * These permissions are required if (1) the `targetSdkVersion` is >= 33, and (2) the permission requirement is marked conditional and
+     * includes one of these permissions as one of its terms.
      */
     private val TARGET_33_CONDITIONAL_PERMISSIONS =
       listOf("android.permission.NEARBY_WIFI_DEVICES", "android.permission.BODY_SENSORS_BACKGROUND")
@@ -710,12 +650,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
-    fun handlesException(
-      node: UElement,
-      exceptionClass: PsiClass?,
-      allowSuperClass: Boolean,
-      exceptionClassName: String,
-    ): Boolean {
+    fun handlesException(node: UElement, exceptionClass: PsiClass?, allowSuperClass: Boolean, exceptionClassName: String): Boolean {
       // Ensure that the caller is handling a security exception
       // First check to see if we're inside a try/catch which catches a SecurityException
       // (or some wider exception than that). Check for nested try/catches too.
@@ -726,14 +661,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           break
         } else {
           for (catchClause in tryCatch.catchClauses) {
-            if (
-              containsException(
-                catchClause.types,
-                exceptionClass,
-                allowSuperClass,
-                exceptionClassName,
-              )
-            ) {
+            if (containsException(catchClause.types, exceptionClass, allowSuperClass, exceptionClassName)) {
               return true
             }
           }
@@ -747,14 +675,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       val declaration = parent.getParentOfType(UMethod::class.java, false)
       if (declaration != null) {
         val thrownTypes = declaration.javaPsi.throwsList.referencedTypes
-        if (
-          containsException(
-            listOf<PsiClassType>(*thrownTypes),
-            exceptionClass,
-            allowSuperClass,
-            exceptionClassName,
-          )
-        ) {
+        if (containsException(listOf<PsiClassType>(*thrownTypes), exceptionClass, allowSuperClass, exceptionClassName)) {
           return true
         }
       }
@@ -770,8 +691,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     ): Boolean {
       for (type in types) {
         if (type is PsiClassType) {
-          val cls =
-            type.resolve()?.qualifiedName ?: return true // on resolve failures, assume it's handled
+          val cls = type.resolve()?.qualifiedName ?: return true // on resolve failures, assume it's handled
           if (allowSuperClass && exceptionClass != null) {
             return InheritanceUtil.isInheritor(exceptionClass, false, cls)
           } else if (exceptionClassName == cls) {

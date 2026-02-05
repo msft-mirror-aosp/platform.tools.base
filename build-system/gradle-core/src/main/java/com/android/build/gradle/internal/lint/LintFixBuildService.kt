@@ -26,9 +26,9 @@ import org.gradle.api.services.BuildServiceParameters
  *
  * This could be problematic as they might be editing overlapping sources.
  */
-abstract class LintFixBuildService: BuildService<BuildServiceParameters.None> {
-    class RegistrationAction(project: Project): ServiceRegistrationAction<LintFixBuildService, BuildServiceParameters.None>(project, LintFixBuildService::class.java, 1){
-        override fun configure(parameters: BuildServiceParameters.None) {
-        }
-    }
+abstract class LintFixBuildService : BuildService<BuildServiceParameters.None> {
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<LintFixBuildService, BuildServiceParameters.None>(project, LintFixBuildService::class.java, 1) {
+    override fun configure(parameters: BuildServiceParameters.None) {}
+  }
 }

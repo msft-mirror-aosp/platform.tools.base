@@ -30,8 +30,7 @@ import org.jetbrains.uast.UImportStatement
 class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
 
   companion object {
-    val IMPLEMENTATION =
-      Implementation(WearMaterialThemeDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    val IMPLEMENTATION = Implementation(WearMaterialThemeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val ISSUE =
       Issue.create(

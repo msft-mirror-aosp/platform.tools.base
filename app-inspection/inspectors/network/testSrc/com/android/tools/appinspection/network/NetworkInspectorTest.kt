@@ -47,17 +47,11 @@ import org.robolectric.junit.rules.CloseGuardRule
 import studio.network.inspection.NetworkInspectorProtocol.SpeedEvent
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class NetworkInspectorTest {
   private val inspectorRule = NetworkInspectorRule(autoStart = false)
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
   private val trafficStatsProvider
     get() = inspectorRule.trafficStatsProvider
@@ -69,13 +63,7 @@ internal class NetworkInspectorTest {
     delay(1000)
 
     assertThat(inspectorRule.connection.speedData.map { it.toDebugString() })
-      .containsExactly(
-        speedEvent(20, 20),
-        speedEvent(20, 0),
-        speedEvent(0, 20),
-        speedEvent(0, 20),
-        speedEvent(0, 0),
-      )
+      .containsExactly(speedEvent(20, 20), speedEvent(20, 0), speedEvent(0, 20), speedEvent(0, 20), speedEvent(0, 0))
       .inOrder()
   }
 
@@ -222,8 +210,7 @@ internal class NetworkInspectorTest {
     verify(mockChannelBuilder, times(1)).intercept(any<ClientInterceptor>())
   }
 
-  private inner class TestInspectorEnvironment(private val rejectClassName: String) :
-    InspectorEnvironment {
+  private inner class TestInspectorEnvironment(private val rejectClassName: String) : InspectorEnvironment {
 
     override fun artTooling(): ArtTooling {
       return object : ArtTooling by inspectorRule.environment.artTooling() {
@@ -234,17 +221,11 @@ internal class NetworkInspectorTest {
           }
         }
 
-        override fun <T : Any?> registerExitHook(
-          originClass: Class<*>,
-          originMethod: String,
-          exitHook: ArtTooling.ExitHook<T>,
-        ) {
+        override fun <T : Any?> registerExitHook(originClass: Class<*>, originMethod: String, exitHook: ArtTooling.ExitHook<T>) {
           if (originClass.name.endsWith(rejectClassName)) {
             throw NoClassDefFoundError()
           } else {
-            inspectorRule.environment
-              .artTooling()
-              .registerExitHook(originClass, originMethod, exitHook)
+            inspectorRule.environment.artTooling().registerExitHook(originClass, originMethod, exitHook)
           }
         }
       }

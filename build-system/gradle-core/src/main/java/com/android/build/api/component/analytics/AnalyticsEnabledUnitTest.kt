@@ -19,27 +19,24 @@ package com.android.build.api.component.analytics
 import com.android.build.api.component.UnitTest
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.tasks.testing.Test
-import javax.inject.Inject
 
 @Suppress("DEPRECATION")
-open class AnalyticsEnabledUnitTest @Inject constructor(
-    override val delegate: UnitTest,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-) : AnalyticsEnabledTestComponent(delegate, stats, objectFactory), UnitTest {
-    override val manifestPlaceholders: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
-            return delegate.manifestPlaceholders
-        }
-
-    override fun configureTestTask(action: (Test) -> Unit) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
-        delegate.configureTestTask(action)
+open class AnalyticsEnabledUnitTest
+@Inject
+constructor(override val delegate: UnitTest, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledTestComponent(delegate, stats, objectFactory), UnitTest {
+  override val manifestPlaceholders: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
+      return delegate.manifestPlaceholders
     }
+
+  override fun configureTestTask(action: (Test) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
+    delegate.configureTestTask(action)
+  }
 }

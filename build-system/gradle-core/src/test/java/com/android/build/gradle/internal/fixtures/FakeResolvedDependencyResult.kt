@@ -23,39 +23,37 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
 
 data class FakeResolvedDependencyResult(
-    private val from: ResolvedComponentResult? = null,
-    private val constraint: Boolean? = null,
-    private val selected: ResolvedComponentResult? = null,
-    private val requested: ComponentSelector? = null,
-    private val resolvedVariant: ResolvedVariantResult? = null
+  private val from: ResolvedComponentResult? = null,
+  private val constraint: Boolean? = null,
+  private val selected: ResolvedComponentResult? = null,
+  private val requested: ComponentSelector? = null,
+  private val resolvedVariant: ResolvedVariantResult? = null,
 ) : ResolvedDependencyResult {
 
-    override fun getFrom() = from ?: error("value not set")
-    override fun isConstraint() = constraint ?: error("value not set")
-    override fun getSelected() = selected ?: error("value not set")
-    override fun getRequested() = requested ?: error("value not set")
-    override fun getResolvedVariant(): ResolvedVariantResult? = resolvedVariant ?: error("value not set")
-    fun addConstraint(constraintNode: FakeResolvedDependencyResult) {
-        check(constraintNode.isConstraint)
-        (getSelected() as FakeResolvedComponentResult).dependencies.add(constraintNode)
-    }
+  override fun getFrom() = from ?: error("value not set")
+
+  override fun isConstraint() = constraint ?: error("value not set")
+
+  override fun getSelected() = selected ?: error("value not set")
+
+  override fun getRequested() = requested ?: error("value not set")
+
+  override fun getResolvedVariant(): ResolvedVariantResult? = resolvedVariant ?: error("value not set")
+
+  fun addConstraint(constraintNode: FakeResolvedDependencyResult) {
+    check(constraintNode.isConstraint)
+    (getSelected() as FakeResolvedComponentResult).dependencies.add(constraintNode)
+  }
 }
 
 internal fun createProjectComponent(projectPath: String) =
-    FakeResolvedComponentResult(
-        id = FakeProjectComponentIdentifier(
-            projectPath = projectPath,
-            buildIdentifier = FakeBuildIdentifier()
-        ),
-    )
+  FakeResolvedComponentResult(id = FakeProjectComponentIdentifier(projectPath = projectPath, buildIdentifier = FakeBuildIdentifier()))
 
 internal fun createModuleComponent(group: String, name: String, version: String) =
-    FakeResolvedComponentResult(
-        id = FakeModuleComponentIdentifier(group = group, module = name, version = version),
-    )
+  FakeResolvedComponentResult(id = FakeModuleComponentIdentifier(group = group, module = name, version = version))
 
 @Suppress("UNCHECKED_CAST")
 internal fun addDependencyEdge(a: ResolvedComponentResult, b: ResolvedComponentResult) {
-    (a.dependencies as MutableSet<DependencyResult>).add(FakeResolvedDependencyResult(selected = b))
-    (b.dependents as MutableSet<DependencyResult>).add(FakeResolvedDependencyResult(from = a))
+  (a.dependencies as MutableSet<DependencyResult>).add(FakeResolvedDependencyResult(selected = b))
+  (b.dependents as MutableSet<DependencyResult>).add(FakeResolvedDependencyResult(from = a))
 }

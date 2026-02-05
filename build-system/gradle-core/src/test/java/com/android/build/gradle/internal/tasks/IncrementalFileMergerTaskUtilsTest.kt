@@ -19,154 +19,153 @@ package com.android.build.gradle.internal.tasks
 import com.android.builder.files.ZipSnapshotRepository
 import com.android.ide.common.resources.FileStatus
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class IncrementalFileMergerTaskUtilsTest {
 
-    @get:Rule
-    var tmpDir = TemporaryFolder()
+  @get:Rule var tmpDir = TemporaryFolder()
 
-    private lateinit var jarInput: File
-    private lateinit var dirInput: File
-    private lateinit var dirFileFoo: File
-    private lateinit var dirFileBar: File
-    private lateinit var changedInputs: MutableMap<File, FileStatus>
-    private lateinit var zipCache: ZipSnapshotRepository
-    private lateinit var cacheUpdates: MutableList<Runnable>
+  private lateinit var jarInput: File
+  private lateinit var dirInput: File
+  private lateinit var dirFileFoo: File
+  private lateinit var dirFileBar: File
+  private lateinit var changedInputs: MutableMap<File, FileStatus>
+  private lateinit var zipCache: ZipSnapshotRepository
+  private lateinit var cacheUpdates: MutableList<Runnable>
 
-    @Before
-    fun setUp() {
-        jarInput = File(tmpDir.root, "jarInput.jar")
-        dirInput = tmpDir.newFolder("dirInput")
-        dirFileFoo = File(dirInput, "foo.txt")
-        dirFileBar = File(dirInput, "bar.txt")
-        changedInputs = mutableMapOf()
-        zipCache = ZipSnapshotRepository(tmpDir.newFolder("cache"))
-        cacheUpdates = mutableListOf()
+  @Before
+  fun setUp() {
+    jarInput = File(tmpDir.root, "jarInput.jar")
+    dirInput = tmpDir.newFolder("dirInput")
+    dirFileFoo = File(dirInput, "foo.txt")
+    dirFileBar = File(dirInput, "bar.txt")
+    changedInputs = mutableMapOf()
+    zipCache = ZipSnapshotRepository(tmpDir.newFolder("cache"))
+    cacheUpdates = mutableListOf()
 
-        ZipOutputStream(FileOutputStream(jarInput)).use { zip ->
-            var e = ZipEntry("foo")
-            zip.putNextEntry(e)
-            zip.write("foo".toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
+    ZipOutputStream(FileOutputStream(jarInput)).use { zip ->
+      var e = ZipEntry("foo")
+      zip.putNextEntry(e)
+      zip.write("foo".toByteArray(Charsets.UTF_8))
+      zip.closeEntry()
 
-            e = ZipEntry("bar")
-            zip.putNextEntry(e)
-            zip.write("bar".toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
-        }
-
-        dirFileFoo.printWriter().use { it.println("foo") }
-        dirFileBar.printWriter().use { it.println("bar") }
+      e = ZipEntry("bar")
+      zip.putNextEntry(e)
+      zip.write("bar".toByteArray(Charsets.UTF_8))
+      zip.closeEntry()
     }
 
-    @Test
-    fun `test toIncrementalInput with new jar input`() {
-        changedInputs[jarInput] = FileStatus.NEW
+    dirFileFoo.printWriter().use { it.println("foo") }
+    dirFileBar.printWriter().use { it.println("bar") }
+  }
 
-        val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).containsExactly("foo", "bar")
-        assertThat(result.updatedPaths).containsExactly("foo", "bar")
+  @Test
+  fun `test toIncrementalInput with new jar input`() {
+    changedInputs[jarInput] = FileStatus.NEW
+
+    val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).containsExactly("foo", "bar")
+    assertThat(result.updatedPaths).containsExactly("foo", "bar")
+  }
+
+  @Test
+  fun `test toIncrementalInput with changed jar input`() {
+    toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
+    cacheUpdates.forEach(Runnable::run)
+
+    // recreate jar without extra baz entry
+    ZipOutputStream(FileOutputStream(jarInput)).use { zip ->
+      var e = ZipEntry("foo")
+      zip.putNextEntry(e)
+      zip.write("foo".toByteArray(Charsets.UTF_8))
+      zip.closeEntry()
+
+      e = ZipEntry("bar")
+      zip.putNextEntry(e)
+      zip.write("bar".toByteArray(Charsets.UTF_8))
+      zip.closeEntry()
+
+      e = ZipEntry("baz")
+      zip.putNextEntry(e)
+      zip.write("baz".toByteArray(Charsets.UTF_8))
+      zip.closeEntry()
     }
 
-    @Test
-    fun `test toIncrementalInput with changed jar input`() {
-        toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
-        cacheUpdates.forEach(Runnable::run)
+    changedInputs[jarInput] = FileStatus.CHANGED
 
-        // recreate jar without extra baz entry
-        ZipOutputStream(FileOutputStream(jarInput)).use { zip ->
-            var e = ZipEntry("foo")
-            zip.putNextEntry(e)
-            zip.write("foo".toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
+    val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).containsExactly("foo", "bar", "baz")
+    assertThat(result.updatedPaths).containsExactly("baz")
+  }
 
-            e = ZipEntry("bar")
-            zip.putNextEntry(e)
-            zip.write("bar".toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
+  @Test
+  fun `test toIncrementalInput with deleted jar input`() {
+    toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
+    cacheUpdates.forEach(Runnable::run)
 
-            e = ZipEntry("baz")
-            zip.putNextEntry(e)
-            zip.write("baz".toByteArray(Charsets.UTF_8))
-            zip.closeEntry()
-        }
+    changedInputs[jarInput] = FileStatus.REMOVED
+    jarInput.delete()
 
-        changedInputs[jarInput] = FileStatus.CHANGED
+    val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).isEmpty()
+    assertThat(result.updatedPaths).containsExactly("foo", "bar")
+  }
 
-        val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).containsExactly("foo", "bar", "baz")
-        assertThat(result.updatedPaths).containsExactly("baz")
-    }
+  @Test
+  fun `test toIncrementalInput with new dir input`() {
+    changedInputs[dirFileFoo] = FileStatus.NEW
+    changedInputs[dirFileBar] = FileStatus.NEW
 
-    @Test
-    fun `test toIncrementalInput with deleted jar input`() {
-        toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
-        cacheUpdates.forEach(Runnable::run)
+    val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result.updatedPaths).containsExactly("foo.txt", "bar.txt")
+  }
 
-        changedInputs[jarInput] = FileStatus.REMOVED
-        jarInput.delete()
+  @Test
+  fun `test toIncrementalInput with changed dir input`() {
+    toNonIncrementalInput(dirInput, "name", zipCache, cacheUpdates)
 
-        val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).isEmpty()
-        assertThat(result.updatedPaths).containsExactly("foo", "bar")
-    }
+    dirFileFoo.printWriter().use { it.println("foofoo") }
 
-    @Test
-    fun `test toIncrementalInput with new dir input`() {
-        changedInputs[dirFileFoo] = FileStatus.NEW
-        changedInputs[dirFileBar] = FileStatus.NEW
+    changedInputs[dirFileFoo] = FileStatus.CHANGED
 
-        val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
-        assertThat(result.updatedPaths).containsExactly("foo.txt", "bar.txt")
-    }
+    val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result.updatedPaths).containsExactly("foo.txt")
+  }
 
-    @Test
-    fun `test toIncrementalInput with changed dir input`() {
-        toNonIncrementalInput(dirInput, "name", zipCache, cacheUpdates)
+  @Test
+  fun `test toIncrementalInput with deleted dir input`() {
+    toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
 
-        dirFileFoo.printWriter().use { it.println("foofoo") }
+    changedInputs[dirFileFoo] = FileStatus.REMOVED
+    dirFileFoo.delete()
 
-        changedInputs[dirFileFoo] = FileStatus.CHANGED
+    val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
+    assertThat(result.allPaths).containsExactly("bar.txt")
+    assertThat(result.updatedPaths).containsExactly("foo.txt")
+  }
 
-        val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
-        assertThat(result.updatedPaths).containsExactly("foo.txt")
-    }
+  @Test
+  fun `test toNonIncrementalInput with jar input`() {
+    val result = toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
+    assertThat(result).isNotNull()
+    assertThat(result?.allPaths).containsExactly("foo", "bar")
+    assertThat(result?.updatedPaths).containsExactly("foo", "bar")
+  }
 
-    @Test
-    fun `test toIncrementalInput with deleted dir input`() {
-        toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
-
-        changedInputs[dirFileFoo] = FileStatus.REMOVED
-        dirFileFoo.delete()
-
-        val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-        assertThat(result.allPaths).containsExactly("bar.txt")
-        assertThat(result.updatedPaths).containsExactly("foo.txt")
-    }
-
-    @Test
-    fun `test toNonIncrementalInput with jar input`() {
-        val result = toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
-        assertThat(result).isNotNull()
-        assertThat(result?.allPaths).containsExactly("foo", "bar")
-        assertThat(result?.updatedPaths).containsExactly("foo", "bar")
-    }
-
-    @Test
-    fun `test toNonIncrementalInput with dir input`() {
-        val result = toNonIncrementalInput(dirInput, "name", zipCache, cacheUpdates)
-        assertThat(result).isNotNull()
-        assertThat(result?.allPaths).containsExactly("foo.txt", "bar.txt")
-        assertThat(result?.updatedPaths).containsExactly("foo.txt", "bar.txt")
-    }
+  @Test
+  fun `test toNonIncrementalInput with dir input`() {
+    val result = toNonIncrementalInput(dirInput, "name", zipCache, cacheUpdates)
+    assertThat(result).isNotNull()
+    assertThat(result?.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result?.updatedPaths).containsExactly("foo.txt", "bar.txt")
+  }
 }

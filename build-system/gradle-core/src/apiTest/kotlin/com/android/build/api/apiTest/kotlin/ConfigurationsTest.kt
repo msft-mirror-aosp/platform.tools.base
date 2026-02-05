@@ -18,19 +18,19 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Kotlin) {
 
-    @Test
-    fun configurationsTest() {
-        given {
-            addModule(":lib1") {
-                buildFile =
-                    // language=kotlin
-                    """
+  @Test
+  fun configurationsTest() {
+    given {
+      addModule(":lib1") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -39,15 +39,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.lib1")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeLib1Source.kt", """
-                    class SomeLib1Source {}
-                """.trimIndent())
-            }
-            addModule(":lib1Sub") {
-                buildFile =
-                    // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeLib1Source.kt",
+          """
+          class SomeLib1Source {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":lib1Sub") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -56,15 +61,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.lib1Sub")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeLib1SubSource.kt", """
-                    class SomeLib1SubSource {}
-                """.trimIndent())
-            }
-            addModule(":testLib") {
-                buildFile =
-                        // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeLib1SubSource.kt",
+          """
+          class SomeLib1SubSource {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":testLib") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -73,15 +83,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.testLib")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeTestLibSource.kt", """
-                    class SomeTestLibSource {}
-                """.trimIndent())
-            }
-            addModule(":testLibSub") {
-                buildFile =
-                        // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeTestLibSource.kt",
+          """
+          class SomeTestLibSource {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":testLibSub") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -90,15 +105,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.testLibSub")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeTestLibSubSource.kt", """
-                    class SomeTestLibSubSource {}
-                """.trimIndent())
-            }
-            addModule(":lib2") {
-                buildFile =
-                        // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeTestLibSubSource.kt",
+          """
+          class SomeTestLibSubSource {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":lib2") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -107,15 +127,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.lib2")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeLib2Source.kt", """
-                    class SomeLib2Source {}
-                """.trimIndent())
-            }
-            addModule(":lib2Sub") {
-                buildFile =
-                        // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeLib2Source.kt",
+          """
+          class SomeLib2Source {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":lib2Sub") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.library")
                                 kotlin("android")
@@ -124,15 +149,20 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         android {
                             ${testingElements.addCommonAndroidBuildLogic("com.android.build.example.lib2Sub")}
                         }
-                        """.trimIndent()
-                this.addSource("src/main/java/SomeLib2SubSource.kt", """
-                    class SomeLib2SubSource {}
-                """.trimIndent())
-            }
-            addModule(":app") {
-                buildFile =
-                    // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        this.addSource(
+          "src/main/java/SomeLib2SubSource.kt",
+          """
+          class SomeLib2SubSource {}
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":app") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.application")
                                 kotlin("android")
@@ -186,42 +216,36 @@ class ConfigurationsTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage
                             androidTestImplementation(project(":lib2"))
                             androidTestImplementation(project(":testLib"))
                         }
-                        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-            tasksToInvoke.clear()
-            tasksToInvoke.addAll(
-                listOf(
-                    ":app:assemble",
-                    ":app:testDebugUnitTest",
-                    ":app:testReleaseUnitTest",
-                    ":app:assembleAndroidTest"
-                )
-            )
-        }
-        check {
-            assertNotNull(this)
-            assertThat(output).contains("BUILD SUCCESSFUL")
-
-            // We expect compileDebugKotlin tasks to run for the libraries which are the original
-            // app dependencies because we don't do any dependency substitution for the app's debug
-            // variant
-            assertThat(task(":lib1:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":lib1Sub:compileDebugKotlin")).isNull()
-            assertThat(task(":testLib:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":testLibSub:compileDebugKotlin")).isNull()
-            assertThat(task(":lib2:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":lib2Sub:compileDebugKotlin")).isNull()
-
-            // We expect compileReleaseKotlin tasks to run for the substitute libraries. We also
-            // expect it to run for lib2 because lib2 was substituted with lib2Sub only for the
-            // nested components, not the app's release variant.
-            assertThat(task(":lib1:compileReleaseKotlin")).isNull()
-            assertThat(task(":lib1Sub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":testLib:compileReleaseKotlin")).isNull()
-            assertThat(task(":testLibSub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":lib2:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            assertThat(task(":lib2Sub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-        }
+                        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
+      tasksToInvoke.clear()
+      tasksToInvoke.addAll(listOf(":app:assemble", ":app:testDebugUnitTest", ":app:testReleaseUnitTest", ":app:assembleAndroidTest"))
     }
+    check {
+      assertNotNull(this)
+      assertThat(output).contains("BUILD SUCCESSFUL")
+
+      // We expect compileDebugKotlin tasks to run for the libraries which are the original
+      // app dependencies because we don't do any dependency substitution for the app's debug
+      // variant
+      assertThat(task(":lib1:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":lib1Sub:compileDebugKotlin")).isNull()
+      assertThat(task(":testLib:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":testLibSub:compileDebugKotlin")).isNull()
+      assertThat(task(":lib2:compileDebugKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":lib2Sub:compileDebugKotlin")).isNull()
+
+      // We expect compileReleaseKotlin tasks to run for the substitute libraries. We also
+      // expect it to run for lib2 because lib2 was substituted with lib2Sub only for the
+      // nested components, not the app's release variant.
+      assertThat(task(":lib1:compileReleaseKotlin")).isNull()
+      assertThat(task(":lib1Sub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":testLib:compileReleaseKotlin")).isNull()
+      assertThat(task(":testLibSub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":lib2:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      assertThat(task(":lib2Sub:compileReleaseKotlin")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+    }
+  }
 }

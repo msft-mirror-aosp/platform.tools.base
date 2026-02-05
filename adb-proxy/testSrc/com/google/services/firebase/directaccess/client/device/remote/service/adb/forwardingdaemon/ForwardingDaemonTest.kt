@@ -56,12 +56,7 @@ class ForwardingDaemonTest {
   // The list is iterated and each command is written to the channel which is read by the
   // ForwardingDaemon.
   private val inputList =
-    listOf(
-      createByteBuffer(CNXN),
-      createByteBuffer(OPEN, 1),
-      createByteBuffer(WRTE, 1, 1, 4, "test"),
-      createByteBuffer(CLSE, 1, 1),
-    )
+    listOf(createByteBuffer(CNXN), createByteBuffer(OPEN, 1), createByteBuffer(WRTE, 1, 1, 4, "test"), createByteBuffer(CLSE, 1, 1))
 
   private val fakeAdbSession = FakeAdbSession()
   private val throwErrorWhenClosing = MutableStateFlow(false)
@@ -102,11 +97,7 @@ class ForwardingDaemonTest {
         }
       }
 
-      override suspend fun open(
-        service: String,
-        streamId: Int,
-        adbOutputChannel: AdbOutputChannel,
-      ) = myStream
+      override suspend fun open(service: String, streamId: Int, adbOutputChannel: AdbOutputChannel) = myStream
 
       override fun close() {
         job.cancel()
@@ -133,18 +124,14 @@ class ForwardingDaemonTest {
           // Setup commands with socket bind.
           if (port != address.port) {
             port = address.port
-            fakeAdbSession.deviceServices.configureShellV2Command(
-              DeviceSelector.fromSerialNumber("localhost:$port"),
-              "cat",
-              "Foo",
-            )
+            fakeAdbSession.deviceServices.configureShellV2Command(DeviceSelector.fromSerialNumber("localhost:$port"), "cat", "Foo")
           }
           return address
         }
 
         /**
-         * Returns an [AdbChannel] that never writes the whole buffer with its writeBuffer method to
-         * expose issues of not writing the whole buffer from the caller.
+         * Returns an [AdbChannel] that never writes the whole buffer with its writeBuffer method to expose issues of not writing the whole
+         * buffer from the caller.
          */
         override suspend fun accept(): AdbChannel {
           val adbChannel = socket.accept()
@@ -173,8 +160,7 @@ class ForwardingDaemonTest {
   @Test
   fun testForwardingDaemon() = runBlockingWithTimeout {
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     assertThat(forwardingDaemon.devicePort).isEqualTo(-1)
     forwardingDaemon.start()
     assertThat(forwardingDaemon.devicePort).isEqualTo(testSocket.localAddress()?.port)
@@ -209,8 +195,7 @@ class ForwardingDaemonTest {
   fun testStreamWithoutResponseClosing() = runBlockingWithTimeout {
     shouldStreamNotRespondOnClosing = true
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     assertThat(forwardingDaemon.devicePort).isEqualTo(-1)
     forwardingDaemon.start()
     assertThat(forwardingDaemon.devicePort).isEqualTo(testSocket.localAddress()?.port)
@@ -235,8 +220,7 @@ class ForwardingDaemonTest {
   @Test
   fun testOnStateChangeCalledWithCancelledScope() = runBlockingWithTimeout {
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     forwardingDaemon.start()
     assertThat(forwardingDaemon.devicePort).isEqualTo(testSocket.localAddress()?.port)
 
@@ -248,8 +232,7 @@ class ForwardingDaemonTest {
   @Test
   fun testConcurrentClose() = runBlockingWithTimeout {
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     forwardingDaemon.start()
     forwardingDaemon.close()
 
@@ -265,8 +248,7 @@ class ForwardingDaemonTest {
   @Test
   fun testStreamConcurrencySupport() = runBlockingWithTimeout {
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     assertThat(forwardingDaemon.devicePort).isEqualTo(-1)
     forwardingDaemon.start()
     assertThat(forwardingDaemon.devicePort).isEqualTo(testSocket.localAddress()?.port)
@@ -303,8 +285,7 @@ class ForwardingDaemonTest {
   fun testExceptionsOnClosing() = runBlockingWithTimeout {
     throwErrorWhenClosing.value = true
     val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
-    forwardingDaemon =
-      ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
     forwardingDaemon.start()
     yieldUntil { isAdbDeviceConnected() }
     throwErrorWhenClosing.value = false
@@ -326,7 +307,5 @@ class ForwardingDaemonTest {
   }
 
   private fun isAdbDeviceConnected() =
-    fakeAdbSession.hostServices.devices.entries.any {
-      it.serialNumber == "localhost:${forwardingDaemon.devicePort}"
-    }
+    fakeAdbSession.hostServices.devices.entries.any { it.serialNumber == "localhost:${forwardingDaemon.devicePort}" }
 }

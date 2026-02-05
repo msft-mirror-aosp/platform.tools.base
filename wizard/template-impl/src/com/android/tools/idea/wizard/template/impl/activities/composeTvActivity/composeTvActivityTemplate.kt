@@ -37,29 +37,16 @@ val composeTvActivityTemplate
     name = "Empty Activity"
     description = "Create a new empty activity with Compose for TV"
     minApi = 21
-    constraints = listOf(
-      TemplateConstraint.AndroidX,
-      TemplateConstraint.Kotlin,
-      TemplateConstraint.Compose
-    )
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Compose)
     category = Category.TV
     formFactor = FormFactor.Tv
-    screens = listOf(
-      WizardUiContext.ActivityGallery,
-      WizardUiContext.MenuEntry,
-      WizardUiContext.NewProject,
-      WizardUiContext.NewModule,
-    )
+    screens = listOf(WizardUiContext.ActivityGallery, WizardUiContext.MenuEntry, WizardUiContext.NewProject, WizardUiContext.NewModule)
 
     val activityClass = stringParameter {
       name = "Activity Name"
       default = "MainActivity"
       help = "The name of the activity class to create"
-      constraints = listOf(
-        Constraint.CLASS,
-        Constraint.UNIQUE,
-        Constraint.NONEMPTY
-      )
+      constraints = listOf(Constraint.CLASS, Constraint.UNIQUE, Constraint.NONEMPTY)
       loggable = true
     }
 
@@ -76,10 +63,7 @@ val composeTvActivityTemplate
       default = "Greeting"
       help = "Used for deduplication"
       visible = { false }
-      constraints = listOf(
-        Constraint.UNIQUE,
-        Constraint.KOTLIN_FUNCTION
-      )
+      constraints = listOf(Constraint.UNIQUE, Constraint.KOTLIN_FUNCTION)
       loggable = true
     }
 
@@ -88,10 +72,7 @@ val composeTvActivityTemplate
       default = "${greeting.value}Preview"
       help = "Used for deduplication"
       visible = { false }
-      constraints = listOf(
-        Constraint.UNIQUE,
-        Constraint.KOTLIN_FUNCTION
-      )
+      constraints = listOf(Constraint.UNIQUE, Constraint.KOTLIN_FUNCTION)
       loggable = true
     }
 
@@ -102,7 +83,7 @@ val composeTvActivityTemplate
       // Invisible widgets to pass data
       TextFieldWidget(greeting),
       TextFieldWidget(defaultPreview),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("compose-tv-activity").resolve("template_compose_tv_empty_activity.png") }
@@ -114,8 +95,7 @@ val composeTvActivityTemplate
         packageName = packageName.value,
         isLauncher = isLauncher.value,
         greeting = greeting.value,
-        defaultPreview = defaultPreview.value
+        defaultPreview = defaultPreview.value,
       )
     }
   }
-

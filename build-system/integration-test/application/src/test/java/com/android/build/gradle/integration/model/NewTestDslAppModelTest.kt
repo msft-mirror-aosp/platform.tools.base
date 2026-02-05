@@ -21,44 +21,35 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class NewTestDslAppModelTest: ReferenceModelComparator(
+class NewTestDslAppModelTest :
+  ReferenceModelComparator(
     referenceConfig = {
-        androidApplication {
-            android {
-                flavorDimensions += "cost"
-                productFlavors {
-                    create("free") {
-                        it.dimension = "cost"
-                    }
-                    create("paid") {
-                        it.dimension = "cost"
-                    }
-                }
-            }
+      androidApplication {
+        android {
+          flavorDimensions += "cost"
+          productFlavors {
+            create("free") { it.dimension = "cost" }
+            create("paid") { it.dimension = "cost" }
+          }
         }
+      }
     },
-    deltaConfig = {
-        gradleProperties {
-            add(BooleanOption.ENABLE_NEW_TEST_DSL, true)
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
+    deltaConfig = { gradleProperties { add(BooleanOption.ENABLE_NEW_TEST_DSL, true) } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        ensureAndroidDslDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    ensureAndroidDslDeltaIsEmpty()
+  }
 }

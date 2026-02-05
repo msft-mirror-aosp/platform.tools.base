@@ -20,53 +20,38 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.SyncIssue
-import org.junit.Rule
-import org.junit.Test
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 
 class MissingNamespaceTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
 
-    @Before
-    fun before() {
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "namespace = \"${HelloWorldApp.NAMESPACE}\"",
-            ""
-        )
-    }
+  @Before
+  fun before() {
+    TestFileUtils.searchAndReplace(project.buildFile, "namespace = \"${HelloWorldApp.NAMESPACE}\"", "")
+  }
 
-    /**
-     * Tests the sync finishes successfully.
-     */
-    @Test
-    fun testSyncIsSuccessful() {
-        // Sync should complete successfully
-        val modelContainer =
-            project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
-        val syncIssues = modelContainer.issues?.syncIssues!!
+  /** Tests the sync finishes successfully. */
+  @Test
+  fun testSyncIsSuccessful() {
+    // Sync should complete successfully
+    val modelContainer = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
+    val syncIssues = modelContainer.issues?.syncIssues!!
 
-        val namespaceNotSetSyncIssues =
-            syncIssues.filter { it.type == SyncIssue.TYPE_NAMESPACE_NOT_SET }
-        assertThat(namespaceNotSetSyncIssues).hasSize(1)
-        assertThat(namespaceNotSetSyncIssues.elementAt(0).message).startsWith(
-            "Namespace not specified. Specify a namespace in the module's build file:"
-        )
+    val namespaceNotSetSyncIssues = syncIssues.filter { it.type == SyncIssue.TYPE_NAMESPACE_NOT_SET }
+    assertThat(namespaceNotSetSyncIssues).hasSize(1)
+    assertThat(namespaceNotSetSyncIssues.elementAt(0).message)
+      .startsWith("Namespace not specified. Specify a namespace in the module's build file:")
 
-        assertThat(modelContainer.androidProject?.namespace).isEqualTo("missing.namespace")
-    }
+    assertThat(modelContainer.androidProject?.namespace).isEqualTo("missing.namespace")
+  }
 
-    /**
-     * Tests that missing namespace breaks the regular build.
-     */
-    @Test
-    fun testRegularBuildBreaks() {
-        project.executor().expectFailure().run("assembleDebug")
-    }
+  /** Tests that missing namespace breaks the regular build. */
+  @Test
+  fun testRegularBuildBreaks() {
+    project.executor().expectFailure().run("assembleDebug")
+  }
 }

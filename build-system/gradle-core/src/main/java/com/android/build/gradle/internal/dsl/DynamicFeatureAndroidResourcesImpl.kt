@@ -21,6 +21,4 @@ import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 abstract class DynamicFeatureAndroidResourcesImpl @Inject constructor(dslServices: DslServices) :
-        DynamicFeatureAndroidResources, AaptOptions(dslServices) {
-
-}
+  DynamicFeatureAndroidResources, AaptOptions(dslServices) {}

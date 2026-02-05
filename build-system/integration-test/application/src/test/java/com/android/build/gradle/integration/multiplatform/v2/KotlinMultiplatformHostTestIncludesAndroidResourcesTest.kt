@@ -20,103 +20,96 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
-import java.nio.file.Path
 
 class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
 
-    companion object {
-        const val SDK_VERSION: String = "9-robolectric-4913185-2-i4"
-        val PLATFORM_JAR_NAME: String = String.format("android-all-instrumented-%s.jar", SDK_VERSION)
-        val PLATFORM_JAR_RELATIVE_PATH: String = String.format(
-            "org/robolectric/android-all-instrumented/%s/%s",
-            SDK_VERSION, PLATFORM_JAR_NAME
-        )
-    }
+  companion object {
+    const val SDK_VERSION: String = "9-robolectric-4913185-2-i4"
+    val PLATFORM_JAR_NAME: String = String.format("android-all-instrumented-%s.jar", SDK_VERSION)
+    val PLATFORM_JAR_RELATIVE_PATH: String = String.format("org/robolectric/android-all-instrumented/%s/%s", SDK_VERSION, PLATFORM_JAR_NAME)
+  }
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        val platformJar: Path = localRepositories
-            .firstOrNull { Files.exists(it.resolve(PLATFORM_JAR_RELATIVE_PATH)) }
-            ?.resolve(PLATFORM_JAR_RELATIVE_PATH)
-            ?: throw AssertionError(
-                "Failed to find Robolectric platform jar $PLATFORM_JAR_RELATIVE_PATH in prebuilts."
-            )
+  @Before
+  fun setUp() {
+    val platformJar: Path =
+      localRepositories.firstOrNull { Files.exists(it.resolve(PLATFORM_JAR_RELATIVE_PATH)) }?.resolve(PLATFORM_JAR_RELATIVE_PATH)
+        ?: throw AssertionError("Failed to find Robolectric platform jar $PLATFORM_JAR_RELATIVE_PATH in prebuilts.")
 
+    val robolectricLibs = project.file("robolectric-libs").toPath()
+    Files.createDirectories(robolectricLibs)
 
-        val robolectricLibs = project.file("robolectric-libs").toPath()
-        Files.createDirectories(robolectricLibs)
+    FileUtils.copyFile(platformJar, robolectricLibs.resolve(PLATFORM_JAR_NAME))
 
-        FileUtils.copyFile(
-            platformJar,
-            robolectricLibs.resolve(PLATFORM_JAR_NAME)
-        )
+    FileUtils.writeToFile(
+      project.getSubproject("kmpHostTestOnlyLib").file("src/androidHostTest/kotlin/com/example/shared/ExampleUnitTest.kt"),
+      """
+      package com.example.kmpHostTestOnlyLib;
 
-        FileUtils.writeToFile(
-            project.getSubproject("kmpHostTestOnlyLib")
-                .file("src/androidHostTest/kotlin/com/example/shared/ExampleUnitTest.kt"),
-            """
-                package com.example.kmpHostTestOnlyLib;
+      import org.junit.runner.RunWith
+      import org.robolectric.RobolectricTestRunner
+      import kotlin.test.Test
+      import kotlin.test.assertEquals
 
-                import org.junit.runner.RunWith
-                import org.robolectric.RobolectricTestRunner
-                import kotlin.test.Test
-                import kotlin.test.assertEquals
+      @RunWith(RobolectricTestRunner::class)
+      class ExampleUnitTest {
+          @Test
+          fun addition_isCorrect() {
+              assertEquals(4, 2 + 2)
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-                @RunWith(RobolectricTestRunner::class)
-                class ExampleUnitTest {
-                    @Test
-                    fun addition_isCorrect() {
-                        assertEquals(4, 2 + 2)
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+  @Test
+  fun testAndroidHostTestRuns() {
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
+  }
 
-    @Test
-    fun testAndroidHostTestRuns() {
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
-    }
+  @Test
+  fun testAndroidHostTestRunsNotAffectedByDeviceTestsBeingEnabled() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpHostTestOnlyLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary {
+          withDeviceTestBuilder {}.configure {
+              targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
+  }
 
-    @Test
-    fun testAndroidHostTestRunsNotAffectedByDeviceTestsBeingEnabled() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpHostTestOnlyLib").ktsBuildFile,
-            """
-                kotlin.androidLibrary {
-                    withDeviceTestBuilder {}.configure {
-                        targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
-                    }
-                }
-            """.trimIndent())
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
-    }
-
-    @Test
-    fun testAndroidHostTestRunsWithAndroidResourcesEnabled() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpHostTestOnlyLib").ktsBuildFile,
-            """
-                kotlin.androidLibrary  {
-                    androidResources.enable = true
-                }
-            """.trimIndent())
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
-    }
+  @Test
+  fun testAndroidHostTestRunsWithAndroidResourcesEnabled() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpHostTestOnlyLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary  {
+          androidResources.enable = true
+      }
+      """
+        .trimIndent(),
+    )
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
+  }
 }

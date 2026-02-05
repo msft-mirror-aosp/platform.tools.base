@@ -15,41 +15,38 @@
  */
 package com.android.adblib
 
-import kotlinx.coroutines.flow.StateFlow
 import java.util.Objects
+import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A [List] of elements [E] paired with a [StateFlowStatus]. This is useful when defining
- * a [StateFlow] that emits [List] instances, to communicate the status of the flow.
+ * A [List] of elements [E] paired with a [StateFlowStatus]. This is useful when defining a [StateFlow] that emits [List] instances, to
+ * communicate the status of the flow.
  */
-open class ListWithStateFlowStatus<out E>(
-    private val list: List<E>,
-    val flowStatus: StateFlowStatus
-) : List<E> by list {
+open class ListWithStateFlowStatus<out E>(private val list: List<E>, val flowStatus: StateFlowStatus) : List<E> by list {
 
-    override fun hashCode(): Int {
-        return Objects.hash(flowStatus, list)
+  override fun hashCode(): Int {
+    return Objects.hash(flowStatus, list)
+  }
+
+  override fun toString(): String {
+    // "<className>(<flowStatus>): <list items>"
+    return "${this::class.simpleName}($flowStatus): $list"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+
+    // Equals should take into account `flowStatus` if compared with another
+    // `ListWithStateFlowStatus` instance
+    if (other is ListWithStateFlowStatus<*>) {
+      return (list == other.list) && (flowStatus == other.flowStatus)
     }
 
-    override fun toString(): String {
-        // "<className>(<flowStatus>): <list items>"
-        return "${this::class.simpleName}($flowStatus): $list"
+    // Equals should only take into account elements if compared with a `List` instance
+    if (other is List<*>) {
+      return list == other
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-
-        // Equals should take into account `flowStatus` if compared with another
-        // `ListWithStateFlowStatus` instance
-        if (other is ListWithStateFlowStatus<*>) {
-            return (list == other.list) && (flowStatus == other.flowStatus)
-        }
-
-        // Equals should only take into account elements if compared with a `List` instance
-        if (other is List<*>) {
-            return list == other
-        }
-
-        return false
-    }
+    return false
+  }
 }

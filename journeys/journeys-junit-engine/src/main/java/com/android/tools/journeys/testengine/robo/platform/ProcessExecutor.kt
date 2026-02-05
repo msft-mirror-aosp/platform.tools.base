@@ -26,51 +26,47 @@ import java.util.concurrent.TimeUnit
  * @param stderr The standard error captured from the process.
  */
 data class ProcessResult(val exitValue: Int, val stdout: String, val stderr: String) {
-    val fullOut = "$stdout\n$stderr"
+  val fullOut = "$stdout\n$stderr"
 }
 
 /**
- * An interface for executing system processes.
- * This abstraction allows for easier testing of classes that interact with external commands.
+ * An interface for executing system processes. This abstraction allows for easier testing of classes that interact with external commands.
  */
 interface ProcessExecutor {
-    /**
-     * Executes a command synchronously and returns the result.
-     *
-     * @param cmdParts The command and its arguments as a list of strings.
-     * @param timeoutSeconds The maximum time to wait for the command to complete.
-     * @return A [ProcessResult] containing the exit code, stdout, and stderr.
-     * @throws IllegalStateException if the command times out.
-     */
-    fun execCmdSync(cmdParts: List<String>, timeoutSeconds: Long): ProcessResult
+  /**
+   * Executes a command synchronously and returns the result.
+   *
+   * @param cmdParts The command and its arguments as a list of strings.
+   * @param timeoutSeconds The maximum time to wait for the command to complete.
+   * @return A [ProcessResult] containing the exit code, stdout, and stderr.
+   * @throws IllegalStateException if the command times out.
+   */
+  fun execCmdSync(cmdParts: List<String>, timeoutSeconds: Long): ProcessResult
 
-    /**
-     * Executes a command asynchronously and returns the [Process] object.
-     *
-     * @param cmdParts The command and its arguments as a list of strings.
-     * @return The [Process] object for the started command.
-     */
-    fun execCmdAsync(cmdParts: List<String>): Process
+  /**
+   * Executes a command asynchronously and returns the [Process] object.
+   *
+   * @param cmdParts The command and its arguments as a list of strings.
+   * @return The [Process] object for the started command.
+   */
+  fun execCmdAsync(cmdParts: List<String>): Process
 }
 
-/**
- * The default implementation of [ProcessExecutor] that uses [ProcessBuilder]
- * to execute commands on the local system.
- */
+/** The default implementation of [ProcessExecutor] that uses [ProcessBuilder] to execute commands on the local system. */
 class DefaultProcessExecutor : ProcessExecutor {
-    override fun execCmdSync(cmdParts: List<String>, timeoutSeconds: Long): ProcessResult {
-        val process = ProcessBuilder(cmdParts).start()
-        val waitFor = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
-        if (!waitFor) {
-            throw IllegalStateException("Timeout waiting for ${cmdParts.joinToString(" ")}")
-        }
-
-        val stdout = process.inputStream.bufferedReader().use { it.readText() }
-        val stderr = process.errorStream.bufferedReader().use { it.readText() }
-        return ProcessResult(process.exitValue(), stdout, stderr)
+  override fun execCmdSync(cmdParts: List<String>, timeoutSeconds: Long): ProcessResult {
+    val process = ProcessBuilder(cmdParts).start()
+    val waitFor = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+    if (!waitFor) {
+      throw IllegalStateException("Timeout waiting for ${cmdParts.joinToString(" ")}")
     }
 
-    override fun execCmdAsync(cmdParts: List<String>): Process {
-        return ProcessBuilder(cmdParts).start()
-    }
+    val stdout = process.inputStream.bufferedReader().use { it.readText() }
+    val stderr = process.errorStream.bufferedReader().use { it.readText() }
+    return ProcessResult(process.exitValue(), stdout, stderr)
+  }
+
+  override fun execCmdAsync(cmdParts: List<String>): Process {
+    return ProcessBuilder(cmdParts).start()
+  }
 }

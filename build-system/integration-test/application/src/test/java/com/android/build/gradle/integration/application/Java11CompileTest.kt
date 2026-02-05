@@ -31,24 +31,18 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests on building a project with Java 9+ source code, annotation processing and unit tests
- */
+/** Tests on building a project with Java 9+ source code, annotation processing and unit tests */
 class Java11CompileTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("daggerTwo")
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("daggerTwo").create()
 
-    @Before
-    fun setUp() {
-        Assume.assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
+  @Before
+  fun setUp() {
+    Assume.assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 dependencies {
                     testImplementation 'junit:junit:4.+'
                 }
@@ -64,86 +58,91 @@ class Java11CompileTest {
                         checkReleaseBuilds = false
                     }
                 }
-            """.trimIndent()
-        )
-
-        val sourceFile = FileUtils.join(project.mainSrcDir, "com/android/tests/Foo.java")
-        sourceFile.parentFile.mkdirs()
-        TestFileUtils.appendToFile(
-            sourceFile,
             """
-                package com.android.tests;
+        .trimIndent(),
+    )
 
-                public class Foo {
-                    public void java11Feature() {
-                        //Local-variable syntax for lambda parameters is the language feature available from Java 11
-                        java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
-                    }
+    val sourceFile = FileUtils.join(project.mainSrcDir, "com/android/tests/Foo.java")
+    sourceFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      sourceFile,
+      """
+      package com.android.tests;
 
-                    public void stringConcat() {
-                        String hello = "hello";
-                        String combine = hello + "world";
-                    }
-                }
-            """.trimIndent()
-        )
+      public class Foo {
+          public void java11Feature() {
+              //Local-variable syntax for lambda parameters is the language feature available from Java 11
+              java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
+          }
 
-        val unitTestFile = FileUtils.join(project.projectDir, "src/test/java/com/android/tests/UnitTest.java")
-        unitTestFile.parentFile.mkdirs()
-        TestFileUtils.appendToFile(
-            unitTestFile,
-            """
-                package com.android.tests;
+          public void stringConcat() {
+              String hello = "hello";
+              String combine = hello + "world";
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-                import org.junit.Test;
+    val unitTestFile = FileUtils.join(project.projectDir, "src/test/java/com/android/tests/UnitTest.java")
+    unitTestFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      unitTestFile,
+      """
+      package com.android.tests;
 
-                public class UnitTest {
+      import org.junit.Test;
 
-                    @Test
-                    public void testCodeWithJava11Feature() {
-                        //Local-variable syntax for lambda parameters is the language feature available from Java 11
-                        java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
-                    }
+      public class UnitTest {
 
-                    @Test
-                    public void testInvokingAppCodeWithJava11Feature() {
-                        new Foo().java11Feature();
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+          @Test
+          public void testCodeWithJava11Feature() {
+              //Local-variable syntax for lambda parameters is the language feature available from Java 11
+              java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
+          }
 
-    @Test
-    fun testJava11CompileAndAnnotationProcessing() {
-        executor().run("assemble")
-    }
+          @Test
+          public void testInvokingAppCodeWithJava11Feature() {
+              new Foo().java11Feature();
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testUnitTestWithJava11Feature() {
-        executor().run("test")
-    }
+  @Test
+  fun testJava11CompileAndAnnotationProcessing() {
+    executor().run("assemble")
+  }
 
-    @Test
-    fun testSyncErrorWhenSdkIsNotCompatible() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun testUnitTestWithJava11Feature() {
+    executor().run("test")
+  }
 
-                android.compileSdkVersion 29
-            """.trimIndent()
-        )
-        executor().expectFailure().run("assembleDebug").assertErrorContains(
-            "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"
-        )
-    }
+  @Test
+  fun testSyncErrorWhenSdkIsNotCompatible() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 
-    @Test
-    fun testCompatibilityWithJacocoPlugin() {
-        TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
-            it.appendToFile(
-                project.buildFile.path,
-                """
+      android.compileSdkVersion 29
+      """
+        .trimIndent(),
+    )
+    executor()
+      .expectFailure()
+      .run("assembleDebug")
+      .assertErrorContains("In order to compile Java 9+ source, please set compileSdkVersion to 30 or above")
+  }
+
+  @Test
+  fun testCompatibilityWithJacocoPlugin() {
+    TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
+      it.appendToFile(
+        project.buildFile.path,
+        """
                         android {
                           buildTypes {
                             debug {
@@ -154,87 +153,80 @@ class Java11CompileTest {
                             sourceCompatibility JavaVersion.VERSION_11
                             targetCompatibility JavaVersion.VERSION_11
                           }
-                        }"""
-            )
-            executor().run("assembleDebug")
-        }
+                        }""",
+      )
+      executor().run("assembleDebug")
     }
+  }
 
-    @Test
-    fun testCompatibilityWithJavaToolChain() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK8)}"
-        )
-        // jdk 8 is going to be used to create the jdk image(configured through java toolChain)
-        // we expect it to fail because jdk 8 doesn't have the jlink tool to create jdk image
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun testCompatibilityWithJavaToolChain() {
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK8)}")
+    // jdk 8 is going to be used to create the jdk image(configured through java toolChain)
+    // we expect it to fail because jdk 8 doesn't have the jlink tool to create jdk image
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 
-                tasks.withType(JavaCompile).configureEach {
-                    javaCompiler = javaToolchains.compilerFor {
-                        languageVersion = JavaLanguageVersion.of(8)
-                    }
-                }
-            """.trimIndent()
-        )
-        val gLink = if (OsType.getHostOs() == OsType.WINDOWS) "jlink.exe" else "jlink"
-        executor().expectFailure().run("assembleDebug").assertErrorContains(
-            "$gLink does not exist"
-        )
+      tasks.withType(JavaCompile).configureEach {
+          javaCompiler = javaToolchains.compilerFor {
+              languageVersion = JavaLanguageVersion.of(8)
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    val gLink = if (OsType.getHostOs() == OsType.WINDOWS) "jlink.exe" else "jlink"
+    executor().expectFailure().run("assembleDebug").assertErrorContains("$gLink does not exist")
 
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "JavaLanguageVersion.of(8)",
-            "JavaLanguageVersion.of(11)"
-        )
+    TestFileUtils.searchAndReplace(project.buildFile, "JavaLanguageVersion.of(8)", "JavaLanguageVersion.of(11)")
 
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK11)}"
-        )
-        executor().run("assembleDebug")
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK11)}")
+    executor().run("assembleDebug")
+  }
+
+  @Test
+  fun `test error message for setting release option`() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      tasks.withType(JavaCompile).configureEach {
+          it.options.release = 11
+      }
+      """
+        .trimIndent(),
+    )
+
+    val syncIssue = project.getSyncIssues().single()
+    Truth.assertThat(syncIssue.severity).isEqualTo(IssueReporter.Severity.ERROR.severity)
+    Truth.assertThat(syncIssue.message)
+      .isEqualTo(
+        """
+        Using '--release' option for JavaCompile is not supported because it prevents the Android Gradle plugin
+        from setting up the bootclasspath for compiling Java source files against Android APIs
+        (see https://issuetracker.google.com/278800528).
+        Please use Java toolchain or set 'sourceCompatibility' and 'targetCompatibility' options instead.
+        (see https://developer.android.com/build/jdks#source-compat).
+        """
+          .trimIndent()
+      )
+  }
+
+  private fun customJdkLocation(jdkVersion: JdkVersion): String {
+    return when (jdkVersion) {
+        JdkVersion.JDK8 -> TestUtils.getJava8Jdk()
+        JdkVersion.JDK11 -> TestUtils.getJava11Jdk()
+      }
+      .toString()
+      .replace("\\", "/")
+  }
+
+  private fun executor() = project.executor().with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
+
+  companion object {
+    enum class JdkVersion {
+      JDK11,
+      JDK8,
     }
-
-    @Test
-    fun `test error message for setting release option`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            tasks.withType(JavaCompile).configureEach {
-                it.options.release = 11
-            }
-            """.trimIndent()
-        )
-
-        val syncIssue = project.getSyncIssues().single()
-        Truth.assertThat(syncIssue.severity).isEqualTo(IssueReporter.Severity.ERROR.severity)
-        Truth.assertThat(syncIssue.message).isEqualTo(
-            """
-            Using '--release' option for JavaCompile is not supported because it prevents the Android Gradle plugin
-            from setting up the bootclasspath for compiling Java source files against Android APIs
-            (see https://issuetracker.google.com/278800528).
-            Please use Java toolchain or set 'sourceCompatibility' and 'targetCompatibility' options instead.
-            (see https://developer.android.com/build/jdks#source-compat).
-            """.trimIndent()
-        )
-    }
-
-    private fun customJdkLocation(jdkVersion: JdkVersion): String {
-        return when(jdkVersion) {
-            JdkVersion.JDK8 -> TestUtils.getJava8Jdk()
-            JdkVersion.JDK11 -> TestUtils.getJava11Jdk()
-        }.toString().replace("\\", "/")
-    }
-
-    private fun executor() =
-        project.executor().with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
-
-    companion object {
-        enum class JdkVersion {
-            JDK11,
-            JDK8
-        }
-    }
+  }
 }

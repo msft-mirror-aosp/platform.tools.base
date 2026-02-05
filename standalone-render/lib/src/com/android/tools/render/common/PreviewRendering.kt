@@ -16,18 +16,16 @@
 
 package com.android.tools.render.common
 
-/**
- * Information required to run standalone rendering for previews defined in [screenshots].
- */
+/** Information required to run standalone rendering for previews defined in [screenshots]. */
 data class PreviewRendering(
-    val fontsPath: String?,
-    val layoutlibPath: String,
-    val outputFolder: String,
-    val metaDataFolder: String,
-    val classPath: List<String>,
-    val projectClassPath: List<String>,
-    val namespace: String,
-    val resourceApkPath: String,
-    val screenshots: List<PreviewScreenshot>,
-    val resultsFilePath: String
+  val fontsPath: String?,
+  val layoutlibPath: String,
+  val outputFolder: String,
+  val metaDataFolder: String,
+  val classPath: List<String>,
+  val projectClassPath: List<String>,
+  val namespace: String,
+  val resourceApkPath: String,
+  val screenshots: List<PreviewScreenshot>,
+  val resultsFilePath: String,
 )

@@ -26,67 +26,54 @@ import org.junit.Test
 /** Tests for library module with navigation. */
 class LibWithNavigationTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            files.update("src/main/AndroidManifest.xml").replaceWith(
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <application android:name="library">
-                            <activity android:name=".MainActivity">
-                                <nav-graph android:value="@navigation/nav1" />
-                            </activity>
-                         </application>
-                    </manifest>""".trimIndent()
-            )
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary {
+        files
+          .update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application android:name="library">
+                    <activity android:name=".MainActivity">
+                        <nav-graph android:value="@navigation/nav1" />
+                    </activity>
+                 </application>
+            </manifest>
+            """
+              .trimIndent()
+          )
+      }
     }
 
-    /**
-     * Test that we can build a release AAR when there are <nav-graph> tags in the library manifest.
-     * Regression test for Issue 140856013.
-     */
-    @Test
-    fun testAssembleReleaseWithNavGraphTagInManifest() {
-        val build = rule.build
-        val library = build.androidLibrary()
+  /** Test that we can build a release AAR when there are <nav-graph> tags in the library manifest. Regression test for Issue 140856013. */
+  @Test
+  fun testAssembleReleaseWithNavGraphTagInManifest() {
+    val build = rule.build
+    val library = build.androidLibrary()
 
-        build.executor.run("clean", "$DEFAULT_LIB_PATH:assembleRelease")
-        library.assertAar(AarSelector.RELEASE) {
-            manifest().contains("<nav-graph android:value=\"@navigation/nav1\" />")
-        }
+    build.executor.run("clean", "$DEFAULT_LIB_PATH:assembleRelease")
+    library.assertAar(AarSelector.RELEASE) { manifest().contains("<nav-graph android:value=\"@navigation/nav1\" />") }
+  }
+
+  /** Test that ExtractDeepLinksTask is/isn't created when buildFeatures.androidResources is/isn't set. */
+  @Test
+  fun testDisablingAndroidResourcesDisablesExtractDeepLinksTask() {
+    val build = rule.build
+    val library = build.androidLibrary()
+
+    val taskName = "extractDeepLinksDebug"
+    val fullTaskName = "$DEFAULT_LIB_PATH:$taskName"
+
+    build.executor.run(fullTaskName).apply { assertTask(fullTaskName).didWork() }
+
+    library.reconfigure { android { buildFeatures { androidResources = false } } }
+
+    build.executor.expectFailure().run(fullTaskName).exception.apply {
+      // The outermost GradleConnectionException does not contain the needed info, but the
+      // message of the next exception down the stack contains a complete stacktrace
+      assertThat(this).hasCauseThat().hasMessageThat().contains("Cannot locate tasks that match '$DEFAULT_LIB_PATH:$taskName'")
     }
-
-    /**
-     * Test that ExtractDeepLinksTask is/isn't created when buildFeatures.androidResources is/isn't set.
-     */
-    @Test
-    fun testDisablingAndroidResourcesDisablesExtractDeepLinksTask() {
-        val build = rule.build
-        val library = build.androidLibrary()
-
-        val taskName = "extractDeepLinksDebug"
-        val fullTaskName = "$DEFAULT_LIB_PATH:$taskName"
-
-        build.executor.run(fullTaskName).apply {
-            assertTask(fullTaskName).didWork()
-        }
-
-        library.reconfigure {
-            android {
-                buildFeatures {
-                    androidResources = false
-                }
-            }
-        }
-
-        build.executor.expectFailure().run(fullTaskName).exception.apply {
-            // The outermost GradleConnectionException does not contain the needed info, but the
-            // message of the next exception down the stack contains a complete stacktrace
-            assertThat(this)
-                .hasCauseThat()
-                .hasMessageThat()
-                .contains("Cannot locate tasks that match '$DEFAULT_LIB_PATH:$taskName'")
-        }
-    }
+  }
 }

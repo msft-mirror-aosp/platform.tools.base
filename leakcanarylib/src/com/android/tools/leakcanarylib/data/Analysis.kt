@@ -26,20 +26,21 @@ import java.io.File
  * 2. AnalysisFailure:Indicates a failed heap analysis, containing information about the exception and metadata.
  */
 sealed class Analysis {
-    companion object {
-        const val DUMP_DURATION_UNKNOWN: Long = -1
-        fun fromString(heapAnalysis: String): Analysis? {
-            return if (heapAnalysis.contains("HEAP ANALYSIS RESULT")) {
-                AnalysisParser.analysisSuccessFromString(heapAnalysis)
-            } else if (heapAnalysis.contains("HEAP ANALYSIS FAILED")) {
-                AnalysisParser.analysisFailureFromString(heapAnalysis)
-            } else if (heapAnalysis.isNotEmpty()){
-                AnalysisParser.analysisUpdateFromString(heapAnalysis)
-            } else {
-                return null
-            }
-        }
+  companion object {
+    const val DUMP_DURATION_UNKNOWN: Long = -1
+
+    fun fromString(heapAnalysis: String): Analysis? {
+      return if (heapAnalysis.contains("HEAP ANALYSIS RESULT")) {
+        AnalysisParser.analysisSuccessFromString(heapAnalysis)
+      } else if (heapAnalysis.contains("HEAP ANALYSIS FAILED")) {
+        AnalysisParser.analysisFailureFromString(heapAnalysis)
+      } else if (heapAnalysis.isNotEmpty()) {
+        AnalysisParser.analysisUpdateFromString(heapAnalysis)
+      } else {
+        return null
+      }
     }
+  }
 }
 
 /**
@@ -53,19 +54,19 @@ sealed class Analysis {
  * @property leaks A list of leaks detected in the heap dump.
  */
 data class AnalysisSuccess(
-    val heapDumpFile: File,
-    val createdAtTimeMillis: Long,
-    val dumpDurationMillis: Long,
-    val analysisDurationMillis: Long,
-    val metadata: Map<String, String>,
-    val leaks: List<Leak>
+  val heapDumpFile: File,
+  val createdAtTimeMillis: Long,
+  val dumpDurationMillis: Long,
+  val analysisDurationMillis: Long,
+  val metadata: Map<String, String>,
+  val leaks: List<Leak>,
 ) : Analysis() {
 
-    override fun toString(): String {
-        val applicationLeaks = leaks.filter { it.type == LeakType.APPLICATION_LEAKS }.toList()
-        val libraryLeaks = leaks.filter { it.type == LeakType.LIBRARY_LEAKS }.toList()
-        val unreachableObjects = ArrayList<String>()
-        return """====================================
+  override fun toString(): String {
+    val applicationLeaks = leaks.filter { it.type == LeakType.APPLICATION_LEAKS }.toList()
+    val libraryLeaks = leaks.filter { it.type == LeakType.LIBRARY_LEAKS }.toList()
+    val unreachableObjects = ArrayList<String>()
+    return """====================================
 HEAP ANALYSIS RESULT
 ====================================
 ${applicationLeaks.size} APPLICATION LEAKS
@@ -109,7 +110,7 @@ Heap dump file path: ${heapDumpFile.absolutePath}
 Heap dump timestamp: $createdAtTimeMillis
 Heap dump duration: ${if (dumpDurationMillis != Analysis.DUMP_DURATION_UNKNOWN) "$dumpDurationMillis ms" else "Unknown"}
 ===================================="""
-    }
+  }
 }
 
 /**
@@ -122,15 +123,15 @@ Heap dump duration: ${if (dumpDurationMillis != Analysis.DUMP_DURATION_UNKNOWN) 
  * @property exception The exception that caused the analysis to fail.
  */
 data class AnalysisFailure(
-    val heapDumpFile: File,
-    val createdAtTimeMillis: Long,
-    val dumpDurationMillis: Long,
-    val analysisDurationMillis: Long,
-    val exception: Throwable
+  val heapDumpFile: File,
+  val createdAtTimeMillis: Long,
+  val dumpDurationMillis: Long,
+  val analysisDurationMillis: Long,
+  val exception: Throwable,
 ) : Analysis() {
 
-    override fun toString(): String {
-        return """====================================
+  override fun toString(): String {
+    return """====================================
 HEAP ANALYSIS FAILED
 
 You can report this failure at https://github.com/square/leakcanary/issues
@@ -145,7 +146,7 @@ Analysis duration: $analysisDurationMillis ms
 Heap dump file path: ${heapDumpFile.absolutePath}
 Heap dump timestamp: $createdAtTimeMillis
 ===================================="""
-    }
+  }
 }
 
 /**
@@ -154,7 +155,7 @@ Heap dump timestamp: $createdAtTimeMillis
  * @property message The logcat message indicating the progress (e.g., "Found 5 objects retained").
  */
 data class AnalysisUpdate(val message: String) : Analysis() {
-    override fun toString(): String {
-        return message
-    }
+  override fun toString(): String {
+    return message
+  }
 }

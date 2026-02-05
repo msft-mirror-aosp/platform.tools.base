@@ -29,89 +29,87 @@ import com.android.tools.lint.model.LintModelSeverity.WARNING
 import com.google.common.truth.MapSubject
 import com.google.common.truth.Truth.assertThat
 import groovy.util.Eval
-import org.junit.Before
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertFailsWith
+import org.junit.Before
+import org.junit.Test
 
 class LintImplTest {
 
-    private lateinit var lintWrapper: LintWrapper
-    private val severityOverrides: Map<String, LintModelSeverity> get() = (lintWrapper.lint as LintImpl).severityOverridesMap
-    private val dslServices: DslServices = createDslServices()
+  private lateinit var lintWrapper: LintWrapper
+  private val severityOverrides: Map<String, LintModelSeverity>
+    get() = (lintWrapper.lint as LintImpl).severityOverridesMap
 
-    private fun lint(action: Lint.() -> Unit) = lintWrapper.lint(action)
-    private val lint get() = lintWrapper.lint
+  private val dslServices: DslServices = createDslServices()
 
-    interface LintWrapper {
-        val lint: Lint
-        fun lint(action: Lint.() -> Unit)
+  private fun lint(action: Lint.() -> Unit) = lintWrapper.lint(action)
+
+  private val lint
+    get() = lintWrapper.lint
+
+  interface LintWrapper {
+    val lint: Lint
+
+    fun lint(action: Lint.() -> Unit)
+  }
+
+  @Before
+  fun init() {
+    lintWrapper = dslServices.newDecoratedInstance(LintWrapper::class.java, dslServices)
+  }
+
+  @Test
+  fun testSeverityOverridesMutuallyExclusive() {
+    lint { enable += "MyCheck" }
+    assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
+    assertThat(lint.disable).named("lint.disable").isEmpty()
+    assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries("MyCheck" to DEFAULT_ENABLED)
+
+    lint { disable += "MyCheck" }
+    assertThat(lint.enable).named("lint.enable").isEmpty()
+    assertThat(lint.disable).named("lint.disable").containsExactly("MyCheck")
+    assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries("MyCheck" to IGNORE)
+  }
+
+  @Test
+  fun testLocking() {
+    lint {
+      enable += "MyCheck"
+      disable += "OtherCheck"
     }
+    assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
+    assertThat(lint.disable).named("lint.disable").containsExactly("OtherCheck")
+    assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries("MyCheck" to DEFAULT_ENABLED, "OtherCheck" to IGNORE)
 
-    @Before
-    fun init() {
-        lintWrapper = dslServices.newDecoratedInstance(LintWrapper::class.java, dslServices)
-    }
+    (lint as Lockable).lock()
 
-    @Test
-    fun testSeverityOverridesMutuallyExclusive() {
-        lint {
-            enable += "MyCheck"
-        }
-        assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
-        assertThat(lint.disable).named("lint.disable").isEmpty()
-        assertThat(severityOverrides).named("severityOverrides")
-            .containsExactlyEntries("MyCheck" to DEFAULT_ENABLED)
+    val failure = assertFailsWith<RuntimeException> { lint { disable += "MyCheck" } }
 
-        lint {
-            disable += "MyCheck"
-        }
-        assertThat(lint.enable).named("lint.enable").isEmpty()
-        assertThat(lint.disable).named("lint.disable").containsExactly("MyCheck")
-        assertThat(severityOverrides).named("severityOverrides")
-            .containsExactlyEntries("MyCheck" to IGNORE)
-    }
+    assertThat(failure)
+      .named("failure")
+      .hasMessageThat()
+      .isEqualTo(
+        """
+        It is too late to modify disable
+        It has already been read to configure this project.
+        Consider either moving this call to be during evaluation,
+        or using the variant API.
+        """
+          .trimIndent()
+      )
 
-    @Test
-    fun testLocking() {
-        lint {
-            enable += "MyCheck"
-            disable += "OtherCheck"
-        }
-        assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
-        assertThat(lint.disable).named("lint.disable").containsExactly("OtherCheck")
-        assertThat(severityOverrides).named("severityOverrides")
-            .containsExactlyEntries("MyCheck" to DEFAULT_ENABLED, "OtherCheck" to IGNORE)
+    assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
+    assertThat(lint.disable).named("lint.disable").containsExactly("OtherCheck")
+    assertThat(severityOverrides).named("severityOverrides")
+    assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries("MyCheck" to DEFAULT_ENABLED, "OtherCheck" to IGNORE)
+  }
 
-        (lint as Lockable).lock()
-
-        val failure = assertFailsWith<RuntimeException> {
-            lint {
-                disable += "MyCheck"
-            }
-        }
-
-        assertThat(failure).named("failure").hasMessageThat().isEqualTo(
-            """
-            It is too late to modify disable
-            It has already been read to configure this project.
-            Consider either moving this call to be during evaluation,
-            or using the variant API.
-            """.trimIndent()
-        )
-
-        assertThat(lint.enable).named("lint.enable").containsExactly("MyCheck")
-        assertThat(lint.disable).named("lint.disable").containsExactly("OtherCheck")
-        assertThat(severityOverrides).named("severityOverrides")
-        assertThat(severityOverrides).named("severityOverrides")
-            .containsExactlyEntries("MyCheck" to DEFAULT_ENABLED, "OtherCheck" to IGNORE)
-
-    }
-
-    @Test
-    fun testGroovyHelpers() {
-        Eval.me(
-            "android", lintWrapper, """
+  @Test
+  fun testGroovyHelpers() {
+    Eval.me(
+      "android",
+      lintWrapper,
+      """
             android.lint {
                 checkOnly 'CheckOnly'
                 checkOnly 'CheckOnly2', 'CheckOnly3'
@@ -130,30 +128,24 @@ class LintImplTest {
                 fatal 'Fatal'
                 fatal 'Fatal2', 'Fatal3'
             }
-        """)
-        assertThat(lint.checkOnly).named("lint.checkOnly")
-            .containsExactly("CheckOnly", "CheckOnly2", "CheckOnly3")
+        """,
+    )
+    assertThat(lint.checkOnly).named("lint.checkOnly").containsExactly("CheckOnly", "CheckOnly2", "CheckOnly3")
 
-        assertThat(lint.disable).named("lint.disable").containsExactly(
-            "Disable", "Disable2", "Disable3",
-            "Ignore", "Ignore2", "Ignore3"
-        )
-        assertThat(lint.enable).named("lint.enable").containsExactly("Enable", "Enable2", "Enable3")
-        assertThat(lint.informational).named("lint.informational").containsExactly(
-            "Informational",
-            "Informational2",
-            "Informational3"
-        )
-        assertThat(lint.warning).named("lint.warning")
-            .containsExactly("Warning", "Warning2", "Warning3")
-        assertThat(lint.error).named("lint.error").containsExactly("Error", "Error2", "Error3")
-        assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal", "Fatal2", "Fatal3")
-    }
+    assertThat(lint.disable).named("lint.disable").containsExactly("Disable", "Disable2", "Disable3", "Ignore", "Ignore2", "Ignore3")
+    assertThat(lint.enable).named("lint.enable").containsExactly("Enable", "Enable2", "Enable3")
+    assertThat(lint.informational).named("lint.informational").containsExactly("Informational", "Informational2", "Informational3")
+    assertThat(lint.warning).named("lint.warning").containsExactly("Warning", "Warning2", "Warning3")
+    assertThat(lint.error).named("lint.error").containsExactly("Error", "Error2", "Error3")
+    assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal", "Fatal2", "Fatal3")
+  }
 
-    @Test
-    fun testGroovyAppend() {
-        Eval.me(
-            "android", lintWrapper, """
+  @Test
+  fun testGroovyAppend() {
+    Eval.me(
+      "android",
+      lintWrapper,
+      """
             android.lint {
                 checkOnly += ['CheckOnly']
                 disable += ['Disable']
@@ -164,30 +156,35 @@ class LintImplTest {
                 error += ['Error']
                 fatal += ['Fatal']
             }
-        """)
-        assertThat(lint.checkOnly).named("lint.checkOnly").containsExactly("CheckOnly")
-        assertThat(lint.disable).named("lint.disable").containsExactly("Disable", "Ignore")
-        assertThat(lint.enable).named("lint.enable").containsExactly("Enable")
-        assertThat(lint.informational).named("lint.informational").containsExactly("Informational")
-        assertThat(lint.disable).named("lint.ignore").containsExactly("Disable", "Ignore")
-        assertThat(lint.warning).named("lint.warning").containsExactly("Warning")
-        assertThat(lint.error).named("lint.error").containsExactly("Error")
-        assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal")
-        assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries(
-            "Disable" to IGNORE,
-            "Enable" to DEFAULT_ENABLED,
-            "Informational" to INFORMATIONAL,
-            "Ignore" to IGNORE,
-            "Warning" to WARNING,
-            "Error" to ERROR,
-            "Fatal" to FATAL,
-        )
-    }
+        """,
+    )
+    assertThat(lint.checkOnly).named("lint.checkOnly").containsExactly("CheckOnly")
+    assertThat(lint.disable).named("lint.disable").containsExactly("Disable", "Ignore")
+    assertThat(lint.enable).named("lint.enable").containsExactly("Enable")
+    assertThat(lint.informational).named("lint.informational").containsExactly("Informational")
+    assertThat(lint.disable).named("lint.ignore").containsExactly("Disable", "Ignore")
+    assertThat(lint.warning).named("lint.warning").containsExactly("Warning")
+    assertThat(lint.error).named("lint.error").containsExactly("Error")
+    assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal")
+    assertThat(severityOverrides)
+      .named("severityOverrides")
+      .containsExactlyEntries(
+        "Disable" to IGNORE,
+        "Enable" to DEFAULT_ENABLED,
+        "Informational" to INFORMATIONAL,
+        "Ignore" to IGNORE,
+        "Warning" to WARNING,
+        "Error" to ERROR,
+        "Fatal" to FATAL,
+      )
+  }
 
-    @Test
-    fun testGroovySetters() {
-        Eval.me(
-            "android", lintWrapper, """
+  @Test
+  fun testGroovySetters() {
+    Eval.me(
+      "android",
+      lintWrapper,
+      """
             android.lint {
                 checkOnly = ['CheckOnly']
                 disable = ['Disable']
@@ -198,133 +195,110 @@ class LintImplTest {
                 error = ['Error']
                 fatal = ['Fatal']
             }
-        """)
-        assertThat(lint.checkOnly).named("lint.checkOnly").containsExactly("CheckOnly")
-        assertThat(lint.disable).named("lint.disable")
-            .containsExactly("Ignore") // Disable Overwritten by ignore=
-        assertThat(lint.enable).named("lint.enable").containsExactly("Enable")
-        assertThat(lint.informational).named("lint.informational").containsExactly("Informational")
-        assertThat(lint.disable).named("lint.ignore").containsExactly("Ignore")
-        assertThat(lint.warning).named("lint.warning").containsExactly("Warning")
-        assertThat(lint.error).named("lint.error").containsExactly("Error")
-        assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal")
-        assertThat(severityOverrides).named("severityOverrides").containsExactlyEntries(
-            "Enable" to DEFAULT_ENABLED,
-            "Informational" to INFORMATIONAL,
-            "Ignore" to IGNORE,
-            "Warning" to WARNING,
-            "Error" to ERROR,
-            "Fatal" to FATAL,
-        )
-    }
+        """,
+    )
+    assertThat(lint.checkOnly).named("lint.checkOnly").containsExactly("CheckOnly")
+    assertThat(lint.disable).named("lint.disable").containsExactly("Ignore") // Disable Overwritten by ignore=
+    assertThat(lint.enable).named("lint.enable").containsExactly("Enable")
+    assertThat(lint.informational).named("lint.informational").containsExactly("Informational")
+    assertThat(lint.disable).named("lint.ignore").containsExactly("Ignore")
+    assertThat(lint.warning).named("lint.warning").containsExactly("Warning")
+    assertThat(lint.error).named("lint.error").containsExactly("Error")
+    assertThat(lint.fatal).named("lint.fatal").containsExactly("Fatal")
+    assertThat(severityOverrides)
+      .named("severityOverrides")
+      .containsExactlyEntries(
+        "Enable" to DEFAULT_ENABLED,
+        "Informational" to INFORMATIONAL,
+        "Ignore" to IGNORE,
+        "Warning" to WARNING,
+        "Error" to ERROR,
+        "Fatal" to FATAL,
+      )
+  }
 
-    @Test
-    fun testTextOutput() {
-        lint {
-            textOutput = File("stdout")
-        }
-        assertThat(lint.textReport).named("lint.textReport").isTrue()
-        assertThat(lint.textOutput?.path).named("lint.textOutput").isEqualTo("stdout")
-    }
+  @Test
+  fun testTextOutput() {
+    lint { textOutput = File("stdout") }
+    assertThat(lint.textReport).named("lint.textReport").isTrue()
+    assertThat(lint.textOutput?.path).named("lint.textOutput").isEqualTo("stdout")
+  }
 
-    @Test
-    fun testHtmlOutput() {
-        lint {
-            htmlOutput = File("lint_report.html")
-        }
-        assertThat(lint.htmlReport).named("lint.htmlReport").isTrue()
-        assertThat(lint.htmlOutput?.path).named("lint.htmlOutput").isEqualTo("lint_report.html")
-    }
+  @Test
+  fun testHtmlOutput() {
+    lint { htmlOutput = File("lint_report.html") }
+    assertThat(lint.htmlReport).named("lint.htmlReport").isTrue()
+    assertThat(lint.htmlOutput?.path).named("lint.htmlOutput").isEqualTo("lint_report.html")
+  }
 
-    @Test
-    fun testSarifOutput() {
-        lint {
-            sarifOutput = File("lint_report.sarif")
-        }
-        assertThat(lint.sarifReport).named("lint.sarifReport").isTrue()
-        assertThat(lint.sarifOutput?.path).named("lint.sarifOutput").isEqualTo("lint_report.sarif")
-    }
+  @Test
+  fun testSarifOutput() {
+    lint { sarifOutput = File("lint_report.sarif") }
+    assertThat(lint.sarifReport).named("lint.sarifReport").isTrue()
+    assertThat(lint.sarifOutput?.path).named("lint.sarifOutput").isEqualTo("lint_report.sarif")
+  }
 
-    @Test
-    fun testTargetSdk() {
+  @Test
+  fun testTargetSdk() {
 
-        lint {
-            targetSdk = 3
-        }
-        assertThat(lint.targetSdk).named("lint.targetSdk").isNotNull()
-        assertThat(lint.targetSdk!!).isEqualTo(3)
-    }
+    lint { targetSdk = 3 }
+    assertThat(lint.targetSdk).named("lint.targetSdk").isNotNull()
+    assertThat(lint.targetSdk!!).isEqualTo(3)
+  }
 
-    @Test
-    fun testTargetSdkSpecRelease() {
-        lint {
-            targetSdk {
-                version = release(5)
-            }
-        }
-        assertThat(lint.targetSdk).named("lint.targetSdk").isEqualTo(5)
-    }
+  @Test
+  fun testTargetSdkSpecRelease() {
+    lint { targetSdk { version = release(5) } }
+    assertThat(lint.targetSdk).named("lint.targetSdk").isEqualTo(5)
+  }
 
-    @Test
-    fun testTargetSdkPreview() {
-        lint {
-            targetSdkPreview = "M"
-        }
-        assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isNotNull()
-        assertThat(lint.targetSdkPreview!!).isEqualTo("M")
-    }
+  @Test
+  fun testTargetSdkPreview() {
+    lint { targetSdkPreview = "M" }
+    assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isNotNull()
+    assertThat(lint.targetSdkPreview!!).isEqualTo("M")
+  }
 
-    @Test
-    fun testTargetSdkSpecPreview() {
-        lint {
-            targetSdk {
-                version = preview("J")
-            }
-        }
-        assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isEqualTo("J")
-    }
+  @Test
+  fun testTargetSdkSpecPreview() {
+    lint { targetSdk { version = preview("J") } }
+    assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isEqualTo("J")
+  }
 
-    @Test
-    fun testXmlOutput() {
-        lint {
-            xmlOutput = File("lint_report.xml")
-        }
-        assertThat(lint.xmlReport).named("lint.xmlReport").isTrue()
-        assertThat(lint.xmlOutput?.path).named("lint.xmlOutput").isEqualTo("lint_report.xml")
-    }
+  @Test
+  fun testXmlOutput() {
+    lint { xmlOutput = File("lint_report.xml") }
+    assertThat(lint.xmlReport).named("lint.xmlReport").isTrue()
+    assertThat(lint.xmlOutput?.path).named("lint.xmlOutput").isEqualTo("lint_report.xml")
+  }
 
-    @Test
-    fun testBaselineFileSetter() {
-        lint {
-            baseline = File("lint_baseline.xml")
-        }
-        assertThat(lint.baseline?.path).named("lint.baselineFile")
-            .isEqualTo("lint_baseline.xml")
-    }
+  @Test
+  fun testBaselineFileSetter() {
+    lint { baseline = File("lint_baseline.xml") }
+    assertThat(lint.baseline?.path).named("lint.baselineFile").isEqualTo("lint_baseline.xml")
+  }
 
-    @Test
-    fun testBaselineAnySetter() {
-        Eval.me(
-            "android", lintWrapper, """
+  @Test
+  fun testBaselineAnySetter() {
+    Eval.me(
+      "android",
+      lintWrapper,
+      """
                 android.lint {
                     baseline = "lint_baseline2.xml"
                 }
-            """)
-        assertThat(lint.baseline?.path).named("lint.baselineFile")
-            .isEqualTo("lint_baseline2.xml")
-    }
+            """,
+    )
+    assertThat(lint.baseline?.path).named("lint.baselineFile").isEqualTo("lint_baseline2.xml")
+  }
 
-    @Test
-    fun testLintConfig() {
-        lint {
-            lintConfig = File("lint_config.xml")
-        }
-        assertThat(lint.lintConfig?.path).named("lint.lintConfig")
-            .isEqualTo("lint_config.xml")
-    }
+  @Test
+  fun testLintConfig() {
+    lint { lintConfig = File("lint_config.xml") }
+    assertThat(lint.lintConfig?.path).named("lint.lintConfig").isEqualTo("lint_config.xml")
+  }
 
-    private fun MapSubject.containsExactlyEntries(vararg pairs: Pair<Any, Any>) {
-        containsExactlyEntriesIn(mapOf(*pairs))
-    }
-
+  private fun MapSubject.containsExactlyEntries(vararg pairs: Pair<Any, Any>) {
+    containsExactlyEntriesIn(mapOf(*pairs))
+  }
 }

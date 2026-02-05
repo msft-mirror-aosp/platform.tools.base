@@ -318,16 +318,10 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
 
   @Suppress("UnstableApiUsage")
   class TestDetector : Detector(), SourceCodeScanner {
-    override fun applicableSuperClasses(): List<String> =
-      listOf("test.pkg.Test.I1", "test.pkg.Test.I2")
+    override fun applicableSuperClasses(): List<String> = listOf("test.pkg.Test.I1", "test.pkg.Test.I2")
 
     override fun visitClass(context: JavaContext, declaration: UClass) {
-      context.report(
-        TEST_ISSUE,
-        declaration,
-        context.getNameLocation(declaration),
-        "Visited `${declaration.nameFromSource}`",
-      )
+      context.report(TEST_ISSUE, declaration, context.getNameLocation(declaration), "Visited `${declaration.nameFromSource}`")
     }
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -356,22 +350,12 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
         }
 
         override fun visitPatternExpression(node: UPatternExpression) {
-          context.report(
-            TEST_ISSUE,
-            node,
-            context.getNameLocation(node),
-            "Visited pattern expression `${node.variable?.nameFromSource}`",
-          )
+          context.report(TEST_ISSUE, node, context.getNameLocation(node), "Visited pattern expression `${node.variable?.nameFromSource}`")
         }
 
         override fun visitAnnotation(node: UAnnotation) {
           if (node.qualifiedName?.contains("Anno") != true) return
-          context.report(
-            TEST_ISSUE,
-            node,
-            context.getNameLocation(node),
-            "Visited annotation `${node.qualifiedName}`",
-          )
+          context.report(TEST_ISSUE, node, context.getNameLocation(node), "Visited annotation `${node.qualifiedName}`")
         }
 
         override fun visitElement(node: UElement) {

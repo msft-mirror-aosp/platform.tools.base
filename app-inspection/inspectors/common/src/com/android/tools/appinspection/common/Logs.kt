@@ -43,8 +43,7 @@ private fun shouldLog(message: String): Boolean {
 /**
  * Logs an error to the commandline.
  *
- * To avoid spamming user's logcat, we cap the number of times a message can be sent to once every
- * [LOG_BUFFER_NS].
+ * To avoid spamming user's logcat, we cap the number of times a message can be sent to once every [LOG_BUFFER_NS].
  */
 fun logError(message: String, throwable: Throwable) {
   if (shouldLog(message)) {

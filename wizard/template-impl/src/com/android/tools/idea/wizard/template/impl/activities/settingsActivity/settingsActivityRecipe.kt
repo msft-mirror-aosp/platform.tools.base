@@ -40,7 +40,7 @@ fun RecipeExecutor.settingsActivityRecipe(
   moduleData: ModuleTemplateData,
   activityClass: String,
   multipleScreens: Boolean,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, _) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
@@ -53,8 +53,12 @@ fun RecipeExecutor.settingsActivityRecipe(
   addMaterialDependency(useAndroidX)
 
   generateManifest(
-    moduleData, activityClass, packageName, isLauncher = moduleData.isNewModule, hasNoActionBar = false,
-    generateActivityTitle = true
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher = moduleData.isNewModule,
+    hasNoActionBar = false,
+    generateActivityTitle = true,
   )
 
   mergeXml(stringsXml(activityClass, simpleName), resOut.resolve("values/strings.xml"))
@@ -67,19 +71,19 @@ fun RecipeExecutor.settingsActivityRecipe(
     mergeXml(headerPreferencesXml(activityClass, packageName), resOut.resolve("xml/header_preferences.xml"))
     mergeXml(messagesPreferencesXml(), resOut.resolve("xml/messages_preferences.xml"))
     mergeXml(syncPreferencesXml(), resOut.resolve("xml/sync_preferences.xml"))
-    val multipleScreenSettingsActivity = when (projectData.language) {
-      Language.Java -> multipleScreenSettingsActivityJava(activityClass, packageName, simpleName)
-      Language.Kotlin -> multipleScreenSettingsActivityKt(activityClass, packageName, simpleName)
-    }
+    val multipleScreenSettingsActivity =
+      when (projectData.language) {
+        Language.Java -> multipleScreenSettingsActivityJava(activityClass, packageName, simpleName)
+        Language.Kotlin -> multipleScreenSettingsActivityKt(activityClass, packageName, simpleName)
+      }
     save(multipleScreenSettingsActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
-
-  }
-  else {
+  } else {
     mergeXml(rootPreferencesXml(), resOut.resolve("xml/root_preferences.xml"))
-    val singleScreenSettingsActivity = when (projectData.language) {
-      Language.Java -> singleScreenSettingsActivityJava(activityClass, packageName)
-      Language.Kotlin -> singleScreenSettingsActivityKt(activityClass, packageName)
-    }
+    val singleScreenSettingsActivity =
+      when (projectData.language) {
+        Language.Java -> singleScreenSettingsActivityJava(activityClass, packageName)
+        Language.Kotlin -> singleScreenSettingsActivityKt(activityClass, packageName)
+      }
     save(singleScreenSettingsActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
   }
   open(srcOut.resolve("${activityClass}.${ktOrJavaExt}"))

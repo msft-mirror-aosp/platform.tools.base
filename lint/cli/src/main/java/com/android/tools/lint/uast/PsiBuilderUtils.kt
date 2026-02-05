@@ -40,13 +40,16 @@ object PsiBuilderUtils {
     LightFieldBuilder(
         manager,
         name.orAnonymous(this),
-        // There's a little cycle dep here as LightFiled require `type` when constructed while the
-        // TypeElement used to get `type` need the LightField as `parent` when constructed. This is
-        // an API issue of `LightFieldBuilder` as it does not implement the super constructor with
-        // lazy type initialization. We assign `containingFile` as the parent here instead, which
+        // There's a little cycle dep here as LightFiled require `type` when constructed while
+        // the
+        // TypeElement used to get `type` need the LightField as `parent` when constructed.
+        // This is
+        // an API issue of `LightFieldBuilder` as it does not implement the super constructor
+        // with
+        // lazy type initialization. We assign `containingFile` as the parent here instead,
+        // which
         // should be side effect free as the TypeElement cannot be fetched from LightField.
-        typeReference?.let { buildCompiledTypeFromReference(it, containingFile) }
-          ?: PsiTypes.nullType(),
+        typeReference?.let { buildCompiledTypeFromReference(it, containingFile) } ?: PsiTypes.nullType(),
       )
       .apply { this.containingClass = containingClass }
 
@@ -71,10 +74,7 @@ object PsiBuilderUtils {
       }
     }
 
-  private fun buildCompiledTypeFromReference(
-    ktTypeReference: KtTypeReference,
-    parent: PsiElement,
-  ): PsiType {
+  private fun buildCompiledTypeFromReference(ktTypeReference: KtTypeReference, parent: PsiElement): PsiType {
     // TODO: This likely won't work for non-class types, and that would be a much harder issue to
     // fix. Refer to
     // https://github.com/JetBrains/kotlin/blob/master/compiler/light-classes/src/org/jetbrains/kotlin/asJava/classes/ultraLightUtils.kt#L202

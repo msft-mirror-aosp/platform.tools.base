@@ -76,11 +76,8 @@ internal class LintFakeLightClassForKlib(
   override fun getImplementsList(): PsiReferenceList? = _implementsList
 
   private fun createInheritanceList(forExtendsList: Boolean): PsiReferenceList {
-    val role =
-      if (forExtendsList) PsiReferenceList.Role.EXTENDS_LIST
-      else PsiReferenceList.Role.IMPLEMENTS_LIST
-    val listBuilder =
-      KotlinSuperTypeListBuilder(this, ktOrigin.getSuperTypeList(), manager, language, role)
+    val role = if (forExtendsList) PsiReferenceList.Role.EXTENDS_LIST else PsiReferenceList.Role.IMPLEMENTS_LIST
+    val listBuilder = KotlinSuperTypeListBuilder(this, ktOrigin.getSuperTypeList(), manager, language, role)
     // TODO: need to map type reference to PsiType and add it to the list
     return listBuilder
   }
@@ -90,18 +87,13 @@ internal class LintFakeLightClassForKlib(
   }
 
   private val _fields: Array<out PsiField> by lazyPub {
-    ktOrigin.declarations
-      .filterIsInstance<KtProperty>()
-      .map { it.buildLightField(this) }
-      .toTypedArray()
+    ktOrigin.declarations.filterIsInstance<KtProperty>().map { it.buildLightField(this) }.toTypedArray()
   }
 
   override fun getFields(): Array<out PsiField?> = _fields
 
   private val _methods: Array<out PsiMethod> by lazyPub {
-    (ktOrigin.allConstructors + ktOrigin.declarations.filterIsInstance<KtNamedFunction>())
-      .map { it.buildLightMethod(this) }
-      .toTypedArray()
+    (ktOrigin.allConstructors + ktOrigin.declarations.filterIsInstance<KtNamedFunction>()).map { it.buildLightMethod(this) }.toTypedArray()
   }
 
   override fun getMethods(): Array<out PsiMethod?> = _methods

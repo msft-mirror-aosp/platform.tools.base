@@ -19,8 +19,8 @@ import java.io.IOException
 import java.nio.file.Path
 
 /**
- * A thread-safe cache of values indexed by a canonicalized Path. This can be used to ensure that
- * only a single instance is created for a given real path on the filesystem.
+ * A thread-safe cache of values indexed by a canonicalized Path. This can be used to ensure that only a single instance is created for a
+ * given real path on the filesystem.
  */
 class CacheByCanonicalPath<T> {
   private val cache = hashMapOf<Path?, T>()
@@ -51,10 +51,7 @@ class CacheByCanonicalPath<T> {
     return value
   }
 
-  /**
-   * Removes the value pointed to by `key` from the cache. All other Paths that point to it are also
-   * removed.
-   */
+  /** Removes the value pointed to by `key` from the cache. All other Paths that point to it are also removed. */
   @Synchronized
   fun remove(key: Path?): Boolean {
     val removed = cache.remove(key)

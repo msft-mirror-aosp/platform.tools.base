@@ -23,71 +23,71 @@ import org.mockito.kotlin.verify
 
 class LifecycleTasksImplTest {
 
-    @Test
-    fun testUnused() {
-        val anchorTasks = LifecycleTasksImpl()
-        Truth.assertThat(anchorTasks.hasPreBuildActions()).isFalse()
-    }
+  @Test
+  fun testUnused() {
+    val anchorTasks = LifecycleTasksImpl()
+    Truth.assertThat(anchorTasks.hasPreBuildActions()).isFalse()
+  }
 
-    @Test
-    fun singleUsage() {
-        val anchorTasks = LifecycleTasksImpl()
-        val task = mock<Task>()
-        val preBuildTask = mock<Task>()
-        anchorTasks.registerPreBuild(task)
+  @Test
+  fun singleUsage() {
+    val anchorTasks = LifecycleTasksImpl()
+    val task = mock<Task>()
+    val preBuildTask = mock<Task>()
+    anchorTasks.registerPreBuild(task)
 
-        Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
-        anchorTasks.invokePreBuildActions(preBuildTask)
+    Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
+    anchorTasks.invokePreBuildActions(preBuildTask)
 
-        verify(preBuildTask).dependsOn(task)
-    }
+    verify(preBuildTask).dependsOn(task)
+  }
 
-    @Test
-    fun multipleUsage() {
-        val anchorTasks = LifecycleTasksImpl()
-        val taskOne = mock<Task>()
-        val taskTwo = mock<Task>()
-        val preBuildTask = mock<Task>()
-        anchorTasks.registerPreBuild(taskOne, taskTwo)
+  @Test
+  fun multipleUsage() {
+    val anchorTasks = LifecycleTasksImpl()
+    val taskOne = mock<Task>()
+    val taskTwo = mock<Task>()
+    val preBuildTask = mock<Task>()
+    anchorTasks.registerPreBuild(taskOne, taskTwo)
 
-        Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
-        anchorTasks.invokePreBuildActions(preBuildTask)
+    Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
+    anchorTasks.invokePreBuildActions(preBuildTask)
 
-        val array = ArrayList<Any>().also {
-            it.add(taskOne)
-            it.add(taskTwo)
-        }
-        verify(preBuildTask).dependsOn(taskOne, taskTwo)
-    }
+    val array =
+      ArrayList<Any>().also {
+        it.add(taskOne)
+        it.add(taskTwo)
+      }
+    verify(preBuildTask).dependsOn(taskOne, taskTwo)
+  }
 
-    @Test
-    fun multipleSingleUsage() {
-        val anchorTasks = LifecycleTasksImpl()
-        val taskOne = mock<Task>()
-        val taskTwo = mock<Task>()
-        val preBuildTask = mock<Task>()
+  @Test
+  fun multipleSingleUsage() {
+    val anchorTasks = LifecycleTasksImpl()
+    val taskOne = mock<Task>()
+    val taskTwo = mock<Task>()
+    val preBuildTask = mock<Task>()
 
-        anchorTasks.registerPreBuild(taskOne)
-        Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
+    anchorTasks.registerPreBuild(taskOne)
+    Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
 
-        anchorTasks.registerPreBuild(taskTwo)
-        Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
+    anchorTasks.registerPreBuild(taskTwo)
+    Truth.assertThat(anchorTasks.hasPreBuildActions()).isTrue()
 
-        anchorTasks.invokePreBuildActions(preBuildTask)
+    anchorTasks.invokePreBuildActions(preBuildTask)
 
-        verify(preBuildTask).dependsOn(taskOne, taskTwo)
-    }
+    verify(preBuildTask).dependsOn(taskOne, taskTwo)
+  }
 
-    @Test
-    fun testApkInstallation() {
-        val anchorTasks = LifecycleTasksImpl()
-        val task = mock<Task>()
-        val apkInstallationTask = mock<Task>()
+  @Test
+  fun testApkInstallation() {
+    val anchorTasks = LifecycleTasksImpl()
+    val task = mock<Task>()
+    val apkInstallationTask = mock<Task>()
 
-        anchorTasks.registerPreInstallation(task)
-        anchorTasks.invokeApkInstallationActions(apkInstallationTask)
+    anchorTasks.registerPreInstallation(task)
+    anchorTasks.invokeApkInstallationActions(apkInstallationTask)
 
-        verify(apkInstallationTask).dependsOn(task)
-    }
+    verify(apkInstallationTask).dependsOn(task)
+  }
 }
-

@@ -25,24 +25,18 @@ import com.android.build.gradle.internal.services.IGNORE_FILE_CREATION
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 
-/**
- * ValueProvider used to write the header-only Prefab publication.
- */
+/** ValueProvider used to write the header-only Prefab publication. */
 abstract class PrefabHeaderOnlyPublicationFileCreator : ConfigPhaseFileCreator<String, Params> {
-    interface Params: ConfigPhaseFileCreator.Params {
-        val publication: Property<PrefabPublication>
-    }
+  interface Params : ConfigPhaseFileCreator.Params {
+    val publication: Property<PrefabPublication>
+  }
 
-    override fun obtain() : String {
-        HeaderOnly.writePublicationFile(parameters.publication.get())
-        return IGNORE_FILE_CREATION
-    }
+  override fun obtain(): String {
+    HeaderOnly.writePublicationFile(parameters.publication.get())
+    return IGNORE_FILE_CREATION
+  }
 }
 
-fun writeHeaderOnlyPublicationFile(
-    providerFactory: ProviderFactory,
-    publication : PrefabPublication) {
-    providerFactory.of(PrefabHeaderOnlyPublicationFileCreator::class.java) {
-        it.parameters.publication.set(publication)
-    }.get()
+fun writeHeaderOnlyPublicationFile(providerFactory: ProviderFactory, publication: PrefabPublication) {
+  providerFactory.of(PrefabHeaderOnlyPublicationFileCreator::class.java) { it.parameters.publication.set(publication) }.get()
 }

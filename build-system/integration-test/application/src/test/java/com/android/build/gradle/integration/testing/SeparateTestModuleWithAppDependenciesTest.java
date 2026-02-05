@@ -17,7 +17,6 @@ public class SeparateTestModuleWithAppDependenciesTest {
     @ClassRule
     public static GradleTestProject project =
             GradleTestProject.builder().fromTestProject("separateTestModule")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @BeforeClass

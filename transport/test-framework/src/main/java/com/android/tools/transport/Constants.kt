@@ -24,36 +24,33 @@ const val LOCAL_HOST = "127.0.0.1"
  * These will be set for you automatically by the `transport_test` rule in `transport_test.bzl`
  */
 object SystemProperties {
-    /**
-     * The path to the transport daemon binary.
-     *
-     * Ex: `path/to/transportbinary`
-     */
-    val TRANSPORT_DAEMON_LOCATION = "transport.daemon.location"
+  /**
+   * The path to the transport daemon binary.
+   *
+   * Ex: `path/to/transportbinary`
+   */
+  val TRANSPORT_DAEMON_LOCATION = "transport.daemon.location"
 
-    /**
-     * A list of zero or more paths pointing to library dependencies (both native .so and .jar
-     * libraries are expected here).
-     *
-     * If there are multiple paths, they should be separated by the ':' character.
-     */
-    val APP_LIBS = "app.libs"
+  /**
+   * A list of zero or more paths pointing to library dependencies (both native .so and .jar libraries are expected here).
+   *
+   * If there are multiple paths, they should be separated by the ':' character.
+   */
+  val APP_LIBS = "app.libs"
 
-    /**
-     * A list of one or more paths to dexed Jars which will be loaded onto a device *if* it
-     * supports JVMTI (O or newer).
-     *
-     * If there are multiple paths, they should be separated by the ':' character.
-     *
-     * Ex: "path/to/jar1.dex:path/to/jar2.dex"
-     */
-    val APP_DEXES_JVMTI = "app.dexes.jvmti"
+  /**
+   * A list of one or more paths to dexed Jars which will be loaded onto a device *if* it supports JVMTI (O or newer).
+   *
+   * If there are multiple paths, they should be separated by the ':' character.
+   *
+   * Ex: "path/to/jar1.dex:path/to/jar2.dex"
+   */
+  val APP_DEXES_JVMTI = "app.dexes.jvmti"
 
-    /**
-     * Similar to [APP_DEXES_JVMTI], except for paths to dexed Jars which will be loaded onto a
-     * device if it does NOT support JVMTI (pre-O).
-     *
-     * If there are multiple paths, they should be separated by the ':' character.
-     */
-    val APP_DEXES_NOJVMTI = "app.dexes.nojvmti"
+  /**
+   * Similar to [APP_DEXES_JVMTI], except for paths to dexed Jars which will be loaded onto a device if it does NOT support JVMTI (pre-O).
+   *
+   * If there are multiple paths, they should be separated by the ':' character.
+   */
+  val APP_DEXES_NOJVMTI = "app.dexes.nojvmti"
 }

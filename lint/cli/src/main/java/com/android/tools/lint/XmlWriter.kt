@@ -150,14 +150,10 @@ open class XmlWriter(
     val ind = indent + 1
 
     when (constraint) {
-      is MinSdkAtLeast ->
-        writeAttribute(writer, -1, ATTR_MIN_GE, constraint.minSdkVersion.serialize())
-      is MinSdkLessThan ->
-        writeAttribute(writer, -1, ATTR_MIN_LT, constraint.minSdkVersion.serialize())
-      is TargetSdkAtLeast ->
-        writeAttribute(writer, -1, ATTR_TARGET_GE, constraint.targetSdkVersion.toString())
-      is TargetSdkLessThan ->
-        writeAttribute(writer, -1, ATTR_TARGET_LT, constraint.targetSdkVersion.toString())
+      is MinSdkAtLeast -> writeAttribute(writer, -1, ATTR_MIN_GE, constraint.minSdkVersion.serialize())
+      is MinSdkLessThan -> writeAttribute(writer, -1, ATTR_MIN_LT, constraint.minSdkVersion.serialize())
+      is TargetSdkAtLeast -> writeAttribute(writer, -1, ATTR_TARGET_GE, constraint.targetSdkVersion.toString())
+      is TargetSdkLessThan -> writeAttribute(writer, -1, ATTR_TARGET_LT, constraint.targetSdkVersion.toString())
       is IsLibraryProject -> writeAttribute(writer, -1, ATTR_LIBRARY, VALUE_TRUE)
       is NotLibraryProject -> writeAttribute(writer, -1, ATTR_LIBRARY, VALUE_FALSE)
       is IsAndroidProject -> writeAttribute(writer, -1, ATTR_ANDROID, VALUE_TRUE)
@@ -237,23 +233,11 @@ open class XmlWriter(
 
     val applicableVariants = incident.applicableVariants
     if (applicableVariants != null && applicableVariants.variantSpecific) {
-      writeAttribute(
-        writer,
-        indent + 1,
-        ATTR_INCLUDED_VARIANTS,
-        Joiner.on(',').join(applicableVariants.includedVariantNames),
-      )
-      writeAttribute(
-        writer,
-        indent + 1,
-        ATTR_EXCLUDED_VARIANTS,
-        Joiner.on(',').join(applicableVariants.excludedVariantNames),
-      )
+      writeAttribute(writer, indent + 1, ATTR_INCLUDED_VARIANTS, Joiner.on(',').join(applicableVariants.includedVariantNames))
+      writeAttribute(writer, indent + 1, ATTR_EXCLUDED_VARIANTS, Joiner.on(',').join(applicableVariants.excludedVariantNames))
     }
 
-    if (
-      type == XmlFileType.REPORT_WITH_FIXES && (incident.fix != null || Reporter.hasAutoFix(issue))
-    ) {
+    if (type == XmlFileType.REPORT_WITH_FIXES && (incident.fix != null || Reporter.hasAutoFix(issue))) {
       writeAttribute(writer, indent + 1, ATTR_QUICK_FIX, VALUE_STUDIO)
     }
 
@@ -306,12 +290,7 @@ open class XmlWriter(
     }
   }
 
-  private fun writeLintMap(
-    map: LintMap,
-    indent: Int = 2,
-    name: String? = null,
-    project: Project? = null,
-  ) {
+  private fun writeLintMap(map: LintMap, indent: Int = 2, name: String? = null, project: Project? = null) {
     val entries = LintMap.getInternalMap(map).entries
     if (entries.isEmpty()) {
       return
@@ -370,13 +349,7 @@ open class XmlWriter(
     writer.write("</$TAG_MAP>\n")
   }
 
-  private fun writeLocation(
-    project: Project?,
-    location: Location,
-    tag: String = TAG_LOCATION,
-    indent: Int = 2,
-    key: String? = null,
-  ) {
+  private fun writeLocation(project: Project?, location: Location, tag: String = TAG_LOCATION, indent: Int = 2, key: String? = null) {
     indent(indent)
     val indented = indent + 1
     writer.write("<")
@@ -444,10 +417,7 @@ open class XmlWriter(
     )
   }
 
-  /**
-   * Applies the quickfixes to a temporary doc and writes out the cumulative set of edits to apply
-   * to the doc.
-   */
+  /** Applies the quickfixes to a temporary doc and writes out the cumulative set of edits to apply to the doc. */
   private fun emitFixEdits(incident: Incident, lintFix: LintFix) {
     val fixes =
       if (lintFix is LintFix.LintFixGroup && lintFix.type == LintFix.GroupType.ALTERNATIVES) {
@@ -486,8 +456,7 @@ open class XmlWriter(
 
           with(edit) {
             val after = source.substring(max(startOffset - 12, 0), startOffset)
-            val before =
-              source.substring(startOffset, min(max(startOffset + 12, endOffset), source.length))
+            val before = source.substring(startOffset, min(max(startOffset + 12, endOffset), source.length))
             writeAttribute(writer, 4, ATTR_OFFSET, startOffset.toString())
             writeAttribute(writer, 4, ATTR_AFTER, after)
             writeAttribute(writer, 4, ATTR_BEFORE, before)
@@ -512,10 +481,7 @@ open class XmlWriter(
     }
   }
 
-  /**
-   * Applies the quickfixes to a temporary doc and writes out the cumulative set of edits to apply
-   * to the doc.
-   */
+  /** Applies the quickfixes to a temporary doc and writes out the cumulative set of edits to apply to the doc. */
   private fun emitFixDescriptors(incident: Incident, lintFix: LintFix, indent: Int = 2) {
     val indented = indent + 1
     when (lintFix) {
@@ -648,9 +614,7 @@ open class XmlWriter(
         }
         lintFix.selectPattern?.let { writeAttribute(writer, indented, ATTR_SELECT_PATTERN, it) }
         lintFix.text?.let { writeAttribute(writer, indented, ATTR_REPLACEMENT, it) }
-        lintFix.binary?.let {
-          writeAttribute(writer, indented, ATTR_BINARY, Base64.getEncoder().encodeToString(it))
-        }
+        lintFix.binary?.let { writeAttribute(writer, indented, ATTR_BINARY, Base64.getEncoder().encodeToString(it)) }
         writer.write("/>\n")
       }
       is LintFix.DataMap -> {
@@ -723,10 +687,7 @@ open class XmlWriter(
   }
 
   /** Writes the given list. */
-  fun writeIncidents(
-    incidents: List<Incident>,
-    extraAttributes: List<Pair<String, String?>> = emptyList(),
-  ) {
+  fun writeIncidents(incidents: List<Incident>, extraAttributes: List<Pair<String, String?>> = emptyList()) {
     writeProlog()
     val rootTag = if (type.isPersistenceFile()) TAG_INCIDENTS else TAG_ISSUES
     val attributeMap = (getDefaultRootAttributes() + extraAttributes).toMap()

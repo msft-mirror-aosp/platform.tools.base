@@ -23,36 +23,26 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [DynamicFeatureComponentCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [DynamicFeatureComponentCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [DynamicFeatureComponentCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [DynamicFeatureComponentCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class DynamicFeatureCallbackPlugin: Plugin<Project> {
+abstract class DynamicFeatureCallbackPlugin : Plugin<Project> {
 
-    override fun apply(target: Project) {
-        target.plugins.withType(DynamicFeaturePlugin::class.java) {
-            val componentsExtension = target.extensions.getByType(DynamicFeatureAndroidComponentsExtension::class.java)
-            handleExtension(target, componentsExtension)
-        }
+  override fun apply(target: Project) {
+    target.plugins.withType(DynamicFeaturePlugin::class.java) {
+      val componentsExtension = target.extensions.getByType(DynamicFeatureAndroidComponentsExtension::class.java)
+      handleExtension(target, componentsExtension)
     }
+  }
 
-    abstract fun handleExtension(
-        project: Project,
-        componentsExtension: DynamicFeatureAndroidComponentsExtension
-    )
+  abstract fun handleExtension(project: Project, componentsExtension: DynamicFeatureAndroidComponentsExtension)
 }
 
-/**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Dynamic Feature
- */
-interface DynamicFeatureComponentCallback: PluginCallback {
-    fun handleExtension(
-        project: Project,
-        androidComponents: DynamicFeatureAndroidComponentsExtension
-    )
+/** interface to implement to provide custom plugin logic to a [GradleRule] project of type Android Dynamic Feature */
+interface DynamicFeatureComponentCallback : PluginCallback {
+  fun handleExtension(project: Project, androidComponents: DynamicFeatureAndroidComponentsExtension)
 }

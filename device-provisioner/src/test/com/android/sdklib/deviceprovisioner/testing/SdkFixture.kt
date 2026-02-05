@@ -26,11 +26,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * A fixture that sets up AvdManager, DeviceManager, and AndroidSdkHandler on an in-memory
- * filesystem.
+ * A fixture that sets up AvdManager, DeviceManager, and AndroidSdkHandler on an in-memory filesystem.
  *
- * The DeviceManager contains the usual built-in set of devices from the resource files. System
- * images are faked by TestSystemImages, which writes package.xml and other relevant files to disk.
+ * The DeviceManager contains the usual built-in set of devices from the resource files. System images are faked by TestSystemImages, which
+ * writes package.xml and other relevant files to disk.
  */
 class SdkFixture {
   val fileSystem = createInMemoryFileSystem()

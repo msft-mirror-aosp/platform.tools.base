@@ -134,12 +134,10 @@ class XmlWriterTest : AbstractCheckTest() {
       val client = realClient!!
       val writer = StringBuilderWriter()
 
-      XmlWriter(client, XmlFileType.PARTIAL_RESULTS, writer, client.pathVariables)
-        .writePartialResults(issueToMap, context.project)
+      XmlWriter(client, XmlFileType.PARTIAL_RESULTS, writer, client.pathVariables).writePartialResults(issueToMap, context.project)
 
       // Remove the format number.
-      val partialResultsOutput =
-        writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
+      val partialResultsOutput = writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
 
       // The main thing we are checking is that entries are sorted.
       assertEquals(
@@ -231,12 +229,10 @@ class XmlWriterTest : AbstractCheckTest() {
           "Gazelle" to Severity.INFORMATIONAL,
         )
 
-      XmlWriter(client, XmlFileType.CONFIGURED_ISSUES, writer, client.pathVariables)
-        .writeConfiguredIssues(severityMap)
+      XmlWriter(client, XmlFileType.CONFIGURED_ISSUES, writer, client.pathVariables).writeConfiguredIssues(severityMap)
 
       // Remove the format number.
-      val configuredIssuesOutput =
-        writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
+      val configuredIssuesOutput = writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
 
       // The main thing we are checking is that entries are sorted.
       assertEquals(

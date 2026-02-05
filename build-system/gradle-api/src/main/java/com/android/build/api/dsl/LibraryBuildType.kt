@@ -19,29 +19,21 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 /**
- * Build types define certain properties that Gradle uses when building and packaging your library,
- * and are typically configured for different stages of your development lifecycle.
+ * Build types define certain properties that Gradle uses when building and packaging your library, and are typically configured for
+ * different stages of your development lifecycle.
  *
- * There are two build types defined by default, `debug` and `release`, and you can customize them
- * and create additional build types.
+ * There are two build types defined by default, `debug` and `release`, and you can customize them and create additional build types.
  *
- * The default debug build type enables debug options, while the release build type is not
- * debuggable and can be configured to, for example shrink and obfuscate your library for
- * distribution.
+ * The default debug build type enables debug options, while the release build type is not debuggable and can be configured to, for example
+ * shrink and obfuscate your library for distribution.
  *
- * See
- * [configuring build types](https://developer.android.com/studio/build#build-config)
- * for more information.
+ * See [configuring build types](https://developer.android.com/studio/build#build-config) for more information.
  */
-interface LibraryBuildType :
-    BuildType,
-    LibraryVariantDimension {
-    /** Whether this build type should be selected in Studio by default  */
-    var isDefault: Boolean
+interface LibraryBuildType : BuildType, LibraryVariantDimension {
+  /** Whether this build type should be selected in Studio by default */
+  var isDefault: Boolean
 
-    @get:Incubating
-    val androidTest: AndroidTest
+  @get:Incubating val androidTest: AndroidTest
 
-    @Incubating
-    fun androidTest(action: AndroidTest.() -> Unit)
+  @Incubating fun androidTest(action: AndroidTest.() -> Unit)
 }

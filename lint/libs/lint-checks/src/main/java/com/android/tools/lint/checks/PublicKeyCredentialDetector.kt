@@ -31,18 +31,16 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 
 /**
- * Shows warnings on calls to `androidx.credentials.CreatePublicKeyCredentialRequest` in projects
- * that depend on `androidx.credentials:credentials-play-services-auth` and have a minimum SDK level
- * below 28 (Android 9). This is a standalone lint check rather than an `@RequiresApi` annotation at
- * the definition of `CreatePublicKeyCredentialRequest` because if an app uses a custom passkey
- * implementation the SDK requirement may be different. As of January 2024 there are no other
- * implementations, so this is a forward-looking constraint.
+ * Shows warnings on calls to `androidx.credentials.CreatePublicKeyCredentialRequest` in projects that depend on
+ * `androidx.credentials:credentials-play-services-auth` and have a minimum SDK level below 28 (Android 9). This is a standalone lint check
+ * rather than an `@RequiresApi` annotation at the definition of `CreatePublicKeyCredentialRequest` because if an app uses a custom passkey
+ * implementation the SDK requirement may be different. As of January 2024 there are no other implementations, so this is a forward-looking
+ * constraint.
  */
 class PublicKeyCredentialDetector : Detector(), SourceCodeScanner {
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(PublicKeyCredentialDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(PublicKeyCredentialDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -61,24 +59,18 @@ Please check for the Android version before calling the method.
         androidSpecific = true,
       )
 
-    const val PUBLIC_KEY_CREDENTIAL_CLASS_FQNAME =
-      "androidx.credentials.CreatePublicKeyCredentialRequest"
+    const val PUBLIC_KEY_CREDENTIAL_CLASS_FQNAME = "androidx.credentials.CreatePublicKeyCredentialRequest"
     const val MIN_SDK_FOR_PUBLIC_KEY_CREDENTIAL = 28
     const val PLAY_SERVICES_DEPENDENCY = "androidx.credentials:credentials-play-services-auth"
   }
 
   override fun getApplicableConstructorTypes() = listOf(PUBLIC_KEY_CREDENTIAL_CLASS_FQNAME)
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     if (context.project.dependsOn(PLAY_SERVICES_DEPENDENCY) == true) {
       val api = ApiConstraint.atLeast(MIN_SDK_FOR_PUBLIC_KEY_CREDENTIAL)
       if (
-        VersionChecks.isWithinVersionCheckConditional(context, node, api) ||
-          VersionChecks.isPrecededByVersionCheckExit(context, node, api)
+        VersionChecks.isWithinVersionCheckConditional(context, node, api) || VersionChecks.isPrecededByVersionCheckExit(context, node, api)
       ) {
         return
       }

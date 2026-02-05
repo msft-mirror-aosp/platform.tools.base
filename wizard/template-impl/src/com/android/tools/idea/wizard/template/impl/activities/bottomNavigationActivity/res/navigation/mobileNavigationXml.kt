@@ -16,11 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.bottomNavigationActivity.res.navigation
 
-
-fun mobileNavigationXml(
-  navGraphName: String,
-  packageName: String
-) = """
+fun mobileNavigationXml(navGraphName: String, packageName: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

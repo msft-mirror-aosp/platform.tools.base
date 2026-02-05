@@ -23,48 +23,44 @@ import com.google.common.truth.Subject
 import java.nio.file.Files
 import java.util.function.Consumer
 
-/**
- * An object that can validate the content of a folder of jni libraries.
- */
+/** An object that can validate the content of a folder of jni libraries. */
 @SubjectDsl
-interface JniSubject: FileArchiveSubject {
+interface JniSubject : FileArchiveSubject {
 
-    /**
-     * Returns a [JniSubject] representing the given ABI folder inside the current Jni folder
-     *
-     * @param abiName the name of the abi
-     */
-    fun abi(abiName: String): JniSubject
+  /**
+   * Returns a [JniSubject] representing the given ABI folder inside the current Jni folder
+   *
+   * @param abiName the name of the abi
+   */
+  fun abi(abiName: String): JniSubject
 
-    /**
-     * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
-     *
-     * @param abiName the name of the abi
-     */
-    fun abi(abiName: String, action: JniSubject.() -> Unit) {
-        action(abi(abiName))
-    }
+  /**
+   * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
+   *
+   * @param abiName the name of the abi
+   */
+  fun abi(abiName: String, action: JniSubject.() -> Unit) {
+    action(abi(abiName))
+  }
 
-    /**
-     * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
-     *
-     * @param abiName the name of the abi
-     */
-    fun abi(abiName: String, action: Consumer<JniSubject>) {
-        action.accept(abi(abiName))
-    }
+  /**
+   * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
+   *
+   * @param abiName the name of the abi
+   */
+  fun abi(abiName: String, action: Consumer<JniSubject>) {
+    action.accept(abi(abiName))
+  }
 
-    /**
-     * Returns a [NativeLibrarySubject] to test the content of the library at the provided path
-     */
-    fun library(libraryPath: String): NativeLibrarySubject
+  /** Returns a [NativeLibrarySubject] to test the content of the library at the provided path */
+  fun library(libraryPath: String): NativeLibrarySubject
 
-    /**
-     * Returns a [BinarySubject] with the binary content of the file at the given path.
-     *
-     * @param libraryPath the path of the item which must not include a leading /
-     */
-    fun bytesOf(libraryPath: String): BinarySubject
+  /**
+   * Returns a [BinarySubject] with the binary content of the file at the given path.
+   *
+   * @param libraryPath the path of the item which must not include a leading /
+   */
+  fun bytesOf(libraryPath: String): BinarySubject
 }
 
 /**
@@ -73,71 +69,56 @@ interface JniSubject: FileArchiveSubject {
  * The main goal here is to filter out the class files
  */
 @SubjectDsl
-internal class JniSubjectImpl(
-    metadata: FailureMetadata,
-    actual: Zip
-): Subject<JniSubjectImpl, Zip>(metadata, actual), JniSubject {
+internal class JniSubjectImpl(metadata: FailureMetadata, actual: Zip) : Subject<JniSubjectImpl, Zip>(metadata, actual), JniSubject {
 
-    companion object {
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun libs(): Factory<JniSubjectImpl, Zip> {
-            return Factory<JniSubjectImpl, Zip> { metadata, actual ->
-                JniSubjectImpl(metadata, actual)
-            }
-        }
+  companion object {
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun libs(): Factory<JniSubjectImpl, Zip> {
+      return Factory<JniSubjectImpl, Zip> { metadata, actual -> JniSubjectImpl(metadata, actual) }
     }
+  }
 
-    override fun containsExactly(items: Collection<String>) {
-        check("entries()")
-            .about(ArchiveEntriesSubject.files())
-            .that(actual().getEntries())
-            .containsExactly(items)
-    }
+  override fun containsExactly(items: Collection<String>) {
+    check("entries()").about(ArchiveEntriesSubject.files()).that(actual().getEntries()).containsExactly(items)
+  }
 
-    override fun isEmpty() {
-        check("entries()").that(actual().getEntries()).isEmpty()
-    }
+  override fun isEmpty() {
+    check("entries()").that(actual().getEntries()).isEmpty()
+  }
 
-    override fun hasSize(size: Int) {
-        check("size()").that(actual().getEntries().size).isEqualTo(size)
-    }
+  override fun hasSize(size: Int) {
+    check("size()").that(actual().getEntries().size).isEqualTo(size)
+  }
 
-    override fun containsAtLeast(items: Collection<String>) {
-        check("entries()")
-            .about(ArchiveEntriesSubject.files())
-            .that(actual().getEntries())
-            .containsAtLeast(items)
-    }
+  override fun containsAtLeast(items: Collection<String>) {
+    check("entries()").about(ArchiveEntriesSubject.files()).that(actual().getEntries()).containsAtLeast(items)
+  }
 
-    override fun abi(abiName: String): JniSubject {
-        val view = ZipFolderView(actual(), abiName)
-        return check("abi($abiName)").about(libs()).that(view)
-    }
+  override fun abi(abiName: String): JniSubject {
+    val view = ZipFolderView(actual(), abiName)
+    return check("abi($abiName)").about(libs()).that(view)
+  }
 
-    override fun bytesOf(libraryPath: String): BinarySubject {
-        check("entries()").that(actual().getEntries()).contains(libraryPath)
-        return check("bytesOf($libraryPath)").about(BinarySubject.bytes()).that(actual().binaryFile(libraryPath))
-    }
+  override fun bytesOf(libraryPath: String): BinarySubject {
+    check("entries()").that(actual().getEntries()).contains(libraryPath)
+    return check("bytesOf($libraryPath)").about(BinarySubject.bytes()).that(actual().binaryFile(libraryPath))
+  }
 
-    override fun library(libraryPath: String): NativeLibrarySubject {
-        check("entries()").that(actual().getEntries()).contains(libraryPath)
+  override fun library(libraryPath: String): NativeLibrarySubject {
+    check("entries()").that(actual().getEntries()).contains(libraryPath)
 
-        val location = actual().getEntry(libraryPath)
+    val location = actual().getEntry(libraryPath)
 
-        // we need to create a temporary file because the subject needs to run command lines against it.
-        // TODO inject a TemporaryFolder rule?
+    // we need to create a temporary file because the subject needs to run command lines against it.
+    // TODO inject a TemporaryFolder rule?
 
-        // location can be null when testing the fixture
-        val nativeFile = location?.let {
-            Files.createTempFile("nativeLibrary_", "_${location.fileName}").also {
-                FileUtils.copyFile(location, it)
-            }.toFile()
-        } ?: Files.createTempFile("empty", ".so").toFile()
+    // location can be null when testing the fixture
+    val nativeFile =
+      location?.let { Files.createTempFile("nativeLibrary_", "_${location.fileName}").also { FileUtils.copyFile(location, it) }.toFile() }
+        ?: Files.createTempFile("empty", ".so").toFile()
 
-        nativeFile.deleteOnExit()
+    nativeFile.deleteOnExit()
 
-        return check("library($libraryPath)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
-    }
+    return check("library($libraryPath)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
+  }
 }

@@ -45,11 +45,10 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 /**
  * Builds a call graph by traversing UAST.
  *
- * Uses [receiverEval] to estimate dispatch receivers, and uses [classHierarchy] to resolve to
- * unique overriding implementations when possible.
+ * Uses [receiverEval] to estimate dispatch receivers, and uses [classHierarchy] to resolve to unique overriding implementations when
+ * possible.
  *
- * If [conservative] is true, then adds edges to all overriding methods of each call target. This
- * trades precision for soundness.
+ * If [conservative] is true, then adds edges to all overriding methods of each call target. This trades precision for soundness.
  */
 class CallGraphVisitor(
   private val receiverEval: DispatchReceiverEvaluator,
@@ -81,10 +80,8 @@ class CallGraphVisitor(
           it.accept(explicitSuperFinder)
           !explicitSuperFinder.foundExplicitCall
         }
-      val callers: Collection<UElement> =
-        if (constructors.isNotEmpty()) thoseWithoutExplicitSuper else listOf(node)
-      val callee: UElement =
-        superClass.constructors().find { it.uastParameters.isEmpty() } ?: superClass
+      val callers: Collection<UElement> = if (constructors.isNotEmpty()) thoseWithoutExplicitSuper else listOf(node)
+      val callee: UElement = superClass.constructors().find { it.uastParameters.isEmpty() } ?: superClass
       with(mutableCallGraph) {
         val calleeNode = getNode(callee)
         callers.forEach { getNode(it).edges.add(Edge(calleeNode, /*call*/ null, DIRECT)) }
@@ -122,9 +119,7 @@ class CallGraphVisitor(
             // Ignore static initializers for now.
             return super.visitCallExpression(node)
           }
-          val containingClass =
-            decl.getContainingUClass()
-              ?: return super.visitCallExpression(node) // No containing class.
+          val containingClass = decl.getContainingUClass() ?: return super.visitCallExpression(node) // No containing class.
           val ctors = containingClass.constructors()
           // For default constructors we use the containing class as the caller.
           if (ctors.isNotEmpty()) ctors else listOf(containingClass)
@@ -164,8 +159,7 @@ class CallGraphVisitor(
     // Create an edge based on the type of call.
     val staticallyDispatched = baseCallee.isStaticallyDispatched()
     val throughSuper = node.receiver is USuperExpression
-    val isFunctionalCall =
-      baseCallee.javaPsi == LambdaUtil.getFunctionalInterfaceMethod(node.receiverType)
+    val isFunctionalCall = baseCallee.javaPsi == LambdaUtil.getFunctionalInterfaceMethod(node.receiverType)
     val uniqueImpl = (overrides + baseCallee).singleOrNull { it.isCallable() }
     when {
       staticallyDispatched || throughSuper -> addEdge(baseCallee, DIRECT)
@@ -180,9 +174,7 @@ class CallGraphVisitor(
         // We don't want to lose the edge to the base callee.
         if (baseCallee !in evidencedTargets) addEdge(baseCallee, BASE)
         if (conservative) {
-          overrides
-            .filter { it !in evidencedTargets && it.isCallable() }
-            .forEach { addEdge(it, NON_UNIQUE_OVERRIDE) }
+          overrides.filter { it !in evidencedTargets && it.isCallable() }.forEach { addEdge(it, NON_UNIQUE_OVERRIDE) }
         }
       }
     }
@@ -213,10 +205,7 @@ class CallGraphVisitor(
       parentClass.hasModifierProperty(PsiModifier.FINAL)
   }
 
-  /**
-   * Tries to find an explicit call to a super constructor. Assumes the first element visited is a
-   * constructor.
-   */
+  /** Tries to find an explicit call to a super constructor. Assumes the first element visited is a constructor. */
   private class ExplicitSuperConstructorCallFinder : AbstractUastVisitor() {
     var foundExplicitCall: Boolean = false
 

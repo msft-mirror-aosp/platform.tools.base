@@ -22,6 +22,9 @@ import com.android.tools.androidtest.testengine.instrument.AmInstrumentationPars
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_IGNORED
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_OK
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
+import java.time.Instant
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,9 +37,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
-import java.time.Duration
-import java.time.Instant
-import kotlin.test.assertFailsWith
 
 @RunWith(JUnit4::class)
 class AmInstrumentationParserTest {
@@ -56,12 +56,7 @@ class AmInstrumentationParserTest {
   fun setUp() {
     listener = mock()
     val now = FakeTime(Instant.ofEpochSecond(1), Duration.ofSeconds(1))
-    parser =
-      AmInstrumentationParser(
-        setOf(listener),
-      ) {
-        TestTimeTracker(now::invoke)
-      }
+    parser = AmInstrumentationParser(setOf(listener)) { TestTimeTracker(now::invoke) }
   }
 
   @Test
@@ -70,7 +65,7 @@ class AmInstrumentationParserTest {
       """
       |
       |a
-    """
+      """
         .trimMargin()
     )
     assertThat(parser.result).isEqualTo(InstrumentationResult())
@@ -100,14 +95,7 @@ class AmInstrumentationParserTest {
 
   @Test
   fun onlyInstrumentationResults_resultsInFailedInstrumentation() {
-    val expectedResult =
-      InstrumentationResult(
-        bundle =
-          mapOf(
-            "a" to "b",
-            "c" to "d",
-          )
-      )
+    val expectedResult = InstrumentationResult(bundle = mapOf("a" to "b", "c" to "d"))
 
     parseAndDone(
       """
@@ -136,15 +124,7 @@ class AmInstrumentationParserTest {
       """
         .trimIndent()
     )
-    assertThat(parser.result)
-      .isEqualTo(
-        InstrumentationResult(
-          bundle =
-            mapOf(
-              "a" to " multi \n  line \n   output ",
-            )
-        )
-      )
+    assertThat(parser.result).isEqualTo(InstrumentationResult(bundle = mapOf("a" to " multi \n  line \n   output ")))
   }
 
   @Test
@@ -160,8 +140,7 @@ class AmInstrumentationParserTest {
 
     var actualTestResult = testResultCaptor.firstValue
     assertThat(actualTestResult.status).isEqualTo(STATUS_CODE_OK)
-    assertThat(actualTestResult.statusBundle)
-      .isEqualTo(mapOf("multi" to " multi \n  line \n   output "))
+    assertThat(actualTestResult.statusBundle).isEqualTo(mapOf("multi" to " multi \n  line \n   output "))
   }
 
   @Test
@@ -174,13 +153,7 @@ class AmInstrumentationParserTest {
       """
         .trimIndent()
     )
-    assertThat(parser.result)
-      .isEqualTo(
-        InstrumentationResult(
-          code = -1,
-          bundle = mapOf("a" to "b"),
-        )
-      )
+    assertThat(parser.result).isEqualTo(InstrumentationResult(code = -1, bundle = mapOf("a" to "b")))
   }
 
   @Test
@@ -196,17 +169,7 @@ class AmInstrumentationParserTest {
       """
         .trimIndent()
     )
-    assertThat(parser.result)
-      .isEqualTo(
-        InstrumentationResult(
-          code = 0,
-          bundle =
-            mapOf(
-              "a" to "multi\nline",
-              "b" to "c",
-            )
-        )
-      )
+    assertThat(parser.result).isEqualTo(InstrumentationResult(code = 0, bundle = mapOf("a" to "multi\nline", "b" to "c")))
   }
 
   @Test
@@ -214,13 +177,7 @@ class AmInstrumentationParserTest {
     val expectedResult =
       InstrumentationResult(
         code = -1,
-        bundle =
-          mapOf(
-            "a" to "",
-            "b" to "multi\nline\noutput",
-            "c" to "another\nmultiline",
-            "space" to " space Value"
-          )
+        bundle = mapOf("a" to "", "b" to "multi\nline\noutput", "c" to "another\nmultiline", "space" to " space Value"),
       )
 
     parseAndDone(
@@ -409,8 +366,7 @@ class AmInstrumentationParserTest {
 
     var actualTestResult = testResultCaptor.firstValue
     assertThat(actualTestResult.status).isEqualTo(STATUS_CODE_OK)
-    assertThat(actualTestResult.statusBundle)
-      .isEqualTo(mapOf("iteration" to "2", "multi" to "multi\nline\noutput"))
+    assertThat(actualTestResult.statusBundle).isEqualTo(mapOf("iteration" to "2", "multi" to "multi\nline\noutput"))
   }
 
   @Test
@@ -523,7 +479,7 @@ class AmInstrumentationParserTest {
       INSTRUMENTATION_STATUS: Error=Unable to find instrumentation info for: ComponentInfo{com.example.mytestapp.test2/androidx.test.runner.AndroidJUnitRunner}
       INSTRUMENTATION_STATUS: id=ActivityManagerService
       INSTRUMENTATION_STATUS_CODE: -1
-    """
+      """
         .trimIndent()
     )
 
@@ -542,7 +498,7 @@ class AmInstrumentationParserTest {
       INSTRUMENTATION_STATUS: Error=Unable to find instrumentation info
       INSTRUMENTATION_STATUS_CODE: -1
       INSTRUMENTATION_FAILED: com.fake/androidx.test.runner.AndroidJUnitRunner
-    """
+      """
         .trimIndent()
     )
 
@@ -564,7 +520,7 @@ class AmInstrumentationParserTest {
       |INSTRUMENTATION_STATUS_CODE: -1at com.android.commands.am.Am.runInstrument(Am.java:532)
       |
       |        at com.android.commands.am.Am.run(Am.java:111)
-    """
+      """
         .trimMargin()
     )
 
@@ -599,12 +555,7 @@ class AmInstrumentationParserTest {
 
   @Test
   fun twoTests() {
-    val expectedTestIdentifier =
-      TestIdentifier(
-        testPackage = TEST_PACKAGE,
-        testClass = TEST_SIMPLE_CLASS,
-        testMethod = TEST_METHOD,
-      )
+    val expectedTestIdentifier = TestIdentifier(testPackage = TEST_PACKAGE, testClass = TEST_SIMPLE_CLASS, testMethod = TEST_METHOD)
     var time = Instant.ofEpochSecond(0)
     fun incAndGet(): Instant {
       time = time.plusSeconds(1)
@@ -623,12 +574,7 @@ class AmInstrumentationParserTest {
     successStatusCode()
     verify(listener)
       .testEnded(
-        TestResult(
-          testIdentifier = expectedTestIdentifier,
-          status = STATUS_CODE_OK,
-          startTime = incAndGet(),
-          endTime = incAndGet(),
-        )
+        TestResult(testIdentifier = expectedTestIdentifier, status = STATUS_CODE_OK, startTime = incAndGet(), endTime = incAndGet())
       )
     verifyNoMoreInteractions(listener)
     reset(listener)
@@ -643,12 +589,7 @@ class AmInstrumentationParserTest {
     failureStatusCode()
     verify(listener)
       .testEnded(
-        TestResult(
-          testIdentifier = expectedTestIdentifier,
-          status = STATUS_CODE_FAILURE,
-          startTime = incAndGet(),
-          endTime = incAndGet(),
-        )
+        TestResult(testIdentifier = expectedTestIdentifier, status = STATUS_CODE_FAILURE, startTime = incAndGet(), endTime = incAndGet())
       )
     verifyNoMoreInteractions(listener)
     reset(listener)
@@ -663,10 +604,9 @@ class AmInstrumentationParserTest {
   }
 
   /**
-   * Real-world example where the test aborts without running any tests. This occurred for a test
-   * where the app and test APK had signature mismatches, and orchestrator was used for running the
-   * test. The output has no test case information, but the instrumentation stream contains details
-   * about the crashed instrumentation process.
+   * Real-world example where the test aborts without running any tests. This occurred for a test where the app and test APK had signature
+   * mismatches, and orchestrator was used for running the test. The output has no test case information, but the instrumentation stream
+   * contains details about the crashed instrumentation process.
    */
   @Test
   fun instrumentationCrashesBeforeAnyTestsRun() {
@@ -698,10 +638,9 @@ class AmInstrumentationParserTest {
   }
 
   /**
-   * Real-world example where the instrumentation exits with `System.exit(1)` in an `@BeforeClass`
-   * annotated method. In this case the status information is actually pointing to the previous
-   * test. The test never starts, and thus is not reported by the parser. At the end the parser
-   * doesn't see the number of expected tests and reports this via `instrumentationFailed()`.
+   * Real-world example where the instrumentation exits with `System.exit(1)` in an `@BeforeClass` annotated method. In this case the status
+   * information is actually pointing to the previous test. The test never starts, and thus is not reported by the parser. At the end the
+   * parser doesn't see the number of expected tests and reports this via `instrumentationFailed()`.
    */
   @Test
   fun instrumentationCrashesInBeforeClassAnnotatedMethod() {
@@ -755,9 +694,8 @@ class AmInstrumentationParserTest {
   }
 
   /**
-   * Real-world example where the instrumentation exits with `System.exit(1)` in an `@BeforeClass`
-   * annotated method, and it is the first test method. At this point we don't have enough
-   * information for calling `instrumentationStarted(testCount)`.
+   * Real-world example where the instrumentation exits with `System.exit(1)` in an `@BeforeClass` annotated method, and it is the first
+   * test method. At this point we don't have enough information for calling `instrumentationStarted(testCount)`.
    */
   @Test
   fun instrumentationCrashesInFirstBeforeClassAnnotatedMethod() {
@@ -791,7 +729,7 @@ class AmInstrumentationParserTest {
       FAILURES!!!
       Tests found: 2, Tests run: 1,  Failures: 1
       INSTRUMENTATION_CODE: -1
-    """
+      """
         .trimIndent()
     )
 
@@ -806,9 +744,8 @@ class AmInstrumentationParserTest {
   }
 
   /**
-   * Real-world example where the instrumentation throws a runtime exception in an `@BeforeClass`
-   * annotated method. The class gets not reported in the normal `INFORMATION_STATUS` flow, but is
-   * reported in the end output.
+   * Real-world example where the instrumentation throws a runtime exception in an `@BeforeClass` annotated method. The class gets not
+   * reported in the normal `INFORMATION_STATUS` flow, but is reported in the end output.
    */
   @Test
   fun instrumentationThrowsExceptionInBeforeClassAnnotatedMethod() {
@@ -856,7 +793,7 @@ class AmInstrumentationParserTest {
       FAILURES!!!
       Tests run: 2,  Failures: 1
       INSTRUMENTATION_CODE: -1
-    """
+      """
         .trimIndent()
     )
 
@@ -878,8 +815,7 @@ class AmInstrumentationParserTest {
   @Test
   fun onErrorMessageIsUsedForFailureMessage() {
     val onError = "onError: commandError=false message=INSTRUMENTATION_ABORTED: System has crashed."
-    val expectedFailureMessage =
-      "Test run failed to complete. Expected 1 tests, received 0. $onError"
+    val expectedFailureMessage = "Test run failed to complete. Expected 1 tests, received 0. $onError"
 
     parseAndDone(
       """
@@ -909,8 +845,7 @@ class AmInstrumentationParserTest {
 
   @Test
   fun instrumentationAbortedMessageIsUsedForFailureMessage() {
-    val expectedFailureMessage =
-      "Test run failed to complete. Expected 1 tests, received 0. System has crashed."
+    val expectedFailureMessage = "Test run failed to complete. Expected 1 tests, received 0. System has crashed."
 
     parseAndDone(
       """
@@ -972,16 +907,11 @@ class AmInstrumentationParserTest {
       INSTRUMENTATION_STATUS: current=1
       INSTRUMENTATION_STATUS_CODE: 0
       INSTRUMENTATION_CODE: -1
-    """
+      """
         .trimIndent()
     )
 
-    val testIdentifier =
-      TestIdentifier(
-        testPackage = "",
-        testClass = "Feature Something",
-        testMethod = "a custom test name"
-      )
+    val testIdentifier = TestIdentifier(testPackage = "", testClass = "Feature Something", testMethod = "a custom test name")
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(testIdentifier)
@@ -1000,9 +930,8 @@ class AmInstrumentationParserTest {
   }
 
   /**
-   * Real-world example where the test code is using `Instrumentation.sendStatus()` to write custom
-   * instrumentation output, but using a wrong status code (-1 = error) and not the in-progress
-   * status code (1).
+   * Real-world example where the test code is using `Instrumentation.sendStatus()` to write custom instrumentation output, but using a
+   * wrong status code (-1 = error) and not the in-progress status code (1).
    *
    * This has been observed with the AndroidX benchmark library v1.0.0.
    */
@@ -1049,22 +978,12 @@ class AmInstrumentationParserTest {
       INSTRUMENTATION_STATUS: current=1
       INSTRUMENTATION_STATUS_CODE: 0
       INSTRUMENTATION_CODE: -1
-    """
+      """
         .trimIndent()
     )
 
-    val testId1 =
-      TestIdentifier(
-        testPackage = "com.example",
-        testClass = "BenchmarkTest",
-        testMethod = "bench1"
-      )
-    val testId2 =
-      TestIdentifier(
-        testPackage = "com.example",
-        testClass = "BenchmarkTest",
-        testMethod = "bench2"
-      )
+    val testId1 = TestIdentifier(testPackage = "com.example", testClass = "BenchmarkTest", testMethod = "bench1")
+    val testId2 = TestIdentifier(testPackage = "com.example", testClass = "BenchmarkTest", testMethod = "bench2")
     val bundle = mapOf("min" to "1", "count" to "2")
     inOrder(listener) {
       verify(listener).instrumentationStarted(2)
@@ -1076,7 +995,7 @@ class AmInstrumentationParserTest {
             status = STATUS_CODE_OK,
             startTime = FIRST_TEST_START_TIME,
             endTime = FIRST_TEST_END_TIME,
-            statusBundle = bundle
+            statusBundle = bundle,
           )
         )
       verify(listener).testStarted(testId2)
@@ -1087,7 +1006,7 @@ class AmInstrumentationParserTest {
             status = STATUS_CODE_OK,
             startTime = SECOND_TEST_START_TIME,
             endTime = SECOND_TEST_END_TIME,
-            statusBundle = bundle
+            statusBundle = bundle,
           )
         )
       verify(listener).instrumentationEnded(InstrumentationResult(-1))
@@ -1187,8 +1106,7 @@ class AmInstrumentationParserTest {
       |
       |OK (1 test)
       |
-      |
-    """
+      |"""
         .trimMargin()
     val COMMON_FAILED_INSTRUMENTATION_STREAM =
       """
@@ -1204,15 +1122,10 @@ class AmInstrumentationParserTest {
       |FAILURES!!!
       |Tests run: 1, Failures: 1
       |
-      |
-    """
+      |"""
         .trimMargin()
 
-    fun expectedTestResult(
-      status: Int,
-      stackTrace: String? = null,
-      statusBundle: Map<String, String> = mapOf()
-    ): TestResult {
+    fun expectedTestResult(status: Int, stackTrace: String? = null, statusBundle: Map<String, String> = mapOf()): TestResult {
       return TestResult(
         testIdentifier = TEST_IDENTIFIER,
         status = status,

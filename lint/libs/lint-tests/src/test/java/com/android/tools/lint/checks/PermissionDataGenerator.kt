@@ -152,8 +152,7 @@ data class Permission(
 
 /**
  * Analyzes the SDK to extract permission data used by various lint checks such as the
- * [com.android.tools.lint.checks.SystemPermissionsDetector] and the
- * [com.android.tools.lint.checks.PermissionDetector]
+ * [com.android.tools.lint.checks.SystemPermissionsDetector] and the [com.android.tools.lint.checks.PermissionDetector]
  */
 class PermissionDataGenerator {
   private val protectedBroadcasts: MutableSet<String> = mutableSetOf()
@@ -163,9 +162,7 @@ class PermissionDataGenerator {
   fun getDangerousPermissions(skipHidden: Boolean = true, minApiLevel: Int): List<Permission> {
     return permissions
       ?.filter { permission ->
-        permission.dangerousIn > 0 &&
-          permission.dangerousOut >= minApiLevel &&
-          (!skipHidden || permission.field != null)
+        permission.dangerousIn > 0 && permission.dangerousOut >= minApiLevel && (!skipHidden || permission.field != null)
       }
       ?.toList() ?: emptyList()
   }
@@ -182,17 +179,15 @@ class PermissionDataGenerator {
   }
 
   /**
-   * Returns permissions that were added as signature permissions later (not at the API level they
-   * were initially introduced. This only considers non-hidden permissions.
+   * Returns permissions that were added as signature permissions later (not at the API level they were initially introduced. This only
+   * considers non-hidden permissions.
    */
   fun getPermissionsMarkedAsSignatureLater(): List<Permission> {
     permissions ?: return emptyList()
 
     return permissions
       .filter { permission ->
-        permission.introducedIn < permission.signatureIn &&
-          permission.field != null &&
-          permission.introducedIn != -1
+        permission.introducedIn < permission.signatureIn && permission.field != null && permission.introducedIn != -1
       }
       .sortedWith(compareBy(Permission::signatureIn, Permission::name))
   }
@@ -209,9 +204,7 @@ class PermissionDataGenerator {
         continue
       }
       sb.append("        case \"").append(permission.name).append("\":")
-      if (
-        index + 1 == permissions.size || permission.signatureIn < permissions[index + 1].signatureIn
-      ) {
+      if (index + 1 == permissions.size || permission.signatureIn < permissions[index + 1].signatureIn) {
         sb.append(" return ${permission.signatureIn - 1};\n")
       } else {
         sb.append("\n")
@@ -242,12 +235,7 @@ class PermissionDataGenerator {
       if (permission.signatureOut < 15) {
         continue
       }
-      sb
-        .append("        case \"")
-        .append(permission.name)
-        .append("\": return ")
-        .append(permission.signatureOut)
-        .append(";\n")
+      sb.append("        case \"").append(permission.name).append("\": return ").append(permission.signatureOut).append(";\n")
     }
     sb.append("        default: return -1;\n")
     sb.append("    }\n")
@@ -258,9 +246,7 @@ class PermissionDataGenerator {
     permissions ?: return emptyList()
 
     return permissions
-      .filter { permission ->
-        permission.introducedIn < permission.dangerousIn && permission.field != null
-      }
+      .filter { permission -> permission.introducedIn < permission.dangerousIn && permission.field != null }
       .sortedWith(compareBy(Permission::dangerousIn, Permission::name))
   }
 
@@ -274,12 +260,7 @@ class PermissionDataGenerator {
       if (permission.dangerousIn < 15) {
         continue
       }
-      sb
-        .append("        case \"")
-        .append(permission.name)
-        .append("\": return ")
-        .append(permission.dangerousIn - 1)
-        .append(";\n")
+      sb.append("        case \"").append(permission.name).append("\": return ").append(permission.dangerousIn - 1).append(";\n")
     }
     sb.append("        default: return -1;\n")
     sb.append("    }\n")
@@ -306,12 +287,7 @@ class PermissionDataGenerator {
       if (permission.dangerousIn < 15) {
         continue
       }
-      sb
-        .append("        case \"")
-        .append(permission.name)
-        .append("\": return ")
-        .append(permission.dangerousOut)
-        .append(";\n")
+      sb.append("        case \"").append(permission.name).append("\": return ").append(permission.dangerousOut).append(";\n")
     }
     sb.append("        default: return -1;\n")
     sb.append("    }\n")
@@ -355,14 +331,7 @@ class PermissionDataGenerator {
       if (document != null) {
         var element = getFirstSubTagByName(document.documentElement, TAG_PERMISSION)
         while (element != null) {
-          processPermissionTag(
-            element,
-            apiLevel,
-            nameToPermission,
-            valueToFieldName,
-            skipHidden,
-            apiLookup,
-          )
+          processPermissionTag(element, apiLevel, nameToPermission, valueToFieldName, skipHidden, apiLookup)
           element = getNextTagByName(element, TAG_PERMISSION)
         }
       }
@@ -384,11 +353,7 @@ class PermissionDataGenerator {
 
   fun getProtectedBroadcasts(): Collection<String> = protectedBroadcasts
 
-  private fun isDangerousPermission(
-    protectionLevels: List<String>,
-    name: String,
-    apiLevel: Int,
-  ): Boolean {
+  private fun isDangerousPermission(protectionLevels: List<String>, name: String, apiLevel: Int): Boolean {
     if (apiLevel >= 23 && name == "android.permission.GET_ACCOUNTS") {
       // No longer needed in M. See issue 223244.
       return false
@@ -398,9 +363,8 @@ class PermissionDataGenerator {
   }
 
   private fun isSignaturePermission(protectionLevels: List<String>): Boolean =
-    (protectionLevels.contains("signature") ||
-      protectionLevels.contains("privileged") ||
-      protectionLevels.contains("signatureOrSystem")) && !protectionLevels.contains("appop")
+    (protectionLevels.contains("signature") || protectionLevels.contains("privileged") || protectionLevels.contains("signatureOrSystem")) &&
+      !protectionLevels.contains("appop")
 
   private fun processPermissionTag(
     element: Element,
@@ -429,8 +393,7 @@ class PermissionDataGenerator {
         nameToPermission[name]
           ?: run {
             val fieldVersion =
-              if (field != null) apiLookup.getFieldVersions("android/Manifest\$permission", field)
-              else ApiConstraint.UNKNOWN
+              if (field != null) apiLookup.getFieldVersions("android/Manifest\$permission", field) else ApiConstraint.UNKNOWN
 
             val new = Permission(name, field, fieldVersion.min())
             nameToPermission.put(name, new)
@@ -508,8 +471,7 @@ class PermissionDataGenerator {
   /** Returns the android.jar file for the given API level, or null if not found/valid. */
   private fun findSdkJar(top: String, apiLevel: Int): File? {
     // Supplement with local platforms
-    val localPath =
-      File("${System.getenv("ANDROID_BUILD_TOP")}/platforms/android-$apiLevel/android.jar")
+    val localPath = File("${System.getenv("ANDROID_BUILD_TOP")}/platforms/android-$apiLevel/android.jar")
     if (localPath.exists()) {
       return localPath
     }
@@ -546,10 +508,7 @@ class PermissionDataGenerator {
       }
   }
 
-  /**
-   * Finds the binary AndroidManifest.xml in the given compiled SDK jar and returns the DOM document
-   * of a pretty printed version of it.
-   */
+  /** Finds the binary AndroidManifest.xml in the given compiled SDK jar and returns the DOM document of a pretty printed version of it. */
   private fun getManifestDocument(loader: URLClassLoader): Document? {
     val stream = loader.getResourceAsStream("AndroidManifest.xml")
     val bytes = ByteStreams.toByteArray(stream)

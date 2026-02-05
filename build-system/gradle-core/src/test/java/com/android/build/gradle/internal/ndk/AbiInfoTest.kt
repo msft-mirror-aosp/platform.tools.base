@@ -22,11 +22,11 @@ import org.junit.Test
 
 class AbiInfoTest {
 
-    @Test
-    fun `abi with wrong bitness`() {
-        PassThroughRecordingLoggingEnvironment().use { log ->
-            AbiInfo("x86", 63, false, false, "", "", "")
-            Truth.assertThat(log.errors).hasSize(1)
-        }
+  @Test
+  fun `abi with wrong bitness`() {
+    PassThroughRecordingLoggingEnvironment().use { log ->
+      AbiInfo("x86", 63, false, false, "", "", "")
+      Truth.assertThat(log.errors).hasSize(1)
     }
+  }
 }

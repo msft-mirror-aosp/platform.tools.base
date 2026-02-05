@@ -27,178 +27,180 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Similar to [NoOpIncrementalBuildTaskStatesTest], but targeting the release build type with
- * `minifyEnabled=true` to verify a different set of tasks.
+ * Similar to [NoOpIncrementalBuildTaskStatesTest], but targeting the release build type with `minifyEnabled=true` to verify a different set
+ * of tasks.
  */
 class NoOpIncrementalBuildMinifyTest {
 
-    companion object {
+  companion object {
 
-        private val EXPECTED_TASK_STATES = mapOf(
-            UP_TO_DATE to setOf(
-                ":assembleDebugAndroidTest",
-                ":assembleRelease",
-                ":bundleDebugClassesToCompileJar",
-                ":bundleDebugClassesToRuntimeJar",
-                ":checkDebugAarMetadata",
-                ":checkDebugAndroidTestAarMetadata",
-                ":checkDebugAndroidTestDuplicateClasses",
-                ":checkReleaseAarMetadata",
-                ":checkReleaseDuplicateClasses",
-                ":collectReleaseDependencies",
-                ":compileDebugAndroidTestJavaWithJavac",
-                ":compileDebugAndroidTestNavigationResources",
-                ":compileDebugJavaWithJavac",
-                ":compileDebugNavigationResources",
-                ":compileReleaseArtProfile",
-                ":compileReleaseJavaWithJavac",
-                ":compileReleaseNavigationResources",
-                ":compressDebugAndroidTestAssets",
-                ":compressReleaseAssets",
-                ":createDebugAndroidTestApkListingFileRedirect",
-                ":createReleaseApkListingFileRedirect",
-                ":createDebugCompatibleScreenManifests",
-                ":createReleaseCompatibleScreenManifests",
-                ":desugarDebugAndroidTestFileDependencies",
-                ":dexBuilderDebugAndroidTest",
-                ":expandReleaseArtProfileWildcards",
-                ":extractReleaseVersionControlInfo",
-                ":extractDeepLinksDebug",
-                ":extractDeepLinksRelease",
-                ":extractProguardFiles",
-                ":generateDebugAndroidTestAssets",
-                ":generateDebugAndroidTestRFile",
-                ":generateDebugAndroidTestLintModel",
-                ":generateDebugAndroidTestResValues",
-                ":generateDebugAndroidTestResources",
-                ":generateDebugLintReportModel",
-                ":generateDebugRFile",
-                ":generateDebugResValues",
-                ":generateDebugResources",
-                ":generateDebugUnitTestLintModel",
-                ":generateReleaseAssets",
-                ":generateReleaseRFile",
-                ":generateReleaseResValues",
-                ":generateReleaseResources",
-                ":javaPreCompileDebug",
-                ":javaPreCompileDebugUnitTest",
-                ":javaPreCompileDebugAndroidTest",
-                ":javaPreCompileRelease",
-                ":lintAnalyzeDebug",
-                ":lintAnalyzeDebugAndroidTest",
-                ":lintAnalyzeDebugUnitTest",
-                ":lintReportDebug",
-                ":mapDebugAndroidTestSourceSetPaths",
-                ":mapDebugSourceSetPaths",
-                ":mergeDebugAndroidTestAssets",
-                ":mergeDebugAndroidTestJavaResource",
-                ":mergeDebugAndroidTestJniLibFolders",
-                ":mergeDebugAndroidTestResources",
-                ":mergeDebugJniLibFolders",
-                ":mergeDebugResources",
-                ":mergeDexDebugAndroidTest",
-                ":mergeExtDexDebugAndroidTest",
-                ":mergeReleaseArtProfile",
-                ":mergeReleaseAssets",
-                ":mergeReleaseGeneratedProguardFiles",
-                ":mergeReleaseJavaResource",
-                ":mergeReleaseJniLibFolders",
-                ":mergeReleaseResources",
-                ":mergeReleaseStartupProfile",
-                ":mapReleaseSourceSetPaths",
-                ":minifyReleaseWithR8",
-                ":optimizeReleaseResources",
-                ":packageDebugAndroidTest",
-                ":packageDebugAndroidTestResources",
-                ":packageDebugResources",
-                ":packageRelease",
-                ":packageReleaseResources",
-                ":parseDebugLocalResources",
-                ":parseDebugAndroidTestLocalResources",
-                ":parseReleaseLocalResources",
-                ":preBuild",
-                ":preDebugBuild",
-                ":preDebugUnitTestBuild",
-                ":preReleaseBuild",
-                ":preDebugUnitTestBuild",
-                ":processDebugAndroidTestManifest",
-                ":processDebugAndroidTestNavigationResources",
-                ":processDebugAndroidTestResources",
-                ":processDebugMainManifest",
-                ":processDebugManifest",
-                ":processDebugManifestForPackage",
-                ":processDebugNavigationResources",
-                ":processDebugResources",
-                ":processReleaseMainManifest",
-                ":processReleaseManifest",
-                ":processReleaseManifestForPackage",
-                ":processReleaseNavigationResources",
-                ":processReleaseResources",
-                ":sdkReleaseDependencyData",
-                ":validateSigningDebugAndroidTest",
-                ":writeDebugAndroidTestSigningConfigVersions",
-                ":writeReleaseAppMetadata",
-                ":writeReleaseSigningConfigVersions"
-            ),
-            SKIPPED to setOf(
-                ":compileDebugUnitTestJavaWithJavac",
-                ":extractReleaseNativeSymbolTables",
-                ":lint",
-                ":mergeDebugAndroidTestNativeLibs",
-                ":mergeDebugNativeLibs",
-                ":mergeReleaseNativeDebugMetadata",
-                ":mergeReleaseNativeLibs",
-                ":preDebugAndroidTestBuild",
-                ":processDebugAndroidTestJavaRes",
-                ":processDebugJavaRes",
-                ":processReleaseJavaRes",
-                ":processDebugUnitTestJavaRes",
-                ":stripDebugAndroidTestDebugSymbols",
-                ":stripReleaseDebugSymbols",
-                ":testDebugUnitTest",
-            ),
-            /*
-             * If you add a task to this DID_WORK set, please add an explanation and/or file a bug.
-             */
-            DID_WORK to setOf(
-                // lintDebug is intentionally not up-to-date because it must print the lint issues
-                // stdout or stderr if necessary.
-                ":lintDebug",
-            )
-        )
-    }
+    private val EXPECTED_TASK_STATES =
+      mapOf(
+        UP_TO_DATE to
+          setOf(
+            ":assembleDebugAndroidTest",
+            ":assembleRelease",
+            ":bundleDebugClassesToCompileJar",
+            ":bundleDebugClassesToRuntimeJar",
+            ":checkDebugAarMetadata",
+            ":checkDebugAndroidTestAarMetadata",
+            ":checkDebugAndroidTestDuplicateClasses",
+            ":checkReleaseAarMetadata",
+            ":checkReleaseDuplicateClasses",
+            ":collectReleaseDependencies",
+            ":compileDebugAndroidTestJavaWithJavac",
+            ":compileDebugAndroidTestNavigationResources",
+            ":compileDebugJavaWithJavac",
+            ":compileDebugNavigationResources",
+            ":compileReleaseArtProfile",
+            ":compileReleaseJavaWithJavac",
+            ":compileReleaseNavigationResources",
+            ":compressDebugAndroidTestAssets",
+            ":compressReleaseAssets",
+            ":createDebugAndroidTestApkListingFileRedirect",
+            ":createReleaseApkListingFileRedirect",
+            ":createDebugCompatibleScreenManifests",
+            ":createReleaseCompatibleScreenManifests",
+            ":desugarDebugAndroidTestFileDependencies",
+            ":dexBuilderDebugAndroidTest",
+            ":expandReleaseArtProfileWildcards",
+            ":extractReleaseVersionControlInfo",
+            ":extractDeepLinksDebug",
+            ":extractDeepLinksRelease",
+            ":extractProguardFiles",
+            ":generateDebugAndroidTestAssets",
+            ":generateDebugAndroidTestRFile",
+            ":generateDebugAndroidTestLintModel",
+            ":generateDebugAndroidTestResValues",
+            ":generateDebugAndroidTestResources",
+            ":generateDebugLintReportModel",
+            ":generateDebugRFile",
+            ":generateDebugResValues",
+            ":generateDebugResources",
+            ":generateDebugUnitTestLintModel",
+            ":generateReleaseAssets",
+            ":generateReleaseRFile",
+            ":generateReleaseResValues",
+            ":generateReleaseResources",
+            ":javaPreCompileDebug",
+            ":javaPreCompileDebugUnitTest",
+            ":javaPreCompileDebugAndroidTest",
+            ":javaPreCompileRelease",
+            ":lintAnalyzeDebug",
+            ":lintAnalyzeDebugAndroidTest",
+            ":lintAnalyzeDebugUnitTest",
+            ":lintReportDebug",
+            ":mapDebugAndroidTestSourceSetPaths",
+            ":mapDebugSourceSetPaths",
+            ":mergeDebugAndroidTestAssets",
+            ":mergeDebugAndroidTestJavaResource",
+            ":mergeDebugAndroidTestJniLibFolders",
+            ":mergeDebugAndroidTestResources",
+            ":mergeDebugJniLibFolders",
+            ":mergeDebugResources",
+            ":mergeDexDebugAndroidTest",
+            ":mergeExtDexDebugAndroidTest",
+            ":mergeReleaseArtProfile",
+            ":mergeReleaseAssets",
+            ":mergeReleaseGeneratedProguardFiles",
+            ":mergeReleaseJavaResource",
+            ":mergeReleaseJniLibFolders",
+            ":mergeReleaseResources",
+            ":mergeReleaseStartupProfile",
+            ":mapReleaseSourceSetPaths",
+            ":minifyReleaseWithR8",
+            ":optimizeReleaseResources",
+            ":packageDebugAndroidTest",
+            ":packageDebugAndroidTestResources",
+            ":packageDebugResources",
+            ":packageRelease",
+            ":packageReleaseResources",
+            ":parseDebugLocalResources",
+            ":parseDebugAndroidTestLocalResources",
+            ":parseReleaseLocalResources",
+            ":preBuild",
+            ":preDebugBuild",
+            ":preDebugUnitTestBuild",
+            ":preReleaseBuild",
+            ":preDebugUnitTestBuild",
+            ":processDebugAndroidTestManifest",
+            ":processDebugAndroidTestNavigationResources",
+            ":processDebugAndroidTestResources",
+            ":processDebugMainManifest",
+            ":processDebugManifest",
+            ":processDebugManifestForPackage",
+            ":processDebugNavigationResources",
+            ":processDebugResources",
+            ":processReleaseMainManifest",
+            ":processReleaseManifest",
+            ":processReleaseManifestForPackage",
+            ":processReleaseNavigationResources",
+            ":processReleaseResources",
+            ":sdkReleaseDependencyData",
+            ":validateSigningDebugAndroidTest",
+            ":writeDebugAndroidTestSigningConfigVersions",
+            ":writeReleaseAppMetadata",
+            ":writeReleaseSigningConfigVersions",
+          ),
+        SKIPPED to
+          setOf(
+            ":compileDebugUnitTestJavaWithJavac",
+            ":extractReleaseNativeSymbolTables",
+            ":lint",
+            ":mergeDebugAndroidTestNativeLibs",
+            ":mergeDebugNativeLibs",
+            ":mergeReleaseNativeDebugMetadata",
+            ":mergeReleaseNativeLibs",
+            ":preDebugAndroidTestBuild",
+            ":processDebugAndroidTestJavaRes",
+            ":processDebugJavaRes",
+            ":processReleaseJavaRes",
+            ":processDebugUnitTestJavaRes",
+            ":stripDebugAndroidTestDebugSymbols",
+            ":stripReleaseDebugSymbols",
+            ":testDebugUnitTest",
+          ),
+        /*
+         * If you add a task to this DID_WORK set, please add an explanation and/or file a bug.
+         */
+        DID_WORK to
+          setOf(
+            // lintDebug is intentionally not up-to-date because it must print the lint
+            // issues
+            // stdout or stderr if necessary.
+            ":lintDebug"
+          ),
+      )
+  }
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.buildFile.appendText(
-            """
-            android.buildTypes {
-                release { minifyEnabled true }
-            }
-            android {
-                buildFeatures {
-                    resValues = true
-                }
-            }
-            """.trimIndent()
-        )
-    }
+  @Before
+  fun setUp() {
+    project.buildFile.appendText(
+      """
+      android.buildTypes {
+          release { minifyEnabled true }
+      }
+      android {
+          buildFeatures {
+              resValues = true
+          }
+      }
+      """
+        .trimIndent()
+    )
+  }
 
-    @Test
-    fun `check task states`() {
-        val result = project.executor().run {
-            val tasks =
-                listOf("assembleRelease", "testDebugUnitTest", "assembleDebugAndroidTest", "lint")
-            run(tasks)
-            run(tasks)
-        }
-        TaskStateAssertionHelper(result)
-            .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
-    }
+  @Test
+  fun `check task states`() {
+    val result =
+      project.executor().run {
+        val tasks = listOf("assembleRelease", "testDebugUnitTest", "assembleDebugAndroidTest", "lint")
+        run(tasks)
+        run(tasks)
+      }
+    TaskStateAssertionHelper(result).assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
+  }
 }

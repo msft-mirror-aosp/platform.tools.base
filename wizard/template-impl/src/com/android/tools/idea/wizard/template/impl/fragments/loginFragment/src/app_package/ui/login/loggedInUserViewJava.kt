@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.app_package.ui.login
 
-
-fun loggedInUserViewJava(
-  packageName: String
-) = """
+fun loggedInUserViewJava(packageName: String) =
+  """
 package  ${packageName}.ui.login;
 
 /**

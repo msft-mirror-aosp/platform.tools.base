@@ -52,23 +52,14 @@ import studio.network.inspection.NetworkInspectorProtocol.InterceptCommand
 private const val URL_PARAMS = "activity=OkHttp3Test"
 private val FAKE_URL = URL("https://www.google.com?$URL_PARAMS")
 private val EXPECTED_RESPONSE =
-  ResponseStarted.newBuilder()
-    .setResponseCode(200)
-    .addHeaders(Header.newBuilder().setKey("response-status-code").addValues("200"))
-    .build()
+  ResponseStarted.newBuilder().setResponseCode(200).addHeaders(Header.newBuilder().setKey("response-status-code").addValues("200")).build()
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class OkHttp3Test {
   private val inspectorRule = NetworkInspectorRule()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
   @Test
   fun get() {
@@ -87,9 +78,7 @@ internal class OkHttp3Test {
     assertThat(httpRequestStarted.transport).isEqualTo(HttpTransport.OKHTTP3)
 
     val httpResponseStarted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED
-      )!!
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED)!!
     assertThat(httpResponseStarted.httpResponseStarted).isEqualTo(EXPECTED_RESPONSE)
 
     assertThat(
@@ -131,9 +120,7 @@ internal class OkHttp3Test {
     assertThat(httpRequestStarted.transport).isEqualTo(HttpTransport.OKHTTP3)
 
     val httpRequestCompleted =
-      inspectorRule.connection.findHttpEvent(
-        NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_COMPLETED
-      )
+      inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_REQUEST_COMPLETED)
     assertThat(httpRequestCompleted).isNotNull()
 
     val requestPayload = inspectorRule.connection.findHttpEvent(REQUEST_PAYLOAD)
@@ -144,9 +131,7 @@ internal class OkHttp3Test {
   fun intercept() {
     val ruleAdded = createFakeRuleAddedEvent(FAKE_URL)
 
-    inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build()
-    )
+    inspectorRule.inspector.receiveInterceptCommand(InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build())
 
     val client = createFakeOkHttp3Client()
     val request = Request.Builder().url(FAKE_URL).build()
@@ -172,9 +157,7 @@ internal class OkHttp3Test {
   @Test
   fun intercept_duplexRequest() {
     val ruleAdded = createFakeRuleAddedEvent(FAKE_URL)
-    inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build()
-    )
+    inspectorRule.inspector.receiveInterceptCommand(InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build())
     val client = createFakeOkHttp3Client()
 
     val request = Request.Builder().url(FAKE_URL).post(DuplexRequestBody()).build()
@@ -187,9 +170,7 @@ internal class OkHttp3Test {
   @Test
   fun intercept_oneShotRequest() {
     val ruleAdded = createFakeRuleAddedEvent(FAKE_URL)
-    inspectorRule.inspector.receiveInterceptCommand(
-      InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build()
-    )
+    inspectorRule.inspector.receiveInterceptCommand(InterceptCommand.newBuilder().apply { interceptRuleAdded = ruleAdded }.build())
     val client = createFakeOkHttp3Client()
 
     val request = Request.Builder().url(FAKE_URL).post(OneShotRequestBody()).build()
@@ -232,9 +213,7 @@ internal class OkHttp3Test {
       assertThat(successEvents).hasSize(6)
       assertThat(successEvents[2].hasHttpResponseStarted()).isTrue()
       val httpResponseStarted =
-        inspectorRule.connection.findHttpEvent(
-          NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED
-        )
+        inspectorRule.connection.findHttpEvent(NetworkInspectorProtocol.HttpConnectionEvent.UnionCase.HTTP_RESPONSE_STARTED)
       assertThat(httpResponseStarted!!.httpResponseStarted).isEqualTo(EXPECTED_RESPONSE)
       assertThat(successEvents[5].hasHttpClosed()).isTrue()
       assertThat(successEvents[5].httpClosed.completed).isTrue()

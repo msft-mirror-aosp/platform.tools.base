@@ -17,21 +17,16 @@
 package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 
-/**
- * Utility methods to create basic Android project content into existing [GradleProject] instances.
- */
+/** Utility methods to create basic Android project content into existing [GradleProject] instances. */
 class HelloWorldAndroid {
-    companion object {
-        fun setupJava(project: AndroidProjectFiles) {
-            project.apply {
-                add(
-                    "src/main/java/$namespaceAsPath/HelloWorld.java",
-                    // language=java
-                    """
+  companion object {
+    fun setupJava(project: AndroidProjectFiles) {
+      project.apply {
+        add(
+          "src/main/java/$namespaceAsPath/HelloWorld.java",
+          // language=java
+          """
                         package $namespace;
 
                         import android.app.Activity;
@@ -45,69 +40,74 @@ class HelloWorldAndroid {
                                 setContentView(R.layout.main);
                             }
                         }
-                    """.trimIndent()
-                )
-
-                add(
-                    "src/main/res/values/strings.xml",
-                    // language=xml
                     """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <resources>
-                            <string name="app_name">HelloWorld</string>
-                        </resources>
-                    """.trimIndent()
-                )
+            .trimIndent(),
+        )
 
-                add(
-                    "src/main/res/layout/main.xml",
-                    // language=xml
-                    """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                            android:orientation="vertical"
-                            android:layout_width="fill_parent"
-                            android:layout_height="fill_parent"
-                            >
-                        <TextView
-                            android:layout_width="fill_parent"
-                            android:layout_height="wrap_content"
-                            android:text="hello world!"
-                            android:id="@+id/text"
-                            />
-                        </LinearLayout>
-                    """.trimIndent()
-                )
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">HelloWorld</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
 
-                update("src/main/AndroidManifest.xml").replaceWith(
-                    // language=xml
-                    """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                              android:versionCode="1"
-                              android:versionName="1.0">
-                            <application android:label="@string/app_name">
-                                <activity android:name=".HelloWorld"
-                                          android:exported="true"
-                                          android:label="@string/app_name">
-                                    <intent-filter>
-                                        <action android:name="android.intent.action.MAIN" />
-                                        <category android:name="android.intent.category.LAUNCHER" />
-                                    </intent-filter>
-                                </activity>
-                            </application>
-                        </manifest>
-                    """.trimIndent()
-                )
-            }
-        }
+        add(
+          "src/main/res/layout/main.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              >
+          <TextView
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:text="hello world!"
+              android:id="@+id/text"
+              />
+          </LinearLayout>
+          """
+            .trimIndent(),
+        )
 
-        fun setupKotlin(project: AndroidProjectFiles) {
-            project.apply {
-                add(
-                    "src/main/java/$namespaceAsPath/HelloWorld.kt",
-                    // language=kotlin
-                    """
+        update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            // language=xml
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:versionCode="1"
+                  android:versionName="1.0">
+                <application android:label="@string/app_name">
+                    <activity android:name=".HelloWorld"
+                              android:exported="true"
+                              android:label="@string/app_name">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            """
+              .trimIndent()
+          )
+      }
+    }
+
+    fun setupKotlin(project: AndroidProjectFiles) {
+      project.apply {
+        add(
+          "src/main/java/$namespaceAsPath/HelloWorld.kt",
+          // language=kotlin
+          """
                         package $namespace
 
                         import android.app.Activity
@@ -120,61 +120,66 @@ class HelloWorldAndroid {
                                 setContentView(R.layout.main)
                             }
                         }
-                    """.trimIndent()
-                )
-
-                add(
-                    "src/main/res/values/strings.xml",
-                    // language=xml
                     """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <resources>
-                            <string name="app_name">HelloWorld</string>
-                        </resources>
-                    """.trimIndent()
-                )
+            .trimIndent(),
+        )
 
-                add(
-                    "src/main/res/layout/main.xml",
-                    // language=xml
-                    """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                            android:orientation="vertical"
-                            android:layout_width="fill_parent"
-                            android:layout_height="fill_parent"
-                            >
-                        <TextView
-                            android:layout_width="fill_parent"
-                            android:layout_height="wrap_content"
-                            android:text="hello world!"
-                            android:id="@+id/text"
-                            />
-                        </LinearLayout>
-                    """.trimIndent()
-                )
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">HelloWorld</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
 
-                update("src/main/AndroidManifest.xml").replaceWith(
-                    // language=xml
-                    """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                              android:versionCode="1"
-                              android:versionName="1.0">
-                            <application android:label="@string/app_name">
-                                <activity android:name=".HelloWorld"
-                                          android:exported="true"
-                                          android:label="@string/app_name">
-                                    <intent-filter>
-                                        <action android:name="android.intent.action.MAIN" />
-                                        <category android:name="android.intent.category.LAUNCHER" />
-                                    </intent-filter>
-                                </activity>
-                            </application>
-                        </manifest>
-                    """.trimIndent()
-                )
-            }
-        }
+        add(
+          "src/main/res/layout/main.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              >
+          <TextView
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:text="hello world!"
+              android:id="@+id/text"
+              />
+          </LinearLayout>
+          """
+            .trimIndent(),
+        )
+
+        update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            // language=xml
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:versionCode="1"
+                  android:versionName="1.0">
+                <application android:label="@string/app_name">
+                    <activity android:name=".HelloWorld"
+                              android:exported="true"
+                              android:label="@string/app_name">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            """
+              .trimIndent()
+          )
+      }
     }
+  }
 }

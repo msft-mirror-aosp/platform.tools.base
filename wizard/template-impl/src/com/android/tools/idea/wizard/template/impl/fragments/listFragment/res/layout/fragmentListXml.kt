@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.listFragment.res.l
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun fragmentListXml(
-  fragmentClass: String,
-  fragmentLayout: String,
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun fragmentListXml(fragmentClass: String, fragmentLayout: String, packageName: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.v7.widget.RecyclerView", useAndroidX)}
         xmlns:android="http://schemas.android.com/apk/res/android"

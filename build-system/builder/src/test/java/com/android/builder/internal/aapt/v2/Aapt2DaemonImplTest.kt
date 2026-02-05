@@ -16,7 +16,6 @@
 
 package com.android.builder.internal.aapt.v2
 
-import com.android.annotations.NonNull
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.internal.aapt.AaptConvertConfig
 import com.android.builder.internal.aapt.AaptOptions
@@ -32,478 +31,570 @@ import com.android.testutils.MockLog
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
-import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.junit.rules.TestName
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertFailsWith
+import org.junit.After
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 
 /** Tests for [Aapt2DaemonImpl], including error conditions */
 class Aapt2DaemonImplTest {
 
-    @Rule
-    @JvmField
-    val temporaryFolder = TemporaryFolder()
+  @Rule @JvmField val temporaryFolder = TemporaryFolder()
 
-    @Rule
-    @JvmField
-    val testName = TestName()
+  @Rule @JvmField val testName = TestName()
 
-    private val logger = MockLog()
+  private val logger = MockLog()
 
-    /** keep track of the daemon to ensure it is closed*/
-    private var daemon: Aapt2Daemon? = null
+  /** keep track of the daemon to ensure it is closed */
+  private var daemon: Aapt2Daemon? = null
 
-    /** No errors or warnings output when the daemon is not used at all. */
-    @Test
-    fun noOperationsCheck() {
-        createDaemon().shutDown()
-    }
+  /** No errors or warnings output when the daemon is not used at all. */
+  @Test
+  fun noOperationsCheck() {
+    createDaemon().shutDown()
+  }
 
-    //This is a regression test.  b/169602190
-    @Test
-    fun testAaptDoesNotRunWhenLinkCommandInvalid() {
-        val daemon = createDaemon()
+  // This is a regression test.  b/169602190
+  @Test
+  fun testAaptDoesNotRunWhenLinkCommandInvalid() {
+    val daemon = createDaemon()
 
-        val manifest = resourceFile(
-            "src",
-            "AndroidManifest.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
-                    |<manifest
-                    |        xmlns:android="http://schemas.android.com/apk/res/android"
-                    |        package="com.example.aapt2daemon.test">
-                    |</manifest>""".trimMargin()
-        )
+    val manifest =
+      resourceFile(
+        "src",
+        "AndroidManifest.xml",
+        """
+        |<?xml version="1.0" encoding="utf-8"?>
+        |<manifest
+        |        xmlns:android="http://schemas.android.com/apk/res/android"
+        |        package="com.example.aapt2daemon.test">
+        |</manifest>
+        """
+          .trimMargin(),
+      )
 
-        val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
-        val emptyTestFile = File(temporaryFolder.newFolder(), "test")
+    val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
+    val emptyTestFile = File(temporaryFolder.newFolder(), "test")
 
-        val request = AaptPackageConfig(
-            androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
-            dependentFeatures = ImmutableList.of(emptyTestFile),
-            packageId = null,
-            manifestFile = manifest,
-            resourceOutputApk = outputFile,
-            resourceDirs = ImmutableList.of(),
-            options = AaptOptions(),
-            componentType = ComponentTypeImpl.BASE_APK
-        )
-       val exception = assertFailsWith(Aapt2Exception::class) {
-            daemon.link(request.copy(intermediateDir = temporaryFolder.newFolder()), logger)
-        }
-        assertThat(exception.message).contains("Unable to make AAPT link command")
-        assertThat(exception.cause?.message).contains("Dependent features configured but no package ID was set.")
+    val request =
+      AaptPackageConfig(
+        androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
+        dependentFeatures = ImmutableList.of(emptyTestFile),
+        packageId = null,
+        manifestFile = manifest,
+        resourceOutputApk = outputFile,
+        resourceDirs = ImmutableList.of(),
+        options = AaptOptions(),
+        componentType = ComponentTypeImpl.BASE_APK,
+      )
+    val exception =
+      assertFailsWith(Aapt2Exception::class) { daemon.link(request.copy(intermediateDir = temporaryFolder.newFolder()), logger) }
+    assertThat(exception.message).contains("Unable to make AAPT link command")
+    assertThat(exception.cause?.message).contains("Dependent features configured but no package ID was set.")
+  }
 
-    }
-    @Test
-    fun testCompileMultipleCalls() {
-        val outDir = temporaryFolder.newFolder()
-        val requests = listOf(
-            CompileResourceRequest(
-                inputFile = valuesFile("strings", "<resources></resources>"),
-                outputDirectory = outDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            CompileResourceRequest(
-                inputFile = valuesFile("styles", "<resources></resources>"),
-                outputDirectory = outDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            )
-        )
-        val daemon = createDaemon()
-        requests.forEach { daemon.compile(it, logger) }
-        assertThat(outDir.list()).asList()
-            .containsExactlyElementsIn(
-                requests.map { Aapt2RenamingConventions.compilationRename(it.inputFile) })
-    }
+  @Test
+  fun testCompileMultipleCalls() {
+    val outDir = temporaryFolder.newFolder()
+    val requests =
+      listOf(
+        CompileResourceRequest(
+          inputFile = valuesFile("strings", "<resources></resources>"),
+          outputDirectory = outDir,
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+        ),
+        CompileResourceRequest(
+          inputFile = valuesFile("styles", "<resources></resources>"),
+          outputDirectory = outDir,
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+        ),
+      )
+    val daemon = createDaemon()
+    requests.forEach { daemon.compile(it, logger) }
+    assertThat(outDir.list()).asList().containsExactlyElementsIn(requests.map { Aapt2RenamingConventions.compilationRename(it.inputFile) })
+  }
 
-    @Test
-    fun testPartialR() {
-        val outDir = temporaryFolder.newFolder()
-        val partialRDir = temporaryFolder.newFolder()
-        val partialRvalue = File(partialRDir, "values_strings.txt")
-        val partialRRaw = File(partialRDir, "raw.txt")
-        val requests = listOf(
-            CompileResourceRequest(
-                inputFile = valuesFile("strings", "<resources></resources>"),
-                outputDirectory = outDir,
-                partialRFile = partialRvalue,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            CompileResourceRequest(
-                inputFile = resourceFile("raw", "my_raw_resource.txt", "Raw Content"),
-                outputDirectory = outDir,
-                partialRFile = partialRRaw,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            )
-        )
-        val daemon = createDaemon()
-        requests.forEach { daemon.compile(it, logger) }
-        assertThat(outDir.list()).asList()
-            .containsExactlyElementsIn(
-                requests.map { Aapt2RenamingConventions.compilationRename(it.inputFile) })
+  @Test
+  fun testPartialR() {
+    val outDir = temporaryFolder.newFolder()
+    val partialRDir = temporaryFolder.newFolder()
+    val partialRvalue = File(partialRDir, "values_strings.txt")
+    val partialRRaw = File(partialRDir, "raw.txt")
+    val requests =
+      listOf(
+        CompileResourceRequest(
+          inputFile = valuesFile("strings", "<resources></resources>"),
+          outputDirectory = outDir,
+          partialRFile = partialRvalue,
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+        ),
+        CompileResourceRequest(
+          inputFile = resourceFile("raw", "my_raw_resource.txt", "Raw Content"),
+          outputDirectory = outDir,
+          partialRFile = partialRRaw,
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+        ),
+      )
+    val daemon = createDaemon()
+    requests.forEach { daemon.compile(it, logger) }
+    assertThat(outDir.list()).asList().containsExactlyElementsIn(requests.map { Aapt2RenamingConventions.compilationRename(it.inputFile) })
 
-        assertThat(partialRvalue).isFile()
-        assertThat(partialRRaw).isFile()
-    }
+    assertThat(partialRvalue).isFile()
+    assertThat(partialRRaw).isFile()
+  }
 
-    @Test
-    fun testWarningsDoNotFailBuild() {
-        val outDir = temporaryFolder.newFolder()
-        val request = CompileResourceRequest(
-            inputFile = valuesFile(
-                "strings",
-                "<resources><string name=\"foo\">%s %d</string></resources>"
-            ),
-            outputDirectory = outDir,
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-        )
+  @Test
+  fun testWarningsDoNotFailBuild() {
+    val outDir = temporaryFolder.newFolder()
+    val request =
+      CompileResourceRequest(
+        inputFile = valuesFile("strings", "<resources><string name=\"foo\">%s %d</string></resources>"),
+        outputDirectory = outDir,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      )
 
-        val daemon = createDaemon()
-        daemon.compile(request, logger)
-        assertThat(outDir.list()).asList()
-            .containsExactly(Aapt2RenamingConventions.compilationRename(request.inputFile))
-        assertThat(logger.messages).hasSize(2)
-        assertThat(logger.messages[1]).contains(
-            "warn: multiple substitutions specified in non-positional format"
-        )
-        logger.clear()
-    }
+    val daemon = createDaemon()
+    daemon.compile(request, logger)
+    assertThat(outDir.list()).asList().containsExactly(Aapt2RenamingConventions.compilationRename(request.inputFile))
+    assertThat(logger.messages).hasSize(2)
+    assertThat(logger.messages[1]).contains("warn: multiple substitutions specified in non-positional format")
+    logger.clear()
+  }
 
-    @Test
-    fun testCompileInvalidFile() {
-        val compiledDir = temporaryFolder.newFolder()
-        val inputFile = resourceFile("values", "foo.txt", "content")
-        val daemon = createDaemon()
-        val exception = assertFailsWith(Aapt2Exception::class) {
-            daemon.compile(
-                CompileResourceRequest(
-                    inputFile = inputFile,
-                    outputDirectory = compiledDir,
-                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-                ),
-                logger
-            )
-        }
-        assertThat(exception.message).contains("error: invalid file path")
-        assertThat(exception.message).contains("foo.txt")
-
-        assertThat(logger.messages.joinToString("\n")).contains("command =")
-        logger.clear()
-    }
-
-    @Test
-    fun testLink() {
-        val daemon = createDaemon()
-
-        val compiledDir = temporaryFolder.newFolder()
+  @Test
+  fun testCompileInvalidFile() {
+    val compiledDir = temporaryFolder.newFolder()
+    val inputFile = resourceFile("values", "foo.txt", "content")
+    val daemon = createDaemon()
+    val exception =
+      assertFailsWith(Aapt2Exception::class) {
         daemon.compile(
-            CompileResourceRequest(
-                inputFile = resourceFile("raw", "foo.txt", "content"),
-                outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
+          CompileResourceRequest(
+            inputFile = inputFile,
+            outputDirectory = compiledDir,
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+          ),
+          logger,
         )
+      }
+    assertThat(exception.message).contains("error: invalid file path")
+    assertThat(exception.message).contains("foo.txt")
 
-        val manifest = resourceFile(
-            "src",
-            "AndroidManifest.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
-                    |<manifest
-                    |        xmlns:android="http://schemas.android.com/apk/res/android"
-                    |        package="com.example.aapt2daemon.test">
-                    |</manifest>""".trimMargin()
-        )
+    assertThat(logger.messages.joinToString("\n")).contains("command =")
+    logger.clear()
+  }
 
-        val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
+  @Test
+  fun testLink() {
+    val daemon = createDaemon()
 
-        val request = AaptPackageConfig(
-            androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
-            manifestFile = manifest,
-            resourceDirs = ImmutableList.of(compiledDir),
-            resourceOutputApk = outputFile,
-            options = AaptOptions(),
-            componentType = ComponentTypeImpl.BASE_APK
-        )
+    val compiledDir = temporaryFolder.newFolder()
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = resourceFile("raw", "foo.txt", "content"),
+        outputDirectory = compiledDir,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
 
-        daemon.link(request, logger)
+    val manifest =
+      resourceFile(
+        "src",
+        "AndroidManifest.xml",
+        """
+        |<?xml version="1.0" encoding="utf-8"?>
+        |<manifest
+        |        xmlns:android="http://schemas.android.com/apk/res/android"
+        |        package="com.example.aapt2daemon.test">
+        |</manifest>
+        """
+          .trimMargin(),
+      )
 
-        assertThat(outputFile) {
-            it.containsFileWithContent("res/raw/foo.txt", "content")
-        }
+    val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
+
+    val request =
+      AaptPackageConfig(
+        androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
+        manifestFile = manifest,
+        resourceDirs = ImmutableList.of(compiledDir),
+        resourceOutputApk = outputFile,
+        options = AaptOptions(),
+        componentType = ComponentTypeImpl.BASE_APK,
+      )
+
+    daemon.link(request, logger)
+
+    assertThat(outputFile) { it.containsFileWithContent("res/raw/foo.txt", "content") }
+  }
+
+  @Test
+  fun testLinkInvalidManifest() {
+    val daemon = createDaemon()
+
+    val compiledDir = temporaryFolder.newFolder()
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = resourceFile("raw", "foo.txt", "content"),
+        outputDirectory = compiledDir,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+
+    val manifest = resourceFile("src", "AndroidManifest.xml", """<""")
+
+    val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
+
+    val request =
+      AaptPackageConfig(
+        androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
+        manifestFile = manifest,
+        resourceOutputApk = outputFile,
+        resourceDirs = ImmutableList.of(compiledDir),
+        options = AaptOptions(),
+        componentType = ComponentTypeImpl.BASE_APK,
+      )
+    val exception =
+      assertFailsWith(Aapt2Exception::class) { daemon.link(request.copy(intermediateDir = temporaryFolder.newFolder()), logger) }
+    assertThat(exception.message).contains("Android resource linking failed")
+    assertThat(exception.message).contains("AndroidManifest.xml")
+    assertThat(exception.message).contains("error: unclosed token.")
+
+    // Compiled resources should be listed in a file.
+    assertThat(logger.messages.joinToString("\n")).contains("@")
+    logger.clear()
+
+    val exception2 = assertFailsWith(Aapt2Exception::class) { daemon.link(request, logger) }
+    assertThat(exception2.message).contains("Android resource linking failed")
+    assertThat(exception2.message).contains("AndroidManifest.xml")
+    assertThat(exception2.message).contains("error: unclosed token.")
+    // Compiled resources should not be listed in a file.
+    assertThat(logger.messages.joinToString("\n")).doesNotContain("@")
+    assertThat(logger.messages.joinToString("\n")).contains("foo.txt")
+    logger.clear()
+  }
+
+  @Test
+  fun testConvert() {
+    val daemon = createDaemon()
+
+    val compiledDir = temporaryFolder.newFolder()
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = resourceFile("layout", "some.xml", "<x/>"),
+        outputDirectory = compiledDir,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = resourceFile("layout", "another.xml", "<merge><a /><b attr=\"Hello\"/></merge>"),
+        outputDirectory = compiledDir,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+
+    val manifest =
+      resourceFile(
+        "src",
+        "AndroidManifest.xml",
+        """
+        |<?xml version="1.0" encoding="utf-8"?>
+        |<manifest
+        |        xmlns:android="http://schemas.android.com/apk/res/android"
+        |        package="com.example.aapt2daemon.test">
+        |</manifest>
+        """
+          .trimMargin(),
+      )
+    val protoLinkedFile = File(temporaryFolder.newFolder(), "proto.apk")
+    val request =
+      AaptPackageConfig(
+        androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
+        manifestFile = manifest,
+        resourceDirs = ImmutableList.of(compiledDir),
+        resourceOutputApk = protoLinkedFile,
+        options = AaptOptions(),
+        componentType = ComponentTypeImpl.BASE_APK,
+        generateProtos = true,
+      )
+    daemon.link(request, logger)
+    assertThat(protoLinkedFile) { it.contains("resources.pb") }
+
+    val binaryLinkedFile = File(temporaryFolder.newFolder(), "binary.apk")
+    daemon.convert(AaptConvertConfig(inputFile = protoLinkedFile, outputFile = binaryLinkedFile), logger)
+
+    assertThat(binaryLinkedFile) {
+      it.contains("resources.arsc")
+      it.containsFileWithContent("res/layout/some.xml", BINARY_XML_CONTENT)
+      it.contains("res/layout/another.xml")
     }
+  }
 
-    @Test
-    fun testLinkInvalidManifest() {
-        val daemon = createDaemon()
+  @Test
+  fun pngWithLongPathCrunchingTest() {
+    val daemon = createDaemon()
 
-        val compiledDir = temporaryFolder.newFolder()
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = resourceFile("raw", "foo.txt", "content"),
-                outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
+    val request =
+      CompileResourceRequest(
+        AaptTestUtils.getTestPngWithLongFileName(temporaryFolder),
+        AaptTestUtils.getOutputDir(temporaryFolder),
+        "test",
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      )
+    daemon.compile(request, logger)
+    val compiled = request.outputDirectory.toPath().resolve(Aapt2RenamingConventions.compilationRename(request.inputFile))
+    assertThat(compiled).exists()
+  }
 
-        val manifest = resourceFile(
-            "src",
-            "AndroidManifest.xml",
-            """<"""
-        )
+  @Test
+  @Throws(Exception::class)
+  fun crunchFlagIsRespected() {
+    val daemon = createDaemon()
+    val png = AaptTestUtils.getTestPng(temporaryFolder)
+    val outDir = AaptTestUtils.getOutputDir(temporaryFolder)
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = png,
+        outputDirectory = outDir,
+        isPseudoLocalize = false,
+        isPngCrunching = true,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+    val outFile = outDir.toPath().resolve(Aapt2RenamingConventions.compilationRename(png))
+    val withCrunchEnabledSize = Files.size(outFile)
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = png,
+        outputDirectory = outDir,
+        isPseudoLocalize = false,
+        isPngCrunching = false,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
 
-        val outputFile = File(temporaryFolder.newFolder(), "lib.apk")
+    val withCrunchDisabledSize = Files.size(outFile)
+    assertThat(withCrunchEnabledSize).isLessThan(withCrunchDisabledSize)
+  }
 
-        val request = AaptPackageConfig(
-            androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
-            manifestFile = manifest,
-            resourceOutputApk = outputFile,
-            resourceDirs = ImmutableList.of(compiledDir),
-            options = AaptOptions(),
-            componentType = ComponentTypeImpl.BASE_APK
-        )
-        val exception = assertFailsWith(Aapt2Exception::class) {
-            daemon.link(request.copy(intermediateDir = temporaryFolder.newFolder()), logger)
-        }
-        assertThat(exception.message).contains("Android resource linking failed")
-        assertThat(exception.message).contains("AndroidManifest.xml")
-        assertThat(exception.message).contains("error: unclosed token.")
+  @Test
+  @Throws(Exception::class)
+  fun ninePatchPngsAlwaysProcessedEvenWhenCrunchingDisabled() {
+    val daemon = createDaemon()
+    val ninePatch = AaptTestUtils.getTest9Patch(temporaryFolder)
+    val outDir = AaptTestUtils.getOutputDir(temporaryFolder)
 
-        // Compiled resources should be listed in a file.
-        assertThat(logger.messages.joinToString("\n")).contains("@")
-        logger.clear()
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = ninePatch,
+        outputDirectory = outDir,
+        isPseudoLocalize = false,
+        isPngCrunching = true,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+    val outFile = outDir.toPath().resolve(Aapt2RenamingConventions.compilationRename(ninePatch))
+    val withCrunchEnabled = Files.readAllBytes(outFile)
+    daemon.compile(
+      CompileResourceRequest(
+        inputFile = ninePatch,
+        outputDirectory = outDir,
+        isPseudoLocalize = false,
+        isPngCrunching = false,
+        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
+      ),
+      logger,
+    )
+    val withCrunchDisabled = Files.readAllBytes(outFile)
+    assertThat(withCrunchDisabled).isEqualTo(withCrunchEnabled)
+  }
 
-        val exception2 = assertFailsWith(Aapt2Exception::class) {
-            daemon.link(request, logger)
-        }
-        assertThat(exception2.message).contains("Android resource linking failed")
-        assertThat(exception2.message).contains("AndroidManifest.xml")
-        assertThat(exception2.message).contains("error: unclosed token.")
-        // Compiled resources should not be listed in a file.
-        assertThat(logger.messages.joinToString("\n")).doesNotContain("@")
-        assertThat(logger.messages.joinToString("\n")).contains("foo.txt")
-        logger.clear()
+  @After
+  fun assertNoWarningOrErrorLogs() {
+    assertThat(logger.messages.filter { !(isStartOrShutdownLog(it) || it.startsWith("V")) }).isEmpty()
+  }
+
+  @After
+  fun shutdownDaemon() {
+    daemon?.let { daemon ->
+      if (daemon.state != Aapt2Daemon.State.SHUTDOWN) {
+        daemon.shutDown()
+      }
     }
+  }
 
-    @Test
-    fun testConvert() {
-        val daemon = createDaemon()
+  private fun isStartOrShutdownLog(line: String) = line.startsWith("P") && (line.contains("starting") || line.contains("shutdown"))
 
-        val compiledDir = temporaryFolder.newFolder()
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = resourceFile("layout", "some.xml", "<x/>"),
-                outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
+  private fun createDaemon(
+    daemonTimeouts: Aapt2DaemonTimeouts = Aapt2DaemonTimeouts(),
+    executable: Path = TestUtils.getAapt2(),
+  ): Aapt2Daemon {
+    val daemon =
+      Aapt2DaemonImpl(
+        displayId = "'Aapt2DaemonImplTest.${testName.methodName}'",
+        aaptExecutable = executable,
+        logger = logger,
+        daemonTimeouts = daemonTimeouts,
+      )
+    this.daemon = daemon
+    return daemon
+  }
+
+  private fun valuesFile(name: String, content: String) = resourceFile("values", "$name.xml", content)
+
+  private fun resourceFile(directory: String, name: String, content: String) =
+    temporaryFolder
+      .newFolder()
+      .toPath()
+      .resolve(directory)
+      .resolve(name)
+      .apply {
+        Files.createDirectories(this.parent)
+        Files.write(this, content.toByteArray(StandardCharsets.UTF_8))
+      }
+      .toFile()
+
+  companion object {
+    private val target: IAndroidTarget by
+      lazy(LazyThreadSafetyMode.NONE) {
+        AndroidSdkHandler.getInstance(AndroidLocationsSingleton, TestUtils.getSdk())
+          .getAndroidTargetManager(FakeProgressIndicator())
+          .getTargets(FakeProgressIndicator())
+          .maxByOrNull { it.version }!!
+      }
+
+    val BINARY_XML_CONTENT =
+      listOf(
+          3,
+          0,
+          8,
+          0,
+          112,
+          0,
+          0,
+          0,
+          1,
+          0,
+          28,
+          0,
+          36,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          32,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          120,
+          0,
+          -128,
+          1,
+          8,
+          0,
+          8,
+          0,
+          0,
+          0,
+          2,
+          1,
+          16,
+          0,
+          36,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          0,
+          0,
+          0,
+          20,
+          0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          1,
+          16,
+          0,
+          24,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          0,
+          0,
+          0,
         )
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = resourceFile(
-                    "layout",
-                    "another.xml",
-                    "<merge><a /><b attr=\"Hello\"/></merge>"
-                ),
-                outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
-
-        val manifest = resourceFile(
-            "src",
-            "AndroidManifest.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
-                    |<manifest
-                    |        xmlns:android="http://schemas.android.com/apk/res/android"
-                    |        package="com.example.aapt2daemon.test">
-                    |</manifest>""".trimMargin()
-        )
-        val protoLinkedFile = File(temporaryFolder.newFolder(), "proto.apk")
-        val request = AaptPackageConfig(
-            androidJarPath = target.getPath(IAndroidTarget.ANDROID_JAR).toString(),
-            manifestFile = manifest,
-            resourceDirs = ImmutableList.of(compiledDir),
-            resourceOutputApk = protoLinkedFile,
-            options = AaptOptions(),
-            componentType = ComponentTypeImpl.BASE_APK,
-            generateProtos = true
-        )
-        daemon.link(request, logger)
-        assertThat(protoLinkedFile) {
-            it.contains("resources.pb")
-        }
-
-        val binaryLinkedFile = File(temporaryFolder.newFolder(), "binary.apk")
-        daemon.convert(
-            AaptConvertConfig(
-                inputFile = protoLinkedFile,
-                outputFile = binaryLinkedFile
-            ), logger
-        )
-
-        assertThat(binaryLinkedFile) {
-            it.contains("resources.arsc")
-            it.containsFileWithContent("res/layout/some.xml", BINARY_XML_CONTENT)
-            it.contains("res/layout/another.xml")
-        }
-    }
-
-    @Test
-    fun pngWithLongPathCrunchingTest() {
-        val daemon = createDaemon()
-
-        val request = CompileResourceRequest(
-            AaptTestUtils.getTestPngWithLongFileName(temporaryFolder),
-            AaptTestUtils.getOutputDir(temporaryFolder),
-            "test",
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-        )
-        daemon.compile(request, logger)
-        val compiled =
-            request.outputDirectory.toPath().resolve(
-                Aapt2RenamingConventions.compilationRename(request.inputFile)
-            )
-        assertThat(compiled).exists()
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun crunchFlagIsRespected() {
-        val daemon = createDaemon()
-        val png = AaptTestUtils.getTestPng(temporaryFolder)
-        val outDir = AaptTestUtils.getOutputDir(temporaryFolder)
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = png,
-                outputDirectory = outDir,
-                isPseudoLocalize = false,
-                isPngCrunching = true,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
-        val outFile = outDir.toPath().resolve(Aapt2RenamingConventions.compilationRename(png))
-        val withCrunchEnabledSize = Files.size(outFile)
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = png,
-                outputDirectory = outDir,
-                isPseudoLocalize = false,
-                isPngCrunching = false,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
-
-        val withCrunchDisabledSize = Files.size(outFile)
-        assertThat(withCrunchEnabledSize).isLessThan(withCrunchDisabledSize)
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun ninePatchPngsAlwaysProcessedEvenWhenCrunchingDisabled() {
-        val daemon = createDaemon()
-        val ninePatch = AaptTestUtils.getTest9Patch(temporaryFolder)
-        val outDir = AaptTestUtils.getOutputDir(temporaryFolder)
-
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = ninePatch,
-                outputDirectory = outDir,
-                isPseudoLocalize = false,
-                isPngCrunching = true,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
-        val outFile = outDir.toPath().resolve(Aapt2RenamingConventions.compilationRename(ninePatch))
-        val withCrunchEnabled = Files.readAllBytes(outFile)
-        daemon.compile(
-            CompileResourceRequest(
-                inputFile = ninePatch,
-                outputDirectory = outDir,
-                isPseudoLocalize = false,
-                isPngCrunching = false,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
-            ),
-            logger
-        )
-        val withCrunchDisabled = Files.readAllBytes(outFile)
-        assertThat(withCrunchDisabled).isEqualTo(withCrunchEnabled)
-    }
-
-    @After
-    fun assertNoWarningOrErrorLogs() {
-        assertThat(logger.messages.filter { !(isStartOrShutdownLog(it) || it.startsWith("V")) })
-            .isEmpty()
-    }
-
-    @After
-    fun shutdownDaemon() {
-        daemon?.let { daemon ->
-            if (daemon.state != Aapt2Daemon.State.SHUTDOWN) {
-                daemon.shutDown()
-            }
-        }
-    }
-
-    private fun isStartOrShutdownLog(line: String) =
-        line.startsWith("P") && (line.contains("starting") || line.contains("shutdown"))
-
-    private fun createDaemon(
-        daemonTimeouts: Aapt2DaemonTimeouts = Aapt2DaemonTimeouts(),
-        executable: Path = TestUtils.getAapt2()
-    ): Aapt2Daemon {
-        val daemon = Aapt2DaemonImpl(
-            displayId = "'Aapt2DaemonImplTest.${testName.methodName}'",
-            aaptExecutable = executable,
-            logger = logger,
-            daemonTimeouts = daemonTimeouts
-        )
-        this.daemon = daemon
-        return daemon
-    }
-
-    private fun valuesFile(name: String, content: String) =
-        resourceFile("values", "$name.xml", content)
-
-    private fun resourceFile(directory: String, name: String, content: String) =
-        temporaryFolder.newFolder()
-            .toPath()
-            .resolve(directory)
-            .resolve(name)
-            .apply {
-                Files.createDirectories(this.parent)
-                Files.write(this, content.toByteArray(StandardCharsets.UTF_8))
-            }
-            .toFile()
-
-    companion object {
-        private val target: IAndroidTarget by lazy(LazyThreadSafetyMode.NONE) {
-            AndroidSdkHandler.getInstance(AndroidLocationsSingleton, TestUtils.getSdk())
-                .getAndroidTargetManager(FakeProgressIndicator())
-                .getTargets(FakeProgressIndicator())
-                .maxByOrNull { it.version }!!
-        }
-
-        val BINARY_XML_CONTENT = listOf(
-            3, 0, 8, 0, 112, 0, 0, 0, 1, 0, 28, 0, 36, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-            0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 120, 0, -128, 1, 8, 0, 8, 0, 0, 0, 2, 1,
-            16, 0, 36, 0, 0, 0, 1, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 20, 0, 20,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 16, 0, 24, 0, 0, 0, 1, 0, 0, 0, -1, -1, -1, -1, -1,
-            -1, -1, -1, 0, 0, 0, 0
-        ).map { it.toByte() }.toByteArray()
-    }
+        .map { it.toByte() }
+        .toByteArray()
+  }
 }

@@ -26,7 +26,7 @@ fun transformFragmentKt(
   fragmentClassName: String,
   navFragmentPrefix: String,
   navViewModelClass: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val layoutName = "fragment_transform"

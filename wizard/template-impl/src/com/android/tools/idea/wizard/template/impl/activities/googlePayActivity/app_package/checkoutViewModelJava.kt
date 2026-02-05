@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity.app_package
 
-fun checkoutViewModelJava(
-  viewModelClass: String,
-  packageName: String
-): String {
+fun checkoutViewModelJava(viewModelClass: String, packageName: String): String {
 
   return """
 package $packageName.viewmodel;

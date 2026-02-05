@@ -23,94 +23,95 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class ExpandArtProfileWildcardsTest {
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
+  @get:Rule val tempFolder = TemporaryFolder()
 
-    private val app = HelloWorldApp.forPluginWithNamespace(
-        "com.android.application", "com.example.app")
-    private val lib =
-        HelloWorldApp.forPluginWithNamespace(
-            "com.android.library", "com.example.lib")
+  private val app = HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app")
+  private val lib = HelloWorldApp.forPluginWithNamespace("com.android.library", "com.example.lib")
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .subproject(":lib", lib)
-                .dependency(app, lib)
-                .build()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .disableBuiltInKotlin()
+      .create()
+
+  @Test
+  fun validateNoOpWithoutMinifyEnabled() {
+    // Do not specify minifyEnabled in build file, which disables it
+    // The expand art profile wildcards task should not run
+    val app =
+      project.getSubproject("app").also {
+        it.buildFile.appendText(
+          """
+          android {
+              defaultConfig {
+                  minSdkVersion = 33
+              }
+          }
+          """
+            .trimIndent()
         )
-        .disableBuiltInKotlin()
-        .create()
+      }
 
-    @Test
-    fun validateNoOpWithoutMinifyEnabled() {
-        // Do not specify minifyEnabled in build file, which disables it
-        // The expand art profile wildcards task should not run
-        val app = project.getSubproject("app").also {
-            it.buildFile.appendText(
-                """
-                    android {
-                        defaultConfig {
-                            minSdkVersion = 33
-                        }
-                    }
-                """.trimIndent()
-            )
-        }
+    FileUtils.createFile(app.file("src/main/baselineProfiles/file.txt"), "L*;")
 
-        FileUtils.createFile(app.file("src/main/baselineProfiles/file.txt"), "L*;")
+    val result = project.executor().run(":app:assembleRelease", ":app:bundleRelease")
 
-        val result = project.executor().run(":app:assembleRelease", ":app:bundleRelease")
+    Truth.assertThat(result.didWorkTasks).doesNotContain(":app:expandReleaseArtProfileWildcards")
+  }
 
-        Truth.assertThat(result.didWorkTasks)
-            .doesNotContain(":app:expandReleaseArtProfileWildcards")
-    }
+  @Test
+  fun testExpandArtProfileWildcardsTaskWithR8Rewriting() {
+    testExpandWildcardsTask(
+      r8Rewriting = true,
+      expectedArtProfile =
+        """
+        Lcom/example/app/HelloWorld;
+        Lb;
+        Lcom/example/lib/HelloWorld;
+        La;
 
-    @Test
-    fun testExpandArtProfileWildcardsTaskWithR8Rewriting() {
-        testExpandWildcardsTask(r8Rewriting = true, expectedArtProfile =
-            """
-                Lcom/example/app/HelloWorld;
-                La/a;
-                Lcom/example/lib/HelloWorld;
-                Lb/a;
+        """
+          .trimIndent(),
+    )
+  }
 
-            """.trimIndent())
-    }
+  @Test
+  fun testExpandArtProfileWildcardsTaskWithoutR8Rewriting() {
+    testExpandWildcardsTask(
+      r8Rewriting = false,
+      expectedArtProfile =
+        """
+        Lcom/example/app/HelloWorld;
+        Lcom/example/app/R${'$'}id;
+        Lcom/example/app/R${'$'}layout;
+        Lcom/example/app/R${'$'}string;
+        Lcom/example/app/R;
+        Lcom/example/lib/Foo;
+        Lcom/example/lib/HelloWorld;
+        Lcom/example/lib/R${'$'}id;
+        Lcom/example/lib/R${'$'}layout;
+        Lcom/example/lib/R${'$'}string;
+        Lcom/example/lib/R;
 
-    @Test
-    fun testExpandArtProfileWildcardsTaskWithoutR8Rewriting() {
-        testExpandWildcardsTask(r8Rewriting = false, expectedArtProfile =
-            """
-                Lcom/example/app/HelloWorld;
-                Lcom/example/app/R${'$'}id;
-                Lcom/example/app/R${'$'}layout;
-                Lcom/example/app/R${'$'}string;
-                Lcom/example/app/R;
-                Lcom/example/lib/Foo;
-                Lcom/example/lib/HelloWorld;
-                Lcom/example/lib/R${'$'}id;
-                Lcom/example/lib/R${'$'}layout;
-                Lcom/example/lib/R${'$'}string;
-                Lcom/example/lib/R;
+        """
+          .trimIndent(),
+    )
+  }
 
-            """.trimIndent())
-    }
-
-    private fun testExpandWildcardsTask(r8Rewriting: Boolean, expectedArtProfile: String) {
-        // Set minifyEnabled to true so ExpandArtProfileWildcardsTask runs
-        val app = project.getSubproject("app").also {
-            it.buildFile.appendText(
-                """
+  private fun testExpandWildcardsTask(r8Rewriting: Boolean, expectedArtProfile: String) {
+    // Set minifyEnabled to true so ExpandArtProfileWildcardsTask runs
+    val app =
+      project.getSubproject("app").also {
+        it.buildFile.appendText(
+          """
                     android {
                         defaultConfig {
                             minSdkVersion = 33
@@ -129,45 +130,49 @@ class ExpandArtProfileWildcardsTest {
                             )
                         })
                     }
-                """.trimIndent()
-            )
-            File(project.getSubproject("app").projectDir, "dontoptimize.pro").writeText("-dontoptimize")
+                """
+            .trimIndent()
+        )
+        File(project.getSubproject("app").projectDir, "dontoptimize.pro").writeText("-dontoptimize")
+      }
+
+    // Add a file whose class name will be included in the output after wildcards are expanded
+    File(project.getSubproject("lib").mainSrcDir, "com/example/lib/Foo.java")
+      .writeText(
+        """
+        package com.example.lib;
+        public class Foo {
+            public int m(int i, int j) {
+                return i;
+            }
         }
+        """
+          .trimIndent()
+      )
 
-        // Add a file whose class name will be included in the output after wildcards are expanded
-        File(project.getSubproject("lib").mainSrcDir, "com/example/lib/Foo.java").writeText(
-            """
-                package com.example.lib;
-                public class Foo {
-                    public int m(int i, int j) {
-                        return i;
-                    }
-                }
-            """.trimIndent()
-        )
+    // Add a wildcard that matches to any amount of characters in a class or method name,
+    // including package separator ('/')
+    FileUtils.createFile(app.file("src/main/baselineProfiles/file.txt"), "L**;")
 
-        // Add a wildcard that matches to any amount of characters in a class or method name,
-        // including package separator ('/')
-        FileUtils.createFile(app.file("src/main/baselineProfiles/file.txt"), "L**;")
+    val result = project.executor().run(":app:assembleRelease", ":app:bundleRelease")
 
-        val result = project.executor().run(":app:assembleRelease", ":app:bundleRelease")
+    Truth.assertThat(result.failedTasks).isEmpty()
+    Truth.assertThat(result.didWorkTasks).contains(":app:expandReleaseArtProfileWildcards")
 
-        Truth.assertThat(result.failedTasks).isEmpty()
-        Truth.assertThat(result.didWorkTasks).contains(":app:expandReleaseArtProfileWildcards")
+    val expandedProfile =
+      FileUtils.join(
+        app.buildDir,
+        SdkConstants.FD_INTERMEDIATES,
+        InternalArtifactType.R8_ART_PROFILE.getFolderName(),
+        "release",
+        "minifyReleaseWithR8",
+        SdkConstants.FN_ART_PROFILE,
+      )
 
-        val expandedProfile = FileUtils.join(
-            app.buildDir,
-            SdkConstants.FD_INTERMEDIATES,
-            InternalArtifactType.R8_ART_PROFILE.getFolderName(),
-            "release",
-            "minifyReleaseWithR8",
-            SdkConstants.FN_ART_PROFILE
-        )
-
-        // The output contains the expansion of the following sources:
-        // - App classes (HelloWorld class)
-        // - App resources (R.jar)
-        // - Lib classes (classes.jar containing HelloWorld and Foo classes)
-        Truth.assertThat(expandedProfile.readText()).isEqualTo(expectedArtProfile)
-    }
+    // The output contains the expansion of the following sources:
+    // - App classes (HelloWorld class)
+    // - App resources (R.jar)
+    // - Lib classes (classes.jar containing HelloWorld and Foo classes)
+    Truth.assertThat(expandedProfile.readText()).isEqualTo(expectedArtProfile)
+  }
 }

@@ -16,98 +16,87 @@
 
 package com.android.build.gradle.integration.common.fixture.project.options
 
-/**
- * Allows configuring a Gadle test project with various options
- */
+/** Allows configuring a Gadle test project with various options */
 interface RuleOptionBuilder {
 
-    /**
-     * Disable checks for improper built-in Kotlin opt-out
-     *
-     * There are cases where it's not possible for the fixture to accurately detect
-     * that the test requires opt-out.
-     *
-     * Using this method will make the fixture not check for this.
-     *
-     * Make sure to use this only on the tests that need it, and not on whole classes.
-     */
-    fun disableBrokenBuiltInKotlinOptOutChecks(): RuleOptionBuilder
+  /**
+   * Disable checks for improper built-in Kotlin opt-out
+   *
+   * There are cases where it's not possible for the fixture to accurately detect that the test requires opt-out.
+   *
+   * Using this method will make the fixture not check for this.
+   *
+   * Make sure to use this only on the tests that need it, and not on whole classes.
+   */
+  fun disableBrokenBuiltInKotlinOptOutChecks(): RuleOptionBuilder
 
-    /**
-     * Disable checks for improper newDsl opt-out
-     *
-     * There are cases where it's not possible for the fixture to accurately detect
-     * that the test requires opt-out.
-     *
-     * Using this method will make the fixture not check for this.
-     *
-     * Make sure to use this only on the tests that need it, and not on whole classes.
-     */
-    fun disableBrokenNewDslOptOutChecks(): RuleOptionBuilder
+  /**
+   * Disable checks for improper newDsl opt-out
+   *
+   * There are cases where it's not possible for the fixture to accurately detect that the test requires opt-out.
+   *
+   * Using this method will make the fixture not check for this.
+   *
+   * Make sure to use this only on the tests that need it, and not on whole classes.
+   */
+  fun disableBrokenNewDslOptOutChecks(): RuleOptionBuilder
 
-    /**
-     * configures the Gradle version or location
-     */
-    fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): RuleOptionBuilder
-    /**
-     * configures the Gradle options (memory, config caching)
-     */
-    fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): RuleOptionBuilder
+  /** configures the Gradle version or location */
+  fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): RuleOptionBuilder
 
-    /**
-     * configures the Android SDK/NDK
-     */
-    fun withSdk(action: SdkConfigurationBuilder.() -> Unit): RuleOptionBuilder
+  /** configures the Gradle options (memory, config caching) */
+  fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): RuleOptionBuilder
+
+  /** configures the Android SDK/NDK */
+  fun withSdk(action: SdkConfigurationBuilder.() -> Unit): RuleOptionBuilder
 }
 
-internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
-    internal var disableBrokenBuiltInKotlinOptOutChecks = false
-    internal var disableBrokenNewDslOptOutChecks = false
-    private val gradleLocationDelegate = GradleLocationDelegate()
-    private val sdkConfigurationDelegate = SdkConfigurationDelegate()
-    private val gradleOptionsDelegate = GradleOptionsDelegate(null)
+internal open class DefaultRuleOptionBuilder : RuleOptionBuilder {
+  internal var disableBrokenBuiltInKotlinOptOutChecks = false
+  internal var disableBrokenNewDslOptOutChecks = false
+  private val gradleLocationDelegate = GradleLocationDelegate()
+  private val sdkConfigurationDelegate = SdkConfigurationDelegate()
+  private val gradleOptionsDelegate = GradleOptionsDelegate(null)
 
-    val gradleLocation: GradleLocation
-        get() = gradleLocationDelegate.asGradleLocation
+  val gradleLocation: GradleLocation
+    get() = gradleLocationDelegate.asGradleLocation
 
-    val sdkConfiguration: SdkConfiguration
-        get() = sdkConfigurationDelegate.asSdkConfiguration
+  val sdkConfiguration: SdkConfiguration
+    get() = sdkConfigurationDelegate.asSdkConfiguration
 
-    val gradleOptions: GradleOptions
-        get() = gradleOptionsDelegate.asGradleOptions
+  val gradleOptions: GradleOptions
+    get() = gradleOptionsDelegate.asGradleOptions
 
-    override fun disableBrokenBuiltInKotlinOptOutChecks(): DefaultRuleOptionBuilder {
-        disableBrokenBuiltInKotlinOptOutChecks = true
-        return this
-    }
+  override fun disableBrokenBuiltInKotlinOptOutChecks(): DefaultRuleOptionBuilder {
+    disableBrokenBuiltInKotlinOptOutChecks = true
+    return this
+  }
 
-    override fun disableBrokenNewDslOptOutChecks(): DefaultRuleOptionBuilder {
-        disableBrokenNewDslOptOutChecks = true
-        return this
-    }
+  override fun disableBrokenNewDslOptOutChecks(): DefaultRuleOptionBuilder {
+    disableBrokenNewDslOptOutChecks = true
+    return this
+  }
 
-    override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
-        action(gradleLocationDelegate)
-        return this
-    }
+  override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
+    action(gradleLocationDelegate)
+    return this
+  }
 
-    override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): DefaultRuleOptionBuilder {
-        action(gradleOptionsDelegate)
-        return this
-    }
+  override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): DefaultRuleOptionBuilder {
+    action(gradleOptionsDelegate)
+    return this
+  }
 
-    override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): DefaultRuleOptionBuilder {
-        action(sdkConfigurationDelegate)
-        return this
-    }
+  override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): DefaultRuleOptionBuilder {
+    action(sdkConfigurationDelegate)
+    return this
+  }
 
-    internal fun mergeWith(other: DefaultRuleOptionBuilder) {
-        disableBrokenBuiltInKotlinOptOutChecks =
-            disableBrokenBuiltInKotlinOptOutChecks || other.disableBrokenBuiltInKotlinOptOutChecks
-        disableBrokenNewDslOptOutChecks =
-            disableBrokenNewDslOptOutChecks || other.disableBrokenNewDslOptOutChecks
-        gradleLocationDelegate.mergeWith(other.gradleLocationDelegate)
-        sdkConfigurationDelegate.mergeWith(other.sdkConfigurationDelegate)
-        gradleOptionsDelegate.mergeWith(other.gradleOptionsDelegate)
-    }
+  internal fun mergeWith(other: DefaultRuleOptionBuilder) {
+    disableBrokenBuiltInKotlinOptOutChecks = disableBrokenBuiltInKotlinOptOutChecks || other.disableBrokenBuiltInKotlinOptOutChecks
+    disableBrokenNewDslOptOutChecks = disableBrokenNewDslOptOutChecks || other.disableBrokenNewDslOptOutChecks
+    gradleLocationDelegate.mergeWith(other.gradleLocationDelegate)
+    sdkConfigurationDelegate.mergeWith(other.sdkConfigurationDelegate)
+    gradleOptionsDelegate.mergeWith(other.gradleOptionsDelegate)
+  }
 }

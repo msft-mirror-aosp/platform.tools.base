@@ -48,12 +48,12 @@ class TestResultsXmlHandlerTest {
   fun test_updateXml() {
     xml.writeText(
       """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <testsuite name='' hostname='localhost' tests='1' failures='0' skipped='0' errors='0' time='0.024' timestamp='2023-06-09T17:23:51'>
-                  <properties />
-                  <testcase name='testMethod' classname='package.name.ClassName' time='0.024' />
-                </testsuite>
-            """
+      <?xml version='1.0' encoding='UTF-8'?>
+      <testsuite name='' hostname='localhost' tests='1' failures='0' skipped='0' errors='0' time='0.024' timestamp='2023-06-09T17:23:51'>
+        <properties />
+        <testcase name='testMethod' classname='package.name.ClassName' time='0.024' />
+      </testsuite>
+      """
         .trimIndent()
     )
 
@@ -63,11 +63,11 @@ class TestResultsXmlHandlerTest {
       temporaryFolderRule.newFile().apply {
         writeText(
           """
-                    <?xml version="1.0" encoding="UTF-8" standalone="no"?><testsuite errors="0" failures="0" hostname="localhost" name="" skipped="0" tests="1" time="0.024" timestamp="2023-06-09T17:23:51">
-                      <properties><property name="device" value="this_is_my_device"/><property name="flavor" value="variant"/><property name="project" value="project"/></properties>
-                      <testcase classname="package.name.ClassName" name="testMethod" time="0.024"/>
-                    </testsuite>
-                """
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?><testsuite errors="0" failures="0" hostname="localhost" name="" skipped="0" tests="1" time="0.024" timestamp="2023-06-09T17:23:51">
+            <properties><property name="device" value="this_is_my_device"/><property name="flavor" value="variant"/><property name="project" value="project"/></properties>
+            <testcase classname="package.name.ClassName" name="testMethod" time="0.024"/>
+          </testsuite>
+          """
             .trimIndent()
         )
       }

@@ -52,15 +52,10 @@ internal fun klibMetaFiles(root: VirtualFile): Collection<VirtualFile> {
 
 internal fun buildStubByVirtualFile(file: VirtualFile): KotlinFileStubImpl? {
   val fileContent = FileContentImpl.createByFile(file)
-  return KotlinKlibMetadataDecompiler().stubBuilder.buildFileStub(fileContent)
-    as? KotlinFileStubImpl
+  return KotlinKlibMetadataDecompiler().stubBuilder.buildFileStub(fileContent) as? KotlinFileStubImpl
 }
 
-internal fun buildPsiSymbolByKotlinStub(
-  psiManager: PsiManager,
-  ktFile: KtFile,
-  ktStub: KotlinStubBaseImpl<*>,
-): PsiNameIdentifierOwner? {
+internal fun buildPsiSymbolByKotlinStub(psiManager: PsiManager, ktFile: KtFile, ktStub: KotlinStubBaseImpl<*>): PsiNameIdentifierOwner? {
   return when (ktStub) {
     is KotlinClassStubImpl -> {
       val ktClass = ktStub.psi

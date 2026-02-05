@@ -30,13 +30,16 @@ fun fullscreenFragmentKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -122,17 +125,17 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "dummy_button",
-          parentView = "view")}
+          parentView = "view",)}
         fullscreenContent = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "fullscreen_content",
-          parentView = "view")}
+          parentView = "view",)}
         fullscreenContentControls = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "fullscreen_content_controls",
-          parentView = "view")}
+          parentView = "view",)}
         // Set up the user interaction to manually show or hide the system UI.
         fullscreenContent?.setOnClickListener { toggle() }
 

@@ -37,102 +37,83 @@ import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledJUnitEngineSpecTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: JUnitEngineSpec = mock()
+  private val delegate: JUnitEngineSpec = mock()
 
-    private val stats: GradleBuildVariant.Builder = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledJUnitEngineSpec by lazy {
-        object : AnalyticsEnabledJUnitEngineSpec(delegate, stats) {}
-    }
+  private val stats: GradleBuildVariant.Builder = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledJUnitEngineSpec by lazy { object : AnalyticsEnabledJUnitEngineSpec(delegate, stats) {} }
 
-    @Test
-    fun testInputs() {
-        val inputs = mutableListOf(AgpTestSuiteInputParameters.TEST_CLASSES)
-        Mockito.`when`(delegate.inputs).thenReturn(inputs)
+  @Test
+  fun testInputs() {
+    val inputs = mutableListOf(AgpTestSuiteInputParameters.TEST_CLASSES)
+    Mockito.`when`(delegate.inputs).thenReturn(inputs)
 
-        Truth.assertThat(proxy.inputs).isEqualTo(inputs)
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(proxy.inputs).isEqualTo(inputs)
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
 
+    verify(delegate, times(1)).inputs
 
-        verify(delegate, times(1)).inputs
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE)
+    Truth.assertThat(proxy.inputs).containsExactly(AgpTestSuiteInputParameters.TEST_CLASSES)
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE)
-        Truth.assertThat(proxy.inputs).containsExactly(
-            AgpTestSuiteInputParameters.TEST_CLASSES,
-        )
-    }
+  @Test
+  fun testIncludeEngines() {
+    val engines = mutableSetOf("engine1")
+    Mockito.`when`(delegate.includeEngines).thenReturn(engines)
 
-    @Test
-    fun testIncludeEngines() {
-        val engines = mutableSetOf("engine1")
-        Mockito.`when`(delegate.includeEngines).thenReturn(engines)
+    Truth.assertThat(proxy.includeEngines).isEqualTo(engines)
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
 
-        Truth.assertThat(proxy.includeEngines).isEqualTo(engines)
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    proxy.includeEngines.add("engine2")
 
-        proxy.includeEngines.add("engine2")
+    verify(delegate, times(2)).includeEngines
 
-        verify(delegate, times(2)).includeEngines
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INCLUDE_ENGINES_VALUE)
+    Truth.assertThat(proxy.includeEngines).containsExactly("engine1", "engine2")
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INCLUDE_ENGINES_VALUE)
-        Truth.assertThat(proxy.includeEngines).containsExactly("engine1", "engine2")
-    }
+  @Test
+  fun testAddInputProperty() {
 
+    proxy.addInputProperty("Foo", "Bar")
 
-    @Test
-    fun testAddInputProperty() {
+    verify(delegate).addInputProperty(eq("Foo"), eq("Bar"))
 
-        proxy.addInputProperty("Foo", "Bar")
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE)
+  }
 
-        verify(delegate).addInputProperty(
-            eq("Foo"),
-            eq("Bar")
-        )
+  @Test
+  fun testAddInputProviderProperty() {
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE)
-    }
+    proxy.addInputProperty("Foo", FakeProviderFactory.factory.provider { "Bar" })
 
-    @Test
-    fun testAddInputProviderProperty() {
+    val providerCaptor = argumentCaptor<Provider<String>>()
 
-        proxy.addInputProperty("Foo", FakeProviderFactory.factory.provider { "Bar" })
+    verify(delegate).addInputProperty(eq("Foo"), providerCaptor.capture())
+    Truth.assertThat(providerCaptor.firstValue.get()).isEqualTo("Bar")
 
-        val providerCaptor = argumentCaptor<Provider<String>>()
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE)
+  }
 
-        verify(delegate).addInputProperty(
-            eq("Foo"),
-            providerCaptor.capture()
-        )
-        Truth.assertThat(providerCaptor.firstValue.get()).isEqualTo("Bar")
+  @Test
+  fun enginesDependencies() {
+    val dependencyCollector: DependencyCollector = mock()
+    Mockito.`when`(delegate.enginesDependencies).thenReturn(dependencyCollector)
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUT_PROPERTIES_VALUE)
-    }
+    Truth.assertThat(proxy.enginesDependencies).isEqualTo(dependencyCollector)
 
-    @Test
-    fun enginesDependencies() {
-        val dependencyCollector: DependencyCollector = mock()
-        Mockito.`when`(delegate.enginesDependencies).thenReturn(dependencyCollector)
-
-        Truth.assertThat(proxy.enginesDependencies).isEqualTo(dependencyCollector)
-
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_ENGINE_DEPENDENCIES_VALUE)
-        verify(delegate, times(1)).enginesDependencies
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_ENGINE_DEPENDENCIES_VALUE)
+    verify(delegate, times(1)).enginesDependencies
+  }
 }

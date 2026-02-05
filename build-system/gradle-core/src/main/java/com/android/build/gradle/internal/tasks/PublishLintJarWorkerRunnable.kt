@@ -23,28 +23,28 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 
 abstract class PublishLintJarWorkerRunnable : ProfileAwareWorkAction<PublishLintJarRequest>() {
-    override fun run() {
-        // there could be more than one files if the dependency is on a sub-projects that
-        // publishes its compile dependencies. Rather than query getSingleFile and fail with
-        // a weird message, do a manual check
-        if (parameters.files.files.size > 1) {
-            throw RuntimeException(
-                    "Found more than one jar in the '"
-                            + VariantDependencies.CONFIG_NAME_LINTPUBLISH
-                            + "' configuration. Only one file is supported. If using a separate Gradle project, make sure compilation dependencies are using compileOnly"
-            )
-        }
-
-        val outputLintJar = parameters.outputLintJar.asFile.get()
-        FileUtils.deleteIfExists(outputLintJar)
-        if (!parameters.files.isEmpty) {
-            FileUtils.mkdirs(outputLintJar.parentFile)
-            parameters.files.singleFile.copyTo(outputLintJar)
-        }
+  override fun run() {
+    // there could be more than one files if the dependency is on a sub-projects that
+    // publishes its compile dependencies. Rather than query getSingleFile and fail with
+    // a weird message, do a manual check
+    if (parameters.files.files.size > 1) {
+      throw RuntimeException(
+        "Found more than one jar in the '" +
+          VariantDependencies.CONFIG_NAME_LINTPUBLISH +
+          "' configuration. Only one file is supported. If using a separate Gradle project, make sure compilation dependencies are using compileOnly"
+      )
     }
+
+    val outputLintJar = parameters.outputLintJar.asFile.get()
+    FileUtils.deleteIfExists(outputLintJar)
+    if (!parameters.files.isEmpty) {
+      FileUtils.mkdirs(outputLintJar.parentFile)
+      parameters.files.singleFile.copyTo(outputLintJar)
+    }
+  }
 }
 
 abstract class PublishLintJarRequest : ProfileAwareWorkAction.Parameters() {
-    abstract val files: ConfigurableFileCollection
-    abstract val outputLintJar: RegularFileProperty
+  abstract val files: ConfigurableFileCollection
+  abstract val outputLintJar: RegularFileProperty
 }

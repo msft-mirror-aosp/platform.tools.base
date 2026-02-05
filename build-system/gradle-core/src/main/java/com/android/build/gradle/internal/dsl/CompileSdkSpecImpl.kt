@@ -16,90 +16,87 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkReleaseSpec
+import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.gradle.internal.services.DslServices
 import com.android.sdklib.SdkVersionInfo
-import org.gradle.api.Action
+import java.io.Serializable
 import javax.inject.Inject
+import org.gradle.api.Action
 
-abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: DslServices): CompileSdkSpec {
+abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: DslServices) : CompileSdkSpec {
 
-    override fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion {
-        val compileSdkRelease = createCompileSdkReleaseSpec()
-        action.invoke(compileSdkRelease)
+  override fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion {
+    val compileSdkRelease = createCompileSdkReleaseSpec()
+    action.invoke(compileSdkRelease)
 
-        return CompileSdkVersionImpl(
-            apiLevel = version,
-            minorApiLevel = compileSdkRelease.minorApiLevel,
-            sdkExtension = compileSdkRelease.sdkExtension,
-        )
-    }
+    return CompileSdkVersionImpl(
+      apiLevel = version,
+      minorApiLevel = compileSdkRelease.minorApiLevel,
+      sdkExtension = compileSdkRelease.sdkExtension,
+    )
+  }
 
-    override fun release(version: Int): CompileSdkVersion {
-        return CompileSdkVersionImpl(apiLevel = version)
-    }
+  override fun release(version: Int): CompileSdkVersion {
+    return CompileSdkVersionImpl(apiLevel = version)
+  }
 
-    fun release(version: Int, action: Action<CompileSdkReleaseSpec>): CompileSdkVersion {
-        val compileSdkRelease = createCompileSdkReleaseSpec()
-        action.execute(compileSdkRelease)
+  fun release(version: Int, action: Action<CompileSdkReleaseSpec>): CompileSdkVersion {
+    val compileSdkRelease = createCompileSdkReleaseSpec()
+    action.execute(compileSdkRelease)
 
-        return CompileSdkVersionImpl(
-            apiLevel = version,
-            minorApiLevel = compileSdkRelease.minorApiLevel,
-            sdkExtension = compileSdkRelease.sdkExtension,
-        )
-    }
+    return CompileSdkVersionImpl(
+      apiLevel = version,
+      minorApiLevel = compileSdkRelease.minorApiLevel,
+      sdkExtension = compileSdkRelease.sdkExtension,
+    )
+  }
 
-    private fun createCompileSdkReleaseSpec(): CompileSdkReleaseSpec {
-        return dslService.newDecoratedInstance(
-            CompileSdkReleaseSpecImpl::class.java, dslService
-        )
-    }
+  private fun createCompileSdkReleaseSpec(): CompileSdkReleaseSpec {
+    return dslService.newDecoratedInstance(CompileSdkReleaseSpecImpl::class.java, dslService)
+  }
 
-    override fun preview(codeName: String): CompileSdkVersion {
-        val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
-        return CompileSdkVersionImpl(apiLevel = apiLevel, codeName = codeName)
-    }
+  override fun preview(codeName: String): CompileSdkVersion {
+    val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
+    return CompileSdkVersionImpl(apiLevel = apiLevel, codeName = codeName)
+  }
 
-    override fun addon(vendor: String, name: String, version: Int): CompileSdkVersion {
-        return CompileSdkVersionImpl(vendorName = vendor, addonName = name, apiLevel = version)
-    }
+  override fun addon(vendor: String, name: String, version: Int): CompileSdkVersion {
+    return CompileSdkVersionImpl(vendorName = vendor, addonName = name, apiLevel = version)
+  }
 }
 
 internal data class CompileSdkVersionImpl(
-    override val apiLevel: Int? = null,
-    override val minorApiLevel: Int? = null,
-    override val sdkExtension: Int? = null,
-    override val codeName: String? = null,
-    override val addonName: String? = null,
-    override val vendorName: String? = null,
-): CompileSdkVersion {
-    fun isAddon() = vendorName != null && addonName != null
+  override val apiLevel: Int? = null,
+  override val minorApiLevel: Int? = null,
+  override val sdkExtension: Int? = null,
+  override val codeName: String? = null,
+  override val addonName: String? = null,
+  override val vendorName: String? = null,
+) : CompileSdkVersion, Serializable {
+  fun isAddon() = vendorName != null && addonName != null
 
-    // Converts to the string representation of the Android version
-    fun toHash(): String? {
-        if (codeName != null) {
-            return "android-$codeName"
-        }
-        if (apiLevel == null) {
-            return null
-        }
-        if (isAddon()) {
-            return "$vendorName:$addonName:$apiLevel"
-        }
-        var compileSdkString = "android-$apiLevel"
-        if (minorApiLevel != null) {
-            compileSdkString += ".$minorApiLevel"
-        }
-        if (sdkExtension != null) {
-            compileSdkString += "-ext$sdkExtension"
-        }
-        return compileSdkString
+  // Converts to the string representation of the Android version
+  fun toHash(): String? {
+    if (codeName != null) {
+      return "android-$codeName"
     }
+    if (apiLevel == null) {
+      return null
+    }
+    if (isAddon()) {
+      return "$vendorName:$addonName:$apiLevel"
+    }
+    var compileSdkString = "android-$apiLevel"
+    if (minorApiLevel != null) {
+      compileSdkString += ".$minorApiLevel"
+    }
+    if (sdkExtension != null) {
+      compileSdkString += "-ext$sdkExtension"
+    }
+    return compileSdkString
+  }
 }
 
-abstract class CompileSdkReleaseSpecImpl @Inject constructor(
-    dslService: DslServices,
-) : CompileSdkReleaseSpec
+abstract class CompileSdkReleaseSpecImpl @Inject constructor(dslService: DslServices) : CompileSdkReleaseSpec

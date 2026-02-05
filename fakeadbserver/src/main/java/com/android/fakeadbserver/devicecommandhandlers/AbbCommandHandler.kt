@@ -18,31 +18,25 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.services.ShellV2Output
-import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
+import kotlinx.coroutines.CoroutineScope
 
 class AbbCommandHandler : DeviceCommandHandler(COMMAND) {
-    companion object {
+  companion object {
 
-        const val COMMAND = "abb"
-        const val SEPARATOR = "\u0000"
-    }
+    const val COMMAND = "abb"
+    const val SEPARATOR = "\u0000"
+  }
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        // Acknowledge "abb_exec" is supported
-        writeOkay(socket.getOutputStream())
+  override fun invoke(fakeAdbServer: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
+    // Acknowledge "abb_exec" is supported
+    writeOkay(socket.getOutputStream())
 
-        // Save command to logs so tests can consult them.
-        device.addAbbLog(args)
+    // Save command to logs so tests can consult them.
+    device.addAbbLog(args)
 
-        // Wrap stdin/stdout and execute abb command
-        val serviceOutput = ShellV2Output(socket, device)
-        device.serviceManager.processCommand(args.split("\u0000"), serviceOutput)
-    }
+    // Wrap stdin/stdout and execute abb command
+    val serviceOutput = ShellV2Output(socket, device)
+    device.serviceManager.processCommand(args.split("\u0000"), serviceOutput)
+  }
 }

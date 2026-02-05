@@ -28,6 +28,11 @@ import com.android.tools.perflogger.Benchmark
 import com.android.tools.tracer.Trace
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -35,11 +40,6 @@ import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.mockito.Mockito
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.regex.Pattern
 
 /*
 How these tests work:
@@ -72,205 +72,196 @@ val INSTALLER_INVOCATION: String = AdbInstaller.INSTALLER_PATH + " -version=\$VE
 
 abstract class DeployRunnerTestBase {
 
-    @JvmField
-    @Rule
-    var testName: TestName = TestName()
+  @JvmField @Rule var testName: TestName = TestName()
 
-    @JvmField
-    @Rule
-    @ApiLevel.Init
-    var connection: FakeDeviceConnection? = null
+  @JvmField @Rule @ApiLevel.Init var connection: FakeDeviceConnection? = null
 
-     companion object {
+  companion object {
 
-        const val BASE: String = "tools/base/deploy/deployer/src/test/resource/"
+    const val BASE: String = "tools/base/deploy/deployer/src/test/resource/"
 
-        private lateinit var dexDbFile: File
+    private lateinit var dexDbFile: File
 
-        @BeforeClass
-        @JvmStatic
-        @Throws(Exception::class)
-        fun prepare() {
-            dexDbFile = File.createTempFile("cached_db", ".bin")
-            dexDbFile.delete()
-            // Fill in the database file by calling dump() at least once.
-            // From then on, we will just keep copying this file and reusing it
-            // for every test.
-            SqlApkFileDatabase(dexDbFile, null).dump()
-            dexDbFile.deleteOnExit()
+    @BeforeClass
+    @JvmStatic
+    @Throws(Exception::class)
+    fun prepare() {
+      dexDbFile = File.createTempFile("cached_db", ".bin")
+      dexDbFile.delete()
+      // Fill in the database file by calling dump() at least once.
+      // From then on, we will just keep copying this file and reusing it
+      // for every test.
+      SqlApkFileDatabase(dexDbFile, null).dump()
+      dexDbFile.deleteOnExit()
+    }
+  }
+
+  protected lateinit var cacheDb: DeploymentCacheDatabase
+  protected lateinit var dexDB: SqlApkFileDatabase
+  protected lateinit var service: UIService
+  protected lateinit var device: FakeDevice
+
+  protected var benchmark: Benchmark? = null
+  private var startTime: Long = 0
+
+  protected fun getInstallerInvocation() = INSTALLER_INVOCATION
+
+  @Before
+  @Throws(java.lang.Exception::class)
+  open fun setUp() {
+    this.device = connection!!.device
+    this.service = Mockito.mock(UIService::class.java)
+
+    val dbFile = File.createTempFile("test_db", ".bin")
+    dbFile.deleteOnExit()
+    FileUtils.copyFile(dexDbFile, dbFile)
+    dexDB = SqlApkFileDatabase(dbFile, null)
+    cacheDb = DeploymentCacheDatabase(2)
+
+    if ("true" == System.getProperty("dashboards.enabled")) {
+      // Put all APIs (parameters) of a particular test into one benchmark.
+      val benchmarkName: String = testName.methodName
+      benchmark = Benchmark.Builder(benchmarkName).setProject("Android Studio Deployment").build()
+      startTime = System.currentTimeMillis()
+    }
+
+    Trace.begin(testName.methodName)
+  }
+
+  @After
+  @Throws(java.lang.Exception::class)
+  open fun tearDown() {
+    val currentTime = System.currentTimeMillis()
+    Trace.end()
+    if (benchmark != null) {
+      val timeTaken = currentTime - startTime
+
+      // Benchmark names can only include [a-zA-Z0-9_-] characters in them.
+      val metricName = String.format("%s-%s_time", testName.methodName, connection!!.deviceId)
+      benchmark!!.log(metricName, timeTaken)
+    }
+    print(getLogcatContent(device))
+    Mockito.verifyNoMoreInteractions(service)
+  }
+
+  @Throws(IOException::class)
+  protected fun assertHistory(device: FakeDevice, vararg expectedHistory: String) {
+    val actualHistory = device.shell.history
+    val actual = java.lang.String.join("\n", actualHistory)
+    var expected = java.lang.String.join("\n", *expectedHistory)
+
+    // Apply the right version
+    expected = expected.replace("\\\$VERSION".toRegex(), Version.hash())
+
+    // Find the right sizes:
+    val pattern = Pattern.compile("\\$\\{size:([^:}]*)(:([^:}]*))?}")
+    val matcher = pattern.matcher(expected)
+    val buffer = StringBuffer()
+    while (matcher.find()) {
+      val pkg = matcher.group(1)
+      val file = matcher.group(3)
+      val paths = device.getAppPaths(pkg)
+      var size = 0
+      for (path in paths!!) {
+        if (file == null || path.endsWith("/$file")) {
+          size += device.readFile(path).size
         }
+      }
+      matcher.appendReplacement(buffer, size.toString())
+    }
+    matcher.appendTail(buffer)
+    expected = buffer.toString()
+
+    Assert.assertEquals(expected, actual)
+  }
+
+  protected fun assertHistoryContain(device: FakeDevice, line: String) {
+    Assert.assertTrue(device.shell.history.any { it.contains(line) })
+  }
+
+  @Throws(IOException::class)
+  protected fun assertInstalled(packageName: String, vararg files: Path?) {
+    Assert.assertArrayEquals(arrayOf(packageName), device!!.apps.toTypedArray())
+    val paths = device!!.getAppPaths(packageName)
+    Assert.assertEquals(files.size.toLong(), paths!!.size.toLong())
+    for (i in paths.indices) {
+      val expected = Files.readAllBytes(files[i])
+      Assert.assertArrayEquals(expected, device!!.readFile(paths[i]))
+    }
+  }
+
+  protected fun assertMetrics(metrics: List<DeployMetric>, vararg expected: String) {
+    val actual = metrics.map { m: DeployMetric -> m.name + (if (m.hasStatus()) ":" + m.status else "") }.toTypedArray()
+
+    // Don't use assertArraysEqual, they don't show enough detail to understand what went wrong
+    // e.g: When several ":Success" are expected, we get only the index which failed.
+    if (expected.size != actual.size) {
+      dumpMetricDiff(expected, actual)
+      Assert.fail("metric differ")
     }
 
-    protected lateinit var cacheDb: DeploymentCacheDatabase
-    protected lateinit var dexDB: SqlApkFileDatabase
-    protected lateinit var service: UIService
-    protected lateinit var device: FakeDevice
-
-    protected var benchmark: Benchmark? = null
-    private var startTime: Long = 0
-
-    protected fun getInstallerInvocation() = INSTALLER_INVOCATION
-
-    @Before
-    @Throws(java.lang.Exception::class)
-    open fun setUp() {
-        this.device = connection!!.device
-        this.service = Mockito.mock(UIService::class.java)
-
-        val dbFile = File.createTempFile("test_db", ".bin")
-        dbFile.deleteOnExit()
-        FileUtils.copyFile(dexDbFile, dbFile)
-        dexDB = SqlApkFileDatabase(dbFile, null)
-        cacheDb = DeploymentCacheDatabase(2)
-
-        if ("true" == System.getProperty("dashboards.enabled")) {
-            // Put all APIs (parameters) of a particular test into one benchmark.
-            val benchmarkName: String = testName.methodName
-            benchmark =
-                Benchmark.Builder(benchmarkName)
-                    .setProject("Android Studio Deployment")
-                    .build()
-            startTime = System.currentTimeMillis()
-        }
-
-        Trace.begin(testName.methodName)
+    for (i in expected.indices) {
+      if (expected[i] != actual[i]) {
+        dumpMetricDiff(expected, actual)
+        Assert.fail("metric differ")
+      }
     }
+  }
 
-    @After
-    @Throws(java.lang.Exception::class)
-    open fun tearDown() {
-        val currentTime = System.currentTimeMillis()
-        Trace.end()
-        if (benchmark != null) {
-            val timeTaken = currentTime - startTime
+  protected fun dumpMetricDiff(expected: Array<out String>, actual: Array<String>) {
+    println("Expected:" + java.lang.String.join(",", *expected))
+    println("Actual  :" + java.lang.String.join(",", *actual))
+  }
 
-            // Benchmark names can only include [a-zA-Z0-9_-] characters in them.
-            val metricName =
-                String.format("%s-%s_time", testName.methodName, connection!!.deviceId)
-            benchmark!!.log(metricName, timeTaken)
-        }
-        print(getLogcatContent(device))
-        Mockito.verifyNoMoreInteractions(service)
+  protected fun getLogcatContent(device: FakeDevice): String {
+    return try {
+      String(Files.readAllBytes(device.logcatFile.toPath()), Charsets.UTF_8)
+    } catch (io: IOException) {
+      ""
     }
+  }
 
-    @Throws(IOException::class)
-    protected fun assertHistory(device: FakeDevice, vararg expectedHistory: String) {
-        val actualHistory = device.shell.history
-        val actual = java.lang.String.join("\n", actualHistory)
-        var expected = java.lang.String.join("\n", *expectedHistory)
+  protected fun assertRedefined(logcat: String, vararg classes: String) {
+    assertPrefixedInLogcat(logcat, "JVMTI::RedefineClasses:", *classes)
+  }
 
-        // Apply the right version
-        expected = expected.replace("\\\$VERSION".toRegex(), Version.hash())
+  protected fun assertRetransformed(logcat: String, vararg classes: String) {
+    assertPrefixedInLogcat(logcat, "JVMTI::RetransformClasses:", *classes)
+  }
 
-        // Find the right sizes:
-        val pattern = Pattern.compile("\\$\\{size:([^:}]*)(:([^:}]*))?}")
-        val matcher = pattern.matcher(expected)
-        val buffer = StringBuffer()
-        while (matcher.find()) {
-            val pkg = matcher.group(1)
-            val file = matcher.group(3)
-            val paths = device.getAppPaths(pkg)
-            var size = 0
-            for (path in paths!!) {
-                if (file == null || path.endsWith("/$file")) {
-                    size += device.readFile(path).size
-                }
-            }
-            matcher.appendReplacement(buffer, size.toString())
-        }
-        matcher.appendTail(buffer)
-        expected = buffer.toString()
+  protected fun assertHiddenAPISilencer(logcat: String, vararg classes: String) {
+    assertPrefixedInLogcat(logcat, "JVMTI::HiddenAPIWarning:", *classes)
+  }
 
-        Assert.assertEquals(expected, actual)
+  protected fun assertPrefixedInLogcat(logcat: String, prefix: String, vararg expected: String) {
+    val actual = logcat.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    var expectedIndex = 0
+    for (i in actual.indices) {
+      val idx = actual[i].indexOf(prefix)
+      if (idx == -1) {
+        continue
+      }
+
+      if (expectedIndex == expected.size) {
+        Assert.fail("Unexpected logcat line: " + actual[i])
+      }
+
+      val trimmed = actual[i].substring(idx)
+      Assert.assertEquals("Unexpected logcat line", prefix + expected[expectedIndex], trimmed)
+      ++expectedIndex
     }
-
-    protected fun assertHistoryContain(device: FakeDevice, line: String) {
-        Assert.assertTrue(device.shell.history.any { it.contains( line )})
+    if (expectedIndex != expected.size) {
+      Assert.fail("Missing logcat line: " + prefix + expected[expectedIndex])
     }
+  }
 
-    @Throws(IOException::class)
-    protected fun assertInstalled(packageName: String, vararg files: Path?) {
-        Assert.assertArrayEquals(arrayOf(packageName), device!!.apps.toTypedArray())
-        val paths = device!!.getAppPaths(packageName)
-        Assert.assertEquals(files.size.toLong(), paths!!.size.toLong())
-        for (i in paths.indices) {
-            val expected = Files.readAllBytes(files[i])
-            Assert.assertArrayEquals(expected, device!!.readFile(paths[i]))
-        }
+  // Some command use EXEC cmd while others use abb_exec. This is an utility function to generate
+  // both types of commands based on the device version
+  protected fun cmd(format: String, device: FakeDevice): String {
+    return if (device.api >= 30) {
+      String.format(format, "abb_exec")
+    } else {
+      String.format(format, "cmd")
     }
-
-    protected fun assertMetrics(metrics: List<DeployMetric>, vararg expected: String) {
-        val actual = metrics.map { m: DeployMetric -> m.name + (if (m.hasStatus()) ":" + m.status else "") }.toTypedArray()
-
-        // Don't use assertArraysEqual, they don't show enough detail to understand what went wrong
-        // e.g: When several ":Success" are expected, we get only the index which failed.
-        if (expected.size != actual.size) {
-            dumpMetricDiff(expected, actual)
-            Assert.fail("metric differ")
-        }
-
-        for (i in expected.indices) {
-            if (expected[i] != actual[i]) {
-                dumpMetricDiff(expected, actual)
-                Assert.fail("metric differ")
-            }
-        }
-    }
-
-    protected fun dumpMetricDiff(expected: Array<out String>, actual: Array<String>) {
-        println("Expected:" + java.lang.String.join(",", *expected))
-        println("Actual  :" + java.lang.String.join(",", *actual))
-    }
-
-    protected fun getLogcatContent(device: FakeDevice): String {
-        return try {
-            String(Files.readAllBytes(device.logcatFile.toPath()), Charsets.UTF_8)
-        } catch (io: IOException) {
-            ""
-        }
-    }
-
-    protected fun assertRedefined(logcat: String, vararg classes: String) {
-        assertPrefixedInLogcat(logcat, "JVMTI::RedefineClasses:", *classes)
-    }
-
-    protected fun assertRetransformed(logcat: String, vararg classes: String) {
-        assertPrefixedInLogcat(logcat, "JVMTI::RetransformClasses:", *classes)
-    }
-
-    protected fun assertHiddenAPISilencer(logcat: String, vararg classes: String) {
-        assertPrefixedInLogcat(logcat, "JVMTI::HiddenAPIWarning:", *classes)
-    }
-
-    protected fun assertPrefixedInLogcat(logcat: String, prefix: String, vararg expected: String) {
-        val actual = logcat.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        var expectedIndex = 0
-        for (i in actual.indices) {
-            val idx = actual[i].indexOf(prefix)
-            if (idx == -1) {
-                continue
-            }
-
-            if (expectedIndex == expected.size) {
-                Assert.fail("Unexpected logcat line: " + actual[i])
-            }
-
-            val trimmed = actual[i].substring(idx)
-            Assert.assertEquals("Unexpected logcat line", prefix + expected[expectedIndex], trimmed)
-            ++expectedIndex
-        }
-        if (expectedIndex != expected.size) {
-            Assert.fail("Missing logcat line: " + prefix + expected[expectedIndex])
-        }
-    }
-
-    // Some command use EXEC cmd while others use abb_exec. This is an utility function to generate
-    // both types of commands based on the device version
-    protected fun cmd(format: String, device: FakeDevice): String {
-        return if (device.api >= 30) {
-            String.format(format, "abb_exec")
-        } else {
-            String.format(format, "cmd")
-        }
-    }
+  }
 }

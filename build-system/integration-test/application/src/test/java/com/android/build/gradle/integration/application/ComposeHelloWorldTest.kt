@@ -32,130 +32,121 @@ import org.junit.Test
 
 class ComposeHelloWorldTest {
 
-    @JvmField
-    @Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("composeHelloWorld")
-            // increase max heap size to avoid OOMs (b/350788568)
-            .withHeap("2048m")
-            .withKotlinGradlePlugin(true)
-            .withComposeCompilerGradlePlugin(true)
-            .create()
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("composeHelloWorld")
+      // increase max heap size to avoid OOMs (b/350788568)
+      .withHeap("2048m")
+      .withKotlinGradlePlugin(true)
+      .withComposeCompilerGradlePlugin(true)
+      .create()
 
-    @Test
-    fun appAndTestsBuildSuccessfully() {
-        val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
-        project.executor().run(tasks)
-        // run once again to test configuration caching
-        project.executor().run(tasks)
-    }
+  @Test
+  fun appAndTestsBuildSuccessfully() {
+    val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
+    project.executor().run(tasks)
+    // run once again to test configuration caching
+    project.executor().run(tasks)
+  }
 
-    @Test
-    fun testScreenshotTestAndTestFixturesCompilation() {
-        project.executor().run(":app:compileDebugTestFixturesKotlin")
-        val testFixturesClassFile =
-            project.getSubproject("app")
-                .getIntermediateFile(
-                    "built_in_kotlinc",
-                    "debugTestFixtures",
-                    "compileDebugTestFixturesKotlin",
-                    "classes",
-                    "com",
-                    "example",
-                    "helloworldcompose",
-                    "FixtureKt.class"
-                )
-        assertThat(testFixturesClassFile).exists()
-
-        project.executor().run(":app:compileDebugScreenshotTestKotlin")
-        val screenshotTestClassFile =
-            project.getSubproject("app")
-                .getIntermediateFile(
-                    "built_in_kotlinc",
-                    "debugScreenshotTest",
-                    "compileDebugScreenshotTestKotlin",
-                    "classes",
-                    "com",
-                    "example",
-                    "helloworldcompose",
-                    "ScreenshotTestKt.class"
-                )
-        assertThat(screenshotTestClassFile).exists()
-    }
-
-    @Test
-    fun testErrorWhenComposeCompilerPluginNotAppliedWithKotlin2() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "apply plugin: '$COMPOSE_COMPILER_PLUGIN_ID'",
-            ""
+  @Test
+  fun testScreenshotTestAndTestFixturesCompilation() {
+    project.executor().run(":app:compileDebugTestFixturesKotlin")
+    val testFixturesClassFile =
+      project
+        .getSubproject("app")
+        .getIntermediateFile(
+          "built_in_kotlinc",
+          "debugTestFixtures",
+          "compileDebugTestFixturesKotlin",
+          "classes",
+          "com",
+          "example",
+          "helloworldcompose",
+          "FixtureKt.class",
         )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    buildFeatures {
-                        compose = true
-                    }
-                }
-            """.trimIndent()
+    assertThat(testFixturesClassFile).exists()
+
+    project.executor().run(":app:compileDebugScreenshotTestKotlin")
+    val screenshotTestClassFile =
+      project
+        .getSubproject("app")
+        .getIntermediateFile(
+          "built_in_kotlinc",
+          "debugScreenshotTest",
+          "compileDebugScreenshotTestKotlin",
+          "classes",
+          "com",
+          "example",
+          "helloworldcompose",
+          "ScreenshotTestKt.class",
         )
-        val result = project.executor().expectFailure().run("assembleDebug")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("Starting in Kotlin 2.0, the Compose Compiler Gradle plugin is required")
-    }
+    assertThat(screenshotTestClassFile).exists()
+  }
 
-    @Test
-    fun testModel() {
-        val appModel = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject(":app")
-        assertThat(
-            appModel.androidProject?.flags?.getFlagValue(AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.name)).isTrue()
-    }
+  @Test
+  fun testErrorWhenComposeCompilerPluginNotAppliedWithKotlin2() {
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "apply plugin: '$COMPOSE_COMPILER_PLUGIN_ID'", "")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          buildFeatures {
+              compose = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    val result = project.executor().expectFailure().run("assembleDebug")
+    ScannerSubject.assertThat(result.stderr).contains("Starting in Kotlin 2.0, the Compose Compiler Gradle plugin is required")
+  }
 
-    @Test
-    fun testSyncIssue() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    buildFeatures {
-                        compose = false
-                    }
-                }
-            """.trimIndent()
-        )
-        val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
-        val syncIssues: ProjectSyncIssues? = result.container.getProject(":app").issues
-        val syncIssue = syncIssues?.syncIssues?.filter {
-            it.type == SyncIssue.TYPE_INCONSISTENT_BUILD_FEATURE_SETTING
-        }?.single()
-        assertThat(syncIssue).isNotNull()
-        assertThat(syncIssue?.data).contains("buildFeatures.compose")
-    }
+  @Test
+  fun testModel() {
+    val appModel = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject(":app")
+    assertThat(appModel.androidProject?.flags?.getFlagValue(AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.name)).isTrue()
+  }
 
-    @Test
-    fun testWithJetbrainsKotlin() {
-        val buildFile = project.getSubproject(":app").buildFile
-        TestFileUtils.searchAndReplace(
-            buildFile,
-            "apply plugin: 'com.android.application'",
-            """
+  @Test
+  fun testSyncIssue() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          buildFeatures {
+              compose = false
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+    val syncIssues: ProjectSyncIssues? = result.container.getProject(":app").issues
+    val syncIssue = syncIssues?.syncIssues?.filter { it.type == SyncIssue.TYPE_INCONSISTENT_BUILD_FEATURE_SETTING }?.single()
+    assertThat(syncIssue).isNotNull()
+    assertThat(syncIssue?.data).contains("buildFeatures.compose")
+  }
+
+  @Test
+  fun testWithJetbrainsKotlin() {
+    val buildFile = project.getSubproject(":app").buildFile
+    TestFileUtils.searchAndReplace(
+      buildFile,
+      "apply plugin: 'com.android.application'",
+      """
                 apply plugin: 'com.android.application'
                 apply plugin: '$KOTLIN_ANDROID_PLUGIN_ID'
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(buildFile, "kotlin.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8")
+            """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(buildFile, "kotlin.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8")
 
-        val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
-        project.executor()
-            .with(BooleanOption.BUILT_IN_KOTLIN, false)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run(tasks)
-        // run once again to test configuration caching
-        project.executor()
-            .with(BooleanOption.BUILT_IN_KOTLIN, false)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run(tasks)
-    }
+    val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
+    project.executor().with(BooleanOption.BUILT_IN_KOTLIN, false).with(BooleanOption.USE_NEW_DSL, false).run(tasks)
+    // run once again to test configuration caching
+    project.executor().with(BooleanOption.BUILT_IN_KOTLIN, false).with(BooleanOption.USE_NEW_DSL, false).run(tasks)
+  }
 }

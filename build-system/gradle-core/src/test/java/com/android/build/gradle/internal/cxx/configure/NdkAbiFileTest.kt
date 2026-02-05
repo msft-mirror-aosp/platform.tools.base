@@ -18,160 +18,157 @@ package com.android.build.gradle.internal.cxx.configure
 
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.ndk.AbiInfo
-import com.android.build.gradle.internal.ndk.DefaultNdkInfo
-import com.android.build.gradle.internal.ndk.DefaultNdkInfoTest
-import com.android.build.gradle.internal.ndk.NdkInfo
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.IOException
 
 class NdkAbiFileTest {
 
-    @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private fun ndkAbiInfosNdk14() : List<AbiInfo> {
-        val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-14"))
-        file.parentFile.mkdirs()
-        return NdkAbiFile(file).abiInfoList
-    }
+  private fun ndkAbiInfosNdk14(): List<AbiInfo> {
+    val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-14"))
+    file.parentFile.mkdirs()
+    return NdkAbiFile(file).abiInfoList
+  }
 
-    private fun ndkAbiInfosNdk16() : List<AbiInfo> {
-        val contents = "{\n" +
-                "  \"armeabi\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": false,\n" +
-                "    \"deprecated\": true\n" +
-                "  },\n" +
-                "  \"armeabi-v7a\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"arm64-v8a\": {\n" +
-                "    \"bitness\": 64,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"mips\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": false,\n" +
-                "    \"deprecated\": true\n" +
-                "  },\n" +
-                "  \"mips64\": {\n" +
-                "    \"bitness\": 64,\n" +
-                "    \"default\": false,\n" +
-                "    \"deprecated\": true\n" +
-                "  },\n" +
-                "  \"x86\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"x86_64\": {\n" +
-                "    \"bitness\": 64,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  }\n" +
-                "}"
+  private fun ndkAbiInfosNdk16(): List<AbiInfo> {
+    val contents =
+      "{\n" +
+        "  \"armeabi\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": false,\n" +
+        "    \"deprecated\": true\n" +
+        "  },\n" +
+        "  \"armeabi-v7a\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"arm64-v8a\": {\n" +
+        "    \"bitness\": 64,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"mips\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": false,\n" +
+        "    \"deprecated\": true\n" +
+        "  },\n" +
+        "  \"mips64\": {\n" +
+        "    \"bitness\": 64,\n" +
+        "    \"default\": false,\n" +
+        "    \"deprecated\": true\n" +
+        "  },\n" +
+        "  \"x86\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"x86_64\": {\n" +
+        "    \"bitness\": 64,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  }\n" +
+        "}"
 
-        val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-16"))
-        file.parentFile.mkdirs()
-        file.writeText(contents)
-        return NdkAbiFile(file).abiInfoList
-    }
+    val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-16"))
+    file.parentFile.mkdirs()
+    file.writeText(contents)
+    return NdkAbiFile(file).abiInfoList
+  }
 
-    private fun ndkAbiInfosNdk17() : List<AbiInfo> {
-        val contents = "{\n" +
-                "  \"armeabi-v7a\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"arm64-v8a\": {\n" +
-                "    \"bitness\": 64,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"x86\": {\n" +
-                "    \"bitness\": 32,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  },\n" +
-                "  \"x86_64\": {\n" +
-                "    \"bitness\": 64,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  }\n" +
-                "}"
+  private fun ndkAbiInfosNdk17(): List<AbiInfo> {
+    val contents =
+      "{\n" +
+        "  \"armeabi-v7a\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"arm64-v8a\": {\n" +
+        "    \"bitness\": 64,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"x86\": {\n" +
+        "    \"bitness\": 32,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  },\n" +
+        "  \"x86_64\": {\n" +
+        "    \"bitness\": 64,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  }\n" +
+        "}"
 
-        val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-17"))
-        file.parentFile.mkdirs()
-        file.writeText(contents)
-        return NdkAbiFile(file).abiInfoList
-    }
+    val file = ndkMetaAbisFile(File(temporaryFolder.root, "./ndk-17"))
+    file.parentFile.mkdirs()
+    file.writeText(contents)
+    return NdkAbiFile(file).abiInfoList
+  }
 
-    private fun weirdBitness() : List<AbiInfo> {
-        val contents = "{\n" +
-                "  \"armeabi-v7a\": {\n" +
-                "    \"bitness\": 92,\n" +
-                "    \"default\": true,\n" +
-                "    \"deprecated\": false\n" +
-                "  }\n" +
-                "}"
+  private fun weirdBitness(): List<AbiInfo> {
+    val contents =
+      "{\n" +
+        "  \"armeabi-v7a\": {\n" +
+        "    \"bitness\": 92,\n" +
+        "    \"default\": true,\n" +
+        "    \"deprecated\": false\n" +
+        "  }\n" +
+        "}"
 
-        val file = ndkMetaAbisFile(File(temporaryFolder.root, "./weird"))
-        file.parentFile.mkdirs()
-        file.writeText(contents)
-        return NdkAbiFile(file).abiInfoList
-    }
+    val file = ndkMetaAbisFile(File(temporaryFolder.root, "./weird"))
+    file.parentFile.mkdirs()
+    file.writeText(contents)
+    return NdkAbiFile(file).abiInfoList
+  }
 
-    @Test
-    fun `read bitness from file`() {
-        val ndkAbiInfos = weirdBitness()
-        val first = ndkAbiInfos.first()
-        assertThat(first.bitness).isEqualTo(92)
-    }
+  @Test
+  fun `read bitness from file`() {
+    val ndkAbiInfos = weirdBitness()
+    val first = ndkAbiInfos.first()
+    assertThat(first.bitness).isEqualTo(92)
+  }
 
-    @Test
-    fun testNdk14() {
-        val ndkAbiInfos = ndkAbiInfosNdk14()
-        assertThat(ndkAbiInfos).hasSize(7)
-        val first = ndkAbiInfos.first()
-        assertThat(first.name).isEqualTo(Abi.ARMEABI.tag)
-        assertThat(first.isDeprecated).isEqualTo(false)
-        assertThat(first.isDefault).isEqualTo(true)
-    }
+  @Test
+  fun testNdk14() {
+    val ndkAbiInfos = ndkAbiInfosNdk14()
+    assertThat(ndkAbiInfos).hasSize(7)
+    val first = ndkAbiInfos.first()
+    assertThat(first.name).isEqualTo(Abi.ARMEABI.tag)
+    assertThat(first.isDeprecated).isEqualTo(false)
+    assertThat(first.isDefault).isEqualTo(true)
+  }
 
-    @Test
-    fun testNdk16() {
-        val ndkAbiInfos = ndkAbiInfosNdk16()
-        assertThat(ndkAbiInfos).hasSize(7)
-        val first = ndkAbiInfos.first()
-        assertThat(first.name).isEqualTo(Abi.ARMEABI.tag)
-        assertThat(first.isDeprecated).isEqualTo(true)
-        assertThat(first.isDefault).isEqualTo(false)
-    }
+  @Test
+  fun testNdk16() {
+    val ndkAbiInfos = ndkAbiInfosNdk16()
+    assertThat(ndkAbiInfos).hasSize(7)
+    val first = ndkAbiInfos.first()
+    assertThat(first.name).isEqualTo(Abi.ARMEABI.tag)
+    assertThat(first.isDeprecated).isEqualTo(true)
+    assertThat(first.isDefault).isEqualTo(false)
+  }
 
-    @Test
-    fun testNdk17() {
-        val ndkAbiInfos = ndkAbiInfosNdk17()
-        assertThat(ndkAbiInfos).hasSize(4)
-        val first = ndkAbiInfos.first()
-        assertThat(first.name).isEqualTo(Abi.ARMEABI_V7A.tag)
-        assertThat(first.isDeprecated).isEqualTo(false)
-        assertThat(first.isDefault).isEqualTo(true)
-    }
+  @Test
+  fun testNdk17() {
+    val ndkAbiInfos = ndkAbiInfosNdk17()
+    assertThat(ndkAbiInfos).hasSize(4)
+    val first = ndkAbiInfos.first()
+    assertThat(first.name).isEqualTo(Abi.ARMEABI_V7A.tag)
+    assertThat(first.isDeprecated).isEqualTo(false)
+    assertThat(first.isDefault).isEqualTo(true)
+  }
 
-    @Test
-    fun `unparseable abis json causes fallback`() {
-        val file = ndkMetaAbisFile(File(temporaryFolder.root, "./invalid-abis-NDK"))
-        file.parentFile.mkdirs()
-        file.writeText("invalid abis json file")
-        assertThat(NdkAbiFile(file).abiInfoList).hasSize(7)
-    }
+  @Test
+  fun `unparseable abis json causes fallback`() {
+    val file = ndkMetaAbisFile(File(temporaryFolder.root, "./invalid-abis-NDK"))
+    file.parentFile.mkdirs()
+    file.writeText("invalid abis json file")
+    assertThat(NdkAbiFile(file).abiInfoList).hasSize(7)
+  }
 }

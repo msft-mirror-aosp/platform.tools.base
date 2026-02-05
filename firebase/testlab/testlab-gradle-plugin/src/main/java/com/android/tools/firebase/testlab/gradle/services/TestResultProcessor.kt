@@ -49,11 +49,9 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
   /**
    * Creates a valid TestSuiteResult for a successfully run test.
    *
-   * @param executionStep: the step containing all information regarding the test run. Retrieved
-   *   from [ToolResults]
+   * @param executionStep: the step containing all information regarding the test run. Retrieved from [ToolResults]
    * @param thumbnails list of all thumbnails associated with this test run
-   * @param testRunStorage the storage handler associated with this test run. Used to download
-   *   output artifacts for test results
+   * @param testRunStorage the storage handler associated with this test run. Used to download output artifacts for test results
    * @param testCases: list of test cases manually called from FTL Api
    */
   fun toUtpResult(
@@ -86,12 +84,7 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
         executionStep.testExecutionStep.toolExecution?.also { toolExecution ->
           addToolLogArtifacts(this, toolExecution.toolLogs ?: listOf())
 
-          addToolOutputArtifacts(
-            this,
-            toolExecution.toolOutputs ?: listOf(),
-            testRunStorage,
-            resultsOutDir,
-          )
+          addToolOutputArtifacts(this, toolExecution.toolOutputs ?: listOf(), testRunStorage, resultsOutDir)
         }
 
         // add thumbnail artifacts
@@ -101,9 +94,7 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
         executionStep.testExecutionStep?.testIssues?.also { issues -> addTestIssues(this, issues) }
 
         // add Test Case data.
-        testCases?.also { cases ->
-          addTestCaseArtifacts(this, cases, testRunStorage, resultsOutDir, deviceInfoFile)
-        }
+        testCases?.also { cases -> addTestCaseArtifacts(this, cases, testRunStorage, resultsOutDir, deviceInfoFile) }
 
         // Lastly add invalid matrix data, if any.
         invalidMatrixDetails?.also { details -> addInvalidMatrixDetails(this, details) }
@@ -112,14 +103,9 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
 
   /** Creates a TestSuiteResult from an invalid matrix detail */
   fun toUtpResult(invalidMatrixDetails: String?): TestSuiteResult =
-    TestSuiteResult.newBuilder()
-      .apply { invalidMatrixDetails?.also { details -> addInvalidMatrixDetails(this, details) } }
-      .build()
+    TestSuiteResult.newBuilder().apply { invalidMatrixDetails?.also { details -> addInvalidMatrixDetails(this, details) } }.build()
 
-  private fun addTestResultXmlFileArtifact(
-    builder: TestSuiteResult.Builder,
-    xmlSource: FileReference,
-  ) {
+  private fun addTestResultXmlFileArtifact(builder: TestSuiteResult.Builder, xmlSource: FileReference) {
     builder.apply {
       xmlSource.fileUri?.also { path ->
         if (path.isNotBlank()) {
@@ -132,13 +118,7 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
   private fun addToolLogArtifacts(builder: TestSuiteResult.Builder, logs: List<FileReference>) {
     builder.apply {
       logs.forEach { log ->
-        addOutputArtifact(
-          createOutputArtifact(
-            label = "firebase.toolLog",
-            path = log.fileUri,
-            mimeType = "text/plain",
-          )
-        )
+        addOutputArtifact(createOutputArtifact(label = "firebase.toolLog", path = log.fileUri, mimeType = "text/plain"))
       }
     }
   }
@@ -155,37 +135,24 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
         if (fileUri != null) {
           // If the outputs has test cases, this will be handled separately.
           if (toolOutput.testCase == null) {
-            addOutputArtifact(
-              createOutputArtifact(label = "firebase.toolOutput", path = toolOutput.output.fileUri)
-            )
+            addOutputArtifact(createOutputArtifact(label = "firebase.toolOutput", path = toolOutput.output.fileUri))
           }
           // Need to download the output if it is requested by the dsl.
           val shouldDownload = directoriesToPull.any { directory -> fileUri.contains(directory) }
           if (shouldDownload) {
-            val downloadedFile =
-              testRunStorage.downloadFromStorage(fileUri) { File(resultsOutDir, it) }
-                ?: return@forEach
-            addOutputArtifact(
-              createOutputArtifact(label = "firebase.toolOutput", path = downloadedFile.path)
-            )
+            val downloadedFile = testRunStorage.downloadFromStorage(fileUri) { File(resultsOutDir, it) } ?: return@forEach
+            addOutputArtifact(createOutputArtifact(label = "firebase.toolOutput", path = downloadedFile.path))
           }
         }
       }
     }
   }
 
-  private fun addThumbnailOutputArtifacts(
-    builder: TestSuiteResult.Builder,
-    thumbnails: List<Image>,
-  ) {
+  private fun addThumbnailOutputArtifacts(builder: TestSuiteResult.Builder, thumbnails: List<Image>) {
     builder.apply {
       thumbnails.forEach { thumbnail ->
         addOutputArtifact(
-          createOutputArtifact(
-            label = "firebase.thumbnail",
-            path = thumbnail.sourceImage.output.fileUri,
-            mimeType = "image/jpeg",
-          )
+          createOutputArtifact(label = "firebase.thumbnail", path = thumbnail.sourceImage.output.fileUri, mimeType = "image/jpeg")
         )
       }
     }
@@ -258,12 +225,7 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
                 testStatus = testStatusFromTestCase(case.status)
 
                 if (testStatus == TestStatus.FAILED || testStatus == TestStatus.ERROR) {
-                  error =
-                    Error.newBuilder()
-                      .apply {
-                        case.stackTraces?.get(0)?.exception?.also { trace -> stackTrace = trace }
-                      }
-                      .build()
+                  error = Error.newBuilder().apply { case.stackTraces?.get(0)?.exception?.also { trace -> stackTrace = trace } }.build()
                 }
 
                 // download the logcat files.
@@ -274,15 +236,11 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
                   ?.forEach { uri ->
                     testRunStorage
                       .downloadFromStorage(uri) { File(resultsOutDir, it) }
-                      ?.also { file ->
-                        addOutputArtifact(createOutputArtifact(label = "logcat", path = file.path))
-                      }
+                      ?.also { file -> addOutputArtifact(createOutputArtifact(label = "logcat", path = file.path)) }
                   }
 
                 // add device info for the test result.
-                addOutputArtifact(
-                  createOutputArtifact(label = "device-info", path = deviceInfoFile.path)
-                )
+                addOutputArtifact(createOutputArtifact(label = "device-info", path = deviceInfoFile.path))
               }
             }
             .build()
@@ -291,10 +249,7 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
     }
   }
 
-  private fun addInvalidMatrixDetails(
-    builder: TestSuiteResult.Builder,
-    invalidMatrixDetails: String,
-  ) {
+  private fun addInvalidMatrixDetails(builder: TestSuiteResult.Builder, invalidMatrixDetails: String) {
     if (invalidMatrixDetails.isNotBlank()) {
       builder.apply {
         platformErrorBuilder.addErrorsBuilder().apply {

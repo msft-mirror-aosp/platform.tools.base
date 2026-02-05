@@ -27,74 +27,68 @@ import org.junit.Test
 
 class AppTestWithSkippedModuleDepTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                api(project(":jar"))
-                androidTestImplementation(project(":jar"))
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          api(project(":jar"))
+          androidTestImplementation(project(":jar"))
         }
-        genericProject(":jar") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            files {
-                add(
-                    "src/main/java/com/example/android/multiproject/person/People.java",
-                    //language=java
-                    """
-                        package com.example.android.multiproject.person;
+      }
+      genericProject(":jar") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        files {
+          add(
+            "src/main/java/com/example/android/multiproject/person/People.java",
+            // language=java
+            """
+            package com.example.android.multiproject.person;
 
-                        public class People {}
-                    """.trimIndent()
-                )
-                add(
-                    "src/main/java/com/example/android/multiproject/person/Person.java",
-                    //language=java
-                    """
-                        package com.example.android.multiproject.person;
+            public class People {}
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/example/android/multiproject/person/Person.java",
+            // language=java
+            """
+            package com.example.android.multiproject.person;
 
-                        public class Person {}
-                    """.trimIndent()
-                )
-            }
+            public class Person {}
+            """
+              .trimIndent(),
+          )
         }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            rule.build.modelBuilder
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies"
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies")
+  }
+
+  @Test
+  fun checkAppBuild() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .containsExactly(
+          "com/example/android/multiproject/person/People",
+          "com/example/android/multiproject/person/Person",
+          "pkg/name/app/R",
         )
     }
+  }
 
-    @Test
-    fun checkAppBuild() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly(
-                "com/example/android/multiproject/person/People",
-                "com/example/android/multiproject/person/Person",
-                "pkg/name/app/R"
-            )
-        }
-    }
-
-    @Test
-    fun checkTestBuild() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebugAndroidTest")
-        build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            classes().containsExactly("pkg/name/app/test/R")
-        }
-    }
+  @Test
+  fun checkTestBuild() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebugAndroidTest")
+    build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) { classes().containsExactly("pkg/name/app/test/R") }
+  }
 }

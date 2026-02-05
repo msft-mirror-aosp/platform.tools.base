@@ -8,24 +8,18 @@ import org.junit.Test
 /**
  * Tests for the XmlProcessor, which parses XML files found in <source-set>/res/xml* directories.
  *
- * TODO(b/132800341): add a connected test to verify contents at runtime.
- * If you need to manually verify the correct behaviour, place the rest file under the res/xml
- * folder. To read contents you can use the XmlPullParser at runtime in an android project, for
- * example to verify the strings are parsed correctly you can query:
+ * TODO(b/132800341): add a connected test to verify contents at runtime. If you need to manually verify the correct behaviour, place the
+ *   rest file under the res/xml folder. To read contents you can use the XmlPullParser at runtime in an android project, for example to
+ *   verify the strings are parsed correctly you can query:
  *
- * val text = view.findViewById<android.widget.TextView>(R.id.text)
- * val xml = view.resources.getXml(R.xml.test)
- * var eventType = -1
+ * val text = view.findViewById<android.widget.TextView>(R.id.text) val xml = view.resources.getXml(R.xml.test) var eventType = -1
  *
- * val builder = StringBuilder()
- * while (eventType != XmlResourceParser.END_DOCUMENT) {
- *     if (xml.eventType == XmlResourceParser.TEXT) {
- *         builder.append("${xml.name} = \"${xml.text}\"\n")
- *     }
+ * val builder = StringBuilder() while (eventType != XmlResourceParser.END_DOCUMENT) { if (xml.eventType == XmlResourceParser.TEXT) {
+ * builder.append("${xml.name} = \"${xml.text}\"\n") }
  *
  *     eventType = xml.next()
- * }
- * text.text = "Found:\n${builder.toString()}"
+ *
+ * } text.text = "Found:\n${builder.toString()}"
  */
 class XmlProcessorTest {
 
@@ -37,11 +31,7 @@ class XmlProcessorTest {
   }
 
   private fun processTest(input: String, configDescription: String = ""): ResourceFile? {
-    val file = ResourceFile(
-      parseNameOrFail("layout/test"),
-      parse(configDescription),
-      Source(""),
-      ResourceFile.Type.ProtoXml)
+    val file = ResourceFile(parseNameOrFail("layout/test"), parse(configDescription), Source(""), ResourceFile.Type.ProtoXml)
     try {
       processor.process(file, input.byteInputStream())
     } catch (e: Exception) {
@@ -60,7 +50,8 @@ class XmlProcessorTest {
 
   @Test
   fun testCollectsIds() {
-    val input = """
+    val input =
+      """
       <View xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/foo"
         text="@+id/bar">
@@ -68,7 +59,8 @@ class XmlProcessorTest {
           android:id="@+id/car"
           class="@+id/bar"/>
       </View>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNotNull()
 
@@ -86,16 +78,17 @@ class XmlProcessorTest {
 
     assertThat(processor.primaryFile.exportedSymbols).isEmpty()
 
-    val input = """
+    val input =
+      """
       <View xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/foo"
         text="@+string/bar"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(processTest(input)).isNotNull()
 
     assertThat(processor.primaryFile.exportedSymbols).hasSize(1)
-    assertThat(processor.primaryFile.exportedSymbols[0])
-      .isEqualTo(SourcedResourceName(parseNameOrFail("id/foo"), 3))
+    assertThat(processor.primaryFile.exportedSymbols[0]).isEqualTo(SourcedResourceName(parseNameOrFail("id/foo"), 3))
   }
 
   @Test
@@ -105,85 +98,91 @@ class XmlProcessorTest {
 
   @Test
   fun checkNoSpaceAdded() {
-      // XMLEventReader parser divides this string into two for some reason. When we're processing
-      // it, we should make sure we join them without a new space, keeping the original string
-      // intact.
-      val stringDividedByReader = "1a(2d1r1u]1o2r3c4u1]1o2l1a(2l2u"
-      val input = """<l>$stringDividedByReader</l>"""
-      val inputFile = processTest(input)
-      assertThat(inputFile).isNotNull()
+    // XMLEventReader parser divides this string into two for some reason. When we're processing
+    // it, we should make sure we join them without a new space, keeping the original string
+    // intact.
+    val stringDividedByReader = "1a(2d1r1u]1o2r3c4u1]1o2l1a(2l2u"
+    val input = """<l>$stringDividedByReader</l>"""
+    val inputFile = processTest(input)
+    assertThat(inputFile).isNotNull()
 
-      assertThat(processor.xmlResources).hasSize(1)
+    assertThat(processor.xmlResources).hasSize(1)
 
-      val proto = processor.xmlResources[0].xmlProto
-      assertThat(proto).isNotNull()
-      assertThat(proto.hasElement()).isTrue()
+    val proto = processor.xmlResources[0].xmlProto
+    assertThat(proto).isNotNull()
+    assertThat(proto.hasElement()).isTrue()
 
-      val element = proto.element
-      assertThat(element.name).isEqualTo("l")
-      assertThat(element.attributeList).hasSize(0)
-      assertThat(element.childList).hasSize(1)
+    val element = proto.element
+    assertThat(element.name).isEqualTo("l")
+    assertThat(element.attributeList).hasSize(0)
+    assertThat(element.childList).hasSize(1)
 
-      // No extra spaces should be added in the middle of the string (even if XMLEventReader divides
-      // it).
-      assertThat(element.getChild(0).text).isEqualTo(stringDividedByReader)
+    // No extra spaces should be added in the middle of the string (even if XMLEventReader divides
+    // it).
+    assertThat(element.getChild(0).text).isEqualTo(stringDividedByReader)
   }
 
   @Test
   fun checkNoSpacesRemoved() {
-      val contentWithSpaces = "   hello world! We meet again "
-      val input = """<l>$contentWithSpaces</l>"""
-      val inputFile = processTest(input)
-      assertThat(inputFile).isNotNull()
+    val contentWithSpaces = "   hello world! We meet again "
+    val input = """<l>$contentWithSpaces</l>"""
+    val inputFile = processTest(input)
+    assertThat(inputFile).isNotNull()
 
-      assertThat(processor.xmlResources).hasSize(1)
+    assertThat(processor.xmlResources).hasSize(1)
 
-      val proto = processor.xmlResources[0].xmlProto
-      assertThat(proto).isNotNull()
-      assertThat(proto.hasElement()).isTrue()
+    val proto = processor.xmlResources[0].xmlProto
+    assertThat(proto).isNotNull()
+    assertThat(proto.hasElement()).isTrue()
 
-      val element = proto.element
-      assertThat(element.name).isEqualTo("l")
-      assertThat(element.attributeList).hasSize(0)
-      assertThat(element.childList).hasSize(1)
+    val element = proto.element
+    assertThat(element.name).isEqualTo("l")
+    assertThat(element.attributeList).hasSize(0)
+    assertThat(element.childList).hasSize(1)
 
-      // Extra spaces should be kept.
-      assertThat(element.getChild(0).text).isEqualTo(contentWithSpaces)
+    // Extra spaces should be kept.
+    assertThat(element.getChild(0).text).isEqualTo(contentWithSpaces)
   }
 
-    @Test
-    fun checkNoNewLineRemoved() {
-        val contentWithNewLines = """
-            <test>
-                Text that is
-                continued here.
-            </test>""".trimIndent()
+  @Test
+  fun checkNoNewLineRemoved() {
+    val contentWithNewLines =
+      """
+      <test>
+          Text that is
+          continued here.
+      </test>
+      """
+        .trimIndent()
 
-        val inputFile = processTest(contentWithNewLines)
-        assertThat(inputFile).isNotNull()
+    val inputFile = processTest(contentWithNewLines)
+    assertThat(inputFile).isNotNull()
 
-        assertThat(processor.xmlResources).hasSize(1)
+    assertThat(processor.xmlResources).hasSize(1)
 
-        val proto = processor.xmlResources[0].xmlProto
-        assertThat(proto).isNotNull()
-        assertThat(proto.hasElement()).isTrue()
+    val proto = processor.xmlResources[0].xmlProto
+    assertThat(proto).isNotNull()
+    assertThat(proto.hasElement()).isTrue()
 
-        val element = proto.element
-        assertThat(element.name).isEqualTo("test")
-        assertThat(element.attributeList).hasSize(0)
-        assertThat(element.childList).hasSize(1)
+    val element = proto.element
+    assertThat(element.name).isEqualTo("test")
+    assertThat(element.attributeList).hasSize(0)
+    assertThat(element.childList).hasSize(1)
 
-
-        // Indentation versus the parent node should be kept here. New lines should be respected.
-        assertThat(element.getChild(0).text).isEqualTo("""
+    // Indentation versus the parent node should be kept here. New lines should be respected.
+    assertThat(element.getChild(0).text)
+      .isEqualTo(
+        """
     Text that is
     continued here.
-""")
-    }
+"""
+      )
+  }
 
-    @Test
-    fun checkWhitespaceComboIsNotRemoved() {
-        val contentWithNewLines = """
+  @Test
+  fun checkWhitespaceComboIsNotRemoved() {
+    val contentWithNewLines =
+      """
             
             hello      world ! 
             
@@ -192,61 +191,66 @@ We meet
 
        again
        """
-        val input = """<l>$contentWithNewLines</l>"""
-        val inputFile = processTest(input)
-        assertThat(inputFile).isNotNull()
+    val input = """<l>$contentWithNewLines</l>"""
+    val inputFile = processTest(input)
+    assertThat(inputFile).isNotNull()
 
-        assertThat(processor.xmlResources).hasSize(1)
+    assertThat(processor.xmlResources).hasSize(1)
 
-        val proto = processor.xmlResources[0].xmlProto
-        assertThat(proto).isNotNull()
-        assertThat(proto.hasElement()).isTrue()
+    val proto = processor.xmlResources[0].xmlProto
+    assertThat(proto).isNotNull()
+    assertThat(proto.hasElement()).isTrue()
 
-        val element = proto.element
-        assertThat(element.name).isEqualTo("l")
-        assertThat(element.attributeList).hasSize(0)
-        assertThat(element.childList).hasSize(1)
+    val element = proto.element
+    assertThat(element.name).isEqualTo("l")
+    assertThat(element.attributeList).hasSize(0)
+    assertThat(element.childList).hasSize(1)
 
-        // We should keep the new lines and extra whitespaces, just as AAPT2 does in res/xml* files.
-        assertThat(element.getChild(0).text).isEqualTo(contentWithNewLines)
-    }
+    // We should keep the new lines and extra whitespaces, just as AAPT2 does in res/xml* files.
+    assertThat(element.getChild(0).text).isEqualTo(contentWithNewLines)
+  }
 
-    @Test
-    fun checkTextWithComment() {
-        val textWithComment = """
-                Text that is
-                <!-- comment -->
-                broken by child.""".trimIndent()
+  @Test
+  fun checkTextWithComment() {
+    val textWithComment =
+      """
+      Text that is
+      <!-- comment -->
+      broken by child.
+      """
+        .trimIndent()
 
-        val input = """<l>$textWithComment</l>"""
-        val inputFile = processTest(input)
-        assertThat(inputFile).isNotNull()
+    val input = """<l>$textWithComment</l>"""
+    val inputFile = processTest(input)
+    assertThat(inputFile).isNotNull()
 
-        assertThat(processor.xmlResources).hasSize(1)
+    assertThat(processor.xmlResources).hasSize(1)
 
-        val proto = processor.xmlResources[0].xmlProto
-        assertThat(proto).isNotNull()
-        assertThat(proto.hasElement()).isTrue()
+    val proto = processor.xmlResources[0].xmlProto
+    assertThat(proto).isNotNull()
+    assertThat(proto.hasElement()).isTrue()
 
-        val element = proto.element
-        assertThat(element.name).isEqualTo("l")
-        assertThat(element.attributeList).hasSize(0)
-        assertThat(element.childList).hasSize(2)
+    val element = proto.element
+    assertThat(element.name).isEqualTo("l")
+    assertThat(element.attributeList).hasSize(0)
+    assertThat(element.childList).hasSize(2)
 
-        // New lines are kept (including new lines), only the comment is removed.
-        assertThat(element.getChild(0).text).isEqualTo("Text that is\n")
-        assertThat(element.getChild(1).text).isEqualTo("\nbroken by child.")
-    }
+    // New lines are kept (including new lines), only the comment is removed.
+    assertThat(element.getChild(0).text).isEqualTo("Text that is\n")
+    assertThat(element.getChild(1).text).isEqualTo("\nbroken by child.")
+  }
 
   @Test
   fun testNoInlineXml() {
-    val input = """
+    val input =
+      """
       <View xmlns:android="http://schemas.android.com/apk/res/android">
         <View android:text="hey">
           <View android:id="hi" />
         </View>
       </View>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -277,8 +281,7 @@ We meet
     assertThat(child.childList).hasSize(1)
 
     val childAttr = child.attributeList[0]
-    assertThat(childAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(childAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(childAttr.name).isEqualTo("text")
     assertThat(childAttr.value).isEqualTo("hey")
 
@@ -292,15 +295,15 @@ We meet
     assertThat(grandchild.childList).hasSize(0)
 
     val grandchildAttr = grandchild.attributeList[0]
-    assertThat(grandchildAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(grandchildAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(grandchildAttr.name).isEqualTo("id")
     assertThat(grandchildAttr.value).isEqualTo("hi")
   }
 
   @Test
   fun testExtractOneXmlResource() {
-    val input = """
+    val input =
+      """
       <View1 xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="android:text">
@@ -309,7 +312,8 @@ We meet
           </View2>
         </aapt:attr>
       </View1>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -353,8 +357,7 @@ We meet
     assertThat(outlinedElement.childList).hasSize(1)
 
     val outlinedNamespace1 = outlinedElement.namespaceDeclarationList[0]
-    assertThat(outlinedNamespace1.uri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedNamespace1.uri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedNamespace1.prefix).isEqualTo("android")
 
     val outlinedNamespace2 = outlinedElement.namespaceDeclarationList[1]
@@ -362,8 +365,7 @@ We meet
     assertThat(outlinedNamespace2.prefix).isEqualTo("aapt")
 
     val outlinedAttr = outlinedElement.attributeList[0]
-    assertThat(outlinedAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedAttr.name).isEqualTo("text")
     assertThat(outlinedAttr.value).isEqualTo("hey")
 
@@ -377,15 +379,15 @@ We meet
     assertThat(outlinedChild.childList).hasSize(0)
 
     val outlinedChildAttr = outlinedChild.attributeList[0]
-    assertThat(outlinedChildAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedChildAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedChildAttr.name).isEqualTo("id")
     assertThat(outlinedChildAttr.value).isEqualTo("hi")
   }
 
   @Test
   fun testExtractTwoSiblingResources() {
-    val input = """
+    val input =
+      """
       <View1 xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="android:text">
@@ -398,7 +400,8 @@ We meet
           <vector />
         </aapt:attr>
       </View1>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -426,16 +429,14 @@ We meet
     // the aapt:attr should be pulled out as an attribute.
     // i.e. 'android:text="@layout/$test__0"'
     val attr1 = element.attributeList[0]
-    assertThat(attr1.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(attr1.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(attr1.name).isEqualTo("text")
     assertThat(attr1.value).isEqualTo("@${getAttrName(inputFile!!, 0)}")
 
     // The second should be pulled out as well.
     // i.e. 'android:drawable="@layout/$test__1"'
     val attr2 = element.attributeList[1]
-    assertThat(attr2.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(attr2.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(attr2.name).isEqualTo("drawable")
     assertThat(attr2.value).isEqualTo("@${getAttrName(inputFile, 1)}")
 
@@ -451,8 +452,7 @@ We meet
     assertThat(outlinedElement.childList).hasSize(1)
 
     val outlinedNamespace1 = outlinedElement.namespaceDeclarationList[0]
-    assertThat(outlinedNamespace1.uri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedNamespace1.uri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedNamespace1.prefix).isEqualTo("android")
 
     val outlinedNamespace2 = outlinedElement.namespaceDeclarationList[1]
@@ -460,8 +460,7 @@ We meet
     assertThat(outlinedNamespace2.prefix).isEqualTo("aapt")
 
     val outlinedAttr = outlinedElement.attributeList[0]
-    assertThat(outlinedAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedAttr.name).isEqualTo("text")
     assertThat(outlinedAttr.value).isEqualTo("hey")
 
@@ -475,8 +474,7 @@ We meet
     assertThat(outlinedChild.childList).hasSize(0)
 
     val outlinedChildAttr = outlinedChild.attributeList[0]
-    assertThat(outlinedChildAttr.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlinedChildAttr.namespaceUri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlinedChildAttr.name).isEqualTo("id")
     assertThat(outlinedChildAttr.value).isEqualTo("hi")
 
@@ -491,8 +489,7 @@ We meet
     assertThat(outlined2Element.childList).hasSize(0)
 
     val outlined2Namespace1 = outlinedElement.namespaceDeclarationList[0]
-    assertThat(outlined2Namespace1.uri)
-      .isEqualTo("http://schemas.android.com/apk/res/android")
+    assertThat(outlined2Namespace1.uri).isEqualTo("http://schemas.android.com/apk/res/android")
     assertThat(outlined2Namespace1.prefix).isEqualTo("android")
 
     val outlined2Namespace2 = outlinedElement.namespaceDeclarationList[1]
@@ -502,7 +499,8 @@ We meet
 
   @Test
   fun testExtractNestedXmlResource() {
-    val input = """
+    val input =
+      """
       <base_root xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:aapt="http://schemas.android.com/aapt">
           <aapt:attr name="inline_xml">
@@ -535,7 +533,8 @@ We meet
               </root1>
           </aapt:attr>
       </base_root>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -546,14 +545,16 @@ We meet
 
   @Test
   fun testExtractIntoAppAttr() {
-    val input = """
+    val input =
+      """
       <parent xmlns:app="http://schemas.android.com/apk/res-auto"
           xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="app:foo">
             <child />
         </aapt:attr>
       </parent>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -579,21 +580,22 @@ We meet
     assertThat(namespace2.prefix).isEqualTo("aapt")
 
     val attr1 = element.attributeList[0]
-    assertThat(attr1.namespaceUri)
-      .isEqualTo("http://schemas.android.com/apk/res-auto")
+    assertThat(attr1.namespaceUri).isEqualTo("http://schemas.android.com/apk/res-auto")
     assertThat(attr1.name).isEqualTo("foo")
     assertThat(attr1.value).isEqualTo("@${getAttrName(inputFile!!, 0)}")
   }
 
   @Test
   fun testExtractIntoNoNamespaceAttr() {
-    val input = """
+    val input =
+      """
       <parent xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="foo">
             <child />
         </aapt:attr>
       </parent>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     val inputFile = processTest(input)
     assertThat(inputFile).isNotNull()
@@ -622,18 +624,21 @@ We meet
 
   @Test
   fun failAttrRoot() {
-    val input = """
+    val input =
+      """
       <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="foo">
         <child/>
       </aapt:attr>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNull()
   }
 
   @Test
   fun failConsecutiveNestedAttrDeclarations() {
-    val input ="""
+    val input =
+      """
       <parent xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="foo">
           <aapt:attr name="bar">
@@ -641,14 +646,16 @@ We meet
           </aapt:attr>
         </aapt:attr>
       </parent>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNull()
   }
 
   @Test
   fun failToOverwriteExistingAttr() {
-    val input = """
+    val input =
+      """
       <parent xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:aapt="http://schemas.android.com/aapt"
           android:drawable="@drawable/hi">
@@ -656,14 +663,16 @@ We meet
           <vector/>
         </aapt:attr>
       </parent>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNull()
   }
 
   @Test
   fun failMultipleWritesToSameAttr() {
-    val input = """
+    val input =
+      """
       <View1 xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="android:text">
@@ -677,20 +686,23 @@ We meet
           </View4>
         </aapt:attr>
       </View1>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNull()
   }
 
   @Test
   fun failEmptyAttr() {
-    val input = """
+    val input =
+      """
       <View1 xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:aapt="http://schemas.android.com/aapt">
         <aapt:attr name="android:text">
         </aapt:attr>
       </View1>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(processTest(input)).isNull()
   }

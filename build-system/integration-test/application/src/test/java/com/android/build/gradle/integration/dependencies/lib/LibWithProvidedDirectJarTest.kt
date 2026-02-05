@@ -27,65 +27,53 @@ import org.junit.Test
 
 class LibWithProvidedDirectJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library", "jar")
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library", "jar")
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                   api project(":library")
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+         api project(":library")
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                dependencies {
-                   compileOnly project(":jar")
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      dependencies {
+         compileOnly project(":jar")
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun `test app VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
+
+  @Test
+  fun `test library VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    with(result).compareVariantDependencies(projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies")
+  }
+
+  @Test
+  fun `check project jar is not packaged`() {
+    project.execute("clean", ":library:assembleDebug")
+    project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+      // make sure People is not in the AAR
+      classes().containsExactly("com/example/android/multiproject/library/PersonView")
     }
-
-    @Test
-    fun `test app VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
-
-    @Test
-    fun `test library VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies"
-        )
-    }
-
-    @Test
-    fun `check project jar is not packaged`() {
-        project.execute("clean", ":library:assembleDebug")
-        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
-            // make sure People is not in the AAR
-            classes().containsExactly("com/example/android/multiproject/library/PersonView")
-        }
-    }
+  }
 }

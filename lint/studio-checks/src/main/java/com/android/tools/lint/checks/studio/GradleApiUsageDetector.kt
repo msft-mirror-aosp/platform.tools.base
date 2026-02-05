@@ -33,14 +33,13 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UastCallKind
 
 /**
- * Detect use of Gradle APIs that should not be used in the Android Gradle plugin. Right now, this
- * detects usage of org.gradle.api.Project.exec, but it may contain more things in the future.
+ * Detect use of Gradle APIs that should not be used in the Android Gradle plugin. Right now, this detects usage of
+ * org.gradle.api.Project.exec, but it may contain more things in the future.
  */
 class GradleApiUsageDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(GradleApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(GradleApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =

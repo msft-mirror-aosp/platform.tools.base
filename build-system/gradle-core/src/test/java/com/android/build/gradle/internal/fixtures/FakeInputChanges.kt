@@ -22,21 +22,17 @@ import org.gradle.api.provider.Provider
 import org.gradle.work.FileChange
 import org.gradle.work.InputChanges
 
-class FakeInputChanges(
-    val incremental: Boolean = false,
-    val inputChanges: List<FileChange> = emptyList()
-) : InputChanges {
+class FakeInputChanges(val incremental: Boolean = false, val inputChanges: List<FileChange> = emptyList()) : InputChanges {
 
-    override fun isIncremental(): Boolean {
-        return incremental
-    }
+  override fun isIncremental(): Boolean {
+    return incremental
+  }
 
-    override fun getFileChanges(parameter: FileCollection): MutableIterable<FileChange> {
-        return inputChanges.toMutableList()
-    }
+  override fun getFileChanges(parameter: FileCollection): MutableIterable<FileChange> {
+    return inputChanges.toMutableList()
+  }
 
-    override fun getFileChanges(parameter: Provider<out FileSystemLocation>)
-            : MutableIterable<FileChange> {
-        return inputChanges.toMutableList()
-    }
+  override fun getFileChanges(parameter: Provider<out FileSystemLocation>): MutableIterable<FileChange> {
+    return inputChanges.toMutableList()
+  }
 }

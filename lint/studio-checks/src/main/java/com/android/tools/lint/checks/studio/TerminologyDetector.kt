@@ -39,18 +39,11 @@ import org.jetbrains.uast.ULiteralExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
 
-/**
- * Looks at identifiers and comments to check for terminology where we have recommended replacements
- * in our codebase.
- */
+/** Looks at identifiers and comments to check for terminology where we have recommended replacements in our codebase. */
 class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        TerminologyDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.OTHER, Scope.TEST_SOURCES),
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(TerminologyDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.OTHER, Scope.TEST_SOURCES), Scope.JAVA_FILE_SCOPE)
 
     /** Looks for terminology that has suggested replacements for our codebase. */
     val ISSUE =
@@ -104,13 +97,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   // Implements SourceFileScanner
 
   override fun getApplicableUastTypes(): List<Class<out UElement?>> {
-    return listOf(
-      UFile::class.java,
-      UVariable::class.java,
-      UMethod::class.java,
-      UClass::class.java,
-      ULiteralExpression::class.java,
-    )
+    return listOf(UFile::class.java, UVariable::class.java, UMethod::class.java, UClass::class.java, ULiteralExpression::class.java)
   }
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
@@ -152,11 +139,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
 
       private fun checkDeclaration(node: UDeclaration, name: String?) {
         name ?: return
-        checkCommentStateMachine(
-          context,
-          JavaContext.findNameElement(node as UElement) ?: node,
-          name,
-        )
+        checkCommentStateMachine(context, JavaContext.findNameElement(node as UElement) ?: node, name)
         for (comment in node.comments) {
           val contents = comment.text
           if (checkedComments.add(contents)) {
@@ -254,11 +237,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
             index = alt
           }
         }
-        if (
-          isPolyadicFromStringTemplate(argument) &&
-            argument.operands.size == 1 &&
-            location.source === argument.operands[0]
-        ) {
+        if (isPolyadicFromStringTemplate(argument) && argument.operands.size == 1 && location.source === argument.operands[0]) {
           context.getRangeLocation(argument.operands[0], index - start, string.length)
         } else {
           context.getRangeLocation(argument, index - start, string.length)
@@ -278,10 +257,9 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   }
 
   /**
-   * See whether the text span in the given range in [source] is separated by word boundaries; this
-   * doesn't just include punctuation but also allows words within camel case strings, for example
-   * in the string getFooBar, the word "Foo" is a whole word match, whereas in getFoobar it would
-   * not have been.
+   * See whether the text span in the given range in [source] is separated by word boundaries; this doesn't just include punctuation but
+   * also allows words within camel case strings, for example in the string getFooBar, the word "Foo" is a whole word match, whereas in
+   * getFoobar it would not have been.
    */
   private fun matchesWholeWords(source: CharSequence, start: Int, end: Int): Boolean {
     // Check beginning
@@ -317,8 +295,8 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   /**
    * Checks the text in [source].
    *
-   * If it finds matches in the string, it will report errors into the given context. The associated
-   * AST [element] is used to look look up suppress annotations and to find the right error range.
+   * If it finds matches in the string, it will report errors into the given context. The associated AST [element] is used to look look up
+   * suppress annotations and to find the right error range.
    */
   @Suppress("SpellCheckingInspection")
   private fun checkCommentStateMachine(context: Context, element: UElement?, source: CharSequence) {

@@ -59,10 +59,7 @@ import org.jetbrains.uast.UWhileExpression
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.util.isConstructorCall
 
-/**
- * Checks for missing `recycle` calls on resources that encourage it, and for missing `commit` calls
- * on FragmentTransactions, etc.
- */
+/** Checks for missing `recycle` calls on resources that encourage it, and for missing `commit` calls on FragmentTransactions, etc. */
 class CleanupDetector : Detector(), SourceCodeScanner {
 
   // ---- implements SourceCodeScanner ----
@@ -116,13 +113,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableConstructorTypes(): List<String> {
-    return listOf(
-      SURFACE_TEXTURE_CLS,
-      SURFACE_CLS,
-      VALUE_ANIMATOR_CLS,
-      OBJECT_ANIMATOR_CLS,
-      ANIMATOR_SET_CLS,
-    )
+    return listOf(SURFACE_TEXTURE_CLS, SURFACE_CLS, VALUE_ANIMATOR_CLS, OBJECT_ANIMATOR_CLS, ANIMATOR_SET_CLS)
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -133,11 +124,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val type = constructor.containingClass?.qualifiedName ?: return
     if (node.isThisOrSuperConstructorCall()) return
     if (type == SURFACE_TEXTURE_CLS || type == SURFACE_CLS) {
@@ -147,11 +134,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkResourceRecycled(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-  ) {
+  private fun checkResourceRecycled(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val name = method.name
 
     // Recycle detector
@@ -162,10 +145,8 @@ class CleanupDetector : Detector(), SourceCodeScanner {
       OBTAIN,
       OBTAIN_NO_HISTORY ->
         when {
-          evaluator.extendsClass(containingClass, MOTION_EVENT_CLS, false) ->
-            checkRecycled(context, node, MOTION_EVENT_CLS, RECYCLE)
-          evaluator.extendsClass(containingClass, PARCEL_CLS, false) ->
-            checkRecycled(context, node, PARCEL_CLS, RECYCLE)
+          evaluator.extendsClass(containingClass, MOTION_EVENT_CLS, false) -> checkRecycled(context, node, MOTION_EVENT_CLS, RECYCLE)
+          evaluator.extendsClass(containingClass, PARCEL_CLS, false) -> checkRecycled(context, node, PARCEL_CLS, RECYCLE)
           evaluator.extendsClass(containingClass, VELOCITY_TRACKER_CLS, false) ->
             checkRecycled(context, node, VELOCITY_TRACKER_CLS, RECYCLE)
         }
@@ -173,8 +154,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
       OBTAIN_ATTRIBUTES,
       OBTAIN_TYPED_ARRAY ->
         if (
-          evaluator.extendsClass(containingClass, CLASS_CONTEXT, false) ||
-            evaluator.extendsClass(containingClass, CLASS_RESOURCES, false)
+          evaluator.extendsClass(containingClass, CLASS_CONTEXT, false) || evaluator.extendsClass(containingClass, CLASS_RESOURCES, false)
         ) {
           val returnType = method.returnType
           if (returnType is PsiClassType) {
@@ -259,20 +239,11 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkRecycled(
-    context: JavaContext,
-    node: UCallExpression,
-    originalRecycleType: String,
-    vararg recycleNames: String,
-  ) {
+  private fun checkRecycled(context: JavaContext, node: UCallExpression, originalRecycleType: String, vararg recycleNames: String) {
     // If it's an AutoCloseable in a try-with-resources clause, don't flag it: these will be
     // cleaned up automatically
     val psi = node.sourcePsi
-    if (
-      psi != null &&
-        isJava(node.lang) &&
-        PsiTreeUtil.getParentOfType(psi, PsiResourceVariable::class.java) != null
-    ) {
+    if (psi != null && isJava(node.lang) && PsiTreeUtil.getParentOfType(psi, PsiResourceVariable::class.java) != null) {
       return
     }
 
@@ -298,8 +269,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
             // loosely match kotlin.io.use() signature and at the same time allow custom
             // overloads for types not extending Closeable
             if (call != null && call.valueArgumentCount == 1) {
-              val argumentType =
-                call.valueArguments.first().skipLabeledExpression().getExpressionType()
+              val argumentType = call.valueArguments.first().skipLabeledExpression().getExpressionType()
               if (argumentType != null && LambdaUtil.isFunctionalType(argumentType)) {
                 return true
               }
@@ -436,9 +406,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    val className =
-      node.returnType?.canonicalText?.substringAfterLast(".")
-        ?: originalRecycleType.substringAfterLast(".")
+    val className = node.returnType?.canonicalText?.substringAfterLast(".") ?: originalRecycleType.substringAfterLast(".")
     val message =
       when (val recycleName = recycleNames.first()) {
         RECYCLE -> "This `$className` should be recycled after use with `#recycle()`"
@@ -454,11 +422,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     context.report(RECYCLE_RESOURCE, node, location, message)
   }
 
-  private fun checkTransactionCommits(
-    context: JavaContext,
-    node: UCallExpression,
-    calledMethod: PsiMethod,
-  ) {
+  private fun checkTransactionCommits(context: JavaContext, node: UCallExpression, calledMethod: PsiMethod) {
     if (isBeginTransaction(context, calledMethod)) {
       val method = node.getParentOfType(UMethod::class.java) ?: return
 
@@ -483,14 +447,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
                   FRAGMENT_TRANSACTION_CLS,
                   FRAGMENT_TRANSACTION_V4_CLS,
                 )
-              SHOW ->
-                isMethodOnFragmentClass(
-                  context,
-                  method,
-                  DIALOG_ANDROIDX_FRAGMENT,
-                  DIALOG_FRAGMENT,
-                  DIALOG_V4_FRAGMENT,
-                )
+              SHOW -> isMethodOnFragmentClass(context, method, DIALOG_ANDROIDX_FRAGMENT, DIALOG_FRAGMENT, DIALOG_V4_FRAGMENT)
               else -> false
             }
           }
@@ -519,11 +476,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
       evaluator.extendsClass(containingClass, v4FragmentClass, false)
   }
 
-  private fun checkEditorApplied(
-    context: JavaContext,
-    node: UCallExpression,
-    calledMethod: PsiMethod,
-  ) {
+  private fun checkEditorApplied(context: JavaContext, node: UCallExpression, calledMethod: PsiMethod) {
     if (isSharedEditorCreation(context, calledMethod)) {
       if (node.valueArguments.isNotEmpty()) {
         // Passing parameters to edit(); that's not the built-in edit method
@@ -550,11 +503,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
                 if (method != null) {
                   val containingClass = method.containingClass
                   val evaluator = context.evaluator
-                  return evaluator.extendsClass(
-                    containingClass,
-                    ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR,
-                    false,
-                  )
+                  return evaluator.extendsClass(containingClass, ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR, false)
                 } else if (call == null || call.valueArgumentCount == 0) {
                   // Couldn't find method but it *looks* like an apply call
                   return true
@@ -565,13 +514,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
                 if (method != null) {
                   val containingClass = method.containingClass
                   val evaluator = context.evaluator
-                  if (
-                    evaluator.extendsClass(
-                      containingClass,
-                      ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR,
-                      false,
-                    )
-                  ) {
+                  if (evaluator.extendsClass(containingClass, ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR, false)) {
                     return true
                   }
                 } else if (call == null || call.valueArgumentCount == 0) {
@@ -585,8 +528,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
         }
 
       if (method.isMissingTarget(visitor)) {
-        val message =
-          "`SharedPreferences.edit()` without a corresponding `commit()` or `apply()` call"
+        val message = "`SharedPreferences.edit()` without a corresponding `commit()` or `apply()` call"
         context.report(SHARED_PREF, node, context.getLocation(node), message)
       } else {
         val targetCall = visitor.targetReference
@@ -603,11 +545,8 @@ class CleanupDetector : Detector(), SourceCodeScanner {
       val containingClass = method.containingClass ?: return false
       val type = method.returnType ?: return false
       val evaluator = context.evaluator
-      return (evaluator.implementsInterface(
-        containingClass,
-        ANDROID_CONTENT_SHARED_PREFERENCES,
-        false,
-      ) && evaluator.typeMatches(type, ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR))
+      return (evaluator.implementsInterface(containingClass, ANDROID_CONTENT_SHARED_PREFERENCES, false) &&
+        evaluator.typeMatches(type, ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR))
     }
 
     return false
@@ -653,13 +592,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
           "its data to persistent storage immediately, whereas " +
           "`apply` will handle it in the background")
       val location = context.getCallLocation(node, includeReceiver = false, includeArguments = true)
-      val fix =
-        LintFix.create()
-          .name("Replace commit() with apply()")
-          .replace()
-          .pattern("(commit)\\s*\\(")
-          .with("apply")
-          .build()
+      val fix = LintFix.create().name("Replace commit() with apply()").replace().pattern("(commit)\\s*\\(").with("apply").build()
       context.report(APPLY_SHARED_PREF, node, location, message, fix)
     }
   }
@@ -806,8 +739,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     private const val FRAGMENT_MANAGER_ANDROIDX_CLS = "androidx.fragment.app.FragmentManager"
     private const val FRAGMENT_TRANSACTION_CLS = "android.app.FragmentTransaction"
     private const val FRAGMENT_TRANSACTION_V4_CLS = "android.support.v4.app.FragmentTransaction"
-    private const val FRAGMENT_TRANSACTION_ANDROIDX_CLS =
-      "androidx.fragment.app.FragmentTransaction"
+    private const val FRAGMENT_TRANSACTION_ANDROIDX_CLS = "androidx.fragment.app.FragmentTransaction"
     private const val ANIMATOR_CLS = "android.animation.Animator"
     private const val VALUE_ANIMATOR_CLS = "android.animation.ValueAnimator"
     private const val OBJECT_ANIMATOR_CLS = "android.animation.ObjectAnimator"
@@ -820,8 +752,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     const val SQLITE_DATABASE_CLS = "android.database.sqlite.SQLiteDatabase"
     const val CURSOR_CLS = "android.database.Cursor"
     const val ANDROID_CONTENT_SHARED_PREFERENCES = "android.content.SharedPreferences"
-    private const val ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR =
-      "android.content.SharedPreferences.Editor"
+    private const val ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR = "android.content.SharedPreferences.Editor"
     private const val ASSET_FILE_DESCRIPTOR_CLS = "android.content.res.AssetFileDescriptor"
     private const val CLOSEABLE_CLS = "java.io.Closeable"
     private const val FILE_INPUT_STREAM_CLS = "java.io.FileInputStream"
@@ -832,11 +763,7 @@ class CleanupDetector : Detector(), SourceCodeScanner {
     /** Returns the variable the expression is assigned to, if any. */
     @JvmStatic
     @JvmOverloads
-    fun getVariableElement(
-      rhs: UCallExpression,
-      allowChainedCalls: Boolean = false,
-      allowFields: Boolean = false,
-    ): PsiVariable? {
+    fun getVariableElement(rhs: UCallExpression, allowChainedCalls: Boolean = false, allowFields: Boolean = false): PsiVariable? {
       return DataFlowAnalyzer.getVariableElement(rhs, allowChainedCalls, allowFields)
     }
   }

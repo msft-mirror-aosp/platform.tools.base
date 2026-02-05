@@ -20,28 +20,19 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class ApplicationIdInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {  }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                defaultConfig.applicationId = "customized.application.id"
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+class ApplicationIdInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
+    deltaConfig = { androidApplication { android { defaultConfig.applicationId = "customized.application.id" } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

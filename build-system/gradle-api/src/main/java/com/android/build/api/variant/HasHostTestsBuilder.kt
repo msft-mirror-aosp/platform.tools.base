@@ -26,14 +26,11 @@ import org.gradle.api.Incubating
 @Incubating
 interface HasHostTestsBuilder {
 
-    /**
-     * Variant's [HostTestBuilder] configuration to turn on or off screenshot tests and set
-     * other screenshot test related settings.
-     *
-     * @return a [Map] which keys are unique names within the tested variant like
-     * [HostTestBuilder.UNIT_TEST_TYPE] or [HostTestBuilder.SCREENSHOT_TEST_TYPE] and the values
-     * are [HostTestBuilder] for that host test suite.
-     */
-    @get:Incubating
-    val hostTests: Map<String, HostTestBuilder>
+  /**
+   * Variant's [HostTestBuilder] configuration to turn on or off screenshot tests and set other screenshot test related settings.
+   *
+   * @return a [Map] which keys are unique names within the tested variant like [HostTestBuilder.UNIT_TEST_TYPE] or
+   *   [HostTestBuilder.SCREENSHOT_TEST_TYPE] and the values are [HostTestBuilder] for that host test suite.
+   */
+  @get:Incubating val hostTests: Map<String, HostTestBuilder>
 }

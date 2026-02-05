@@ -23,36 +23,25 @@ import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
 import org.junit.Test
 
-class CustomSourceDirectoryTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidLibrary {
-        }
-    },
-    deltaConfig = {
-        androidLibrary {
-            pluginCallbacks += TomlCallback::class.java
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+class CustomSourceDirectoryTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidLibrary {} },
+    deltaConfig = { androidLibrary { pluginCallbacks += TomlCallback::class.java } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  class TomlCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.registerSourceType("toml")
     }
-) {
-    class TomlCallback: LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            androidComponents.registerSourceType("toml")
-        }
-    }
+  }
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith()
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith()
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        ensureAndroidProjectDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    ensureAndroidProjectDeltaIsEmpty()
+  }
 }

@@ -39,9 +39,8 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getParentOfType
 
 /**
- * Checks for calls to begin and end trace sections, ensuring they are properly nested and paired.
- * This check works for public tracing APIs (`android.os.Trace.beginSection()`), AndroidX APIs
- * (`androidx.tracing.Trace.beginSection()`), and hidden platform tracing APIs
+ * Checks for calls to begin and end trace sections, ensuring they are properly nested and paired. This check works for public tracing APIs
+ * (`android.os.Trace.beginSection()`), AndroidX APIs (`androidx.tracing.Trace.beginSection()`), and hidden platform tracing APIs
  * (`android.os.Trace.traceBegin()`).
  */
 class TraceSectionDetector : Detector(), SourceCodeScanner {
@@ -65,12 +64,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
           "The `${node.methodName}()` call is not always closed with a matching " +
             "`${endName(node.methodName)}()` because the code in between may throw an exception"
       }
-    context.report(
-      UNCLOSED_TRACE,
-      node,
-      context.getCallLocation(node, includeReceiver = false, includeArguments = false),
-      message,
-    )
+    context.report(UNCLOSED_TRACE, node, context.getCallLocation(node, includeReceiver = false, includeArguments = false), message)
   }
 
   /** Return the name of the matching end-section call. */
@@ -193,10 +187,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
       FOUND_SUSPEND,
     }
 
-    private fun searchForMatchingTraceSection(
-      context: JavaContext,
-      node: UCallExpression,
-    ): SearchResult {
+    private fun searchForMatchingTraceSection(context: JavaContext, node: UCallExpression): SearchResult {
       val searchContext =
         if (isPlatformPublicBeginCall(node)) {
           AstSearchContext(context, ::isPlatformPublicBeginCall, ::isPlatformPublicEndCall)
@@ -214,16 +205,12 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
         ControlFlowGraph.create(
           containingMethod,
           builder =
-            object :
-              ControlFlowGraph.Companion.Builder(
-                strictMode,
-                trackCallThrows = true,
-                trackUncheckedExceptions = false,
-              ) {
+            object : ControlFlowGraph.Companion.Builder(strictMode, trackCallThrows = true, trackUncheckedExceptions = false) {
               override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
                 val name = method.name
                 // Ignore exceptions for begin and end calls. Technically,
-                // android.os.Trace.beginSection() will throw an IllegalArgumentException if passed
+                // android.os.Trace.beginSection() will throw an IllegalArgumentException if
+                // passed
                 // a string longer than 127 characters, but that's a separate issue.
                 if (
                   name == TRACE_IS_ENABLED ||
@@ -242,9 +229,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
                 return super.canThrow(reference, method)
               }
 
-              override fun checkBranchPaths(
-                conditional: UExpression
-              ): ControlFlowGraph.FollowBranch {
+              override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
                 val selector = conditional.findSelector()
                 if (selector is UCallExpression) {
                   val resolved = selector.resolve()
@@ -272,38 +257,32 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
 
     private fun isPlatformPublicBeginCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == BEGIN_SECTION &&
-        call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
+      return name == BEGIN_SECTION && call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
     }
 
     private fun isPlatformPublicEndCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == END_SECTION &&
-        call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
+      return name == END_SECTION && call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
     }
 
     private fun isPlatformSystemBeginCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == TRACE_BEGIN &&
-        call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
+      return name == TRACE_BEGIN && call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
     }
 
     private fun isPlatformSystemEndCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == TRACE_END &&
-        call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
+      return name == TRACE_END && call.resolve()?.containingClass?.qualifiedName == PLATFORM_TRACE_FQN
     }
 
     private fun isAndroidXBeginCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == BEGIN_SECTION &&
-        call.resolve()?.containingClass?.qualifiedName == ANDROIDX_TRACE_FQN
+      return name == BEGIN_SECTION && call.resolve()?.containingClass?.qualifiedName == ANDROIDX_TRACE_FQN
     }
 
     private fun isAndroidXEndCall(call: UCallExpression): Boolean {
       val name = call.methodName
-      return name == END_SECTION &&
-        call.resolve()?.containingClass?.qualifiedName == ANDROIDX_TRACE_FQN
+      return name == END_SECTION && call.resolve()?.containingClass?.qualifiedName == ANDROIDX_TRACE_FQN
     }
 
     private fun isSuspendCall(evaluator: JavaEvaluator, call: UCallExpression): Boolean {
@@ -312,8 +291,8 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Search all paths from the given target, verifying that all paths lead to a matching
-     * `Trace.endSection()` call before returning, throwing an exception, or suspending.
+     * Search all paths from the given target, verifying that all paths lead to a matching `Trace.endSection()` call before returning,
+     * throwing an exception, or suspending.
      *
      * @param node the beginSection() node
      */
@@ -345,11 +324,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
             // Found a matching endSection()
             return FOUND_NOTHING
           }
-        } else if (
-          isPlatformPublicBeginCall(instruction) ||
-            isPlatformSystemBeginCall(instruction) ||
-            isAndroidXBeginCall(instruction)
-        ) {
+        } else if (isPlatformPublicBeginCall(instruction) || isPlatformSystemBeginCall(instruction) || isAndroidXBeginCall(instruction)) {
           if (searchContext.isBeginCall(instruction)) {
             openTraceSectionCount++
           }
@@ -362,13 +337,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
       }
 
       for ((_, next, _, isException) in node) {
-        val other =
-          dfs(
-            searchContext,
-            next,
-            openTraceSectionCount,
-            viaException = viaException || isException,
-          )
+        val other = dfs(searchContext, next, openTraceSectionCount, viaException = viaException || isException)
         if (other != FOUND_NOTHING) {
           return other
         }

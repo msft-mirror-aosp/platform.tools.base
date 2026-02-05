@@ -23,122 +23,109 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
 @RunWith(Parameterized::class)
 class ProguardAndroidOptimizeTest(val proguardAndroidTxtDisallowed: Boolean) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "proguardAndroidTxtDisallowed={0}")
-        fun proguardAndroidTxtDisallowed() = listOf(true, false)
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "proguardAndroidTxtDisallowed={0}") fun proguardAndroidTxtDisallowed() = listOf(true, false)
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      gradleProperties { add(BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED, proguardAndroidTxtDisallowed) }
+      androidApplication {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+        android {
+          defaultConfig.minSdk = 24
+          buildTypes { named("release") { it.isMinifyEnabled = true } }
+        }
+        files {
+          add(
+            "src/main/java/com/example/app/ClassToOptimize.kt",
+            // language=kotlin
+            """
+            class ClassToOptimize
+            """
+              .trimIndent(),
+          )
+        }
+      }
     }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        gradleProperties {
-            add(BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED, proguardAndroidTxtDisallowed)
-        }
+  @Test
+  fun `test proguard-android-txt disallowed with flag`() {
+    val build =
+      rule.build {
         androidApplication {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                defaultConfig.minSdk = 24
-                buildTypes {
-                    named("release") {
-                        it.isMinifyEnabled = true
-                    }
+          android {
+            buildTypes {
+              named("release") {
+                it.optimization.keepRules {
+                  // proguard-android.txt isn't supported when the flag is set
+                  files.add(getDefaultProguardFile("proguard-android.txt"))
                 }
+              }
             }
-            files {
-                add(
-                    "src/main/java/com/example/app/ClassToOptimize.kt",
-                    //language=kotlin
-                    """
-                        class ClassToOptimize
-                    """.trimIndent()
-                )
-            }
+          }
         }
-    }
+      }
 
-    @Test
-    fun `test proguard-android-txt disallowed with flag`() {
-        val build = rule.build {
-            androidApplication {
-                android {
-                    buildTypes {
-                        named("release") {
-                            it.optimization.keepRules {
-                                // proguard-android.txt isn't supported when the flag is set
-                                files.add(getDefaultProguardFile("proguard-android.txt"))
-                            }
-                        }
-                    }
+    if (proguardAndroidTxtDisallowed) {
+      val result = build.executor.expectFailure().run(":app:assembleRelease")
+      assertThat(Throwables.getRootCause(result.exception).message)
+        .contains("`getDefaultProguardFile('proguard-android.txt')` is no longer supported")
+    } else {
+      build.executor.run(":app:assembleRelease") // builds fine
+    }
+  }
+
+  @Test
+  fun `test proguard-android-optimize-txt always allowed`() {
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            buildTypes {
+              named("release") {
+                it.optimization.keepRules {
+                  // proguard-android-optimize.txt is fine
+                  files.add(getDefaultProguardFile("proguard-android-optimize.txt"))
                 }
+              }
             }
+          }
         }
+      }
+    build.executor.run(":app:assembleRelease")
+    assertThat(build.getReleaseConfigurationTxtFile()).doesNotContain("-dontoptimize")
+  }
 
-        if (proguardAndroidTxtDisallowed) {
-            val result = build.executor.expectFailure().run(":app:assembleRelease")
-            assertThat(Throwables.getRootCause(result.exception).message).contains(
-                "`getDefaultProguardFile('proguard-android.txt')` is no longer supported"
-            )
-        } else {
-            build.executor.run(":app:assembleRelease") // builds fine
-        }
+  @Test
+  fun `test default -dontoptimize behavior`() {
+    val build =
+      rule.build {
+        // with `optimization.keepRules.files` being empty, you get the default rules
+        // which should not contain -dontoptimize
+      }
+    build.executor.run(":app:assembleRelease")
+    if (proguardAndroidTxtDisallowed) {
+      assertThat(build.getReleaseConfigurationTxtFile()).doesNotContain("-dontoptimize")
+    } else {
+      assertThat(build.getReleaseConfigurationTxtFile()).contains("-dontoptimize")
     }
+  }
 
-    @Test
-    fun `test proguard-android-optimize-txt always allowed`() {
-        val build = rule.build {
-            androidApplication {
-                android {
-                    buildTypes {
-                        named("release") {
-                            it.optimization.keepRules {
-                                // proguard-android-optimize.txt is fine
-                                files.add(getDefaultProguardFile("proguard-android-optimize.txt"))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        build.executor.run(":app:assembleRelease")
-        assertThat(build.getReleaseConfigurationTxtFile())
-            .doesNotContain("-dontoptimize")
+  private fun GradleBuild.getReleaseConfigurationTxtFile(): File {
+
+    return FileUtils.join(androidApplication().outputsDir.toFile(), "mapping", "release", "configuration.txt").also {
+      assertThat(it).exists()
     }
-
-    @Test
-    fun `test default -dontoptimize behavior`() {
-        val build = rule.build {
-            // with `optimization.keepRules.files` being empty, you get the default rules
-            // which should not contain -dontoptimize
-        }
-        build.executor.run(":app:assembleRelease")
-        if (proguardAndroidTxtDisallowed) {
-            assertThat(build.getReleaseConfigurationTxtFile())
-                .doesNotContain("-dontoptimize")
-        } else {
-            assertThat(build.getReleaseConfigurationTxtFile())
-                .contains("-dontoptimize")
-        }
-    }
-
-    private fun GradleBuild.getReleaseConfigurationTxtFile(): File {
-
-        return FileUtils.join(
-            androidApplication().outputsDir.toFile(),
-            "mapping",
-            "release",
-            "configuration.txt"
-        ).also {
-            assertThat(it).exists()
-        }
-    }
+  }
 }

@@ -24,47 +24,48 @@ import org.junit.Test
 
 class MinSdkVariantTest {
 
-    @get:Rule
-    val appProject: GradleTestProject = builder()
-        .withName("application")
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule
+  val appProject: GradleTestProject =
+    builder().withName("application").fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun testMinSdkValuesFromVariantAPI() {
-        appProject.buildFile.appendText("""
-            android {
-                defaultConfig {
-                    minSdkVersion 12
-                }
-                flavorDimensions "color"
-                productFlavors {
-                    red {
-                        dimension = "color"
-                    }
-                    blue {
-                        dimension = "color"
-                        minSdkVersion 19
-                    }
-                }
-            }
+  @Test
+  fun testMinSdkValuesFromVariantAPI() {
+    appProject.buildFile.appendText(
+      """
+      android {
+          defaultConfig {
+              minSdkVersion 12
+          }
+          flavorDimensions "color"
+          productFlavors {
+              red {
+                  dimension = "color"
+              }
+              blue {
+                  dimension = "color"
+                  minSdkVersion 19
+              }
+          }
+      }
 
-            androidComponents {
-                onVariants(selector().withFlavor(new kotlin.Pair("color", "red")), { variant ->
-                    if (variant.minSdk.api != 12)
-                        throw new RuntimeException("Invalid minSdk version, expected 12, got ${'$'}{variant.minSdk.api}")
-                    if (variant.buildType == "debug" && variant.deviceTests.get("AndroidTest").minSdk.api != 12)
-                        throw new RuntimeException("Invalid device test minSdk version, expected 12, got ${'$'}{variant.deviceTests.get("AndroidTest").minSdk.api}")
-                })
-                onVariants(selector().withFlavor(new kotlin.Pair("color", "blue")), { variant ->
-                    if (variant.minSdk.api != 19)
-                        throw new RuntimeException("Invalid minSdk version, expected 19, got ${'$'}{variant.minSdk.api}")
-                    if (variant.buildType == "debug" && variant.deviceTests.get("AndroidTest").minSdk.api != 19)
-                        throw new RuntimeException("Invalid device test minSdk version, expected 12, got ${'$'}{variant.deviceTests.get("AndroidTest").minSdk.api}")
-                })
-            }
-        """.trimIndent())
+      androidComponents {
+          onVariants(selector().withFlavor(new kotlin.Pair("color", "red")), { variant ->
+              if (variant.minSdk.api != 12)
+                  throw new RuntimeException("Invalid minSdk version, expected 12, got ${'$'}{variant.minSdk.api}")
+              if (variant.buildType == "debug" && variant.deviceTests.get("AndroidTest").minSdk.api != 12)
+                  throw new RuntimeException("Invalid device test minSdk version, expected 12, got ${'$'}{variant.deviceTests.get("AndroidTest").minSdk.api}")
+          })
+          onVariants(selector().withFlavor(new kotlin.Pair("color", "blue")), { variant ->
+              if (variant.minSdk.api != 19)
+                  throw new RuntimeException("Invalid minSdk version, expected 19, got ${'$'}{variant.minSdk.api}")
+              if (variant.buildType == "debug" && variant.deviceTests.get("AndroidTest").minSdk.api != 19)
+                  throw new RuntimeException("Invalid device test minSdk version, expected 12, got ${'$'}{variant.deviceTests.get("AndroidTest").minSdk.api}")
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        appProject.executor().run("tasks")
-    }
+    appProject.executor().run("tasks")
+  }
 }

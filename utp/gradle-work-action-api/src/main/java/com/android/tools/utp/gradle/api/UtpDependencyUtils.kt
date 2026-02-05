@@ -25,152 +25,110 @@ private const val UTP_MAVEN_GROUP_ID = "com.google.testing.platform"
 private const val UTP_DEFAULT_VERSION = "0.0.9-alpha04"
 private const val ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID = "com.android.tools.utp"
 
-/**
- * Available Unified Test Platform dependencies.
- */
+/** Available Unified Test Platform dependencies. */
 enum class UtpDependency(
-    val artifactId: String,
-    val mainClass: String,
-    val mapperFunc: (UtpDependencies) -> ConfigurableFileCollection,
-    private val groupId: String = UTP_MAVEN_GROUP_ID) {
-    LAUNCHER(
-        "launcher",
-        "com.google.testing.platform.launcher.Launcher",
-        UtpDependencies::launcher),
-    CORE(
-        "core",
-        "com.google.testing.platform.main.MainKt",
-        UtpDependencies::core),
-    GRADLE_WORK_ACTION(
-        "gradle-work-action",
-        "",
-        UtpDependencies::gradleWorkAction,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_DEVICE_PROVIDER_DDMLIB(
-        "android-device-provider-ddmlib",
-        "com.android.tools.utp.plugins.deviceprovider.ddmlib.DdmlibAndroidDeviceProvider",
-        UtpDependencies::deviceControllerDdmlib,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_DRIVER_INSTRUMENTATION(
-        "android-driver-instrumentation",
-        "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver",
-        UtpDependencies::driverInstrumentation),
-    ANDROID_TEST_PLUGIN(
-        "android-test-plugin",
-        "com.google.testing.platform.plugin.android.AndroidDevicePlugin",
-        UtpDependencies::testPlugin),
-    ANDROID_TEST_DEVICE_INFO_PLUGIN(
-        "android-test-plugin-host-device-info",
-        "com.android.tools.utp.plugins.host.device.info.AndroidTestDeviceInfoPlugin",
-        UtpDependencies::testDeviceInfoPlugin,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN(
-        "android-test-plugin-host-additional-test-output",
-        "com.android.tools.utp.plugins.host.additionaltestoutput.AndroidAdditionalTestOutputPlugin",
-        UtpDependencies::additionalTestOutputPlugin,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_PLUGIN_APK_INSTALLER(
-        "android-test-plugin-host-apk-installer",
-        "com.android.tools.utp.plugins.host.apkinstaller.AndroidTestApkInstallerPlugin",
-        UtpDependencies::testPluginApkInstaller,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_COVERAGE_PLUGIN(
-        "android-test-plugin-host-coverage",
-        "com.android.tools.utp.plugins.host.coverage.AndroidTestCoveragePlugin",
-        UtpDependencies::testCoveragePlugin,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_LOGCAT_PLUGIN(
-        "android-test-plugin-host-logcat",
-        "com.android.tools.utp.plugins.host.logcat.AndroidTestLogcatPlugin",
-        UtpDependencies::testLogcatPlugin,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL(
-        "android-test-plugin-host-emulator-control",
-        "com.android.tools.utp.plugins.host.emulatorcontrol.EmulatorControlPlugin",
-        UtpDependencies::testEmulatorAccessPlugin,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    ),
-    ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE(
-        "android-test-plugin-result-listener-gradle",
-        "com.android.tools.utp.plugins.result.listener.gradle.GradleAndroidTestResultListener",
-        UtpDependencies::testPluginResultListenerGradle,
-        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-    )
-    ;
+  val artifactId: String,
+  val mainClass: String,
+  val mapperFunc: (UtpDependencies) -> ConfigurableFileCollection,
+  private val groupId: String = UTP_MAVEN_GROUP_ID,
+) {
+  LAUNCHER("launcher", "com.google.testing.platform.launcher.Launcher", UtpDependencies::launcher),
+  CORE("core", "com.google.testing.platform.main.MainKt", UtpDependencies::core),
+  GRADLE_WORK_ACTION("gradle-work-action", "", UtpDependencies::gradleWorkAction, ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID),
+  ANDROID_DEVICE_PROVIDER_DDMLIB(
+    "android-device-provider-ddmlib",
+    "com.android.tools.utp.plugins.deviceprovider.ddmlib.DdmlibAndroidDeviceProvider",
+    UtpDependencies::deviceControllerDdmlib,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_DRIVER_INSTRUMENTATION(
+    "android-driver-instrumentation",
+    "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver",
+    UtpDependencies::driverInstrumentation,
+  ),
+  ANDROID_TEST_PLUGIN("android-test-plugin", "com.google.testing.platform.plugin.android.AndroidDevicePlugin", UtpDependencies::testPlugin),
+  ANDROID_TEST_DEVICE_INFO_PLUGIN(
+    "android-test-plugin-host-device-info",
+    "com.android.tools.utp.plugins.host.device.info.AndroidTestDeviceInfoPlugin",
+    UtpDependencies::testDeviceInfoPlugin,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN(
+    "android-test-plugin-host-additional-test-output",
+    "com.android.tools.utp.plugins.host.additionaltestoutput.AndroidAdditionalTestOutputPlugin",
+    UtpDependencies::additionalTestOutputPlugin,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_PLUGIN_APK_INSTALLER(
+    "android-test-plugin-host-apk-installer",
+    "com.android.tools.utp.plugins.host.apkinstaller.AndroidTestApkInstallerPlugin",
+    UtpDependencies::testPluginApkInstaller,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_COVERAGE_PLUGIN(
+    "android-test-plugin-host-coverage",
+    "com.android.tools.utp.plugins.host.coverage.AndroidTestCoveragePlugin",
+    UtpDependencies::testCoveragePlugin,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_LOGCAT_PLUGIN(
+    "android-test-plugin-host-logcat",
+    "com.android.tools.utp.plugins.host.logcat.AndroidTestLogcatPlugin",
+    UtpDependencies::testLogcatPlugin,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL(
+    "android-test-plugin-host-emulator-control",
+    "com.android.tools.utp.plugins.host.emulatorcontrol.EmulatorControlPlugin",
+    UtpDependencies::testEmulatorAccessPlugin,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  ),
+  ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE(
+    "android-test-plugin-result-listener-gradle",
+    "com.android.tools.utp.plugins.result.listener.gradle.GradleAndroidTestResultListener",
+    UtpDependencies::testPluginResultListenerGradle,
+    ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+  );
 
-    val configurationName: String = "_internal-unified-test-platform-${artifactId}"
+  val configurationName: String = "_internal-unified-test-platform-${artifactId}"
 
-    /**
-     * Returns a maven coordinate string to download dependencies from the Maven repository.
-     */
-    fun mavenCoordinate(androidToolsBaseVersion: String): String {
-        val version = if (groupId == ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID) {
-            androidToolsBaseVersion
-        } else {
-            UTP_DEFAULT_VERSION
-        }
-        return "${groupId}:${artifactId}:${version}"
-    }
+  /** Returns a maven coordinate string to download dependencies from the Maven repository. */
+  fun mavenCoordinate(androidToolsBaseVersion: String): String {
+    val version =
+      if (groupId == ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID) {
+        androidToolsBaseVersion
+      } else {
+        UTP_DEFAULT_VERSION
+      }
+    return "${groupId}:${artifactId}:${version}"
+  }
 }
 
 @NonExtensible
 abstract class UtpDependencies {
-    @get:Optional
-    @get:Classpath
-    abstract val launcher: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val launcher: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val core: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val core: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val gradleWorkAction: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val gradleWorkAction: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val deviceControllerDdmlib: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val deviceControllerDdmlib: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val driverInstrumentation: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val driverInstrumentation: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testPlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testPlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testDeviceInfoPlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testDeviceInfoPlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val additionalTestOutputPlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val additionalTestOutputPlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testCoveragePlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testCoveragePlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testLogcatPlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testLogcatPlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testEmulatorAccessPlugin: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testEmulatorAccessPlugin: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testPluginResultListenerGradle: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testPluginResultListenerGradle: ConfigurableFileCollection
 
-    @get:Optional
-    @get:Classpath
-    abstract val testPluginApkInstaller: ConfigurableFileCollection
+  @get:Optional @get:Classpath abstract val testPluginApkInstaller: ConfigurableFileCollection
 }

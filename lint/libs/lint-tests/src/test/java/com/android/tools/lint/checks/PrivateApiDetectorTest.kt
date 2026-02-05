@@ -420,23 +420,23 @@ class PrivateApiDetectorTest : AbstractCheckTest() {
   fun testMaybeListJavaCall() {
     val expected =
       """
-            src/test/pkg/application/ReflectionTest.java:11: Error: Reflective access to getContentCaptureManager is forbidden when targeting API 28 and above [BlockedPrivateApi]
-                        Method m2 = Activity.class.getDeclaredMethod("getContentCaptureManager");
-                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.java:10: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                        Method m1 = Activity.class.getDeclaredMethod("setParent", Activity.class);
-                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.java:12: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                        Method m3 = Activity.class.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle.class); // MAYBE_MAX_O
-                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.java:14: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                    Method m4 = Activity.class.getDeclaredMethod("setParent", Activity.class); // MAYBE_MAX_P
-                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.java:15: Error: Reflective access to restoreManagedDialogs will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
-                    Method m5 = Activity.class.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle.class); // MAYBE_MAX_O
-                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 3 warnings
-            """
+      src/test/pkg/application/ReflectionTest.java:11: Error: Reflective access to getContentCaptureManager is forbidden when targeting API 28 and above [BlockedPrivateApi]
+                  Method m2 = Activity.class.getDeclaredMethod("getContentCaptureManager");
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.java:10: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+                  Method m1 = Activity.class.getDeclaredMethod("setParent", Activity.class);
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.java:12: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+                  Method m3 = Activity.class.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle.class); // MAYBE_MAX_O
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.java:14: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+              Method m4 = Activity.class.getDeclaredMethod("setParent", Activity.class); // MAYBE_MAX_P
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.java:15: Error: Reflective access to restoreManagedDialogs will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
+              Method m5 = Activity.class.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle.class); // MAYBE_MAX_O
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      2 errors, 3 warnings
+      """
         .trimIndent()
     lint()
       .files(
@@ -624,23 +624,23 @@ class PrivateApiDetectorTest : AbstractCheckTest() {
   fun testMaybeListKotlinCall() {
     val expected =
       """
-            src/test/pkg/application/ReflectionTest.kt:10: Error: Reflective access to getContentCaptureManager is forbidden when targeting API 28 and above [BlockedPrivateApi]
-                        25 -> clazz.getDeclaredMethod("getContentCaptureManager") // DENY
-                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.kt:11: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                        26 -> clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java)
-                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.kt:12: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                        27 -> clazz.getDeclaredMethod("setParent", Activity::class.java) // MAYBE_MAX_P
-                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.kt:17: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
-                            clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java)
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/application/ReflectionTest.kt:13: Error: Reflective access to restoreManagedDialogs will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
-                        else -> clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java) // MAYBE_MAX_O
-                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 3 warnings
-            """
+      src/test/pkg/application/ReflectionTest.kt:10: Error: Reflective access to getContentCaptureManager is forbidden when targeting API 28 and above [BlockedPrivateApi]
+                  25 -> clazz.getDeclaredMethod("getContentCaptureManager") // DENY
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.kt:11: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+                  26 -> clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.kt:12: Warning: Reflective access to setParent, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+                  27 -> clazz.getDeclaredMethod("setParent", Activity::class.java) // MAYBE_MAX_P
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.kt:17: Warning: Reflective access to restoreManagedDialogs, which is not part of the public SDK and therefore likely to change in future Android releases [DiscouragedPrivateApi]
+                      clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java)
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/application/ReflectionTest.kt:13: Error: Reflective access to restoreManagedDialogs will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
+                  else -> clazz.getDeclaredMethod("restoreManagedDialogs", android.os.Bundle::class.java) // MAYBE_MAX_O
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      2 errors, 3 warnings
+      """
         .trimIndent()
     lint()
       .files(

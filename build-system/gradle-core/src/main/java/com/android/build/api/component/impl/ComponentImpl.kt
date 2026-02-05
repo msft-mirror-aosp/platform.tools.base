@@ -21,7 +21,6 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.AndroidResourcesCreationConfigImpl
 import com.android.build.api.component.impl.features.InstrumentationCreationConfigImpl
 import com.android.build.api.component.impl.features.ManifestPlaceholdersCreationConfigImpl
-import com.android.build.api.component.impl.features.PrivacySandboxCreationConfigImpl
 import com.android.build.api.component.impl.features.ResValuesCreationConfigImpl
 import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
@@ -41,7 +40,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
-import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
 import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySupport
 import com.android.build.gradle.internal.core.ProductFlavor
@@ -68,333 +66,266 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS
 import com.android.builder.core.ComponentType
 import com.android.utils.appendCapitalized
+import java.io.File
+import java.util.Locale
+import java.util.function.Predicate
 import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
-import java.io.File
-import java.util.Locale
-import java.util.function.Predicate
 
-abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
-    open val componentIdentity: ComponentIdentity,
-    final override val buildFeatures: BuildFeatureValues,
-    protected val dslInfo: DslInfoT,
-    final override val variantDependencies: VariantDependencies,
-    private val variantSources: VariantSources,
-    override val paths: VariantPathHelper,
-    override val artifacts: ArtifactsImpl,
-    private val variantData: BaseVariantData? = null,
-    override val taskContainer: MutableTaskContainer,
-    protected val internalServices: VariantServices,
-    final override val services: TaskCreationServices,
-    final override val global: GlobalTaskCreationConfig,
-): Component, ComponentCreationConfig, ComponentIdentity by componentIdentity {
+abstract class ComponentImpl<DslInfoT : ComponentDslInfo>(
+  open val componentIdentity: ComponentIdentity,
+  final override val buildFeatures: BuildFeatureValues,
+  protected val dslInfo: DslInfoT,
+  final override val variantDependencies: VariantDependencies,
+  private val variantSources: VariantSources,
+  override val paths: VariantPathHelper,
+  override val artifacts: ArtifactsImpl,
+  private val variantData: BaseVariantData? = null,
+  override val taskContainer: MutableTaskContainer,
+  protected val internalServices: VariantServices,
+  final override val services: TaskCreationServices,
+  final override val global: GlobalTaskCreationConfig,
+) : Component, ComponentCreationConfig, ComponentIdentity by componentIdentity {
 
-    // ---------------------------------------------------------------------------------------------
-    // PUBLIC API
-    // ---------------------------------------------------------------------------------------------
-    override val namespace: Provider<String> =
-        internalServices.providerOf(
-            type = String::class.java,
-            value = dslInfo.namespace
-        )
+  // ---------------------------------------------------------------------------------------------
+  // PUBLIC API
+  // ---------------------------------------------------------------------------------------------
+  override val namespace: Provider<String> = internalServices.providerOf(type = String::class.java, value = dslInfo.namespace)
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
-    override fun <ParamT : InstrumentationParameters> transformClassesWith(
-        classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
-        scope: InstrumentationScope,
-        instrumentationParamsConfig: (ParamT) -> Unit
-    ) {
-        instrumentation.transformClassesWith(
-            classVisitorFactoryImplClass,
-            scope,
-            instrumentationParamsConfig
-        )
-    }
+  @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+  override fun <ParamT : InstrumentationParameters> transformClassesWith(
+    classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
+    scope: InstrumentationScope,
+    instrumentationParamsConfig: (ParamT) -> Unit,
+  ) {
+    instrumentation.transformClassesWith(classVisitorFactoryImplClass, scope, instrumentationParamsConfig)
+  }
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
-    override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
-        instrumentation.setAsmFramesComputationMode(mode)
-    }
+  @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+  override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
+    instrumentation.setAsmFramesComputationMode(mode)
+  }
 
-    override val javaCompilation: JavaCompilation =
-        JavaCompilationImpl(
-            dslInfo.javaCompileOptionsSetInDSL,
-            buildFeatures.dataBinding,
-            internalServices,
-            variantDependencies
-        )
+  override val javaCompilation: JavaCompilation =
+    JavaCompilationImpl(dslInfo.javaCompileOptionsSetInDSL, buildFeatures.dataBinding, internalServices, variantDependencies)
 
-    override val sources by lazy {
-        SourcesImpl(
-            DefaultSourcesProviderImpl(this, variantSources),
-            internalServices,
-            multiFlavorSourceProvider = variantSources.multiFlavorSourceProvider,
-            variantSourceProvider = variantSources.variantSourceProvider,
-        ).also { sourcesImpl ->
-            // add all source sets extra directories added by the user
-            variantSources.customSourceList.forEach{ (_, srcEntries) ->
-                srcEntries.forEach { customSourceDirectory ->
-                    sourcesImpl.extras.maybeCreate(customSourceDirectory.sourceTypeName).also {
-                        (it as FlatSourceDirectoriesImpl).addStaticSource(
-                                FileBasedDirectoryEntryImpl(
-                                    customSourceDirectory.sourceTypeName,
-                                    customSourceDirectory.directory,
-                                )
-                            )
-                    }
-                }
+  override val sources by lazy {
+    SourcesImpl(
+        DefaultSourcesProviderImpl(this, variantSources),
+        internalServices,
+        multiFlavorSourceProvider = variantSources.multiFlavorSourceProvider,
+        variantSourceProvider = variantSources.variantSourceProvider,
+      )
+      .also { sourcesImpl ->
+        // add all source sets extra directories added by the user
+        variantSources.customSourceList.forEach { (_, srcEntries) ->
+          srcEntries.forEach { customSourceDirectory ->
+            sourcesImpl.extras.maybeCreate(customSourceDirectory.sourceTypeName).also {
+              (it as FlatSourceDirectoriesImpl).addStaticSource(
+                FileBasedDirectoryEntryImpl(customSourceDirectory.sourceTypeName, customSourceDirectory.directory)
+              )
             }
+          }
         }
-    }
+      }
+  }
 
-    override val instrumentation: Instrumentation
-        get() = instrumentationCreationConfig.instrumentation
+  override val instrumentation: Instrumentation
+    get() = instrumentationCreationConfig.instrumentation
 
-    override val compileClasspath: FileCollection by lazy {
-        getJavaClasspath(
-            ConsumedConfigType.COMPILE_CLASSPATH,
-            AndroidArtifacts.ArtifactType.CLASSES_JAR,
-            generatedBytecodeKey = null
+  override val compileClasspath: FileCollection by lazy {
+    getJavaClasspath(ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES_JAR, generatedBytecodeKey = null)
+  }
+
+  override val compileConfiguration = variantDependencies.compileClasspath
+
+  override val runtimeConfiguration = variantDependencies.runtimeClasspath
+
+  override val annotationProcessorConfiguration = variantDependencies.annotationProcessorConfiguration!!
+
+  override val lifecycleTasks = LifecycleTasksImpl()
+
+  override fun computeTaskName(action: String, subject: String): String = computeTaskName(name, action, subject)
+
+  override fun getResolvableConfiguration(sourceSetConfigurationsAffix: String): Configuration {
+    val lowercaseAffix = sourceSetConfigurationsAffix.lowercase()
+    val configurationName =
+      variantDependencies.sourceSetConfigurationsMap[lowercaseAffix]?.apply(name)
+        ?: throw RuntimeException(
+          "Invalid call to " +
+            "getResolvableConfiguration(\"$sourceSetConfigurationsAffix\"). " +
+            "There must be a corresponding call to " +
+            if (lowercaseAffix == "ksp") {
+              "addKspConfigurations() "
+            } else {
+              "addSourceSetConfigurations(\"$sourceSetConfigurationsAffix\") "
+            } +
+            "to create the resolvable configuration."
         )
+    val configuration =
+      services.configurations.findByName(configurationName)
+        ?: throw RuntimeException("Cannot find expected resolvable configuration: \"$configurationName\".")
+    return configuration
+  }
+
+  override fun configureJavaCompileTask(action: (JavaCompile) -> Unit) {
+    javaCompileTaskConfigActions.add(action)
+  }
+
+  override fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>) {
+    javaCompileTaskConfigActions.forEach { taskProvider.configure { task -> it(task) } }
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // INTERNAL API
+  // ---------------------------------------------------------------------------------------------
+
+  private val javaCompileTaskConfigActions = mutableListOf<(JavaCompile) -> Unit>()
+
+  override val componentType: ComponentType = dslInfo.componentType
+
+  override val dirName: String
+    get() = paths.dirName
+
+  final override val baseName: String
+    get() = paths.baseName
+
+  override val productFlavorList: List<ProductFlavor> = dslInfo.componentIdentity.productFlavors.map { ProductFlavor(it.first, it.second) }
+
+  override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
+    when {
+      internalServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) && dslInfo.enableKotlin ->
+        BuiltInKotlinSupportMode.Supported.BuiltInKotlinBooleanOptionEnabled
+      internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) && dslInfo.enableKotlin ->
+        BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
+      else -> BuiltInKotlinSupportMode.NotSupported
     }
+  }
 
-    override val compileConfiguration = variantDependencies.compileClasspath
-
-    override val runtimeConfiguration = variantDependencies.runtimeClasspath
-
-    override val annotationProcessorConfiguration =
-        variantDependencies.annotationProcessorConfiguration!!
-
-    override val lifecycleTasks = LifecycleTasksImpl()
-
-    override fun computeTaskName(action: String, subject: String): String  =
-        computeTaskName(name, action, subject)
-
-    override fun getResolvableConfiguration(sourceSetConfigurationsAffix: String): Configuration {
-        val lowercaseAffix = sourceSetConfigurationsAffix.lowercase()
-        val configurationName =
-            variantDependencies.sourceSetConfigurationsMap[lowercaseAffix]?.apply(name)
-                ?: throw RuntimeException(
-                    "Invalid call to " +
-                            "getResolvableConfiguration(\"$sourceSetConfigurationsAffix\"). " +
-                            "There must be a corresponding call to " +
-                            if (lowercaseAffix == "ksp") {
-                                "addKspConfigurations() "
-                            } else {
-                                "addSourceSetConfigurations(\"$sourceSetConfigurationsAffix\") "
-                            } +
-                            "to create the resolvable configuration."
-                )
-        val configuration = services.configurations.findByName(configurationName)
-            ?: throw RuntimeException(
-                "Cannot find expected resolvable configuration: \"$configurationName\"."
-            )
-        return configuration
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode by lazy {
+    if (internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID)) {
+      BuiltInKaptSupportMode.Supported.BuiltInKaptPluginApplied
+    } else {
+      BuiltInKaptSupportMode.NotSupported
     }
+  }
 
-    override fun configureJavaCompileTask(action: (JavaCompile) -> Unit) {
-        javaCompileTaskConfigActions.add(action)
-    }
+  // ---------------------------------------------------------------------------------------------
+  // Private stuff
+  // ---------------------------------------------------------------------------------------------
 
-    override fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>) {
-        javaCompileTaskConfigActions.forEach {
-            taskProvider.configure { task -> it(task) }
-        }
-    }
+  override fun computeTaskNameInternal(prefix: String): String = prefix.appendCapitalized(name)
 
-    // ---------------------------------------------------------------------------------------------
-    // INTERNAL API
-    // ---------------------------------------------------------------------------------------------
+  override fun computeTaskNameInternal(prefix: String, suffix: String): String {
+    return prefix.appendCapitalized(name, suffix)
+  }
 
-    private val javaCompileTaskConfigActions = mutableListOf<(JavaCompile) -> Unit>()
+  // -------------------------
+  // File location computation. Previously located in VariantScope, these are here
+  // temporarily until we fully move away from them.
 
-    override val componentType: ComponentType = dslInfo.componentType
+  // Precomputed file paths.
+  final override fun getJavaClasspath(
+    configType: ConsumedConfigType,
+    classesType: AndroidArtifacts.ArtifactType,
+    generatedBytecodeKey: Any?,
+  ): FileCollection = getJavaClasspath(this, configType, classesType, generatedBytecodeKey)
 
-    override val dirName: String
-        get() = paths.dirName
-
-    final override val baseName: String
-        get() = paths.baseName
-
-    override val productFlavorList: List<ProductFlavor> = dslInfo.componentIdentity.productFlavors.map {
-        ProductFlavor(it.first, it.second)
-    }
-
-    override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
-        when {
-            internalServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) && dslInfo.enableKotlin -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinBooleanOptionEnabled
-            internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) && dslInfo.enableKotlin -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
-            else -> BuiltInKotlinSupportMode.NotSupported
-        }
-    }
-
-    override val builtInKaptSupportMode: BuiltInKaptSupportMode by lazy {
-        if (internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID)) {
-            BuiltInKaptSupportMode.Supported.BuiltInKaptPluginApplied
-        } else {
-            BuiltInKaptSupportMode.NotSupported
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // Private stuff
-    // ---------------------------------------------------------------------------------------------
-
-    override fun computeTaskNameInternal(prefix: String): String =
-        prefix.appendCapitalized(name)
-
-    override fun computeTaskNameInternal(prefix: String, suffix: String): String  {
-        return prefix.appendCapitalized(name, suffix)
-    }
-
-    // -------------------------
-    // File location computation. Previously located in VariantScope, these are here
-    // temporarily until we fully move away from them.
-
-    // Precomputed file paths.
-    final override fun getJavaClasspath(
-        configType: ConsumedConfigType,
-        classesType: AndroidArtifacts.ArtifactType,
-        generatedBytecodeKey: Any?
-    ): FileCollection = getJavaClasspath(
-        this, configType, classesType, generatedBytecodeKey
+  override val providedOnlyClasspath: FileCollection by lazy {
+    getProvidedClasspath(
+      compileClasspath =
+        variantDependencies.getArtifactCollection(
+          ConsumedConfigType.COMPILE_CLASSPATH,
+          ArtifactScope.ALL,
+          AndroidArtifacts.ArtifactType.CLASSES_JAR,
+        ),
+      runtimeClasspath =
+        variantDependencies.getArtifactCollection(
+          ConsumedConfigType.RUNTIME_CLASSPATH,
+          ArtifactScope.ALL,
+          AndroidArtifacts.ArtifactType.CLASSES_JAR,
+        ),
     )
+  }
 
-    override val providedOnlyClasspath: FileCollection by lazy {
-        getProvidedClasspath(
-            compileClasspath = variantDependencies.getArtifactCollection(
-                ConsumedConfigType.COMPILE_CLASSPATH,
-                ArtifactScope.ALL,
-                AndroidArtifacts.ArtifactType.CLASSES_JAR
-            ),
-            runtimeClasspath = variantDependencies.getArtifactCollection(
-                ConsumedConfigType.RUNTIME_CLASSPATH,
-                ArtifactScope.ALL,
-                AndroidArtifacts.ArtifactType.CLASSES_JAR
-            )
-        )
+  /** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs. */
+  override fun publishBuildArtifacts() {
+    com.android.build.gradle.internal.scope.publishBuildArtifacts(this, (dslInfo as? PublishableComponentDslInfo)?.publishInfo)
+  }
+
+  override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? by lazy {
+    OldVariantApiLegacySupportImpl(this, dslInfo, variantData!!, variantSources, internalServices)
+  }
+
+  override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
+    if (buildFeatures.androidResources) {
+      AndroidResourcesCreationConfigImpl(this, dslInfo, dslInfo.androidResourcesDsl!!, internalServices)
+    } else {
+      null
     }
+  }
 
-    /** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs.  */
-    override fun publishBuildArtifacts() {
-        com.android.build.gradle.internal.scope.publishBuildArtifacts(
-            this,
-            (dslInfo as? PublishableComponentDslInfo)?.publishInfo
-        )
+  override val resValuesCreationConfig: ResValuesCreationConfig? by lazy {
+    if (buildFeatures.resValues) {
+      ResValuesCreationConfigImpl(dslInfo.androidResourcesDsl!!, internalServices)
+    } else {
+      null
     }
+  }
 
-    override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? by lazy {
-        OldVariantApiLegacySupportImpl(
-            this,
-            dslInfo,
-            variantData!!,
-            variantSources,
-            internalServices
-        )
-    }
+  override val instrumentationCreationConfig: InstrumentationCreationConfig by lazy {
+    InstrumentationCreationConfigImpl(this, internalServices)
+  }
 
-    override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
-        if (buildFeatures.androidResources) {
-            AndroidResourcesCreationConfigImpl(
-                this,
-                dslInfo,
-                dslInfo.androidResourcesDsl!!,
-                internalServices,
-            )
-        } else {
-            null
-        }
-    }
+  /**
+   * Returns the direct (i.e., non-transitive) local file dependencies matching the given predicate
+   *
+   * @param filePredicate the file predicate used to filter the local file dependencies
+   * @return a non null, but possibly empty FileCollection
+   */
+  override fun computeLocalFileDependencies(filePredicate: Predicate<File>): FileCollection =
+    variantDependencies.computeLocalFileDependencies(internalServices, filePredicate)
 
-    override val resValuesCreationConfig: ResValuesCreationConfig? by lazy {
-        if (buildFeatures.resValues) {
-            ResValuesCreationConfigImpl(
-                dslInfo.androidResourcesDsl!!,
-                internalServices
-            )
-        } else {
-            null
-        }
-    }
+  /**
+   * Returns the packaged local Jars
+   *
+   * @return a non null, but possibly empty set.
+   */
+  override fun computeLocalPackagedJars(): FileCollection = computeLocalFileDependencies { file ->
+    file.name.lowercase(Locale.US).endsWith(SdkConstants.DOT_JAR)
+  }
 
-    override val instrumentationCreationConfig: InstrumentationCreationConfig by lazy {
-        InstrumentationCreationConfigImpl(
-            this,
-            internalServices
-        )
-    }
+  override fun getArtifactName(name: String) = name
 
-    /**
-     * Returns the direct (i.e., non-transitive) local file dependencies matching the given
-     * predicate
-     *
-     * @return a non null, but possibly empty FileCollection
-     * @param filePredicate the file predicate used to filter the local file dependencies
-     */
-    override fun computeLocalFileDependencies(filePredicate: Predicate<File>): FileCollection =
-        variantDependencies.computeLocalFileDependencies(
-            internalServices,
-            filePredicate
-        )
+  protected fun createManifestPlaceholdersCreationConfig(placeholders: Map<String, String>?): ManifestPlaceholdersCreationConfig {
+    val legacyApiManifestPlaceholders = oldVariantApiLegacySupport?.manifestPlaceholdersDslInfo?.placeholders ?: mapOf()
+    val allPlaceholders = (placeholders ?: mapOf()) + legacyApiManifestPlaceholders
+    return ManifestPlaceholdersCreationConfigImpl(allPlaceholders, internalServices)
+  }
 
-    /**
-     * Returns the packaged local Jars
-     *
-     * @return a non null, but possibly empty set.
-     */
-    override fun computeLocalPackagedJars(): FileCollection =
-        computeLocalFileDependencies { file ->
-            file
-                .name
-                .lowercase(Locale.US)
-                .endsWith(SdkConstants.DOT_JAR)
-        }
+  fun isApiModelingEnabled(): Boolean {
+    return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS) ?: !debuggable
+  }
 
-    override fun getArtifactName(name: String) = name
+  fun isGlobalSyntheticsEnabled(): Boolean {
+    return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS) ?: (!debuggable || isJavaLanguageLevelAbove14())
+  }
 
-    protected fun createManifestPlaceholdersCreationConfig(
-            placeholders: Map<String, String>?): ManifestPlaceholdersCreationConfig {
-        val legacyApiManifestPlaceholders = oldVariantApiLegacySupport?.manifestPlaceholdersDslInfo?.placeholders
-                ?: mapOf()
-        val allPlaceholders = (placeholders ?: mapOf()) + legacyApiManifestPlaceholders
-        return ManifestPlaceholdersCreationConfigImpl(
-                allPlaceholders,
-                internalServices
-        )
-    }
+  private fun isJavaLanguageLevelAbove14(): Boolean {
+    return global.compileOptions.sourceCompatibility.isCompatibleWith(JavaVersion.VERSION_14) &&
+      global.compileOptions.targetCompatibility.isCompatibleWith(JavaVersion.VERSION_14)
+  }
 
+  override val androidResources: AndroidResourcesImpl? = null
 
-    fun isApiModelingEnabled(): Boolean {
-        return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS)
-            ?: !debuggable
-    }
+  internal fun getAndroidResources(androidResources: AndroidResources): AndroidResourcesImpl =
+    initializeAaptOptionsFromDsl(androidResources, buildFeatures, internalServices)
 
-    fun isGlobalSyntheticsEnabled(): Boolean {
-        return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS)
-            ?: (!debuggable || isJavaLanguageLevelAbove14())
-    }
-
-    private fun isJavaLanguageLevelAbove14(): Boolean {
-        return global.compileOptions.sourceCompatibility.isCompatibleWith(JavaVersion.VERSION_14) &&
-                global.compileOptions.targetCompatibility.isCompatibleWith(JavaVersion.VERSION_14)
-    }
-
-    override val androidResources: AndroidResourcesImpl? = null
-
-    internal fun getAndroidResources(androidResources: AndroidResources): AndroidResourcesImpl =
-        initializeAaptOptionsFromDsl(androidResources, buildFeatures, internalServices,)
-
-    override val privacySandboxCreationConfig: PrivacySandboxCreationConfig? by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        if (dslInfo.privacySandboxDsl.enable) {
-            PrivacySandboxCreationConfigImpl()
-        } else null
-    }
-
-    override fun finalizeAndLock() {
-        artifacts.finalizeAndLock()
-    }
+  override fun finalizeAndLock() {
+    artifacts.finalizeAndLock()
+  }
 }

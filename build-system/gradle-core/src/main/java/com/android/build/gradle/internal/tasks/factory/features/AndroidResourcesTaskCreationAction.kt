@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.AndroidResourcesCrea
  * ```
  */
 interface AndroidResourcesTaskCreationAction {
-    val androidResourcesCreationConfig: AndroidResourcesCreationConfig
+  val androidResourcesCreationConfig: AndroidResourcesCreationConfig
 }
 
-class AndroidResourcesTaskCreationActionImpl(
-    creationConfig: ComponentCreationConfig
-): AndroidResourcesTaskCreationAction {
+class AndroidResourcesTaskCreationActionImpl(creationConfig: ComponentCreationConfig) : AndroidResourcesTaskCreationAction {
 
-    override val androidResourcesCreationConfig: AndroidResourcesCreationConfig =
-        creationConfig.androidResourcesCreationConfig!!
+  override val androidResourcesCreationConfig: AndroidResourcesCreationConfig = creationConfig.androidResourcesCreationConfig!!
 }

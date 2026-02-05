@@ -27,46 +27,39 @@ import org.mockito.Mockito
 
 class JUnitEngineSpecImplForTestSuiteVariantTest {
 
-    private val objects = ProjectFactory.project.objects
-    private val dslDefinedJUnitEngineSpec = object: JUnitEngineSpecImpl() {
-        override val enginesDependencies: DependencyCollector
-            get() = Mockito.mock(DependencyCollector::class.java)
+  private val objects = ProjectFactory.project.objects
+  private val dslDefinedJUnitEngineSpec =
+    object : JUnitEngineSpecImpl() {
+      override val enginesDependencies: DependencyCollector
+        get() = Mockito.mock(DependencyCollector::class.java)
     }
 
-    @Test
-    fun testInputParameters() {
+  @Test
+  fun testInputParameters() {
 
-        val variantBuilderJUnitEngineSpec =
-            JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
-                it.inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
-                it.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
-            }
-        val junitEngineSpec = JUnitEngineSpecImplForVariant(
-            variantBuilderJUnitEngineSpec,
-            { objects.mapProperty(String::class.java, String::class.java) }
-        )
-        assertThat(junitEngineSpec.inputs).containsExactly(
-            AgpTestSuiteInputParameters.TESTED_APKS,
-            AgpTestSuiteInputParameters.TESTING_APK,
-        )
-    }
+    val variantBuilderJUnitEngineSpec =
+      JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
+        it.inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+        it.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
+      }
+    val junitEngineSpec =
+      JUnitEngineSpecImplForVariant(variantBuilderJUnitEngineSpec, { objects.mapProperty(String::class.java, String::class.java) })
+    assertThat(junitEngineSpec.inputs).containsExactly(AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TESTING_APK)
+  }
 
-    @Test
-    fun testInputProperties() {
-        val variantBuilderJUnitEngineSpec =
-            JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
-                it.addInputProperty("foo", "fooValue")
-                it.addInputProperty("bar", "barValue")
-            }
-        val junitEngineSpec = JUnitEngineSpecImplForVariant(
-            variantBuilderJUnitEngineSpec,
-            { objects.mapProperty(String::class.java, String::class.java) }
-        ).also {
-            it.addInputProperty("foo", "variantFooValue")
-            it.addInputProperty("foobar", "foobarValue")
-        }
-        assertThat(junitEngineSpec.inputProperties.get()).containsExactlyEntriesIn(
-            mapOf("foo" to "variantFooValue", "bar" to "barValue", "foobar" to "foobarValue")
-        )
-    }
+  @Test
+  fun testInputProperties() {
+    val variantBuilderJUnitEngineSpec =
+      JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
+        it.addInputProperty("foo", "fooValue")
+        it.addInputProperty("bar", "barValue")
+      }
+    val junitEngineSpec =
+      JUnitEngineSpecImplForVariant(variantBuilderJUnitEngineSpec, { objects.mapProperty(String::class.java, String::class.java) }).also {
+        it.addInputProperty("foo", "variantFooValue")
+        it.addInputProperty("foobar", "foobarValue")
+      }
+    assertThat(junitEngineSpec.inputProperties.get())
+      .containsExactlyEntriesIn(mapOf("foo" to "variantFooValue", "bar" to "barValue", "foobar" to "foobarValue"))
+  }
 }

@@ -16,10 +16,8 @@
 
 package com.android.build.api.variant
 
-/**
- * Build-time properties for packaging inside a tested [Component].
- */
+/** Build-time properties for packaging inside a tested [Component]. */
 interface TestedComponentPackaging : Packaging {
 
-    override val jniLibs: JniLibsTestedComponentPackaging
+  override val jniLibs: JniLibsTestedComponentPackaging
 }

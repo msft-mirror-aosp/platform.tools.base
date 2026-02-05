@@ -27,8 +27,9 @@ fun listFragmentKt(
   fragmentClass: String,
   fragment_layout_list: String,
   packageName: String,
-  useAndroidX: Boolean
-) = """
+  useAndroidX: Boolean,
+) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

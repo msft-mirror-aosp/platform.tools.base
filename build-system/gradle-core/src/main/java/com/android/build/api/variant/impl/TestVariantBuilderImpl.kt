@@ -27,38 +27,29 @@ import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class TestVariantBuilderImpl @Inject constructor(
-    globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-    dslInfo: TestProjectVariantDslInfo,
-    componentIdentity: ComponentIdentity,
-    variantBuilderServices: VariantBuilderServices
-) : VariantBuilderImpl(
-    globalVariantBuilderConfig,
-    dslInfo,
-    componentIdentity,
-    variantBuilderServices
-), TestVariantBuilder {
+open class TestVariantBuilderImpl
+@Inject
+constructor(
+  globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+  dslInfo: TestProjectVariantDslInfo,
+  componentIdentity: ComponentIdentity,
+  variantBuilderServices: VariantBuilderServices,
+) : VariantBuilderImpl(globalVariantBuilderConfig, dslInfo, componentIdentity, variantBuilderServices), TestVariantBuilder {
 
-    override fun <T : VariantBuilder> createUserVisibleVariantObject(
-            projectServices: ProjectServices,
-            stats: GradleBuildVariant.Builder?
-    ): T =
-        if (stats == null) {
-            this as T
-        } else {
-            projectServices.objectFactory.newInstance(
-                AnalyticsEnabledTestVariantBuilder::class.java,
-                this,
-                stats
-            ) as T
-        }
+  override fun <T : VariantBuilder> createUserVisibleVariantObject(
+    projectServices: ProjectServices,
+    stats: GradleBuildVariant.Builder?,
+  ): T =
+    if (stats == null) {
+      this as T
+    } else {
+      projectServices.objectFactory.newInstance(AnalyticsEnabledTestVariantBuilder::class.java, this, stats) as T
+    }
 
-    override var isMinifyEnabled: Boolean =
-        dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
+  override var isMinifyEnabled: Boolean = dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
 
-    internal var _enableMultiDex = dslInfo.dexingDslInfo.isMultiDexEnabled
-    override var debuggable: Boolean = dslInfo.isDebuggable
-    override var enableMultiDex: Boolean? = _enableMultiDex
-    override val hostTests: Map<String, HostTestBuilder> = mapOf()
-
+  internal var _enableMultiDex = dslInfo.dexingDslInfo.isMultiDexEnabled
+  override var debuggable: Boolean = dslInfo.isDebuggable
+  override var enableMultiDex: Boolean? = _enableMultiDex
+  override val hostTests: Map<String, HostTestBuilder> = mapOf()
 }

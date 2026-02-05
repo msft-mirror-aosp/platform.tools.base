@@ -19,72 +19,52 @@ package com.android.build.gradle.integration.configurationcache
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
 class GradlePropertiesTest {
 
-    @get:Rule
-    val project = GradleTestProject
-        .builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Before
-    fun setUp() {
-        project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
-    }
+  @Before
+  fun setUp() {
+    project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
+  }
 
-    @Test
-    fun testAccessingChangedGradlePropertiesAtConfiguration() {
-        // AndroidX must be enabled when Jetifier is enabled
-        executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .with(BooleanOption.ENABLE_JETIFIER, true)
-            .run("assembleDebug")
-        var result = executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .with(BooleanOption.ENABLE_JETIFIER, true)
-            .run("assembleDebug")
-        result.assertConfigurationCacheHit()
-        result = executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .with(BooleanOption.ENABLE_JETIFIER, false)
-            .run("assembleDebug")
-        result.assertOutputContains(
-            "Calculating task graph as configuration cache cannot be reused because " +
-                    "Gradle property 'android.enableJetifier' has changed"
-        )
-    }
+  @Test
+  fun testAccessingChangedGradlePropertiesAtConfiguration() {
+    // AndroidX must be enabled when Jetifier is enabled
+    executor().with(BooleanOption.ENABLE_JETIFIER, true).run("assembleDebug")
+    var result = executor().with(BooleanOption.ENABLE_JETIFIER, true).run("assembleDebug")
+    result.assertConfigurationCacheHit()
+    result = executor().with(BooleanOption.ENABLE_JETIFIER, false).run("assembleDebug")
+    result.assertOutputContains(
+      "Calculating task graph as configuration cache cannot be reused because " + "Gradle property 'android.enableJetifier' has changed"
+    )
+  }
 
-    @Test
-    fun testCapturingStandardInstrumentationTestRunnerArgs() {
-        executor().run("assembleDebug")
-        val result = executor()
-            .withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium")
-            .run("assembleDebug")
-        result.assertOutputContains(
-                "Calculating task graph as configuration cache cannot be reused " +
-                        "because the set of Gradle properties has changed: 'android.testInstrumentationRunnerArguments.size' was added")
-    }
+  @Test
+  fun testCapturingStandardInstrumentationTestRunnerArgs() {
+    executor().run("assembleDebug")
+    val result = executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium").run("assembleDebug")
+    result.assertOutputContains(
+      "Calculating task graph as configuration cache cannot be reused " +
+        "because the set of Gradle properties has changed: 'android.testInstrumentationRunnerArguments.size' was added"
+    )
+  }
 
-    @Test
-    fun testCapturingCustomInstrumentationTestRunnerArgs() {
-        executor()
-            .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=origin")
-            .run("assembleDebug")
-        val result = executor()
-            .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=changed")
-            .run("assembleDebug")
-        result.assertOutputContains(
-                "Calculating task graph as configuration cache cannot be reused " +
-                        "because the set of Gradle properties has changed: the value of "+
-                        "'android.testInstrumentationRunnerArguments.foo' was changed.")
-    }
+  @Test
+  fun testCapturingCustomInstrumentationTestRunnerArgs() {
+    executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=origin").run("assembleDebug")
+    val result = executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=changed").run("assembleDebug")
+    result.assertOutputContains(
+      "Calculating task graph as configuration cache cannot be reused " +
+        "because the set of Gradle properties has changed: the value of " +
+        "'android.testInstrumentationRunnerArguments.foo' was changed."
+    )
+  }
 
-    private fun executor(): GradleTaskExecutor = project.executor()
+  private fun executor(): GradleTaskExecutor = project.executor()
 }

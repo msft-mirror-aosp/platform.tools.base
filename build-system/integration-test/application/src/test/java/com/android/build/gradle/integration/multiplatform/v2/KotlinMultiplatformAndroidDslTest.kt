@@ -27,93 +27,81 @@ import org.junit.Test
 
 class KotlinMultiplatformAndroidDslTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
-            android {
-                namespace = "com.mylibrary.foo"
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) { android { namespace = "com.mylibrary.foo" } }
     }
 
-    @Test
-    fun testCompileSdkVersionRelease() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":library") {
-                android {
-                    compileSdk {
-                        version = release(36) {
-                            minorApiLevel = 0
-                            sdkExtension = 4
-                        }
-                    }
-                }
-                pluginCallbacks += SdkReleaseCallback::class.java
-            }
-        }
-
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":library:assembleAndroidMain")
-    }
-
-    class SdkReleaseCallback : AndroidKotlinMultiplatformLibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: KotlinMultiplatformAndroidComponentsExtension
-        ) {
-            extension.finalizeDsl { extension ->
-                check(extension.compileSdk == 36) {
-                    "compileSdk should be 36"
-                }
-                check(extension.compileSdkExtension == 4) {
-                    "compileSdkExtension should be 4"
+  @Test
+  fun testCompileSdkVersionRelease() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":library") {
+          android {
+            compileSdk {
+              version =
+                release(36) {
+                  minorApiLevel = 0
+                  sdkExtension = 4
                 }
             }
+          }
+          pluginCallbacks += SdkReleaseCallback::class.java
         }
+      }
+
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":library:assembleAndroidMain")
+  }
+
+  class SdkReleaseCallback : AndroidKotlinMultiplatformLibraryComponentCallback {
+    override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {
+      extension.finalizeDsl { extension ->
+        check(extension.compileSdk == 36) { "compileSdk should be 36" }
+        check(extension.compileSdkExtension == 4) { "compileSdkExtension should be 4" }
+      }
     }
+  }
 
-    @Test
-    fun testMinSdkVersionRelease() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":library") {
-                android {
-                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                    minSdk {
-                        version = release(36)
-                    }
-                }
-            }
+  @Test
+  fun testMinSdkVersionRelease() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":library") {
+          android {
+            compileSdk = DEFAULT_COMPILE_SDK_VERSION
+            minSdk { version = release(36) }
+          }
         }
+      }
 
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":library:assembleAndroidMain")
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":library:assembleAndroidMain")
 
-        build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
-            manifest().contains("android:minSdkVersion=\"36\"")
-        }
+    build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
+      manifest().contains("android:minSdkVersion=\"36\"")
     }
+  }
 
-    @Test
-    fun testMinSdkVersionPreview() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":library") {
-                android {
-                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                    minSdk {
-                        version = preview("S")
-                    }
-                }
-            }
+  @Test
+  fun testMinSdkVersionPreview() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":library") {
+          android {
+            compileSdk = DEFAULT_COMPILE_SDK_VERSION
+            minSdk { version = preview("S") }
+          }
         }
+      }
 
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":library:assembleAndroidMain")
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":library:assembleAndroidMain")
 
-        build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
-            manifest().contains("android:minSdkVersion=\"S\"")
-        }
-    }
+    build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) { manifest().contains("android:minSdkVersion=\"S\"") }
+  }
 }

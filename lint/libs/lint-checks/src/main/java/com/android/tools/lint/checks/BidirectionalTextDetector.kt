@@ -55,12 +55,7 @@ class BidirectionalTextDetector : ResourceXmlDetector(), SourceCodeScanner, Grad
   private fun checkBidi(context: JavaContext, node: UElement, source: CharSequence) {
     if (containsUnterminatedBidiSegment(source)) {
       val type = if (node is UComment) "Comment" else "String"
-      context.report(
-        BIDI_SPOOFING,
-        node,
-        context.getLocation(node),
-        "$type contains misleading Unicode bidirectional text",
-      )
+      context.report(BIDI_SPOOFING, node, context.getLocation(node), "$type contains misleading Unicode bidirectional text")
     }
   }
 
@@ -95,8 +90,7 @@ class BidirectionalTextDetector : ResourceXmlDetector(), SourceCodeScanner, Grad
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(BidirectionalTextDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(BidirectionalTextDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Looks for bidirectional text spans which may be used to change the meaning of the code */
     @JvmField

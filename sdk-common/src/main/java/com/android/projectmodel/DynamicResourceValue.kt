@@ -17,16 +17,10 @@ package com.android.projectmodel
 
 import com.android.resources.ResourceType
 
-/**
- * Metadata for a dynamic resource, which is a resource whose value is provided or overridden by the build system.
- */
+/** Metadata for a dynamic resource, which is a resource whose value is provided or overridden by the build system. */
 data class DynamicResourceValue(
-        /**
-         * Type of the Android resource.
-         */
-        val type: ResourceType,
-        /**
-         * Value of the resource, as a String.
-         */
-        val value: String
+  /** Type of the Android resource. */
+  val type: ResourceType,
+  /** Value of the resource, as a String. */
+  val value: String,
 )

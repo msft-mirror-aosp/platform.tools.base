@@ -22,9 +22,7 @@ import org.junit.Assert.fail
 private val DAEMON_PATH = ProcessRunner.getProcessPath(SystemProperties.TRANSPORT_DAEMON_LOCATION)
 private val SERVER_LISTENING = Regex("(.*)(Server listening on.*port:)(?<result>.*)")
 
-/**
- * Class responsible for starting up (and waiting for) the transport daemon that runs on the device.
- */
+/** Class responsible for starting up (and waiting for) the transport daemon that runs on the device. */
 class TransportDaemonRunner(configFilePath: String, vararg processArgs: String) :
   ProcessRunner(DAEMON_PATH, "--config_file=$configFilePath", *processArgs) {
 

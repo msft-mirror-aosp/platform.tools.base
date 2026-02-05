@@ -15,11 +15,5 @@
  */
 package com.android.build.gradle.external.gnumake
 
-/**
- * A shell command with n arguments.
- */
-internal data class CommandLine(
-    val executable: String,
-    val escapedFlags: List<String>,
-    val rawFlags: List<String>
-)
+/** A shell command with n arguments. */
+internal data class CommandLine(val executable: String, val escapedFlags: List<String>, val rawFlags: List<String>)

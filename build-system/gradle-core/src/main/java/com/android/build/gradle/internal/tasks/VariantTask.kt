@@ -21,24 +21,24 @@ import org.gradle.api.Task
 /** Represents a variant-specific task. */
 interface VariantTask {
 
-    /** the name of the variant */
-    var variantName: String
+  /** the name of the variant */
+  var variantName: String
 
-    object ConfigureAction {
+  object ConfigureAction {
 
-        fun <TaskT> configure(task: TaskT, variantName: String) where TaskT : Task, TaskT : VariantTask {
-            task.variantName = variantName
-        }
+    fun <TaskT> configure(task: TaskT, variantName: String) where TaskT : Task, TaskT : VariantTask {
+      task.variantName = variantName
     }
+  }
 }
 
 /** Represents a global (non variant-specific) task. */
 interface GlobalTask {
 
-    object ConfigureAction {
+  object ConfigureAction {
 
-        fun <TaskT> configure(task: TaskT) where TaskT : Task, TaskT : GlobalTask {
-            // Nothing to do currently
-        }
+    fun <TaskT> configure(task: TaskT) where TaskT : Task, TaskT : GlobalTask {
+      // Nothing to do currently
     }
+  }
 }

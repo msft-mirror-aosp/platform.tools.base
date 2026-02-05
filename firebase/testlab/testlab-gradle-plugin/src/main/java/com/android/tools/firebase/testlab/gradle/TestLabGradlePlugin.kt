@@ -31,10 +31,7 @@ import com.google.firebase.testlab.gradle.TestLabGradlePluginExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
-/**
- * An entry point for Firebase Test Lab Gradle plugin that extends Gradle Managed Device and adds
- * support for Firebase Test Lab devices.
- */
+/** An entry point for Firebase Test Lab Gradle plugin that extends Gradle Managed Device and adds support for Firebase Test Lab devices. */
 class TestLabGradlePlugin : Plugin<Project> {
 
   companion object {
@@ -45,12 +42,10 @@ class TestLabGradlePlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
     project.plugins.withType(AndroidBasePlugin::class.java) {
-      val agpVersion =
-        project.extensions.getByType(AndroidComponentsExtension::class.java).pluginVersion
+      val agpVersion = project.extensions.getByType(AndroidComponentsExtension::class.java).pluginVersion
       if (
         agpVersion.previewType != "dev" &&
-          (agpVersion < AndroidPluginVersion(8, 3, 0).alpha(1) ||
-            agpVersion > AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE))
+          (agpVersion < AndroidPluginVersion(8, 3, 0).alpha(1) || agpVersion > AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE))
       ) {
         error(
           "Firebase TestLab plugin is an experimental feature. It requires Android " +
@@ -78,16 +73,11 @@ class TestLabGradlePlugin : Plugin<Project> {
         )
 
       val uploadTask =
-        project.tasks.register(
-          EXTRA_DEVICE_FILES_UPLOAD_TASK_NAME,
-          ExtraDeviceFilesUploadTask::class.java,
-        ) { task ->
+        project.tasks.register(EXTRA_DEVICE_FILES_UPLOAD_TASK_NAME, ExtraDeviceFilesUploadTask::class.java) { task ->
           task.projectPath.set(project.path)
           task.buildService.set(TestLabBuildService.RegistrationAction.getBuildService(project))
           task.extraFiles.set(extension.testOptions.fixture.extraDeviceFiles)
-          task.outputFile.set(
-            project.layout.buildDirectory.file("$FTL_OUTPUT_DIRECTORY/$EXTRA_DEVICE_FILES_LOCATION")
-          )
+          task.outputFile.set(project.layout.buildDirectory.file("$FTL_OUTPUT_DIRECTORY/$EXTRA_DEVICE_FILES_LOCATION"))
         }
 
       TestLabBuildService.RegistrationAction(project).registerIfAbsent()

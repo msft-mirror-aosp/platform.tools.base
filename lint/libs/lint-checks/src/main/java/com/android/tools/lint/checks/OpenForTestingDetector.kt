@@ -37,8 +37,7 @@ import org.jetbrains.uast.UElement
 /** Makes sure that APIs annotated `OpenForTesting` are only overridden or subclassed from tests. */
 class OpenForTestingDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(OpenForTestingDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(OpenForTestingDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Overriding open-for-testing APIs */
     @JvmField
@@ -62,8 +61,7 @@ class OpenForTestingDetector : Detector(), SourceCodeScanner {
 
   override fun applicableAnnotations(): List<String> = listOf(OPEN_FOR_TESTING_ANNOTATION)
 
-  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-    type == METHOD_OVERRIDE || type == EXTENDS
+  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == METHOD_OVERRIDE || type == EXTENDS
 
   override fun visitAnnotationUsage(
     context: JavaContext,

@@ -20,9 +20,8 @@ package com.android.sdklib.deviceprovisioner
  *
  * @property pluginId the DeviceProvisionerPlugin that created this DeviceId
  * @property isTemplate if true, this refers to a DeviceTemplate rather than a DeviceHandle.
- * @property identifier an arbitrary string that uniquely identifies the device (among others with
- *   the same plugin ID). This is public only for the purpose of serialization; it should not be
- *   interpreted.
+ * @property identifier an arbitrary string that uniquely identifies the device (among others with the same plugin ID). This is public only
+ *   for the purpose of serialization; it should not be interpreted.
  */
 data class DeviceId(val pluginId: String, val isTemplate: Boolean, val identifier: String) {
   override fun toString(): String = "$pluginId:${if (isTemplate) "template" else ""}:$identifier"
@@ -31,11 +30,7 @@ data class DeviceId(val pluginId: String, val isTemplate: Boolean, val identifie
     fun fromString(id: String): DeviceId? {
       val parts = id.split(":", limit = 3)
       if (parts.size < 3) return null
-      return DeviceId(
-        pluginId = parts[0],
-        isTemplate = parts[1] == "template",
-        identifier = parts[2],
-      )
+      return DeviceId(pluginId = parts[0], isTemplate = parts[1] == "template", identifier = parts[2])
     }
   }
 }

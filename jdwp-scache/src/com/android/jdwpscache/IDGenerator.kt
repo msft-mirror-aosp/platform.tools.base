@@ -20,9 +20,8 @@ class IDGenerator {
   /**
    * Summary of all ID generators:
    *
-   * oj-libjdwp (downstream) starts at 0 Intellij debugger (upstream) starts at 0 ddmlib (upstream)
-   * starts at 0x40000000 (JdwpPacket.java) adbconnection (downstream) starts at 0x80000000
-   * (adbconnection.cc)
+   * oj-libjdwp (downstream) starts at 0 Intellij debugger (upstream) starts at 0 ddmlib (upstream) starts at 0x40000000 (JdwpPacket.java)
+   * adbconnection (downstream) starts at 0x80000000 (adbconnection.cc)
    *
    * We start at 0xA000000 to avoid collisions with other injected streams.
    */

@@ -20,7 +20,6 @@ package com.android.build.gradle.integration.common.fixture.app
  * Simple test application that prints "hello world!" with Kotlin build script.
  *
  * <p>Using this in a test application as a rule is usually done as:
- *
  * <pre>
  * {@literal @}Rule
  * public GradleTestProject project = GradleTestProject.builder()
@@ -30,19 +29,20 @@ package com.android.build.gradle.integration.common.fixture.app
  */
 class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloWorldApp() {
 
-    companion object {
+  companion object {
 
-        const val NAMESPACE = "com.example.helloworld"
+    const val NAMESPACE = "com.example.helloworld"
 
-        fun forPlugin(plugin: String): HelloWorldAppKts {
-            return HelloWorldAppKts(plugin, NAMESPACE)
-        }
+    fun forPlugin(plugin: String): HelloWorldAppKts {
+      return HelloWorldAppKts(plugin, NAMESPACE)
     }
+  }
 
-    constructor(plugin: String, namespace: String) : this(namespace) {
-        val buildFile = TestSourceFile(
-            "build.gradle.kts",
-            """
+  constructor(plugin: String, namespace: String) : this(namespace) {
+    val buildFile =
+      TestSourceFile(
+        "build.gradle.kts",
+        """
             buildscript {
                 apply(from = "../commonBuildScript.gradle")
                 dependencies {
@@ -73,33 +73,36 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
               androidTestImplementation("com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}")
             }
 
-        """.trimIndent()
-        )
-        addFile(buildFile)
+        """
+          .trimIndent(),
+      )
+    addFile(buildFile)
 
-        val settingsFile = TestSourceFile(
-            "settings.gradle.kts", """
-                apply(from = "../versionCatalog.gradle")
-                pluginManagement{
-                  apply(from = "../commonLocalRepo.gradle", to = pluginManagement)
-                  repositories {
-                    google()
-                    mavenCentral()
-                  }
-                }
-                dependencyResolutionManagement {
-                  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-                  apply(from = "../commonLocalRepo.gradle", to = dependencyResolutionManagement)
-                  repositories {
-                    google()
-                    mavenCentral()
-                  }
-                }
-            """.trimIndent())
-        addFile(settingsFile)
+    val settingsFile =
+      TestSourceFile(
+        "settings.gradle.kts",
+        """
+        apply(from = "../versionCatalog.gradle")
+        pluginManagement{
+          apply(from = "../commonLocalRepo.gradle", to = pluginManagement)
+          repositories {
+            google()
+            mavenCentral()
+          }
+        }
+        dependencyResolutionManagement {
+          repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+          apply(from = "../commonLocalRepo.gradle", to = dependencyResolutionManagement)
+          repositories {
+            google()
+            mavenCentral()
+          }
+        }
+        """
+          .trimIndent(),
+      )
+    addFile(settingsFile)
+  }
 
-    }
-
-    override fun containsFullBuildScript() = true
-
+  override fun containsFullBuildScript() = true
 }

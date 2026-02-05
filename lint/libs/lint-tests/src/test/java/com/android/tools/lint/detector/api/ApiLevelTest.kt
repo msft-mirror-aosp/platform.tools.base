@@ -51,14 +51,8 @@ class ApiLevelTest {
 
   @Test
   fun testBuildCode() {
-    assertEquals(
-      "android.os.Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_0",
-      ApiLevel(35, 0).toSourceReference(),
-    )
-    assertEquals(
-      "android.os.Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_1",
-      ApiLevel(35, 1).toSourceReference(),
-    )
+    assertEquals("android.os.Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_0", ApiLevel(35, 0).toSourceReference())
+    assertEquals("android.os.Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_1", ApiLevel(35, 1).toSourceReference())
     assertEquals("VANILLA_ICE_CREAM_1", ApiLevel(35, 1).toSourceReference(fullyQualified = false))
     // Future API levels: just put constant reference in
     assertEquals("80", ApiLevel(80).toSourceReference())

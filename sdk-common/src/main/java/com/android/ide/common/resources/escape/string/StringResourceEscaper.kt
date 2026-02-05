@@ -19,8 +19,7 @@ import com.google.common.escape.Escaper
 import com.google.common.escape.Escapers
 
 /**
- * Static singleton responsible for escaping string resources. See documentation for the
- * [StringResourceEscaper.escape] method for details.
+ * Static singleton responsible for escaping string resources. See documentation for the [StringResourceEscaper.escape] method for details.
  */
 object StringResourceEscaper {
   /**
@@ -29,7 +28,6 @@ object StringResourceEscaper {
    * [this Android Cookbook recipe](https://androidcookbook.com/Recipe.seam?recipeId=2219).
    *
    * The entire string is escaped as follows:
-   *
    * 1. `'"'` and `'\\'` are escaped with backslashes
    * 1. `'\n'` and `'\t'` are escaped with `"\\n"` and `"\\t"`
    * 1. If the string starts or ends with a space, the string is quoted with `'"'`
@@ -37,9 +35,8 @@ object StringResourceEscaper {
    * 1. If the string starts with a `'?'` or `'@'`, that character is escaped with a backslash
    * 1. If escapeMarkupDelimiters is true, `'&'` and `'<'` are escaped with `"&amp;"` and `"&lt;"`
    *
-   * If the string contains markup with attributes, the quotes will be escaped which will result in
-   * invalid XML. If [escapeMarkupDelimiters] is true, the markup will lose its semantics and become
-   * plain character data. If that is not desired, use
+   * If the string contains markup with attributes, the quotes will be escaped which will result in invalid XML. If [escapeMarkupDelimiters]
+   * is true, the markup will lose its semantics and become plain character data. If that is not desired, use
    * [com.android.ide.common.resources.escape.xml.CharacterDataEscaper.escape] which is XML-aware.
    *
    * @param escapeMarkupDelimiters if true escape `'&'` and `'<'` with their entity references
@@ -63,12 +60,7 @@ object StringResourceEscaper {
 
   @Suppress("UnstableApiUsage")
   private fun buildEscaper(escapeApostrophes: Boolean, escapeMarkupDelimiters: Boolean): Escaper {
-    val builder =
-        Escapers.builder()
-            .addEscape('"', """\"""")
-            .addEscape('\\', """\\""")
-            .addEscape('\n', """\n""")
-            .addEscape('\t', """\t""")
+    val builder = Escapers.builder().addEscape('"', """\"""").addEscape('\\', """\\""").addEscape('\n', """\n""").addEscape('\t', """\t""")
     if (escapeApostrophes) builder.addEscape('\'', """\'""")
     if (escapeMarkupDelimiters) {
       builder.addEscape('&', "&amp;").addEscape('<', "&lt;")

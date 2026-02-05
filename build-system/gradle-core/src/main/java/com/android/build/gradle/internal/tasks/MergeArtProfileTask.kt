@@ -48,120 +48,107 @@ import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = SIMPLE_MERGING_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ART_PROFILE, secondaryTaskCategories = [TaskCategory.MERGING])
-abstract class MergeArtProfileTask: MergeFileTask() {
+abstract class MergeArtProfileTask : MergeFileTask() {
 
-    @get:Classpath // The order of `inputFiles` is important
-    abstract override val inputFiles: ConfigurableFileCollection
+  @get:Classpath // The order of `inputFiles` is important
+  abstract override val inputFiles: ConfigurableFileCollection
 
-    // Use InputFiles rather than InputFile to allow the file not to exist
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val profileSource: RegularFileProperty
+  // Use InputFiles rather than InputFile to allow the file not to exist
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val profileSource: RegularFileProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val profileSourceDirectories: ListProperty<Directory>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val profileSourceDirectories: ListProperty<Directory>
 
-    @get:Input
-    @get:Optional
-    abstract val ignoreFrom: SetProperty<String>
+  @get:Input @get:Optional abstract val ignoreFrom: SetProperty<String>
 
-    @get:Input
-    @get:Optional
-    abstract val ignoreFromAllExternalDependencies: Property<Boolean>
+  @get:Input @get:Optional abstract val ignoreFromAllExternalDependencies: Property<Boolean>
 
-    @get:Internal
-    internal lateinit var libraryArtifacts: ArtifactCollection
+  @get:Internal internal lateinit var libraryArtifacts: ArtifactCollection
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(MergeFilesWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.inputFiles.from(inputFiles)
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(MergeFilesWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.inputFiles.from(inputFiles)
 
-            it.inputFiles.from(
-                profileSourceDirectories.get().map { directory -> directory.asFileTree.files }
-                    .flatten()
-                    .filter(BaselineProfiles::shouldBeMergedIntoArtProfile)
-            )
-            if (profileSource.get().asFile.isFile) {
-                it.inputFiles.from(profileSource)
-            }
+      it.inputFiles.from(
+        profileSourceDirectories
+          .get()
+          .map { directory -> directory.asFileTree.files }
+          .flatten()
+          .filter(BaselineProfiles::shouldBeMergedIntoArtProfile)
+      )
+      if (profileSource.get().asFile.isFile) {
+        it.inputFiles.from(profileSource)
+      }
 
-            if (!ignoreFrom.get().isNullOrEmpty() ||
-                ignoreFromAllExternalDependencies.get() == true) {
-                it.inputFiles.setFrom(getFilteredFiles(
-                    ignoreFrom.get(),
-                    ignoreFromAllExternalDependencies.get(),
-                    libraryArtifacts,
-                    it.inputFiles,
-                    LoggerWrapper.getLogger(MergeArtProfileTask::class.java),
-                    LibraryArtifactType.BASELINE_PROFILES))
-            }
+      if (!ignoreFrom.get().isNullOrEmpty() || ignoreFromAllExternalDependencies.get() == true) {
+        it.inputFiles.setFrom(
+          getFilteredFiles(
+            ignoreFrom.get(),
+            ignoreFromAllExternalDependencies.get(),
+            libraryArtifacts,
+            it.inputFiles,
+            LoggerWrapper.getLogger(MergeArtProfileTask::class.java),
+            LibraryArtifactType.BASELINE_PROFILES,
+          )
+        )
+      }
 
-            it.outputFile.set(outputFile)
-        }
+      it.outputFile.set(outputFile)
+    }
+  }
+
+  abstract class MergeFilesWorkAction : ProfileAwareWorkAction<MergeFilesWorkAction.Parameters>() {
+    abstract class Parameters : ProfileAwareWorkAction.Parameters() {
+      abstract val inputFiles: ConfigurableFileCollection
+      abstract val outputFile: RegularFileProperty
     }
 
-    abstract class MergeFilesWorkAction: ProfileAwareWorkAction<MergeFilesWorkAction.Parameters>() {
-        abstract class Parameters : ProfileAwareWorkAction.Parameters() {
-            abstract val inputFiles: ConfigurableFileCollection
-            abstract val outputFile: RegularFileProperty
-        }
+    override fun run() {
+      mergeFiles(parameters.inputFiles.files.filter { it.isFile }, parameters.outputFile.get().asFile)
+    }
+  }
 
-        override fun run() {
-            mergeFiles(
-                parameters.inputFiles.files.filter { it.isFile },
-                parameters.outputFile.get().asFile
-            )
-        }
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<MergeArtProfileTask, ApkCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = creationConfig.computeTaskNameInternal("merge", "ArtProfile")
+
+    override val type: Class<MergeArtProfileTask>
+      get() = MergeArtProfileTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<MergeArtProfileTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeFileTask::outputFile)
+        .withName(BaselineProfiles.BaselineProfileFileName)
+        .on(InternalArtifactType.MERGED_ART_PROFILE)
     }
 
-    class CreationAction(
-        creationConfig: ApkCreationConfig
-    ) : VariantTaskCreationAction<MergeArtProfileTask, ApkCreationConfig>(creationConfig) {
+    override fun configure(task: MergeArtProfileTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = creationConfig.computeTaskNameInternal("merge", "ArtProfile")
-        override val type: Class<MergeArtProfileTask>
-            get() = MergeArtProfileTask::class.java
+      task.libraryArtifacts =
+        creationConfig.variantDependencies.getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactScope.ALL,
+          AndroidArtifacts.ArtifactType.ART_PROFILE,
+        )
 
-        override fun handleProvider(taskProvider: TaskProvider<MergeArtProfileTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                MergeFileTask::outputFile
-            ).withName(BaselineProfiles.BaselineProfileFileName)
-                .on(InternalArtifactType.MERGED_ART_PROFILE)
-        }
+      task.inputFiles.fromDisallowChanges(task.libraryArtifacts.artifactFiles)
 
-        override fun configure(task: MergeArtProfileTask) {
-            super.configure(task)
+      // for backwards compat we need to keep reading the old location for baseline profile
+      creationConfig.sources.artProfile?.let { artProfile -> task.profileSource.set(artProfile) }
 
-            task.libraryArtifacts = creationConfig.variantDependencies.getArtifactCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                AndroidArtifacts.ArtifactScope.ALL,
-                AndroidArtifacts.ArtifactType.ART_PROFILE)
+      task.profileSource.disallowChanges()
 
-            task.inputFiles.fromDisallowChanges(task.libraryArtifacts.artifactFiles)
+      creationConfig.sources.baselineProfiles { task.profileSourceDirectories.setDisallowChanges(it.all) }
 
-            // for backwards compat we need to keep reading the old location for baseline profile
-            creationConfig.sources.artProfile?.let { artProfile ->
-                task.profileSource.set(artProfile)
-            }
+      task.ignoreFrom.setDisallowChanges(creationConfig.optimizationCreationConfig.ignoreFromInBaselineProfile)
 
-            task.profileSource.disallowChanges()
-
-            creationConfig.sources.baselineProfiles {
-                task.profileSourceDirectories.setDisallowChanges(it.all)
-            }
-
-            task.ignoreFrom.setDisallowChanges(
-                creationConfig.optimizationCreationConfig.ignoreFromInBaselineProfile
-            )
-
-            task.ignoreFromAllExternalDependencies.setDisallowChanges(
-                creationConfig.optimizationCreationConfig.ignoreFromAllExternalDependenciesInBaselineProfile
-            )
-        }
+      task.ignoreFromAllExternalDependencies.setDisallowChanges(
+        creationConfig.optimizationCreationConfig.ignoreFromAllExternalDependenciesInBaselineProfile
+      )
     }
+  }
 }

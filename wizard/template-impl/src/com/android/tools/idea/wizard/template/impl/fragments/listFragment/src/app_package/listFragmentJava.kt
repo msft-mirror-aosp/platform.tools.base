@@ -26,8 +26,9 @@ fun listFragmentJava(
   fragmentClass: String,
   fragmentLayoutList: String,
   packageName: String,
-  useAndroidX: Boolean
-) = """
+  useAndroidX: Boolean,
+) =
+  """
 package ${packageName};
 
 import android.content.Context;

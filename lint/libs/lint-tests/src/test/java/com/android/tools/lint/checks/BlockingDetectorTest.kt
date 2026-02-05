@@ -47,19 +47,19 @@ class BlockingDetectorTest : AbstractCheckTest() {
       .files(
         kotlin(
             """
-          annotation class Blocking // TODO get rid of
-          annotation class NonBlocking // TODO get rid of
+            annotation class Blocking // TODO get rid of
+            annotation class NonBlocking // TODO get rid of
 
-          @Blocking
-          fun doSomethingBlocking() { }
+            @Blocking
+            fun doSomethingBlocking() { }
 
-          fun nonBlocking(): () -> Unit = { doSomethingBlocking() }
+            fun nonBlocking(): () -> Unit = { doSomethingBlocking() }
 
-          fun maybeBlocking(doIt: () -> Unit) = doIt()
+            fun maybeBlocking(doIt: () -> Unit) = doIt()
 
-          @NonBlocking // we want to alert that main() will block
-          fun main() = maybeBlocking(nonBlocking())
-          """
+            @NonBlocking // we want to alert that main() will block
+            fun main() = maybeBlocking(nonBlocking())
+            """
               .trimIndent()
           )
           .indented()
@@ -81,37 +81,37 @@ class BlockingDetectorTest : AbstractCheckTest() {
       .files(
         kotlin(
             """
-          annotation class Blocking // TODO get rid of
-          annotation class NonBlocking // TODO get rid of
+            annotation class Blocking // TODO get rid of
+            annotation class NonBlocking // TODO get rid of
 
-          interface UnannotatedIntf {
-            fun doUnannotated()
-          }
+            interface UnannotatedIntf {
+              fun doUnannotated()
+            }
 
-          interface NonBlockingIntf {
-            @NonBlocking fun doAnnotatedNonBlocking()
-          }
+            interface NonBlockingIntf {
+              @NonBlocking fun doAnnotatedNonBlocking()
+            }
 
-          interface BlockingIntf {
-            @Blocking fun doAnnotatedBlocking()
-          }
+            interface BlockingIntf {
+              @Blocking fun doAnnotatedBlocking()
+            }
 
-          class Impl: UnannotatedIntf, NonBlockingIntf, BlockingIntf {
-            override fun doUnannotated() = block() // OK
+            class Impl: UnannotatedIntf, NonBlockingIntf, BlockingIntf {
+              override fun doUnannotated() = block() // OK
 
-            override fun doAnnotatedBlocking() = block() // OK
+              override fun doAnnotatedBlocking() = block() // OK
 
-            override fun doAnnotatedNonBlocking() = block() // ERROR
+              override fun doAnnotatedNonBlocking() = block() // ERROR
 
-            @Blocking private fun block() { }
-          }
+              @Blocking private fun block() { }
+            }
 
-          class RelaxingImpl: BlockingIntf {
-            // it's ok for subclass to strengthen its promise, or equivalently,
-            // relax its requirement, than superclass
-            @NonBlocking override fun doAnnotatedBlocking() { }
-          }
-          """
+            class RelaxingImpl: BlockingIntf {
+              // it's ok for subclass to strengthen its promise, or equivalently,
+              // relax its requirement, than superclass
+              @NonBlocking override fun doAnnotatedBlocking() { }
+            }
+            """
               .trimIndent()
           )
           .indented()
@@ -131,13 +131,11 @@ class BlockingDetectorTest : AbstractCheckTest() {
   fun `test external assumptions available`() {
     getTempDir().absolutePath.let { assumptionsPath ->
       System.setProperty(BlockingDetector.ASSUMPTIONS_PATH, assumptionsPath)
-      Truth.assertThat(System.getProperty(BlockingDetector.ASSUMPTIONS_PATH))
-        .isEqualTo(assumptionsPath)
+      Truth.assertThat(System.getProperty(BlockingDetector.ASSUMPTIONS_PATH)).isEqualTo(assumptionsPath)
 
       val assumptions =
         BlockingDetector.statusLattice.build {
-          static<Long>(Thread::sleep) assumedAs
-            given(Type.Long) { concreteEffect = BlockingDetector.Status.MaybeBlocking }
+          static<Long>(Thread::sleep) assumedAs given(Type.Long) { concreteEffect = BlockingDetector.Status.MaybeBlocking }
         }
       detector.savePartialResults(assumptionsPath, assumptions)
     }
@@ -146,28 +144,28 @@ class BlockingDetectorTest : AbstractCheckTest() {
       .files(
         kotlin(
             """
-          annotation class NonBlocking // TODO get rid of
+            annotation class NonBlocking // TODO get rid of
 
-          @NonBlocking
-          fun nonBlocking1() {
-              doSomethingThenSleep()
-          }
+            @NonBlocking
+            fun nonBlocking1() {
+                doSomethingThenSleep()
+            }
 
-          @NonBlocking
-          fun nonBlocking2(): Int = 42.also {
-              doSomethingThenSleep()
-          }
+            @NonBlocking
+            fun nonBlocking2(): Int = 42.also {
+                doSomethingThenSleep()
+            }
 
-          @NonBlocking
-          fun nonBlocking3() {
-              val t = ::doSomethingThenSleep // ok
-              println("Done")
-          }
+            @NonBlocking
+            fun nonBlocking3() {
+                val t = ::doSomethingThenSleep // ok
+                println("Done")
+            }
 
-          fun doSomethingThenSleep() {
-              Thread.sleep(10)
-          }
-          """
+            fun doSomethingThenSleep() {
+                Thread.sleep(10)
+            }
+            """
               .trimIndent()
           )
           .indented()

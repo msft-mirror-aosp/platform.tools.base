@@ -19,8 +19,7 @@ package com.android.build.api.dsl
 /**
  * Maven publishing DSL object for configuring options related to publishing APK and AAB.
  *
- * This following code example creates a publication for the fullRelease build variant, which
- * publish your app as Android App Bundle.
+ * This following code example creates a publication for the fullRelease build variant, which publish your app as Android App Bundle.
  *
  * ```
  * android {
@@ -49,8 +48,7 @@ package com.android.build.api.dsl
  * }
  * ```
  *
- * To publish your app as a ZIP file of APKs, simply use the [ApplicationSingleVariant.publishApk]
- * as shown in the following example.
+ * To publish your app as a ZIP file of APKs, simply use the [ApplicationSingleVariant.publishApk] as shown in the following example.
  *
  * ```
  * android {

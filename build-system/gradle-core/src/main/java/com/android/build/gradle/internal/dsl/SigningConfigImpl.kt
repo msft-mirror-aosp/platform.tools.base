@@ -21,26 +21,23 @@ import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitia
 import java.io.File
 import java.security.KeyStore
 
-abstract class SigningConfigImpl: SigningConfig {
+abstract class SigningConfigImpl : SigningConfig {
 
-    protected abstract var _storeFile: String?
+  protected abstract var _storeFile: String?
 
-    @WithLazyInitialization
-    @Suppress("unused") // the call is injected by DslDecorator
-    protected fun lazyInit() {
-        storeType = KeyStore.getDefaultType()
+  @WithLazyInitialization
+  @Suppress("unused") // the call is injected by DslDecorator
+  protected fun lazyInit() {
+    storeType = KeyStore.getDefaultType()
+  }
+
+  override var storeFile: File?
+    get() = _storeFile?.let { File(it) }
+    set(value) {
+      _storeFile = value?.absolutePath
     }
-
-    override var storeFile: File?
-        get() = _storeFile?.let { File(it) }
-        set(value) { _storeFile = value?.absolutePath }
-
 }
 
 internal fun SigningConfig.isPresent(): Boolean {
-    return this.storeFile != null ||
-            this.storePassword != null ||
-            this.keyAlias != null ||
-            this.keyPassword != null
+  return this.storeFile != null || this.storePassword != null || this.keyAlias != null || this.keyPassword != null
 }
-

@@ -71,8 +71,7 @@ class WebViewApiAvailabilityDetector : Detector(), SourceCodeScanner {
         priority = 7,
         severity = Severity.WARNING,
         moreInfo = "https://developer.android.com/reference/androidx/webkit/package-summary",
-        implementation =
-          Implementation(WebViewApiAvailabilityDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(WebViewApiAvailabilityDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
   }
@@ -126,10 +125,7 @@ class WebViewApiAvailabilityDetector : Detector(), SourceCodeScanner {
           issue = ISSUE,
           scope = node,
           location = context.getLocation(node),
-          message =
-            "Consider using `WebViewCompat." +
-              method.name +
-              "` instead which will support more devices.",
+          message = "Consider using `WebViewCompat." + method.name + "` instead which will support more devices.",
         )
       context.report(incident)
     }

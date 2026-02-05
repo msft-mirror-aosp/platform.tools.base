@@ -22,50 +22,34 @@ import com.android.tools.profiler.proto.MemoryServiceGrpc
 import com.android.tools.profiler.proto.MemoryServiceGrpc.MemoryServiceBlockingStub
 import com.android.tools.transport.grpc.Grpc
 
-/** Wrapper of stub calls that is shared among tests.  */
+/** Wrapper of stub calls that is shared among tests. */
 class MemoryStubWrapper(val memoryStub: MemoryServiceBlockingStub) {
-    companion object {
-        /**
-         * Convenience method for creating a wrapper when you don't need to create the underlying
-         * stub yourself.
-         */
-        @JvmStatic
-        fun create(grpc: Grpc): MemoryStubWrapper {
-            return MemoryStubWrapper(MemoryServiceGrpc.newBlockingStub(grpc.channel))
-        }
+  companion object {
+    /** Convenience method for creating a wrapper when you don't need to create the underlying stub yourself. */
+    @JvmStatic
+    fun create(grpc: Grpc): MemoryStubWrapper {
+      return MemoryStubWrapper(MemoryServiceGrpc.newBlockingStub(grpc.channel))
     }
+  }
 
-    fun getJvmtiData(session: Common.Session, startTime: Long, endTime: Long): MemoryData {
-        return memoryStub.getJvmtiData(
-                MemoryRequest.newBuilder()
-                        .setSession(session)
-                        .setStartTime(startTime)
-                        .setEndTime(endTime)
-                        .build())
-    }
+  fun getJvmtiData(session: Common.Session, startTime: Long, endTime: Long): MemoryData {
+    return memoryStub.getJvmtiData(MemoryRequest.newBuilder().setSession(session).setStartTime(startTime).setEndTime(endTime).build())
+  }
 
-    fun getMemoryData(session: Common.Session?, startTime: Long, endTime: Long): MemoryData {
-        return memoryStub.getData(
-                MemoryRequest.newBuilder()
-                        .setSession(session)
-                        .setStartTime(startTime)
-                        .setEndTime(endTime)
-                        .build())
-    }
+  fun getMemoryData(session: Common.Session?, startTime: Long, endTime: Long): MemoryData {
+    return memoryStub.getData(MemoryRequest.newBuilder().setSession(session).setStartTime(startTime).setEndTime(endTime).build())
+  }
 
-    fun startAllocationTracking(session: Common.Session?): TrackAllocationsResponse {
-        return memoryStub.trackAllocations(
-                TrackAllocationsRequest.newBuilder().setSession(session).setEnabled(true).build())
-    }
+  fun startAllocationTracking(session: Common.Session?): TrackAllocationsResponse {
+    return memoryStub.trackAllocations(TrackAllocationsRequest.newBuilder().setSession(session).setEnabled(true).build())
+  }
 
-    fun setSamplingRate(session: Common.Session?, samplingNumInterval: Int): SetAllocationSamplingRateResponse {
-        return memoryStub.setAllocationSamplingRate(
-                SetAllocationSamplingRateRequest.newBuilder()
-                        .setSession(session)
-                        .setSamplingRate(
-                                Memory.MemoryAllocSamplingData.newBuilder()
-                                        .setSamplingNumInterval(samplingNumInterval))
-                        .build())
-    }
-
+  fun setSamplingRate(session: Common.Session?, samplingNumInterval: Int): SetAllocationSamplingRateResponse {
+    return memoryStub.setAllocationSamplingRate(
+      SetAllocationSamplingRateRequest.newBuilder()
+        .setSession(session)
+        .setSamplingRate(Memory.MemoryAllocSamplingData.newBuilder().setSamplingNumInterval(samplingNumInterval))
+        .build()
+    )
+  }
 }

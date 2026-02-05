@@ -24,84 +24,80 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * The same transformation does not work for library as library does not do global resource merge,
- * so it does not produce ASSETS artifact
+ * The same transformation does not work for library as library does not do global resource merge, so it does not produce ASSETS artifact
  */
 class TransformApplicationAssetsTest {
 
-    @get: Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun transformAssetInLibrary() {
-        project.buildFile.appendText(
-            """
-        import org.apache.commons.io.FileUtils
-        import com.android.build.api.artifact.ScopedArtifact
-        import com.android.build.api.artifact.SingleArtifact
-        import com.android.build.api.variant.ScopedArtifacts.Scope
+  @Test
+  fun transformAssetInLibrary() {
+    project.buildFile.appendText(
+      """
+      import org.apache.commons.io.FileUtils
+      import com.android.build.api.artifact.ScopedArtifact
+      import com.android.build.api.artifact.SingleArtifact
+      import com.android.build.api.variant.ScopedArtifacts.Scope
 
-        abstract class AppendAssets extends DefaultTask {
+      abstract class AppendAssets extends DefaultTask {
 
-            @Input
-            abstract Property<String> getActivityName()
+          @Input
+          abstract Property<String> getActivityName()
 
-            @InputDirectory
-            abstract DirectoryProperty getAssetsFolder()
+          @InputDirectory
+          abstract DirectoryProperty getAssetsFolder()
 
-            @OutputDirectory
-            abstract DirectoryProperty getUpdatedAssetsFolder()
+          @OutputDirectory
+          abstract DirectoryProperty getUpdatedAssetsFolder()
 
-            @TaskAction
-            void taskAction() {
-                def src = assetsFolder.get().asFile
-                def dest = updatedAssetsFolder.get().asFile
-                try {
-                    FileUtils.copyDirectory(src, dest);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("In: " + src)
-                System.out.println("Out: " + dest)
-                new File(dest,"ejson.json") << "{ \"key\": \"8437ycn95y73o947c3b\"}"
-            }
-        }
+          @TaskAction
+          void taskAction() {
+              def src = assetsFolder.get().asFile
+              def dest = updatedAssetsFolder.get().asFile
+              try {
+                  FileUtils.copyDirectory(src, dest);
+              } catch (IOException e) {
+                  e.printStackTrace();
+              }
+              System.out.println("In: " + src)
+              System.out.println("Out: " + dest)
+              new File(dest,"ejson.json") << "{ \"key\": \"8437ycn95y73o947c3b\"}"
+          }
+      }
 
-        androidComponents {
-            onVariants(selector().all(), { variant ->
-                TaskProvider copyEjsonKeyTask = tasks.register("append" + variant.name + "Ejson", AppendAssets.class){
-                    getActivityName().set("ManuallyAdded")
-                }
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              TaskProvider copyEjsonKeyTask = tasks.register("append" + variant.name + "Ejson", AppendAssets.class){
+                  getActivityName().set("ManuallyAdded")
+              }
 
-                variant
-                    .artifacts
-                    .use(copyEjsonKeyTask)
-                    .wiredWithDirectories(
-                        { it.getAssetsFolder() },
-                        { it.getUpdatedAssetsFolder() }
-                    )
-                    .toTransform(SingleArtifact.ASSETS.INSTANCE)
+              variant
+                  .artifacts
+                  .use(copyEjsonKeyTask)
+                  .wiredWithDirectories(
+                      { it.getAssetsFolder() },
+                      { it.getUpdatedAssetsFolder() }
+                  )
+                  .toTransform(SingleArtifact.ASSETS.INSTANCE)
 
-            })
-        }
-        """.trimIndent()
+          })
+      }
+      """
+        .trimIndent()
+    )
+
+    val result = project.executor().run("appendDebugEjson")
+
+    ScannerSubject.assertThat(result.stdout)
+      .contains(
+        FileUtils.join(
+          "intermediates",
+          "assets",
+          "debug",
+          "mergeDebugAssets", // in
         )
+      )
 
-        val result = project.executor().run("appendDebugEjson")
-
-        ScannerSubject.assertThat(result.stdout)
-            .contains(FileUtils.join(
-                    "intermediates",
-                    "assets",
-                    "debug",
-                    "mergeDebugAssets" //in
-                )
-            )
-
-        ScannerSubject.assertThat(result.stdout)
-            .contains(FileUtils.join("intermediates", "assets", "debug", "appenddebugEjson")) //out
-    }
+    ScannerSubject.assertThat(result.stdout).contains(FileUtils.join("intermediates", "assets", "debug", "appenddebugEjson")) // out
+  }
 }

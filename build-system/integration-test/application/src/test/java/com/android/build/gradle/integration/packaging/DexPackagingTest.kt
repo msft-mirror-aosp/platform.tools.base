@@ -24,64 +24,57 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import org.junit.Rule
+import org.junit.Test
 
-/**
- * Integration tests for [DexPackagingOptions]
- */
+/** Integration tests for [DexPackagingOptions] */
 class DexPackagingTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .appendToBuild(
-                """
-                    android {
-                        packagingOptions {
-                            dex {
-                                useLegacyPackaging = true
-                            }
-                        }
-                    }
-                    androidComponents {
-                        onVariants(selector().withName("debug"), {
-                            packaging.dex.useLegacyPackaging.set(false)
-                        })
-                    }
-                    """.trimIndent()
-            )
-
-    private val multiModuleTestProject =
-        MultiModuleTestProject.builder().subproject(":app", app).build()
-
-    @get:Rule
-    val project =
-        GradleTestProject
-            .builder()
-            .fromTestApp(multiModuleTestProject)
-            .create()
-
-    @Test
-    fun testDexPackagingOptions() {
-        val appSubProject = project.getSubproject(":app")
-        appSubProject.execute("assemble")
-
-        val debugApkFile = appSubProject.getApk(DEBUG).file.toFile()
-        assertThat(debugApkFile).exists()
-        ZipFile(debugApkFile).use {
-            val classesDotDex = it.getEntry("classes.dex")
-            assertThat(classesDotDex).isNotNull()
-            assertThat(classesDotDex.method).isEqualTo(ZipEntry.STORED)
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .appendToBuild(
+        """
+        android {
+            packagingOptions {
+                dex {
+                    useLegacyPackaging = true
+                }
+            }
         }
-
-        val releaseApkFile = appSubProject.getApk(RELEASE).file.toFile()
-        assertThat(releaseApkFile).exists()
-        ZipFile(releaseApkFile).use {
-            val classesDotDex = it.getEntry("classes.dex")
-            assertThat(classesDotDex).isNotNull()
-            assertThat(classesDotDex.method).isEqualTo(ZipEntry.DEFLATED)
+        androidComponents {
+            onVariants(selector().withName("debug"), {
+                packaging.dex.useLegacyPackaging.set(false)
+            })
         }
+        """
+          .trimIndent()
+      )
+
+  private val multiModuleTestProject = MultiModuleTestProject.builder().subproject(":app", app).build()
+
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(multiModuleTestProject).create()
+
+  @Test
+  fun testDexPackagingOptions() {
+    val appSubProject = project.getSubproject(":app")
+    appSubProject.execute("assemble")
+
+    val debugApkFile = appSubProject.getApk(DEBUG).file.toFile()
+    assertThat(debugApkFile).exists()
+    ZipFile(debugApkFile).use {
+      val classesDotDex = it.getEntry("classes.dex")
+      assertThat(classesDotDex).isNotNull()
+      assertThat(classesDotDex.method).isEqualTo(ZipEntry.STORED)
     }
+
+    val releaseApkFile = appSubProject.getApk(RELEASE).file.toFile()
+    assertThat(releaseApkFile).exists()
+    ZipFile(releaseApkFile).use {
+      val classesDotDex = it.getEntry("classes.dex")
+      assertThat(classesDotDex).isNotNull()
+      assertThat(classesDotDex.method).isEqualTo(ZipEntry.DEFLATED)
+    }
+  }
 }

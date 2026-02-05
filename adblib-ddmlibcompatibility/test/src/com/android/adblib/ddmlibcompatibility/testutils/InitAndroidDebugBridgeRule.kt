@@ -23,29 +23,23 @@ import org.junit.rules.ExternalResource
 /**
  * This test rule initializes AndroidDebugBridge.
  *
- * This rule is needed if the test directly or indirectly relies
- * on a call to `AndroidDebugBridge.createBridge`.
+ * This rule is needed if the test directly or indirectly relies on a call to `AndroidDebugBridge.createBridge`.
  *
- *  Use `portSuppier` to feed a server port from an outer rule
- *  like `FakeAdbServerProviderRule`.
+ * Use `portSuppier` to feed a server port from an outer rule like `FakeAdbServerProviderRule`.
  */
-class InitAndroidDebugBridgeRule(
-    private val alsoCreateBridge: Boolean = false,
-    private val portSupplier: () -> Int
-) : ExternalResource() {
+class InitAndroidDebugBridgeRule(private val alsoCreateBridge: Boolean = false, private val portSupplier: () -> Int) : ExternalResource() {
 
-    public override fun before() {
-        AndroidDebugBridge.enableFakeAdbServerMode(portSupplier())
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
-        if (alsoCreateBridge) {
-            AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS)
-                ?: error("InitAndroidDebugBridgeRule could not create ADB bridge ")
-        }
+  public override fun before() {
+    AndroidDebugBridge.enableFakeAdbServerMode(portSupplier())
+    AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
+    if (alsoCreateBridge) {
+      AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("InitAndroidDebugBridgeRule could not create ADB bridge ")
     }
+  }
 
-    override fun after() {
-        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS)
-        AndroidDebugBridge.terminate()
-        AndroidDebugBridge.disableFakeAdbServerMode()
-    }
+  override fun after() {
+    AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS)
+    AndroidDebugBridge.terminate()
+    AndroidDebugBridge.disableFakeAdbServerMode()
+  }
 }

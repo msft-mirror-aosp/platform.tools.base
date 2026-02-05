@@ -151,19 +151,10 @@ fun LanguageVersionSettings.withKMPEnabled(): LanguageVersionSettings {
 }
 
 @OptIn(KaImplementationDetail::class)
-internal fun configureProjectEnvironment(
-  project: MockProject,
-  config: UastEnvironment.Configuration,
-) {
+internal fun configureProjectEnvironment(project: MockProject, config: UastEnvironment.Configuration) {
   // Annotation support.
-  project.registerService(
-    ExternalAnnotationsManager::class.java,
-    LintExternalAnnotationsManager::class.java,
-  )
-  project.registerService(
-    InferredAnnotationsManager::class.java,
-    LintInferredAnnotationsManager::class.java,
-  )
+  project.registerService(ExternalAnnotationsManager::class.java, LintExternalAnnotationsManager::class.java)
+  project.registerService(InferredAnnotationsManager::class.java, LintInferredAnnotationsManager::class.java)
 
   // Java language level.
   val javaLanguageLevel = config.javaLanguageLevel
@@ -182,16 +173,11 @@ internal fun configureProjectEnvironment(
   @Suppress("DEPRECATION") project.registerService(UastContext::class.java, UastContext(project))
 
   // KotlinResolutionScopeEnlarger
-  PluginStructureProvider.registerProjectExtensionPoints(
-    project,
-    "/META-INF/analysis-api/analysis-api-platform-interface.xml",
-  )
+  PluginStructureProvider.registerProjectExtensionPoints(project, "/META-INF/analysis-api/analysis-api-platform-interface.xml")
 }
 
 @OptIn(KaImplementationDetail::class, KaExperimentalApi::class)
-internal fun configureAnalysisApiProjectStructure(
-  config: UastEnvironment.Configuration
-): KtModuleProviderBuilder.() -> Unit = {
+internal fun configureAnalysisApiProjectStructure(config: UastEnvironment.Configuration): KtModuleProviderBuilder.() -> Unit = {
   val isKMP = config.isKMP
   // The platform of the module provider, not individual modules
   platform = if (isKMP) CommonPlatforms.defaultCommonPlatform else JvmPlatforms.defaultJvmPlatform
@@ -254,8 +240,7 @@ internal fun configureAnalysisApiProjectStructure(
         }
       }
 
-      val (moduleKlibPathsRegular, moduleKlibPathsDependsOn) =
-        m.klibs.keys.partition { m.klibs[it] == Project.DependencyKind.Regular }
+      val (moduleKlibPathsRegular, moduleKlibPathsDependsOn) = m.klibs.keys.partition { m.klibs[it] == Project.DependencyKind.Regular }
 
       fun buildKlibModule(klibs: PathCollection, name: String) = buildKtLibraryModule {
         platform = mPlatform
@@ -269,24 +254,17 @@ internal fun configureAnalysisApiProjectStructure(
       }
 
       if (moduleKlibPathsDependsOn.isNotEmpty()) {
-        addDependsOnDependency(
-          buildKlibModule(
-            moduleKlibPathsDependsOn.toPathCollection(),
-            "dependsOn klibs for $moduleName",
-          )
-        )
+        addDependsOnDependency(buildKlibModule(moduleKlibPathsDependsOn.toPathCollection(), "dependsOn klibs for $moduleName"))
       }
     }
 
-    val (scripts, nonScripts) =
-      sourceFilePaths.partition(coreApplicationEnvironment.localFileSystem, VirtualFile::isKts)
+    val (scripts, nonScripts) = sourceFilePaths.partition(coreApplicationEnvironment.localFileSystem, VirtualFile::isKts)
 
     val fs = StandardFileSystems.local()
     val psiManager = PsiManager.getInstance(project)
     val ktsFiles =
       scripts.physicalFiles.mapNotNull { physicalFilePath ->
-        val virtualFile =
-          fs.findFileByPath(physicalFilePath.absolutePathString()) ?: return@mapNotNull null
+        val virtualFile = fs.findFileByPath(physicalFilePath.absolutePathString()) ?: return@mapNotNull null
         psiManager.findFile(virtualFile) as? KtFile
       } + scripts.virtualFiles.mapNotNull { psiManager.findFile(it) as? KtFile }
 
@@ -304,8 +282,7 @@ internal fun configureAnalysisApiProjectStructure(
       when {
         m.sourceRoots.isNotEmpty() -> {
           buildKtSourceModule {
-            languageVersionSettings =
-              if (isKMP) m.kotlinLanguageLevel.withKMPEnabled() else m.kotlinLanguageLevel
+            languageVersionSettings = if (isKMP) m.kotlinLanguageLevel.withKMPEnabled() else m.kotlinLanguageLevel
             addModuleDependencies(m.name)
             platform = mPlatform
             moduleName = m.name
@@ -320,10 +297,7 @@ internal fun configureAnalysisApiProjectStructure(
                   Project.DependencyKind.Regular -> addRegularDependency(depKtModule)
                   Project.DependencyKind.DependsOn -> addDependsOnDependency(depKtModule)
                 }
-              }
-                ?: System.err.println(
-                  "Dependency named `${depProj.name}` (pkg: `${depProj.`package`}`) ignored because module not found"
-                )
+              } ?: System.err.println("Dependency named `${depProj.name}` (pkg: `${depProj.`package`}`) ignored because module not found")
             }
 
             addSourcePaths(nonScripts)
@@ -401,10 +375,7 @@ private class LibraryRootsSearchScope(roots: List<VirtualFile>) : GlobalSearchSc
 internal val appLock = ReentrantLock()
 private var appConfigured = false
 
-internal fun configureApplicationEnvironment(
-  appEnv: CoreApplicationEnvironment,
-  configurator: (CoreApplicationEnvironment) -> Unit,
-) {
+internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment, configurator: (CoreApplicationEnvironment) -> Unit) {
   check(appLock.isHeldByCurrentThread)
 
   if (appConfigured) return
@@ -417,18 +388,9 @@ internal fun configureApplicationEnvironment(
   Registry.markAsLoaded()
 
   // The Kotlin compiler does not use UAST, so we must configure it ourselves.
-  CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    UastLanguagePlugin.EP,
-    UastLanguagePlugin::class.java,
-  )
-  CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    UEvaluatorExtension.EXTENSION_POINT_NAME,
-    UEvaluatorExtension::class.java,
-  )
-  CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(
-    PsiAugmentProvider.EP_NAME.toString(),
-    PsiAugmentProvider::class.java,
-  )
+  CoreApplicationEnvironment.registerApplicationExtensionPoint(UastLanguagePlugin.EP, UastLanguagePlugin::class.java)
+  CoreApplicationEnvironment.registerApplicationExtensionPoint(UEvaluatorExtension.EXTENSION_POINT_NAME, UEvaluatorExtension::class.java)
+  CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(PsiAugmentProvider.EP_NAME.toString(), PsiAugmentProvider::class.java)
 
   // https://youtrack.jetbrains.com/issue/IJPL-175398
   // JavaIndexingPlugin.xml (formerly JavaPsiPlugin.xml)
@@ -443,14 +405,8 @@ internal fun configureApplicationEnvironment(
 
   // These extensions points seem to be needed too, probably because Lint
   // triggers different IntelliJ code paths than the Kotlin compiler does.
-  CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    CustomExceptionHandler.KEY,
-    CustomExceptionHandler::class.java,
-  )
-  CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    DiagnosticSuppressor.EP_NAME,
-    DiagnosticSuppressor::class.java,
-  )
+  CoreApplicationEnvironment.registerApplicationExtensionPoint(CustomExceptionHandler.KEY, CustomExceptionHandler::class.java)
+  CoreApplicationEnvironment.registerApplicationExtensionPoint(DiagnosticSuppressor.EP_NAME, DiagnosticSuppressor::class.java)
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
     LanguageFeatureProvider.EXTENSION_POINT_NAME,
     LanguageFeatureProvider::class.java,
@@ -458,11 +414,7 @@ internal fun configureApplicationEnvironment(
 
   appEnv.registerFileType(KlibMetaFileType, KLIB_METADATA_FILE_EXTENSION)
   appEnv.registerFileType(DeclarativeFileType.INSTANCE, "dcl")
-  appEnv.addExplicitExtension(
-    LanguageASTFactory.INSTANCE,
-    DeclarativeLanguage.INSTANCE,
-    DeclarativeASTFactory(),
-  )
+  appEnv.addExplicitExtension(LanguageASTFactory.INSTANCE, DeclarativeLanguage.INSTANCE, DeclarativeASTFactory())
   appEnv.registerParserDefinition(DeclarativeParserDefinition())
 
   // Mark the app as "started" to avoid early bailout paths in Registry.is() and more.

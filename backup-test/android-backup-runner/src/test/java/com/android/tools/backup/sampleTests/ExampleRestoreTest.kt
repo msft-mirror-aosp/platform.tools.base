@@ -24,9 +24,7 @@ import org.junit.Test
 @Ignore("Example test for AndroidBackupRunnerBuilderTest")
 @RestoreTest("backupFile.zip")
 class ExampleRestoreTest {
-    @BeforeRestore
-    fun checkInitialAppState() {}
+  @BeforeRestore fun checkInitialAppState() {}
 
-    @Test
-    fun test1() {}
+  @Test fun test1() {}
 }

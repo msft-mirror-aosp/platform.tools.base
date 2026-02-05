@@ -24,94 +24,80 @@ import com.android.fakeadbserver.services.StatusWriter
 import java.nio.ByteBuffer
 
 /**
- * A [SimpleShellHandler] that replies to `stdout`, `stderr` and `exit` messages sent
- * to its `stdin` stream with the corresponding [ShellV2Protocol.PacketKind] packets
+ * A [SimpleShellHandler] that replies to `stdout`, `stderr` and `exit` messages sent to its `stdin` stream with the corresponding
+ * [ShellV2Protocol.PacketKind] packets
  */
-class ShellProtocolEchoCommandHandler() : SimpleShellHandler(
-    ShellProtocolType.SHELL_V2,
-    "shell-protocol-echo"
-) {
+class ShellProtocolEchoCommandHandler() : SimpleShellHandler(ShellProtocolType.SHELL_V2, "shell-protocol-echo") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        // Forward `stdin`, `stderr` and `exit` lines as `stdout` packets
-        statusWriter.writeOk()
-        var exitCode = 0
-        val stdoutPrefix = "stdout:"
-        val stderrPrefix = "stderr:"
-        val exitPrefix = "exit:"
-        val stdinProcessor = StdinProcessor { line ->
-            when {
-                line.startsWith(stdoutPrefix) -> {
-                    shellCommandOutput.writeStdout(
-                        line.takeLast(line.length - stdoutPrefix.length)
-                            .trimStart()
-                    )
-                }
-
-                line.startsWith(stderrPrefix) -> {
-                    shellCommandOutput.writeStderr(
-                        line.takeLast(line.length - stderrPrefix.length)
-                            .trimStart()
-                    )
-                }
-
-                line.startsWith(exitPrefix) -> {
-                    exitCode = line.takeLast(line.length - exitPrefix.length)
-                        .trimStart()
-                        .toInt()
-                }
-            }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    // Forward `stdin`, `stderr` and `exit` lines as `stdout` packets
+    statusWriter.writeOk()
+    var exitCode = 0
+    val stdoutPrefix = "stdout:"
+    val stderrPrefix = "stderr:"
+    val exitPrefix = "exit:"
+    val stdinProcessor = StdinProcessor { line ->
+      when {
+        line.startsWith(stdoutPrefix) -> {
+          shellCommandOutput.writeStdout(line.takeLast(line.length - stdoutPrefix.length).trimStart())
         }
-        while (true) {
-            val buffer = ByteArray(100)
-            val numRead = shellCommandOutput.readStdin(buffer, 0, buffer.size)
-            if (numRead < 0) {
-                stdinProcessor.flush()
-                shellCommandOutput.writeExitCode(exitCode)
-                break
-            }
-            stdinProcessor.process(if (numRead == buffer.size) buffer else buffer.copyOfRange(
-                0,
-                numRead
-            ))
+
+        line.startsWith(stderrPrefix) -> {
+          shellCommandOutput.writeStderr(line.takeLast(line.length - stderrPrefix.length).trimStart())
         }
+
+        line.startsWith(exitPrefix) -> {
+          exitCode = line.takeLast(line.length - exitPrefix.length).trimStart().toInt()
+        }
+      }
+    }
+    while (true) {
+      val buffer = ByteArray(100)
+      val numRead = shellCommandOutput.readStdin(buffer, 0, buffer.size)
+      if (numRead < 0) {
+        stdinProcessor.flush()
+        shellCommandOutput.writeExitCode(exitCode)
+        break
+      }
+      stdinProcessor.process(if (numRead == buffer.size) buffer else buffer.copyOfRange(0, numRead))
+    }
+  }
+
+  class StdinProcessor(private val block: (String) -> Unit) {
+
+    val buffer: ByteBuffer = ByteBuffer.allocate(8_192)
+
+    fun flush() {
+      // Data if from [0 -> position1], so ensure we have
+      // [position(0), limit(position1)]
+      buffer.flip()
+      if (buffer.remaining() > 0) {
+        block(bufferToByteArray().toString(Charsets.UTF_8))
+        buffer.compact()
+      }
     }
 
-    class StdinProcessor(private val block: (String) -> Unit) {
-
-        val buffer: ByteBuffer = ByteBuffer.allocate(8_192)
-
-        fun flush() {
-            // Data if from [0 -> position1], so ensure we have
-            // [position(0), limit(position1)]
-            buffer.flip()
-            if (buffer.remaining() > 0) {
-                block(bufferToByteArray().toString(Charsets.UTF_8))
-                buffer.compact()
-            }
+    fun process(bytes: ByteArray) {
+      for (b in bytes) {
+        buffer.put(b)
+        if (b.toChar() == '\n') {
+          flush()
         }
-
-        fun process(bytes: ByteArray) {
-            for (b in bytes) {
-                buffer.put(b)
-                if (b.toChar() == '\n') {
-                    flush()
-                }
-            }
-        }
-
-        private fun bufferToByteArray(): ByteArray {
-            // Copy bytes from [position -> limit] into new byte array
-            val bytes = ByteArray(buffer.remaining())
-            buffer.get(bytes)
-            return bytes
-        }
+      }
     }
+
+    private fun bufferToByteArray(): ByteArray {
+      // Copy bytes from [position -> limit] into new byte array
+      val bytes = ByteArray(buffer.remaining())
+      buffer.get(bytes)
+      return bytes
+    }
+  }
 }

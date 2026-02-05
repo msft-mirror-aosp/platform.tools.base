@@ -17,9 +17,9 @@ package com.android.fakeadbserver.services
 
 class PackageManagerSession(val id: String) {
 
-    val splits : MutableList<String> = mutableListOf()
+  val splits: MutableList<String> = mutableListOf()
 
-    fun addSplit(splitName: String) {
-        splits.add(splitName)
-    }
+  fun addSplit(splitName: String) {
+    splits.add(splitName)
+  }
 }

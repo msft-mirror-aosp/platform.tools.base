@@ -26,54 +26,37 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-class ProjectSubstitutionDependenciesTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
-                implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
-            }
-            pluginCallbacks += AppCallback::class.java
+class ProjectSubstitutionDependenciesTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
+          implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
         }
-        androidLibrary(":lib") {
-            android {
-                enableKotlin = false
-            }
-        }
-        androidLibrary(":lib2") {
-            android {
-                enableKotlin = false
-            }
-        }
+        pluginCallbacks += AppCallback::class.java
+      }
+      androidLibrary(":lib") { android { enableKotlin = false } }
+      androidLibrary(":lib2") { android { enableKotlin = false } }
     }
 
-    class AppCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            project.configurations.all {
-                it.resolutionStrategy.dependencySubstitution {
-                    it.substitute(it.module("com.example:lib:1.0")).using(it.project(":lib"))
-                    it.substitute(it.module("com.example:lib2:1.0")).using(it.project(":lib2"))
-                }
-            }
+  class AppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      project.configurations.all {
+        it.resolutionStrategy.dependencySubstitution {
+          it.substitute(it.module("com.example:lib:1.0")).using(it.project(":lib"))
+          it.substitute(it.module("com.example:lib2:1.0")).using(it.project(":lib2"))
         }
+      }
     }
+  }
 
-    @Test
-    fun checkAllDependencies() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun checkAllDependencies() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
+  }
 }

@@ -23,22 +23,18 @@ import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotli
 import com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.src.app_package.broadcastReceiverJava
 import com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.src.app_package.broadcastReceiverKt
 
-fun RecipeExecutor.broadcastReceiverRecipe(
-  moduleData: ModuleTemplateData,
-  className: String,
-  isExported: Boolean,
-  isEnabled: Boolean
-) {
+fun RecipeExecutor.broadcastReceiverRecipe(moduleData: ModuleTemplateData, className: String, isExported: Boolean, isEnabled: Boolean) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val ktOrJavaExt = projectData.language.extension
   val packageName = moduleData.packageName
   addAllKotlinDependencies(moduleData)
 
   mergeXml(androidManifestXml(className, isEnabled, isExported, packageName), manifestOut.resolve("AndroidManifest.xml"))
-  val broadcastReceiver = when (projectData.language) {
-    Language.Java -> broadcastReceiverJava(className, packageName)
-    Language.Kotlin -> broadcastReceiverKt(className, packageName)
-  }
+  val broadcastReceiver =
+    when (projectData.language) {
+      Language.Java -> broadcastReceiverJava(className, packageName)
+      Language.Kotlin -> broadcastReceiverKt(className, packageName)
+    }
   save(broadcastReceiver, srcOut.resolve("${className}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${className}.${ktOrJavaExt}"))

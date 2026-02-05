@@ -16,34 +16,27 @@
 
 package com.android.tools.transport.device
 
-/**
- * Simple wrapper class that represents an Android SDK level plus misc. useful utilities
- */
-class SdkLevel(private val value: Int): Comparable<SdkLevel> {
-    companion object {
-        @JvmField
-        val M = SdkLevel(23)
+/** Simple wrapper class that represents an Android SDK level plus misc. useful utilities */
+class SdkLevel(private val value: Int) : Comparable<SdkLevel> {
+  companion object {
+    @JvmField val M = SdkLevel(23)
 
-        @JvmField
-        val N = SdkLevel(24)
+    @JvmField val N = SdkLevel(24)
 
-        @JvmField
-        val O = SdkLevel(26)
+    @JvmField val O = SdkLevel(26)
 
-        @JvmField
-        val P = SdkLevel(28)
+    @JvmField val P = SdkLevel(28)
 
-        @JvmField
-        val Q = SdkLevel(29)
-    }
+    @JvmField val Q = SdkLevel(29)
+  }
 
-    override fun toString(): String {
-        return value.toString()
-    }
+  override fun toString(): String {
+    return value.toString()
+  }
 
-    override fun compareTo(other: SdkLevel): Int {
-        return value.compareTo(other.value)
-    }
+  override fun compareTo(other: SdkLevel): Int {
+    return value.compareTo(other.value)
+  }
 }
 
 fun SdkLevel.supportsJvmti() = this >= SdkLevel.O

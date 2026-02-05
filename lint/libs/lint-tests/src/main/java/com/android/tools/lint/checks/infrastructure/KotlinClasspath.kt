@@ -25,9 +25,7 @@ fun findKotlinStdlibPath(): List<File> =
   findFromRuntimeClassPath(::isKotlinStdLib).ifEmpty {
     // kotlin-stdlib might be in another jar, so use that.
     PathManager.getJarForClass(KotlinVersion::class.java)?.let { listOf(it.toFile()) }
-      ?: error(
-        "Did not find kotlin-stdlib-jdk8 in classpath: ${System.getProperty("java.class.path")}"
-      )
+      ?: error("Did not find kotlin-stdlib-jdk8 in classpath: ${System.getProperty("java.class.path")}")
   }
 
 fun findFromRuntimeClassPath(accept: (File) -> Boolean): List<File> {

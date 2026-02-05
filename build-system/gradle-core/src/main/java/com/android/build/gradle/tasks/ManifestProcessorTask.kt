@@ -23,47 +23,36 @@ import com.android.manifmerger.MergingReport
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
+import java.io.File
+import java.io.IOException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
-import java.io.IOException
 
 interface ManifestProcessor {
 
-    @get:Optional
-    @get:OutputFile
-    abstract val reportFile: RegularFileProperty
+  @get:Optional @get:OutputFile abstract val reportFile: RegularFileProperty
 
-    @get:Optional
-    @get:OutputFile
-    abstract val mergeBlameFile: RegularFileProperty
+  @get:Optional @get:OutputFile abstract val mergeBlameFile: RegularFileProperty
 }
 
-/** A task that processes the manifest  */
+/** A task that processes the manifest */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
 abstract class ManifestProcessorTask : NonIncrementalTask(), ManifestProcessor
 
-/** A task that processes the manifest  */
+/** A task that processes the manifest */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
 abstract class ManifestProcessorGlobalTask : NonIncrementalGlobalTask(), ManifestProcessor
 
 @Throws(IOException::class)
-internal fun outputMergeBlameContents(
-    mergingReport: MergingReport, mergeBlameFile: File?
-) {
-    if (mergeBlameFile == null) {
-        return
-    }
-    val output =
-        mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME)
-            ?: return
-    FileUtils.mkdirs(mergeBlameFile.parentFile)
-    Files.newWriter(
-        mergeBlameFile,
-        Charsets.UTF_8
-    ).use { writer -> writer.write(output) }
+internal fun outputMergeBlameContents(mergingReport: MergingReport, mergeBlameFile: File?) {
+  if (mergeBlameFile == null) {
+    return
+  }
+  val output = mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME) ?: return
+  FileUtils.mkdirs(mergeBlameFile.parentFile)
+  Files.newWriter(mergeBlameFile, Charsets.UTF_8).use { writer -> writer.write(output) }
 }

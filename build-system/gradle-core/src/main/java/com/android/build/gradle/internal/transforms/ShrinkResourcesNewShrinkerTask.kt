@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.transforms
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.R8_MAPPING_RESOURCES
 import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -40,6 +39,7 @@ import com.android.build.shrinker.usages.ToolsAttributeUsageRecorder
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ResourceShrinkingConfig
 import com.android.utils.FileUtils
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
@@ -53,160 +53,130 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.workers.WorkAction
-import javax.inject.Inject
 
-/**
- * Shrinks application resources in proto format.
- */
+/** Shrinks application resources in proto format. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION, secondaryTaskCategories = [TaskCategory.ANDROID_RESOURCES])
 abstract class ShrinkResourcesNewShrinkerTask : NonIncrementalTask() {
 
-    @get:Nested
-    abstract val params: R8ResourceShrinkingParameters
+  @get:Nested abstract val params: R8ResourceShrinkingParameters
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val dex: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val dex: ConfigurableFileCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:Optional
-    abstract val mappingFile: RegularFileProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val mappingFile: RegularFileProperty
 
-    override fun doTaskAction() {
-        val inputBuiltArtifacts = params.loadInputBuiltArtifacts()
-        params.saveOutputBuiltArtifactsMetadata()
+  override fun doTaskAction() {
+    val inputBuiltArtifacts = params.loadInputBuiltArtifacts()
+    params.saveOutputBuiltArtifactsMetadata()
 
-        val workQueue = workerExecutor.noIsolation()
+    val workQueue = workerExecutor.noIsolation()
 
-        repeat(inputBuiltArtifacts.elements.size) { index ->
-            workQueue.submit(ShrinkProtoResourcesAction::class.java) {
-                it.config.set(params.toConfig())
-                it.index.set(index)
-                it.dex.from(dex)
-                it.mappingFile.set(mappingFile)
-            }
-        }
+    repeat(inputBuiltArtifacts.elements.size) { index ->
+      workQueue.submit(ShrinkProtoResourcesAction::class.java) {
+        it.config.set(params.toConfig())
+        it.index.set(index)
+        it.dex.from(dex)
+        it.mappingFile.set(mappingFile)
+      }
+    }
+  }
+
+  class CreationAction(creationConfig: ApplicationCreationConfig) :
+    VariantTaskCreationAction<ShrinkResourcesNewShrinkerTask, ApplicationCreationConfig>(creationConfig) {
+    override val type = ShrinkResourcesNewShrinkerTask::class.java
+    override val name = computeTaskName("shrink", "Res")
+
+    override fun handleProvider(taskProvider: TaskProvider<ShrinkResourcesNewShrinkerTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts.setInitialProvider(taskProvider) { it.params.shrunkResourcesOutputDir }.on(SHRUNK_RESOURCES_PROTO_FORMAT)
+      creationConfig.artifacts.setInitialProvider(taskProvider) { it.params.logFile }.on(R8_MAPPING_RESOURCES)
     }
 
-    class CreationAction(
-        creationConfig: ApplicationCreationConfig
-    ) : VariantTaskCreationAction<ShrinkResourcesNewShrinkerTask, ApplicationCreationConfig>(
-        creationConfig
-    ) {
-        override val type = ShrinkResourcesNewShrinkerTask::class.java
-        override val name = computeTaskName("shrink", "Res")
+    override fun configure(task: ShrinkResourcesNewShrinkerTask) {
+      super.configure(task)
 
-        override fun handleProvider(taskProvider: TaskProvider<ShrinkResourcesNewShrinkerTask>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(taskProvider) {
-                it.params.shrunkResourcesOutputDir
-            }.on(SHRUNK_RESOURCES_PROTO_FORMAT)
-            creationConfig.artifacts.setInitialProvider(taskProvider) {
-                it.params.logFile
-            }.on(R8_MAPPING_RESOURCES)
-        }
-
-        override fun configure(task: ShrinkResourcesNewShrinkerTask) {
-            super.configure(task)
-
-            task.params.initialize(creationConfig)
-            task.dex.from(PackageAndroidArtifact.CreationAction.getDexFolders(creationConfig))
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                SingleArtifact.OBFUSCATION_MAPPING_FILE,
-                task.mappingFile
-            )
-        }
+      task.params.initialize(creationConfig)
+      task.dex.from(PackageAndroidArtifact.CreationAction.getDexFolders(creationConfig))
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.OBFUSCATION_MAPPING_FILE, task.mappingFile)
     }
+  }
 }
 
 abstract class ShrinkProtoResourcesParams : DecoratedWorkParameters {
 
-    abstract val config: Property<ResourceShrinkingConfig>
+  abstract val config: Property<ResourceShrinkingConfig>
 
-    /**
-     * For multi-APKs, each worker action creates 1 APK. Suppose there are N worker actions to
-     * create N APKs. Then, [index] is a number from 0 to N-1, corresponding to the current worker
-     * action / APK.
-     */
-    abstract val index: Property<Int>
+  /**
+   * For multi-APKs, each worker action creates 1 APK. Suppose there are N worker actions to create N APKs. Then, [index] is a number from 0
+   * to N-1, corresponding to the current worker action / APK.
+   */
+  abstract val index: Property<Int>
 
-    abstract val dex: ConfigurableFileCollection
+  abstract val dex: ConfigurableFileCollection
 
-    @get:Optional
-    abstract val mappingFile: RegularFileProperty
-
+  @get:Optional abstract val mappingFile: RegularFileProperty
 }
 
-abstract class ShrinkProtoResourcesAction @Inject constructor() :
-    WorkAction<ShrinkProtoResourcesParams> {
+abstract class ShrinkProtoResourcesAction @Inject constructor() : WorkAction<ShrinkProtoResourcesParams> {
 
-    private val logger = Logging.getLogger(ShrinkResourcesNewShrinkerTask::class.java)
+  private val logger = Logging.getLogger(ShrinkResourcesNewShrinkerTask::class.java)
 
-    override fun execute() {
-        val config = parameters.config.get()
-        val originalProtoFile = config.linkedResourcesInputFiles[parameters.index.get()]
-        val shrunkProtoFile = config.shrunkResourcesOutputFiles[parameters.index.get()]
+  override fun execute() {
+    val config = parameters.config.get()
+    val originalProtoFile = config.linkedResourcesInputFiles[parameters.index.get()]
+    val shrunkProtoFile = config.shrunkResourcesOutputFiles[parameters.index.get()]
 
-        FileUtils.createZipFilesystem(originalProtoFile.toPath()).use { fs ->
-            val dexRecorders = parameters.dex.files.map { DexUsageRecorder(it.toPath()) }
-            val manifestRecorder =
-                ProtoAndroidManifestUsageRecorder(fs.getPath("AndroidManifest.xml"))
-            val toolsRecorders =
-                config.mergedNotCompiledResourcesInputDirs.map{ ToolsAttributeUsageRecorder(it.toPath()) }
-            val gatherer = ProtoResourceTableGatherer(fs.getPath("resources.pb"))
-            val graphBuilder = ProtoResourcesGraphBuilder(
-                resourceRoot = fs.getPath("res"),
-                resourceTable = fs.getPath("resources.pb")
-            )
-            val obfuscationMappings =
-                parameters.mappingFile.orNull?.asFile?.let { ProguardMappingsRecorder(it.toPath()) }
+    FileUtils.createZipFilesystem(originalProtoFile.toPath()).use { fs ->
+      val dexRecorders = parameters.dex.files.map { DexUsageRecorder(it.toPath()) }
+      val manifestRecorder = ProtoAndroidManifestUsageRecorder(fs.getPath("AndroidManifest.xml"))
+      val toolsRecorders = config.mergedNotCompiledResourcesInputDirs.map { ToolsAttributeUsageRecorder(it.toPath()) }
+      val gatherer = ProtoResourceTableGatherer(fs.getPath("resources.pb"))
+      val graphBuilder = ProtoResourcesGraphBuilder(resourceRoot = fs.getPath("res"), resourceTable = fs.getPath("resources.pb"))
+      val obfuscationMappings = parameters.mappingFile.orNull?.asFile?.let { ProguardMappingsRecorder(it.toPath()) }
 
-            ResourceShrinkerImpl(
-                resourcesGatherers = listOf(gatherer),
-                obfuscationMappingsRecorder = obfuscationMappings,
-                usageRecorders = dexRecorders + manifestRecorder + toolsRecorders,
-                graphBuilders = listOf(graphBuilder),
-                debugReporter = LoggerAndFileDebugReporter(
-                    logDebug = { debugMessage ->
-                        if (logger.isEnabled(LogLevel.DEBUG)) {
-                            logger.log(LogLevel.DEBUG, debugMessage)
-                        }
-                    },
-                    logInfo = { infoMessage ->
-                        if (logger.isEnabled(LogLevel.DEBUG)) {
-                            logger.log(LogLevel.DEBUG, infoMessage)
-                        }
-                    },
-                    config.logFile
-                ),
-                supportMultipackages = false,
-            ).use { shrinker ->
-                shrinker.analyze()
-
-                shrinker.rewriteResourcesInApkFormat(
-                    originalProtoFile,
-                    shrunkProtoFile,
-                    LinkedResourcesFormat.PROTO
-                )
-
-                // Dump some stats
-                if (shrinker.unusedResourceCount > 0) {
-                    val before = shrunkProtoFile.length()
-                    val after = shrunkProtoFile.length()
-                    val percent = ((before - after) * 100 / before).toInt()
-
-                    val stat = "Removed unused resources: Proto resource data reduced from " +
-                            "${toKbString(before)}KB to ${toKbString(after)}KB. Removed $percent%"
-                    logger.info(stat)
+      ResourceShrinkerImpl(
+          resourcesGatherers = listOf(gatherer),
+          obfuscationMappingsRecorder = obfuscationMappings,
+          usageRecorders = dexRecorders + manifestRecorder + toolsRecorders,
+          graphBuilders = listOf(graphBuilder),
+          debugReporter =
+            LoggerAndFileDebugReporter(
+              logDebug = { debugMessage ->
+                if (logger.isEnabled(LogLevel.DEBUG)) {
+                  logger.log(LogLevel.DEBUG, debugMessage)
                 }
-            }
+              },
+              logInfo = { infoMessage ->
+                if (logger.isEnabled(LogLevel.DEBUG)) {
+                  logger.log(LogLevel.DEBUG, infoMessage)
+                }
+              },
+              config.logFile,
+            ),
+          supportMultipackages = false,
+        )
+        .use { shrinker ->
+          shrinker.analyze()
+
+          shrinker.rewriteResourcesInApkFormat(originalProtoFile, shrunkProtoFile, LinkedResourcesFormat.PROTO)
+
+          // Dump some stats
+          if (shrinker.unusedResourceCount > 0) {
+            val before = shrunkProtoFile.length()
+            val after = shrunkProtoFile.length()
+            val percent = ((before - after) * 100 / before).toInt()
+
+            val stat =
+              "Removed unused resources: Proto resource data reduced from " +
+                "${toKbString(before)}KB to ${toKbString(after)}KB. Removed $percent%"
+            logger.info(stat)
+          }
         }
     }
+  }
 
-    private fun toKbString(size: Long): String {
-        return (size.toInt() / 1024).toString()
-    }
+  private fun toKbString(size: Long): String {
+    return (size.toInt() / 1024).toString()
+  }
 }

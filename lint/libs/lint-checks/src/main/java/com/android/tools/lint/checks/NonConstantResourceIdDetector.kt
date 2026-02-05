@@ -40,8 +40,8 @@ import org.jetbrains.uast.USwitchExpression
 import org.jetbrains.uast.UastFacade
 
 /**
- * Warns against using non-constant resource IDs in Java switch statement blocks and annotations.
- * This aims to prevent users from using resource IDs as switch cases and annotations.
+ * Warns against using non-constant resource IDs in Java switch statement blocks and annotations. This aims to prevent users from using
+ * resource IDs as switch cases and annotations.
  */
 class NonConstantResourceIdDetector : Detector(), SourceCodeScanner {
 
@@ -95,8 +95,7 @@ class NonConstantResourceIdDetector : Detector(), SourceCodeScanner {
         NON_CONSTANT_RESOURCE_ID,
         element,
         location,
-        "Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, " +
-          "avoid using them $where",
+        "Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, " + "avoid using them $where",
       )
     }
 
@@ -132,8 +131,7 @@ class NonConstantResourceIdDetector : Detector(), SourceCodeScanner {
         priority = 5,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(NonConstantResourceIdDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(NonConstantResourceIdDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
   }
 }

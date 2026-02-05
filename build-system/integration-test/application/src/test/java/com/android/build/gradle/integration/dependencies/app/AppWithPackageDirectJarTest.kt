@@ -27,40 +27,33 @@ import org.junit.Test
 
 class AppWithPackageDirectJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "jar")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    runtimeOnly project(":jar")
-                }
-            """.trimIndent())
-    }
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "jar")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          runtimeOnly project(":jar")
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun checkPackageJarIsPackaged() {
-        project.execute(":app:assembleDebug")
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
-    }
+  @Test
+  fun checkPackageJarIsPackaged() {
+    project.execute(":app:assembleDebug")
+    val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
+  }
 }

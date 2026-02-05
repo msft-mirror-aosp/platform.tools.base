@@ -25,61 +25,54 @@ import com.android.fakeadbserver.services.readStdinByte
 import java.nio.file.attribute.PosixFilePermission
 import kotlin.text.Charsets.UTF_8
 
-class ScreenRecordCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "screenrecord"
-) {
+class ScreenRecordCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "screenrecord") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        if (device.apiLevel <= 18) {
-            shellCommandOutput.writeStderr("/system/bin/sh: screenrecord: not found\n")
-            shellCommandOutput.writeExitCode(255)
-            return
-        }
-
-        if (shellCommandArgs == null) {
-            // Simulate behavior for `adb shell screenrecord` without an output file name specified
-            shellCommandOutput.writeStderr("Must specify output file (see --help).")
-            shellCommandOutput.writeExitCode(2)
-            return
-        }
-        val parameters = shellCommandArgs.split(" ")
-        val outputPath = parameters.last()
-
-        createDeviceFile(device, outputPath, UNFINISHED_RECORDING_CONTENTS)
-
-        // Wait until "Ctrl-C" is returned, then write file contents
-        while (true) {
-            val inputChar = shellCommandOutput.readStdinByte()
-            if (inputChar == 0x03) {
-                createDeviceFile(device, outputPath, FINISHED_RECORDING_CONTENTS)
-                break
-            } else {
-                println("Ignoring character from `stdin`: $inputChar")
-            }
-        }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    if (device.apiLevel <= 18) {
+      shellCommandOutput.writeStderr("/system/bin/sh: screenrecord: not found\n")
+      shellCommandOutput.writeExitCode(255)
+      return
     }
 
-    private fun createDeviceFile(device: DeviceState, outputPath: String, bytes: ByteArray) {
-        DeviceFileState(
-            path = outputPath,
-            permissions = arrayOf(PosixFilePermission.OWNER_READ),
-            modifiedDate = 0,
-            bytes = bytes
-        ).also {
-            device.createFile(it)
-        }
+    if (shellCommandArgs == null) {
+      // Simulate behavior for `adb shell screenrecord` without an output file name specified
+      shellCommandOutput.writeStderr("Must specify output file (see --help).")
+      shellCommandOutput.writeExitCode(2)
+      return
     }
+    val parameters = shellCommandArgs.split(" ")
+    val outputPath = parameters.last()
 
-    companion object {
-        val UNFINISHED_RECORDING_CONTENTS = "unfinishedFiled".toByteArray(UTF_8)
-        val FINISHED_RECORDING_CONTENTS = "finished_video_file".toByteArray(UTF_8)
+    createDeviceFile(device, outputPath, UNFINISHED_RECORDING_CONTENTS)
+
+    // Wait until "Ctrl-C" is returned, then write file contents
+    while (true) {
+      val inputChar = shellCommandOutput.readStdinByte()
+      if (inputChar == 0x03) {
+        createDeviceFile(device, outputPath, FINISHED_RECORDING_CONTENTS)
+        break
+      } else {
+        println("Ignoring character from `stdin`: $inputChar")
+      }
     }
+  }
+
+  private fun createDeviceFile(device: DeviceState, outputPath: String, bytes: ByteArray) {
+    DeviceFileState(path = outputPath, permissions = arrayOf(PosixFilePermission.OWNER_READ), modifiedDate = 0, bytes = bytes).also {
+      device.createFile(it)
+    }
+  }
+
+  companion object {
+    val UNFINISHED_RECORDING_CONTENTS = "unfinishedFiled".toByteArray(UTF_8)
+    val FINISHED_RECORDING_CONTENTS = "finished_video_file".toByteArray(UTF_8)
+  }
 }

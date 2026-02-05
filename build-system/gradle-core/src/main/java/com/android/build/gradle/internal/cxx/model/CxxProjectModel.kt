@@ -18,47 +18,30 @@ package com.android.build.gradle.internal.cxx.model
 
 import java.io.File
 
-/**
- * Holds immutable project-level information for C/C++ build and sync, see README.md
- */
+/** Holds immutable project-level information for C/C++ build and sync, see README.md */
 data class CxxProjectModel(
-    /**
-     * Folder of project-level build.gradle file
-     *   ex, source-root/
-     */
-    val rootBuildGradleFolder: File = File("."),
+  /** Folder of project-level build.gradle file ex, source-root/ */
+  val rootBuildGradleFolder: File = File("."),
 
-    /**
-     * Install folder of SDK
-     *   ex, sdk.dir=/path/to/sdk
-     */
-    val sdkFolder: File = File("."),
+  /** Install folder of SDK ex, sdk.dir=/path/to/sdk */
+  val sdkFolder: File = File("."),
 
-    /**
-     * Whether to build a single ABI for IDE
-     *   default -pandroid.buildOnlyTargetAbi=true
-     */
-    val isBuildOnlyTargetAbiEnabled: Boolean = false,
+  /** Whether to build a single ABI for IDE default -pandroid.buildOnlyTargetAbi=true */
+  val isBuildOnlyTargetAbiEnabled: Boolean = false,
 
-    /** The ABIs to build for IDE
-     *   example -pandroid.injected.build.abi="x86,x86_64"
-     */
-    val ideBuildTargetAbi: String? = null,
+  /** The ABIs to build for IDE example -pandroid.injected.build.abi="x86,x86_64" */
+  val ideBuildTargetAbi: String? = null,
 
-    /**
-     * When true, CMake Build Cohabitation is turned on.
-     */
-    val isCmakeBuildCohabitationEnabled: Boolean = false,
+  /** When true, CMake Build Cohabitation is turned on. */
+  val isCmakeBuildCohabitationEnabled: Boolean = false,
 
-    /**
-     * Directory containing all build attribution file in Chrome trace format. See
-     * [com.android.builder.profile.ChromeTracingProfileConverter.EXTRA_CHROME_TRACE_DIRECTORY].
-     * If null, it means user has not requested generation of build attribution file.
-     */
-    val chromeTraceJsonFolder: File? = null,
+  /**
+   * Directory containing all build attribution file in Chrome trace format. See
+   * [com.android.builder.profile.ChromeTracingProfileConverter.EXTRA_CHROME_TRACE_DIRECTORY]. If null, it means user has not requested
+   * generation of build attribution file.
+   */
+  val chromeTraceJsonFolder: File? = null,
 
-    /**
-     * Feature flag enabling prefab for the project.
-     */
-    val isPrefabEnabled: Boolean = false,
+  /** Feature flag enabling prefab for the project. */
+  val isPrefabEnabled: Boolean = false,
 )

@@ -34,9 +34,8 @@ import org.jetbrains.uast.isInjectionHost
 import org.jetbrains.uast.skipParenthesizedExprDown
 
 /**
- * Kotlin's "by lazy" looks like an easy replacement for lazy initialization in Java, but it's
- * actually much more involved than it looks. This detector flags some cases where we should avoid
- * it.
+ * Kotlin's "by lazy" looks like an easy replacement for lazy initialization in Java, but it's actually much more involved than it looks.
+ * This detector flags some cases where we should avoid it.
  */
 class ByLazyDetector : Detector(), SourceCodeScanner {
 
@@ -99,9 +98,7 @@ class ByLazyDetector : Detector(), SourceCodeScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (
-      !context.evaluator.isMemberInClass(node.resolve()) { fqName ->
-        fqName == "kotlin.LazyKt__LazyJVMKt" || fqName == "kotlin.LazyKt"
-      }
+      !context.evaluator.isMemberInClass(node.resolve()) { fqName -> fqName == "kotlin.LazyKt__LazyJVMKt" || fqName == "kotlin.LazyKt" }
     ) {
       return
     }
@@ -126,8 +123,7 @@ class ByLazyDetector : Detector(), SourceCodeScanner {
       if (expressions.size == 1) {
         val expression = expressions[0]
         if (expression is UReturnExpression) {
-          val returnExpression =
-            expression.returnExpression?.skipParenthesizedExprDown() ?: return false
+          val returnExpression = expression.returnExpression?.skipParenthesizedExprDown() ?: return false
           val selector = returnExpression.findSelector()
           return if (selector is UCallExpression) {
             val name = selector.methodName ?: selector.methodIdentifier?.name

@@ -19,25 +19,21 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ApplicationPublishing
 import com.android.build.api.dsl.ApplicationSingleVariant
 import com.android.build.gradle.internal.services.DslServices
-import org.gradle.api.Action
 import javax.inject.Inject
+import org.gradle.api.Action
 
-abstract class ApplicationPublishingImpl@Inject constructor(dslService: DslServices)
-    : ApplicationPublishing, AbstractPublishing<ApplicationSingleVariantImpl>(dslService) {
+abstract class ApplicationPublishingImpl @Inject constructor(dslService: DslServices) :
+  ApplicationPublishing, AbstractPublishing<ApplicationSingleVariantImpl>(dslService) {
 
-    override fun singleVariant(variantName: String) {
-        addSingleVariant(variantName, ApplicationSingleVariantImpl::class.java)
-    }
+  override fun singleVariant(variantName: String) {
+    addSingleVariant(variantName, ApplicationSingleVariantImpl::class.java)
+  }
 
-    override fun singleVariant(
-        variantName: String,
-        action: ApplicationSingleVariant.() -> Unit
-    ) {
-        addSingleVariantAndConfigure(variantName, ApplicationSingleVariantImpl::class.java, action)
-    }
+  override fun singleVariant(variantName: String, action: ApplicationSingleVariant.() -> Unit) {
+    addSingleVariantAndConfigure(variantName, ApplicationSingleVariantImpl::class.java, action)
+  }
 
-    fun singleVariant(variantName: String, action: Action<ApplicationSingleVariant>) {
-        addSingleVariantAndConfigure(variantName, ApplicationSingleVariantImpl::class.java) {
-            action.execute(this) }
-    }
+  fun singleVariant(variantName: String, action: Action<ApplicationSingleVariant>) {
+    addSingleVariantAndConfigure(variantName, ApplicationSingleVariantImpl::class.java) { action.execute(this) }
+  }
 }

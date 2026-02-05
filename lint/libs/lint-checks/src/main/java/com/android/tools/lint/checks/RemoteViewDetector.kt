@@ -51,8 +51,7 @@ import org.xmlpull.v1.XmlPullParserException
 /** Checks related to RemoteViews. */
 class RemoteViewDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(RemoteViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(RemoteViewDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Unsupported views in a remote view. */
     @JvmField
@@ -79,11 +78,7 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     return listOf("android.widget.RemoteViews")
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val arguments = node.valueArguments
     if (arguments.size != 2) return
     val argument = arguments[1]
@@ -122,10 +117,9 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Checks the [layouts] that are known to be used with a `RemoteView` to make sure they only
-   * reference views safe with remote views. Reports true if a problem is reported. If [node] is not
-   * null, the error will be reported on that AST call expression, otherwise it will be applied to
-   * the [incident] (used for partial analysis).
+   * Checks the [layouts] that are known to be used with a `RemoteView` to make sure they only reference views safe with remote views.
+   * Reports true if a problem is reported. If [node] is not null, the error will be reported on that AST call expression, otherwise it will
+   * be applied to the [incident] (used for partial analysis).
    */
   private fun checkLayouts(
     context: Context,

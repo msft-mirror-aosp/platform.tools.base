@@ -29,61 +29,64 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * When the [BooleanOption.USE_NEW_DSL] flag is removed, also rename this test to
- * `ApplicationIdReset`, as the current [ApplicationIdReset] will have been deleted.
+ * When the [BooleanOption.USE_NEW_DSL] flag is removed, also rename this test to `ApplicationIdReset`, as the current [ApplicationIdReset]
+ * will have been deleted.
  */
 class ApplicationIdResetUseNewDsl {
 
-    @get:Rule
-    val rule = GradleRule.configure().from {
-        androidApplication {
-            android {
-                defaultConfig {
-                    applicationId = "com.flavors.appidtest"
-                }
-                flavorDimensions += listOf("build", "price")
-                productFlavors {
-                    create("app1") { it.dimension = "build" }
-                    create("app2") { it.dimension = "build" }
-                    create("free") { it.dimension = "price" }
-                    create("paid") { it.dimension = "price" }
-                }
-            }
-            pluginCallbacks += Callback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidApplication {
+        android {
+          defaultConfig { applicationId = "com.flavors.appidtest" }
+          flavorDimensions += listOf("build", "price")
+          productFlavors {
+            create("app1") { it.dimension = "build" }
+            create("app2") { it.dimension = "build" }
+            create("free") { it.dimension = "price" }
+            create("paid") { it.dimension = "price" }
+          }
         }
+        pluginCallbacks += Callback::class.java
+      }
     }
 
-    class Callback : ApplicationComponentCallback {
+  class Callback : ApplicationComponentCallback {
 
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.apply {
-                onVariants(selector().all()) { variant ->
-                    val appId = "com.flavors." + when(variant.flavorName) {
-                        "app1Free" -> "app1.free"
-                        "app2Free" -> "app2.free"
-                        "app1Paid" -> "app1.paid"
-                        "app2Paid" -> "app2.paid"
-                        else -> throw RuntimeException("Unknown variant flavorName: ${variant.flavorName}")
-                    }
-                    variant.applicationId.set(appId)
-                }
-            }
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.apply {
+        onVariants(selector().all()) { variant ->
+          val appId =
+            "com.flavors." +
+              when (variant.flavorName) {
+                "app1Free" -> "app1.free"
+                "app2Free" -> "app2.free"
+                "app1Paid" -> "app1.paid"
+                "app2Paid" -> "app2.paid"
+                else -> throw RuntimeException("Unknown variant flavorName: ${variant.flavorName}")
+              }
+          variant.applicationId.set(appId)
         }
+      }
     }
+  }
 
-    @Test
-    fun checkApplicationIdDebug() {
-        rule.build.run {
-            executor.run("assembleApp1FreeDebug")
-            val androidProject = modelBuilder.fetchModels().container.getProject().androidProject!!
-            val variant = androidProject.getVariantByName("app1FreeDebug")
-            val listingFile = getListingFile(variant.mainArtifact.assembleTaskOutputListingFile!!)
-            assertAbout(PathSubject.paths()).that(listingFile.toPath()).contains("""
+  @Test
+  fun checkApplicationIdDebug() {
+    rule.build.run {
+      executor.run("assembleApp1FreeDebug")
+      val androidProject = modelBuilder.fetchModels().container.getProject().androidProject!!
+      val variant = androidProject.getVariantByName("app1FreeDebug")
+      val listingFile = getListingFile(variant.mainArtifact.assembleTaskOutputListingFile!!)
+      assertAbout(PathSubject.paths())
+        .that(listingFile.toPath())
+        .contains(
+          """
                 |  "applicationId": "com.flavors.app1.free"
-            """.trimMargin("|"))
-        }
+            """
+            .trimMargin("|")
+        )
     }
+  }
 }

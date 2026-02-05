@@ -21,50 +21,39 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledLifecycleTasksTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: LifecycleTasks = mock()
+  private val delegate: LifecycleTasks = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: LifecycleTasks by lazy {
-        AnalyticsEnabledLifecycleTasks(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: LifecycleTasks by lazy { AnalyticsEnabledLifecycleTasks(delegate, stats) }
 
-    @Test
-    fun registerPreBuild() {
-        proxy.registerPreBuild()
+  @Test
+  fun registerPreBuild() {
+    proxy.registerPreBuild()
 
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.single().type)
+      .isEqualTo(VariantPropertiesMethodType.REGISTER_PRE_BUILD_VALUE)
+    verify(delegate, times(1)).registerPreBuild()
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.single().type
-        ).isEqualTo(
-                VariantPropertiesMethodType.REGISTER_PRE_BUILD_VALUE,
-        )
-        verify(delegate, times(1)).registerPreBuild()
-    }
+  @Test
+  fun registerApkInstallation() {
+    proxy.registerPreInstallation()
 
-    @Test
-    fun registerApkInstallation() {
-        proxy.registerPreInstallation()
-
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.single().type
-        ).isEqualTo(
-            VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE,
-        )
-        verify(delegate, times(1)).registerPreInstallation()
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.single().type)
+      .isEqualTo(VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE)
+    verify(delegate, times(1)).registerPreInstallation()
+  }
 }

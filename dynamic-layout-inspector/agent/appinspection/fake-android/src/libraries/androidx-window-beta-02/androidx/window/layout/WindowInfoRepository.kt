@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +20,13 @@ import android.app.Activity
 import kotlinx.coroutines.flow.Flow
 
 interface WindowInfoRepository {
-    companion object {
-        lateinit var instance: WindowInfoRepository
+  companion object {
+    lateinit var instance: WindowInfoRepository
 
-        fun getOrCreate(activity: Activity) : WindowInfoRepository = instance
-    }
+    fun getOrCreate(activity: Activity): WindowInfoRepository = instance
+  }
 
-    val windowLayoutInfo: Flow<WindowLayoutInfo>
+  val windowLayoutInfo: Flow<WindowLayoutInfo>
 }
 
-class WindowInfoRepositoryImpl(
-    override val windowLayoutInfo: Flow<WindowLayoutInfo>
-): WindowInfoRepository
+class WindowInfoRepositoryImpl(override val windowLayoutInfo: Flow<WindowLayoutInfo>) : WindowInfoRepository

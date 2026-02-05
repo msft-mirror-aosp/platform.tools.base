@@ -34,98 +34,84 @@ import com.android.build.gradle.options.StringOption
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class KotlinMultiplatformAndroidVariantBuilderImpl @Inject constructor(
-    globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-    dslInfo: KmpVariantDslInfo,
-    componentIdentity: ComponentIdentity,
-    variantBuilderServices: VariantBuilderServices
-) : VariantBuilderImpl(
-    globalVariantBuilderConfig,
-    dslInfo,
-    componentIdentity,
-    variantBuilderServices
-), KotlinMultiplatformAndroidVariantBuilder, InternalVariantBuilder {
+open class KotlinMultiplatformAndroidVariantBuilderImpl
+@Inject
+constructor(
+  globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+  dslInfo: KmpVariantDslInfo,
+  componentIdentity: ComponentIdentity,
+  variantBuilderServices: VariantBuilderServices,
+) :
+  VariantBuilderImpl(globalVariantBuilderConfig, dslInfo, componentIdentity, variantBuilderServices),
+  KotlinMultiplatformAndroidVariantBuilder,
+  InternalVariantBuilder {
 
-    override var androidTestEnabled: Boolean
-        get() = androidTest.enable
-        set(value) {
-            androidTest.enable = value
-        }
-
-    override var enableAndroidTest: Boolean
-        get() = androidTest.enable
-        set(value) {
-            androidTest.enable = value
-        }
-
-    override var enableTestFixtures: Boolean = dslInfo.testFixtures?.enable ?: false
-
-    override fun <T : VariantBuilder> createUserVisibleVariantObject(
-        projectServices: ProjectServices,
-        stats: GradleBuildVariant.Builder?
-    ): T =
-        if (stats == null) {
-            this as T
-        } else {
-            projectServices.objectFactory.newInstance(
-                AnalyticsEnabledKotlinMultiplatformAndroidVariantBuilder::class.java,
-                this,
-                stats
-            ) as T
-        }
-
-    override var targetSdk: Int?
-        get() = super.targetSdk
-        set(value) {
-            variantBuilderServices.deprecationReporter.reportObsoleteUsage(
-                "libraryVariant.targetSdk",
-                DeprecationReporter.DeprecationTarget.VERSION_9_0
-            )
-            super.targetSdk = value
-        }
-
-    override var targetSdkPreview: String?
-        get() = super.targetSdkPreview
-        set(value) {
-            variantBuilderServices.deprecationReporter.reportObsoleteUsage(
-                "libraryVariant.targetSdkPreview",
-                DeprecationReporter.DeprecationTarget.VERSION_9_0
-            )
-            super.targetSdkPreview = value
-        }
-
-    override var isMinifyEnabled: Boolean =
-        dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-
-    override val deviceTests: Map<String, DeviceTestBuilderImpl> =
-        DeviceTestBuilderImpl.create(
-            dslInfo.dslDefinedDeviceTests,
-            variantBuilderServices,
-            globalVariantBuilderConfig,
-            { targetSdkVersion },
-            dslInfo.androidTestMultiDexEnabled,
-            ProfilingMode.getProfilingModeType(
-                variantBuilderServices.projectOptions[StringOption.PROFILING_MODE]
-            ).isDebuggable == true
-        )
-
-    override val androidTest: AndroidTestBuilder by lazy(LazyThreadSafetyMode.NONE) {
-        AndroidTestBuilderImpl(
-            deviceTests.get(DeviceTestBuilder.ANDROID_TEST_TYPE)
-                ?: throw RuntimeException("No androidTest component defined on this variant")
-        )
+  override var androidTestEnabled: Boolean
+    get() = androidTest.enable
+    set(value) {
+      androidTest.enable = value
     }
 
-    override val hostTests: Map<String, HostTestBuilder> =
-        HostTestBuilderImpl.create(
-            dslInfo.dslDefinedHostTests,
-            dslInfo.experimentalProperties,
-        )
+  override var enableAndroidTest: Boolean
+    get() = androidTest.enable
+    set(value) {
+      androidTest.enable = value
+    }
 
-    override val suites: Map<String, TestSuiteBuilder> =
-        TestSuiteBuilderImpl.create(
-            dslInfo.dslDefinedTestSuites,
-            variantBuilderServices,
-            dslInfo.experimentalProperties,
-        )
+  override var enableTestFixtures: Boolean = dslInfo.testFixtures?.enable ?: false
+
+  override fun <T : VariantBuilder> createUserVisibleVariantObject(
+    projectServices: ProjectServices,
+    stats: GradleBuildVariant.Builder?,
+  ): T =
+    if (stats == null) {
+      this as T
+    } else {
+      projectServices.objectFactory.newInstance(AnalyticsEnabledKotlinMultiplatformAndroidVariantBuilder::class.java, this, stats) as T
+    }
+
+  override var targetSdk: Int?
+    get() = super.targetSdk
+    set(value) {
+      variantBuilderServices.deprecationReporter.reportObsoleteUsage(
+        "libraryVariant.targetSdk",
+        DeprecationReporter.DeprecationTarget.VERSION_9_0,
+      )
+      super.targetSdk = value
+    }
+
+  override var targetSdkPreview: String?
+    get() = super.targetSdkPreview
+    set(value) {
+      variantBuilderServices.deprecationReporter.reportObsoleteUsage(
+        "libraryVariant.targetSdkPreview",
+        DeprecationReporter.DeprecationTarget.VERSION_9_0,
+      )
+      super.targetSdkPreview = value
+    }
+
+  override var isMinifyEnabled: Boolean = dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
+
+  override val deviceTests: Map<String, DeviceTestBuilderImpl> =
+    DeviceTestBuilderImpl.create(
+      dslInfo.dslDefinedDeviceTests,
+      variantBuilderServices,
+      globalVariantBuilderConfig,
+      { targetSdkVersion },
+      dslInfo.androidTestMultiDexEnabled,
+      ProfilingMode.getProfilingModeType(variantBuilderServices.projectOptions[StringOption.PROFILING_MODE]).isDebuggable == true,
+    )
+
+  override val androidTest: AndroidTestBuilder by
+    lazy(LazyThreadSafetyMode.NONE) {
+      AndroidTestBuilderImpl(
+        deviceTests.get(DeviceTestBuilder.ANDROID_TEST_TYPE) ?: throw RuntimeException("No androidTest component defined on this variant")
+      )
+    }
+
+  override val hostTests: Map<String, HostTestBuilder> =
+    HostTestBuilderImpl.create(dslInfo.dslDefinedHostTests, dslInfo.experimentalProperties)
+
+  override val suites: Map<String, TestSuiteBuilder> =
+    TestSuiteBuilderImpl.create(dslInfo.dslDefinedTestSuites, variantBuilderServices, dslInfo.experimentalProperties)
 }

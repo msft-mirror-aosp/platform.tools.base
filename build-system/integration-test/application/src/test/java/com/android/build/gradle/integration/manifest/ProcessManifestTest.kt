@@ -22,65 +22,66 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject.Companio
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class ProcessManifestTest {
-    @JvmField @Rule
-    var project: GradleTestProject = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @JvmField
+  @Rule
+  var project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
 
-    @Test
-    fun build() {
-        project.buildFile.appendText("""
-            import com.android.build.api.variant.AndroidVersion
+  @Test
+  fun build() {
+    project.buildFile.appendText(
+      """
+      import com.android.build.api.variant.AndroidVersion
 
-            androidComponents {
-                beforeVariants(selector().all(), { variant ->
-                    variant.minSdk = 21
-                    variant.maxSdk = 29
-                    variant.targetSdk = 22
-                })
-            }
-        """.trimIndent())
+      androidComponents {
+          beforeVariants(selector().all(), { variant ->
+              variant.minSdk = 21
+              variant.maxSdk = 29
+              variant.targetSdk = 22
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        project.executor().run("processDebugManifest")
-        val manifestContent =
-            File(project.buildDir, "intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml")
-                .readLines().joinToString("\n")
-        Truth.assertThat(manifestContent).contains("android:minSdkVersion=\"21\"")
-        Truth.assertThat(manifestContent).doesNotContain("android:targetSdkVersion")
-        Truth.assertThat(manifestContent).contains("android:maxSdkVersion=\"29\"")
-    }
+    project.executor().run("processDebugManifest")
+    val manifestContent =
+      File(project.buildDir, "intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml").readLines().joinToString("\n")
+    Truth.assertThat(manifestContent).contains("android:minSdkVersion=\"21\"")
+    Truth.assertThat(manifestContent).doesNotContain("android:targetSdkVersion")
+    Truth.assertThat(manifestContent).contains("android:maxSdkVersion=\"29\"")
+  }
 
-    // Regression test for b/237450413
-    @Test
-    fun testSourceManifestDeletion() {
-        val manifestFile = project.file("src/main/AndroidManifest.xml")
-        PathSubject.assertThat(manifestFile).isFile()
-        project.executor().run("processDebugManifest")
-        FileUtils.deleteIfExists(manifestFile)
-        PathSubject.assertThat(manifestFile).doesNotExist()
-        project.executor().run("processDebugManifest")
-    }
+  // Regression test for b/237450413
+  @Test
+  fun testSourceManifestDeletion() {
+    val manifestFile = project.file("src/main/AndroidManifest.xml")
+    PathSubject.assertThat(manifestFile).isFile()
+    project.executor().run("processDebugManifest")
+    FileUtils.deleteIfExists(manifestFile)
+    PathSubject.assertThat(manifestFile).doesNotExist()
+    project.executor().run("processDebugManifest")
+  }
 
-    // This should eventually be a warning, but not until there's AUA support (b/272815813)
-    @Test
-    fun testNoWarningsForApplicationAttributes() {
-        val manifestFile = project.file("src/main/AndroidManifest.xml")
-        FileUtils.deleteIfExists(manifestFile)
-        FileUtils.createFile(
-            manifestFile,
-            """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application android:extractNativeLibs="true"/>
-                </manifest>
-            """.trimIndent())
-        val result = project.executor().run("assembleDebug")
-        result.stdout.use {
-            assertThat(it).doesNotContain("android:extractNativeLibs should not be specified")
-        }
-    }
+  // This should eventually be a warning, but not until there's AUA support (b/272815813)
+  @Test
+  fun testNoWarningsForApplicationAttributes() {
+    val manifestFile = project.file("src/main/AndroidManifest.xml")
+    FileUtils.deleteIfExists(manifestFile)
+    FileUtils.createFile(
+      manifestFile,
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <application android:extractNativeLibs="true"/>
+      </manifest>
+      """
+        .trimIndent(),
+    )
+    val result = project.executor().run("assembleDebug")
+    result.stdout.use { assertThat(it).doesNotContain("android:extractNativeLibs should not be specified") }
+  }
 }

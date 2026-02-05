@@ -36,29 +36,21 @@ class InterceptionRuleImpl(proto: InterceptRule) : InterceptionRule {
     transformations =
       proto.transformationList.mapNotNull { transformationProto ->
         when {
-          transformationProto.hasStatusCodeReplaced() ->
-            StatusCodeReplacedTransformation(transformationProto.statusCodeReplaced)
-          transformationProto.hasHeaderAdded() ->
-            HeaderAddedTransformation(transformationProto.headerAdded)
-          transformationProto.hasHeaderReplaced() ->
-            HeaderReplacedTransformation(transformationProto.headerReplaced)
-          transformationProto.hasBodyReplaced() ->
-            BodyReplacedTransformation(transformationProto.bodyReplaced)
-          transformationProto.hasBodyModified() ->
-            BodyModifiedTransformation(transformationProto.bodyModified)
+          transformationProto.hasStatusCodeReplaced() -> StatusCodeReplacedTransformation(transformationProto.statusCodeReplaced)
+          transformationProto.hasHeaderAdded() -> HeaderAddedTransformation(transformationProto.headerAdded)
+          transformationProto.hasHeaderReplaced() -> HeaderReplacedTransformation(transformationProto.headerReplaced)
+          transformationProto.hasBodyReplaced() -> BodyReplacedTransformation(transformationProto.bodyReplaced)
+          transformationProto.hasBodyModified() -> BodyModifiedTransformation(transformationProto.bodyModified)
           else -> null
         }
       }
   }
 
-  override fun transform(
-    connection: NetworkConnection,
-    response: NetworkResponse,
-  ): NetworkResponse {
+  override fun transform(connection: NetworkConnection, response: NetworkResponse): NetworkResponse {
     if (criteria.appliesTo(connection)) {
-      return transformations.fold(
-        response.copy(interception = response.interception.copy(criteriaMatched = true))
-      ) { intermediateResponse, transformation ->
+      return transformations.fold(response.copy(interception = response.interception.copy(criteriaMatched = true))) {
+        intermediateResponse,
+        transformation ->
         transformation.transform(intermediateResponse)
       }
     }

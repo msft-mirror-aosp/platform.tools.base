@@ -27,6 +27,7 @@ import com.android.builder.core.BuilderConstants
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.resources.ResourceSet
 import com.google.common.annotations.VisibleForTesting
+import java.io.File
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
@@ -44,243 +45,193 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.work.Incremental
-import java.io.File
 
 abstract class DependencyResourcesComputer {
 
-    /**
-     * Each source set within this project is recorded separately as an input.
-     *
-     * This allows us to:
-     * 1. Preserve the order between sourcesets. It doesn't work to flatten these
-     * to a single [PathSensitive.RELATIVE] input, as that would ignore ordering.
-     * 2. Account for multiple source files with the same name. It doesn't work to use the
-     * order-preserving [org.gradle.api.tasks.Classpath], as it ignores duplicate files from
-     * fingerprinting.
-    */
-    abstract class ResourceSourceSetInput {
-        @get:InputFiles
-        @get:PathSensitive(PathSensitivity.RELATIVE)
-        @get:Incremental
-        @get:IgnoreEmptyDirectories
-        abstract val sourceDirectories: ConfigurableFileCollection
-    }
-
-    /** Local resources from within this project */
-    @get:Nested
-    abstract val resources: MapProperty<String, ResourceSourceSetInput>
-
-    @get:Internal
-    abstract val libraries: Property<ArtifactCollection>
-
-    /** Resources from dependencies (e.g. in apps and tests) */
+  /**
+   * Each source set within this project is recorded separately as an input.
+   *
+   * This allows us to:
+   * 1. Preserve the order between sourcesets. It doesn't work to flatten these to a single [PathSensitive.RELATIVE] input, as that would
+   *    ignore ordering.
+   * 2. Account for multiple source files with the same name. It doesn't work to use the order-preserving [org.gradle.api.tasks.Classpath],
+   *    as it ignores duplicate files from fingerprinting.
+   */
+  abstract class ResourceSourceSetInput {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Incremental
-    abstract val librarySourceSets: ConfigurableFileCollection
+    @get:IgnoreEmptyDirectories
+    abstract val sourceDirectories: ConfigurableFileCollection
+  }
 
-    @get:InputFiles
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val generatedResOutputDir: ConfigurableFileCollection
+  /** Local resources from within this project */
+  @get:Nested abstract val resources: MapProperty<String, ResourceSourceSetInput>
 
-    @get:InputFiles
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val generatedLocaleConfig: DirectoryProperty
+  @get:Internal abstract val libraries: Property<ArtifactCollection>
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val extraGeneratedResFolders: ConfigurableFileCollection
+  /** Resources from dependencies (e.g. in apps and tests) */
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Incremental abstract val librarySourceSets: ConfigurableFileCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val staticResFolders: ConfigurableFileCollection
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val generatedResOutputDir: ConfigurableFileCollection
 
-    @get:Input
-    abstract val validateEnabled: Property<Boolean>
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val generatedLocaleConfig: DirectoryProperty
 
-    private fun addLibraryResources(
-        libraries: ArtifactCollection?,
-        resourceSetList: MutableList<ResourceSet>,
-        resourceArePrecompiled: Boolean,
-        aaptEnv: String?
-    ) {
-        // add at the beginning since the libraries are less important than the folder based
-        // resource sets.
-        // get the dependencies first
-        libraries?.let {
-            val libArtifacts = it.artifacts
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val extraGeneratedResFolders: ConfigurableFileCollection
 
-            // the order of the artifact is descending order, so we need to reverse it.
-            for (artifact in libArtifacts) {
-                val resourceSet = ResourceSet(
-                    ProcessApplicationManifest.getArtifactName(artifact),
-                    ResourceNamespace.RES_AUTO, null,
-                    validateEnabled.get(),
-                    aaptEnv
-                )
-                resourceSet.isFromDependency = true
-                resourceSet.addSource(artifact.file)
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val staticResFolders: ConfigurableFileCollection
 
-                if (resourceArePrecompiled) {
-                    // For values resources we impose stricter rules different from aapt so they need to go
-                    // through the merging step.
-                    resourceSet.setAllowedFolderPrefix(FD_RES_VALUES)
-                }
+  @get:Input abstract val validateEnabled: Property<Boolean>
 
-                // add to 0 always, since we need to reverse the order.
-                resourceSetList.add(0, resourceSet)
-            }
+  private fun addLibraryResources(
+    libraries: ArtifactCollection?,
+    resourceSetList: MutableList<ResourceSet>,
+    resourceArePrecompiled: Boolean,
+    aaptEnv: String?,
+  ) {
+    // add at the beginning since the libraries are less important than the folder based
+    // resource sets.
+    // get the dependencies first
+    libraries?.let {
+      val libArtifacts = it.artifacts
+
+      // the order of the artifact is descending order, so we need to reverse it.
+      for (artifact in libArtifacts) {
+        val resourceSet =
+          ResourceSet(
+            ProcessApplicationManifest.getArtifactName(artifact),
+            ResourceNamespace.RES_AUTO,
+            null,
+            validateEnabled.get(),
+            aaptEnv,
+          )
+        resourceSet.isFromDependency = true
+        resourceSet.addSource(artifact.file)
+
+        if (resourceArePrecompiled) {
+          // For values resources we impose stricter rules different from aapt so they need to go
+          // through the merging step.
+          resourceSet.setAllowedFolderPrefix(FD_RES_VALUES)
         }
+
+        // add to 0 always, since we need to reverse the order.
+        resourceSetList.add(0, resourceSet)
+      }
+    }
+  }
+
+  /**
+   * Computes resource sets for merging, if [precompileDependenciesResources] flag is enabled we filter out the non-values resources as it's
+   * precompiled and is consumed directly in the linking step.
+   */
+  @JvmOverloads
+  fun compute(
+    precompileDependenciesResources: Boolean = false,
+    aaptEnv: String?,
+    renderscriptResOutputDir: Provider<Directory>,
+  ): List<ResourceSet> {
+    val sourceFolderSets = getResSet(resources.get().mapValues { it.value.sourceDirectories }, aaptEnv)
+    var size = sourceFolderSets.size
+    libraries.orNull?.let { size += it.artifacts.size }
+
+    val resourceSetList = ArrayList<ResourceSet>(size)
+
+    addLibraryResources(libraries.orNull, resourceSetList, precompileDependenciesResources, aaptEnv)
+
+    // add the folder based next
+    resourceSetList.addAll(sourceFolderSets)
+
+    val generatedResFolders = mutableListOf<File>()
+
+    if (renderscriptResOutputDir.isPresent) {
+      generatedResFolders.add(renderscriptResOutputDir.get().asFile)
     }
 
-    /**
-     * Computes resource sets for merging, if [precompileDependenciesResources] flag is enabled we
-     * filter out the non-values resources as it's precompiled and is consumed directly in the
-     * linking step.
-     */
-    @JvmOverloads
-    fun compute(
-        precompileDependenciesResources: Boolean = false,
-        aaptEnv: String?,
-        renderscriptResOutputDir: Provider<Directory>
-    ): List<ResourceSet> {
-        val sourceFolderSets = getResSet(resources.get().mapValues { it.value.sourceDirectories }, aaptEnv)
-        var size = sourceFolderSets.size
-        libraries.orNull?.let {
-            size += it.artifacts.size
-        }
-
-        val resourceSetList = ArrayList<ResourceSet>(size)
-
-        addLibraryResources(
-            libraries.orNull,
-            resourceSetList,
-            precompileDependenciesResources,
-            aaptEnv
-        )
-
-        // add the folder based next
-        resourceSetList.addAll(sourceFolderSets)
-
-        val generatedResFolders = mutableListOf<File>()
-
-        if (renderscriptResOutputDir.isPresent) {
-            generatedResFolders.add(renderscriptResOutputDir.get().asFile)
-        }
-
-        generatedResFolders.addAll(generatedResOutputDir.files)
-        generatedResFolders.addAll(extraGeneratedResFolders.files)
-        if (generatedLocaleConfig.isPresent) {
-            generatedResFolders.add(generatedLocaleConfig.get().asFile)
-        }
-
-        // if generated res files exist, add them to the generated source set.
-        if (generatedResFolders.isNotEmpty() && sourceFolderSets.isNotEmpty()) {
-            val generatedResourceSet = sourceFolderSets.find {
-                it.configName.equals(BuilderConstants.GENERATED)
-            } ?: throw RuntimeException("Generated resource set does not exist")
-
-            generatedResourceSet.addSources(generatedResFolders)
-        }
-
-        val staticRes = mutableListOf<File>()
-        staticRes.addAll(staticResFolders.files)
-        if (staticRes.isNotEmpty() && sourceFolderSets.isNotEmpty()) {
-            val staticResourceSet = sourceFolderSets.find {
-                it.configName.equals("variant")
-            } ?: throw RuntimeException("Static resource set does not exist")
-
-            staticResourceSet.addSources(staticRes)
-        }
-
-        return resourceSetList
+    generatedResFolders.addAll(generatedResOutputDir.files)
+    generatedResFolders.addAll(extraGeneratedResFolders.files)
+    if (generatedLocaleConfig.isPresent) {
+      generatedResFolders.add(generatedLocaleConfig.get().asFile)
     }
 
-    private fun getResSet(
-        resourcesMap: Map<String, FileCollection>, aaptEnv: String?)
-    : List<ResourceSet> {
-        return resourcesMap.map {
-            val resourceSet = ResourceSet(
-                it.key, ResourceNamespace.RES_AUTO, null, validateEnabled.get(), aaptEnv)
-            resourceSet.addSources(it.value.files)
-            resourceSet
-        }
+    // if generated res files exist, add them to the generated source set.
+    if (generatedResFolders.isNotEmpty() && sourceFolderSets.isNotEmpty()) {
+      val generatedResourceSet =
+        sourceFolderSets.find { it.configName.equals(BuilderConstants.GENERATED) }
+          ?: throw RuntimeException("Generated resource set does not exist")
+
+      generatedResourceSet.addSources(generatedResFolders)
     }
 
-    fun initFromVariantScope(
-        creationConfig: ComponentCreationConfig,
-        libraryDependencies: ArtifactCollection?,
-    ) {
-        val projectOptions = creationConfig.services.projectOptions
-        val services = creationConfig.services
+    val staticRes = mutableListOf<File>()
+    staticRes.addAll(staticResFolders.files)
+    if (staticRes.isNotEmpty() && sourceFolderSets.isNotEmpty()) {
+      val staticResourceSet =
+        sourceFolderSets.find { it.configName.equals("variant") } ?: throw RuntimeException("Static resource set does not exist")
 
-        validateEnabled.setDisallowChanges(!projectOptions.get(BooleanOption.DISABLE_RESOURCE_VALIDATION))
-        libraryDependencies?.let {
-            this.libraries.set(it)
-            this.librarySourceSets.from(it.artifactFiles)
-        }
-        this.libraries.disallowChanges()
-        this.librarySourceSets.disallowChanges()
-
-        creationConfig.sources.res { resSources ->
-            addResourceSets(
-                resSources.getVariantSourcesWithFilter {
-                    !it.isUserAdded && !it.isGenerated
-                }
-            ) { services.newInstance(ResourceSourceSetInput::class.java) }
-
-            // Add the user added static resource directories
-            resSources.getVariantSources().forEach { directoryEntries ->
-                directoryEntries.directoryEntries
-                    .filter {
-                        it.isUserAdded && !it.isGenerated
-                    }
-                    .forEach {
-                        it.addTo(creationConfig.services.projectInfo.projectDirectory, staticResFolders)
-                    }
-            }
-            staticResFolders.disallowChanges()
-
-            // Add the user added generated directories to the extraGeneratedResFolders.
-            // this should be cleaned up once the old variant API is removed.
-            resSources.getVariantSources().forEach { directoryEntries ->
-                directoryEntries.directoryEntries
-                    .filter {
-                        it.isUserAdded && it.isGenerated
-                    }
-                    .forEach {
-                        it.addTo(creationConfig.services.projectInfo.projectDirectory, extraGeneratedResFolders)
-                    }
-            }
-            extraGeneratedResFolders.disallowChanges()
-        }
-        resources.disallowChanges()
-
-        if (creationConfig.artifacts.get(InternalArtifactType.GENERATED_RES).isPresent) {
-            generatedResOutputDir.fromDisallowChanges(
-                creationConfig.artifacts.get(InternalArtifactType.GENERATED_RES)
-            )
-        }
-
-        if ((creationConfig.androidResources as? ApplicationAndroidResources)?.generateLocaleConfig == true) {
-            generatedLocaleConfig.set(
-                creationConfig.artifacts.get(InternalArtifactType.GENERATED_LOCALE_CONFIG)
-            )
-        }
-        generatedLocaleConfig.disallowChanges()
+      staticResourceSet.addSources(staticRes)
     }
 
-    @VisibleForTesting
-    fun addResourceSets(
-        resourcesMap: Map<String, FileCollection>,
-        blockFactory: () -> ResourceSourceSetInput
-    ) {
-        resourcesMap.forEach{(name, collectionOfDirectories) ->
-            resources.put(name, blockFactory().also {
-                it.sourceDirectories.fromDisallowChanges(collectionOfDirectories)
-            })
-        }
+    return resourceSetList
+  }
+
+  private fun getResSet(resourcesMap: Map<String, FileCollection>, aaptEnv: String?): List<ResourceSet> {
+    return resourcesMap.map {
+      val resourceSet = ResourceSet(it.key, ResourceNamespace.RES_AUTO, null, validateEnabled.get(), aaptEnv)
+      resourceSet.addSources(it.value.files)
+      resourceSet
     }
+  }
+
+  fun initFromVariantScope(creationConfig: ComponentCreationConfig, libraryDependencies: ArtifactCollection?) {
+    val projectOptions = creationConfig.services.projectOptions
+    val services = creationConfig.services
+
+    validateEnabled.setDisallowChanges(!projectOptions.get(BooleanOption.DISABLE_RESOURCE_VALIDATION))
+    libraryDependencies?.let {
+      this.libraries.set(it)
+      this.librarySourceSets.from(it.artifactFiles)
+    }
+    this.libraries.disallowChanges()
+    this.librarySourceSets.disallowChanges()
+
+    creationConfig.sources.res { resSources ->
+      addResourceSets(resSources.getVariantSourcesWithFilter { !it.isUserAdded && !it.isGenerated }) {
+        services.newInstance(ResourceSourceSetInput::class.java)
+      }
+
+      // Add the user added static resource directories
+      resSources.getVariantSources().forEach { directoryEntries ->
+        directoryEntries.directoryEntries
+          .filter { it.isUserAdded && !it.isGenerated }
+          .forEach { it.addTo(creationConfig.services.projectInfo.projectDirectory, staticResFolders) }
+      }
+      staticResFolders.disallowChanges()
+
+      // Add the user added generated directories to the extraGeneratedResFolders.
+      // this should be cleaned up once the old variant API is removed.
+      resSources.getVariantSources().forEach { directoryEntries ->
+        directoryEntries.directoryEntries
+          .filter { it.isUserAdded && it.isGenerated }
+          .forEach { it.addTo(creationConfig.services.projectInfo.projectDirectory, extraGeneratedResFolders) }
+      }
+      extraGeneratedResFolders.disallowChanges()
+    }
+    resources.disallowChanges()
+
+    if (creationConfig.artifacts.get(InternalArtifactType.GENERATED_RES).isPresent) {
+      generatedResOutputDir.fromDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.GENERATED_RES))
+    }
+
+    if ((creationConfig.androidResources as? ApplicationAndroidResources)?.generateLocaleConfig == true) {
+      generatedLocaleConfig.set(creationConfig.artifacts.get(InternalArtifactType.GENERATED_LOCALE_CONFIG))
+    }
+    generatedLocaleConfig.disallowChanges()
+  }
+
+  @VisibleForTesting
+  fun addResourceSets(resourcesMap: Map<String, FileCollection>, blockFactory: () -> ResourceSourceSetInput) {
+    resourcesMap.forEach { (name, collectionOfDirectories) ->
+      resources.put(name, blockFactory().also { it.sourceDirectories.fromDisallowChanges(collectionOfDirectories) })
+    }
+  }
 }

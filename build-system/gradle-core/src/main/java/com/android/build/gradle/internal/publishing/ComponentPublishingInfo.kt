@@ -18,23 +18,16 @@ package com.android.build.gradle.internal.publishing
 
 import com.android.build.gradle.internal.dsl.AbstractPublishing
 
-/**
- * A data class wraps publishing info related to a software component.
- */
+/** A data class wraps publishing info related to a software component. */
 data class ComponentPublishingInfo(
-    val componentName: String,
-    val type: AbstractPublishing.Type,
-    val attributesConfig: AttributesConfig? = null,
-    val isClassifierRequired: Boolean = false,
-    val withSourcesJar: Boolean = false,
-    val withJavadocJar: Boolean = false
+  val componentName: String,
+  val type: AbstractPublishing.Type,
+  val attributesConfig: AttributesConfig? = null,
+  val isClassifierRequired: Boolean = false,
+  val withSourcesJar: Boolean = false,
+  val withJavadocJar: Boolean = false,
 ) {
 
-    /**
-     * Configs for attributes to be added to the variant.
-     */
-    data class AttributesConfig(
-        val buildType: String?,
-        val flavorDimensions: Set<String>
-    )
+  /** Configs for attributes to be added to the variant. */
+  data class AttributesConfig(val buildType: String?, val flavorDimensions: Set<String>)
 }

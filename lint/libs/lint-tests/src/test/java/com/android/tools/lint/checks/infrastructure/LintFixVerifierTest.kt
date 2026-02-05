@@ -460,12 +460,7 @@ class LintFixVerifierTest {
 
     @Suppress("BooleanLiteralArgument")
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-      val part1 =
-        fix()
-          .replace()
-          .range(context.getLocation(node))
-          .with("Api21Impl.setBackgroundTintList(view, tint)")
-          .build()
+      val part1 = fix().replace().range(context.getLocation(node)).with("Api21Impl.setBackgroundTintList(view, tint)").build()
       val part2 =
         fix()
           .replace()
@@ -517,12 +512,7 @@ class LintFixVerifierTest {
 
     @Suppress("BooleanLiteralArgument")
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-      val part1 =
-        fix()
-          .replace()
-          .range(context.getLocation(node))
-          .with("Api21Impl.setBackgroundTintList(view, tint)")
-          .build()
+      val part1 = fix().replace().range(context.getLocation(node)).with("Api21Impl.setBackgroundTintList(view, tint)").build()
       val part2 =
         fix()
           .replace()
@@ -560,10 +550,7 @@ class LintFixVerifierTest {
             Category.CORRECTNESS,
             5,
             Severity.ERROR,
-            Implementation(
-              BrokenClassVerificationFailureDetector::class.java,
-              Scope.JAVA_FILE_SCOPE,
-            ),
+            Implementation(BrokenClassVerificationFailureDetector::class.java, Scope.JAVA_FILE_SCOPE),
           )
           .setAndroidSpecific(true)
     }
@@ -588,23 +575,10 @@ class LintFixVerifierTest {
               LintFix.create()
                 .replace()
                 .text(importReference.asSourceString())
-                .with(
-                  importReference
-                    .asSourceString()
-                    .replace(
-                      "org.assertj.core.api.Assertions",
-                      "org.assertj.core.api.Java6Assertions",
-                    )
-                )
+                .with(importReference.asSourceString().replace("org.assertj.core.api.Assertions", "org.assertj.core.api.Java6Assertions"))
                 .build()
 
-            context.report(
-              ISSUE_ASSERTJ_IMPORT,
-              node,
-              context.getLocation(importReference),
-              "Should use Java6Assertions instead",
-              fix,
-            )
+            context.report(ISSUE_ASSERTJ_IMPORT, node, context.getLocation(importReference), "Should use Java6Assertions instead", fix)
           }
         }
       }
@@ -625,11 +599,7 @@ class LintFixVerifierTest {
           category = Category.CORRECTNESS,
           priority = 10,
           severity = Severity.WARNING,
-          implementation =
-            Implementation(
-              AssertjDetector::class.java,
-              EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-            ),
+          implementation = Implementation(AssertjDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)),
         )
     }
   }
@@ -644,24 +614,12 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val parentMethod = node.getParentOfType<UMethod>(UMethod::class.java, false)
     val fix =
-      fix()
-        .name("Rename Containing Method")
-        .replace()
-        .all()
-        .with("renamedMethod")
-        .range(context.getNameLocation(parentMethod!!))
-        .build()
+      fix().name("Rename Containing Method").replace().all().with("renamedMethod").range(context.getNameLocation(parentMethod!!)).build()
     if (method.name == "renameMethodNameInstead") {
-      context.report(
-        ISSUE,
-        context.getLocation(node),
-        "This error has a quickfix which edits parent method name instead",
-        fix,
-      )
+      context.report(ISSUE, context.getLocation(node), "This error has a quickfix which edits parent method name instead", fix)
     } else if (method.name == "updateBuildGradle") {
       val file =
-        File(context.file.parentFile?.parentFile?.parentFile?.parentFile!!, FN_BUILD_GRADLE).let {
-          file ->
+        File(context.file.parentFile?.parentFile?.parentFile?.parentFile!!, FN_BUILD_GRADLE).let { file ->
           if (file.isFile) {
             file
           } else {
@@ -674,34 +632,25 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
       val range = Location.Companion.create(file, source, start, end)
 
       // Test modifying a file other than the one containing the incident
-      val gradleFix =
-        fix().name("Update build.gradle").replace().all().with("kotlin").range(range).build()
+      val gradleFix = fix().name("Update build.gradle").replace().all().with("kotlin").range(range).build()
 
       // Test creating a new file too
       val newFileFix =
         fix()
           .name("Create file")
-          .newFile(
-            File(range.file.parentFile, "new.txt"),
-            "First line in new file.\nSecond line.\nThe End.",
-          )
+          .newFile(File(range.file.parentFile, "new.txt"), "First line in new file.\nSecond line.\nThe End.")
           .select("(new)")
           .build()
 
       // And a new binary
-      val newBinaryFix =
-        fix()
-          .name("Create blob")
-          .newFile(File(range.file.parentFile, "data.bin"), ByteArray(150))
-          .build()
+      val newBinaryFix = fix().name("Create blob").newFile(File(range.file.parentFile, "data.bin"), ByteArray(150)).build()
 
       // And delete a file
       val deleteFix = fix().deleteFile(File(file.parentFile, "delete_me.txt")).build()
 
       // Test both updating a file separate from the incident location, but also
       // updating multiple files in a single fix
-      val composite =
-        fix().name("Update files").composite(fix, gradleFix, newFileFix, newBinaryFix, deleteFix)
+      val composite = fix().name("Update files").composite(fix, gradleFix, newFileFix, newBinaryFix, deleteFix)
 
       context.report(
         ISSUE,
@@ -726,13 +675,7 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
         }
       }
 
-      context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "This method call should be fully deleted",
-        deleteFix.build(),
-      )
+      context.report(ISSUE, node, context.getLocation(node), "This method call should be fully deleted", deleteFix.build())
     } else {
       error(method.name)
     }
@@ -748,11 +691,7 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
         category = Category.TESTING,
         priority = 10,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            LintFixVerifierDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-          ),
+        implementation = Implementation(LintFixVerifierDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)),
       )
   }
 }

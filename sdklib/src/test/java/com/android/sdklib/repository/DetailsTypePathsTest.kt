@@ -20,92 +20,90 @@ import com.android.sdklib.repository.meta.DetailsTypes
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/**
- * Tests that assert that the paths we create from AndroidVersion match that which ADRT places in
- * the `path` attribute in package.xml
- */
+/** Tests that assert that the paths we create from AndroidVersion match that which ADRT places in the `path` attribute in package.xml */
 class DetailsTypePathsTest {
 
-    @Test
-    fun testPlatformPath() {
-        assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, null, true)))
-            .isEqualTo("platforms;android-30")
-        assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, "X", null, true)))
-            .isEqualTo("platforms;android-X")
-        assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, 2, false)))
-            .isEqualTo("platforms;android-30-ext2")
-        assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, 2, true)))
-            .isEqualTo("platforms;android-30")
-        assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, "X", 2, false)))
-            .isEqualTo("platforms;android-X")
-    }
+  @Test
+  fun testPlatformPath() {
+    assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, null, true))).isEqualTo("platforms;android-30")
+    assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, "X", null, true))).isEqualTo("platforms;android-X")
+    assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, 2, false))).isEqualTo("platforms;android-30-ext2")
+    assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, 2, true))).isEqualTo("platforms;android-30")
+    assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, "X", 2, false))).isEqualTo("platforms;android-X")
+  }
 
-    @Test
-    fun testSourcesPath() {
-        assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, null, true)))
-            .isEqualTo("sources;android-30")
-        assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, "X", null, true)))
-            .isEqualTo("sources;android-X")
-        assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, 2, false)))
-            .isEqualTo("sources;android-30-ext2")
-        assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, 2, true)))
-            .isEqualTo("sources;android-30")
-        assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, "X", 2, false)))
-            .isEqualTo("sources;android-X")
-    }
+  @Test
+  fun testSourcesPath() {
+    assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, null, true))).isEqualTo("sources;android-30")
+    assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, "X", null, true))).isEqualTo("sources;android-X")
+    assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, 2, false))).isEqualTo("sources;android-30-ext2")
+    assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, 2, true))).isEqualTo("sources;android-30")
+    assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, "X", 2, false))).isEqualTo("sources;android-X")
+  }
 
-    @Test
-    fun testSysImgPath() {
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, null, true),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-30;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, "X", null, true),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-X;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, 2, false),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-30-ext2;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, 2, true),
-                                              IdDisplay.create("id", "display"), "abi"))
-                .isEqualTo("system-images;android-30;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, "X", 2, false),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-X;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 0),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-36;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-36.1;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1, "Baklava.2", null, true),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-Baklava.2;id;abi")
-        assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(37, 0),
-                                              IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-37.0;id;abi")
-    }
+  @Test
+  fun testSysImgPath() {
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, null, true), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-30;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, "X", null, true), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-X;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, 2, false), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-30-ext2;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, null, 2, true), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-30;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, "X", 2, false), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-X;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 0), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-36;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-36.1;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1, "Baklava.2", null, true), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-Baklava.2;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(37, 0), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-37.0;id;abi")
+  }
 
-    @Test
-    fun testAddonsPath() {
-        assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
-                                             AndroidVersion(30, null, null, true),
-                                             IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-30")
-        assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
-                                             AndroidVersion(30, "X", null, true),
-                                             IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-X")
-        assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
-                                             AndroidVersion(30, null, 2, false),
-                                             IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-30-ext2")
-        assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
-                                             AndroidVersion(30, null, 2, true),
-                                             IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-30")
-        assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
-                                             AndroidVersion(30, "X", 2, false),
-                                             IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-X")
-    }
+  @Test
+  fun testAddonsPath() {
+    assertThat(
+        DetailsTypes.getAddonPath(
+          IdDisplay.create("idVendor", "displayVendor"),
+          AndroidVersion(30, null, null, true),
+          IdDisplay.create("idName", "displayName"),
+        )
+      )
+      .isEqualTo("add-ons;addon-idName-idVendor-30")
+    assertThat(
+        DetailsTypes.getAddonPath(
+          IdDisplay.create("idVendor", "displayVendor"),
+          AndroidVersion(30, "X", null, true),
+          IdDisplay.create("idName", "displayName"),
+        )
+      )
+      .isEqualTo("add-ons;addon-idName-idVendor-X")
+    assertThat(
+        DetailsTypes.getAddonPath(
+          IdDisplay.create("idVendor", "displayVendor"),
+          AndroidVersion(30, null, 2, false),
+          IdDisplay.create("idName", "displayName"),
+        )
+      )
+      .isEqualTo("add-ons;addon-idName-idVendor-30-ext2")
+    assertThat(
+        DetailsTypes.getAddonPath(
+          IdDisplay.create("idVendor", "displayVendor"),
+          AndroidVersion(30, null, 2, true),
+          IdDisplay.create("idName", "displayName"),
+        )
+      )
+      .isEqualTo("add-ons;addon-idName-idVendor-30")
+    assertThat(
+        DetailsTypes.getAddonPath(
+          IdDisplay.create("idVendor", "displayVendor"),
+          AndroidVersion(30, "X", 2, false),
+          IdDisplay.create("idName", "displayName"),
+        )
+      )
+      .isEqualTo("add-ons;addon-idName-idVendor-X")
+  }
 }

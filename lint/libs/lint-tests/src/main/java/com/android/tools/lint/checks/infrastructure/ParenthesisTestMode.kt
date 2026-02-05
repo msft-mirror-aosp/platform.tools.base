@@ -50,16 +50,11 @@ import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.util.isArrayInitializer
 
 /**
- * Test mode which inserts unnecessary parentheses in various places to make sure AST analysis
- * properly calls `skipParenthesizedExprUp` and `skipParenthesizedExprDown` to navigate through
- * UParenthesizedExpression nodes
+ * Test mode which inserts unnecessary parentheses in various places to make sure AST analysis properly calls `skipParenthesizedExprUp` and
+ * `skipParenthesizedExprDown` to navigate through UParenthesizedExpression nodes
  */
 class ParenthesisTestMode(private val includeUnlikely: Boolean = false) :
-  UastSourceTransformationTestMode(
-    description = "Extra parentheses added",
-    "TestMode.PARENTHESIZED",
-    "parentheses",
-  ) {
+  UastSourceTransformationTestMode(description = "Extra parentheses added", "TestMode.PARENTHESIZED", "parentheses") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -93,12 +88,7 @@ class ParenthesisTestMode(private val includeUnlikely: Boolean = false) :
         """
       .trimIndent()
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     val edits = mutableListOf<Edit>()
     root.acceptSourceFile(
       object : EditVisitor() {
@@ -131,9 +121,7 @@ class ParenthesisTestMode(private val includeUnlikely: Boolean = false) :
         }
 
         private fun checkCall(node: UCallExpression) {
-          if (
-            node.sourcePsi is KtSuperTypeCallEntry || node.sourcePsi is KtConstructorDelegationCall
-          ) {
+          if (node.sourcePsi is KtSuperTypeCallEntry || node.sourcePsi is KtConstructorDelegationCall) {
             // Super calls shouldn't be parenthesized
             return
           }
@@ -150,8 +138,7 @@ class ParenthesisTestMode(private val includeUnlikely: Boolean = false) :
                 receiver is UParenthesizedExpression ||
                 receiver.sourcePsi is KtSafeQualifiedExpression ||
                 includeUnlikely && (receiver is UThisExpression || receiver is USuperExpression) ||
-                receiver is UQualifiedReferenceExpression &&
-                  receiver.selector !is USimpleNameReferenceExpression ||
+                receiver is UQualifiedReferenceExpression && receiver.selector !is USimpleNameReferenceExpression ||
                 receiver is USimpleNameReferenceExpression && receiver.resolve() is PsiVariable
             ) {
               parenthesize(receiver)

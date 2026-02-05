@@ -151,16 +151,8 @@ class IncidentTest : AbstractCheckTest() {
     val location2 =
       create(
         location1.file,
-        DefaultPosition(
-          location1.start!!.line,
-          location1.start!!.column + 1,
-          location1.start!!.offset + 1,
-        ),
-        DefaultPosition(
-          location1.end!!.line,
-          location1.end!!.column + 1,
-          location1.end!!.offset + 1,
-        ),
+        DefaultPosition(location1.start!!.line, location1.start!!.column + 1, location1.start!!.offset + 1),
+        DefaultPosition(location1.end!!.line, location1.end!!.column + 1, location1.end!!.offset + 1),
       )
     val incident2 =
       Incident(incident1.issue, incident1.message, location2, incident1.fix).apply {
@@ -177,8 +169,7 @@ class IncidentTest : AbstractCheckTest() {
     incident2.location.secondary = secondary2
     assertTrue(incident2.compareTo(incident1) > 0)
     assertTrue(incident1.compareTo(incident2) < 0)
-    secondary2 =
-      create(File(location1.file.parentFile, "_before"), location1.start!!, location1.end)
+    secondary2 = create(File(location1.file.parentFile, "_before"), location1.start!!, location1.end)
     incident2.location.secondary = secondary2
     assertTrue(incident2.compareTo(incident1) > 0)
     assertTrue(incident1.compareTo(incident2) < 0)

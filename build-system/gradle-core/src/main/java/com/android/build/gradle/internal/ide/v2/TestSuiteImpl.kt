@@ -25,9 +25,9 @@ import com.android.builder.model.v2.models.TestApkTestSuiteSource
 import java.io.Serializable
 
 class TestSuiteImpl(
-    override val name: String,
-    override val junitEngineInfo: JUnitEngineInfo,
-    override val generatedAssets: Collection<AssetsTestSuiteSource>,
-    override val generatedHostJars: Collection<HostJarTestSuiteSource>,
-    override val generatedTestApks: Collection<TestApkTestSuiteSource>
-): TestSuite, AndroidModel, Serializable
+  override val name: String,
+  override val junitEngineInfo: JUnitEngineInfo,
+  override val generatedAssets: Collection<AssetsTestSuiteSource>,
+  override val generatedHostJars: Collection<HostJarTestSuiteSource>,
+  override val generatedTestApks: Collection<TestApkTestSuiteSource>,
+) : TestSuite, AndroidModel, Serializable

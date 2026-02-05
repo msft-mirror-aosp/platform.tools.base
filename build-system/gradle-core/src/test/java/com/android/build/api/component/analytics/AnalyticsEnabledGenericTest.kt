@@ -17,68 +17,64 @@
 package com.android.build.api.component.analytics
 
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.io.File
 import java.lang.reflect.Modifier
 import java.net.URL
 import java.util.jar.JarFile
 import kotlin.test.fail
+import org.junit.Test
 
 class AnalyticsEnabledGenericTest {
 
-    @Test
-    fun testAllClassesAreOpenOrAbstract() {
-        val packageName = AnalyticsEnabledComponent::class.java.`package`.name
-        val name = packageName.replace('.', '/')
+  @Test
+  fun testAllClassesAreOpenOrAbstract() {
+    val packageName = AnalyticsEnabledComponent::class.java.`package`.name
+    val name = packageName.replace('.', '/')
 
-        // Get a File object for the package
-        val url: URL? = AnalyticsEnabledComponent::class.java.classLoader.getResource(
-                "$name/${AnalyticsEnabledComponent::class.java.simpleName}.class")
-        Truth.assertThat(url).isNotNull()
-        getListOfClasses(url!!, name)
-            .forEach {
-                val clazz = Class.forName(it)
-                if (!Modifier.isAbstract(clazz.modifiers) && Modifier.isFinal(clazz.modifiers)) {
-                    fail("Class $it is neither abstract nor open.\n" +
-                            "All AnalyticsEnabled types must not be final as they are " +
-                            "subclassed by Gradle at runtime.")
-                }
-            }
-        }
-
-    private fun getListOfClasses(url: URL, packageName: String): List<String> {
-        return if (url.protocol == "jar") {
-            val jarFile = url.path.substring("file:".length, url.path.indexOf("!"))
-            val entryNames = mutableListOf<String>()
-            JarFile(jarFile).use {
-                it.entries().iterator()
-                        .forEach { jarEntry ->
-                    if (!jarEntry.isDirectory
-                            && jarEntry.name.startsWith(packageName)
-                            && !jarEntry.name.contains('$')
-                    ) {
-                        entryNames.add(
-                                jarEntry.name.dropLast(6)
-                                        .replace('/', '.')
-                        )
-                    }
-                }
-            }
-            entryNames
-        } else {
-            val directory = File(url.file).parentFile
-
-            Truth.assertThat(directory.exists()).isTrue()
-
-            // Get the list of the files contained in the package
-            directory.walk()
-                    .filter { f ->
-                        f.isFile && !f.name.contains('$') && f.name.endsWith(".class")
-                    }
-                    .map{ packageName.plus(it.canonicalPath.removePrefix(directory.canonicalPath))
-                            .dropLast(6) // remove .class
-                            .replace('/', '.') }
-                    .toList()
-        }
+    // Get a File object for the package
+    val url: URL? =
+      AnalyticsEnabledComponent::class.java.classLoader.getResource("$name/${AnalyticsEnabledComponent::class.java.simpleName}.class")
+    Truth.assertThat(url).isNotNull()
+    getListOfClasses(url!!, name).forEach {
+      val clazz = Class.forName(it)
+      if (!Modifier.isAbstract(clazz.modifiers) && Modifier.isFinal(clazz.modifiers)) {
+        fail(
+          "Class $it is neither abstract nor open.\n" +
+            "All AnalyticsEnabled types must not be final as they are " +
+            "subclassed by Gradle at runtime."
+        )
+      }
     }
+  }
+
+  private fun getListOfClasses(url: URL, packageName: String): List<String> {
+    return if (url.protocol == "jar") {
+      val jarFile = url.path.substring("file:".length, url.path.indexOf("!"))
+      val entryNames = mutableListOf<String>()
+      JarFile(jarFile).use {
+        it.entries().iterator().forEach { jarEntry ->
+          if (!jarEntry.isDirectory && jarEntry.name.startsWith(packageName) && !jarEntry.name.contains('$')) {
+            entryNames.add(jarEntry.name.dropLast(6).replace('/', '.'))
+          }
+        }
+      }
+      entryNames
+    } else {
+      val directory = File(url.file).parentFile
+
+      Truth.assertThat(directory.exists()).isTrue()
+
+      // Get the list of the files contained in the package
+      directory
+        .walk()
+        .filter { f -> f.isFile && !f.name.contains('$') && f.name.endsWith(".class") }
+        .map {
+          packageName
+            .plus(it.canonicalPath.removePrefix(directory.canonicalPath))
+            .dropLast(6) // remove .class
+            .replace('/', '.')
+        }
+        .toList()
+    }
+  }
 }

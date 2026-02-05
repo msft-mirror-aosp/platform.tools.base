@@ -21,21 +21,21 @@ import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitia
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
 
-abstract class ResourcesPackagingImpl: ResourcesPackaging {
+abstract class ResourcesPackagingImpl : ResourcesPackaging {
 
-    @WithLazyInitialization
-    @Suppress("unused") // the call is injected by DslDecorator
-    protected fun lazyInit() {
-        setExcludes(defaultExcludes)
-        setMerges(defaultMerges)
-    }
+  @WithLazyInitialization
+  @Suppress("unused") // the call is injected by DslDecorator
+  protected fun lazyInit() {
+    setExcludes(defaultExcludes)
+    setMerges(defaultMerges)
+  }
 
-    // support excludes += 'foo' syntax in groovy
-    abstract fun setExcludes(patterns: Set<String>)
+  // support excludes += 'foo' syntax in groovy
+  abstract fun setExcludes(patterns: Set<String>)
 
-    // support pickFirsts += 'foo' syntax in groovy
-    abstract fun setPickFirsts(patterns: Set<String>)
+  // support pickFirsts += 'foo' syntax in groovy
+  abstract fun setPickFirsts(patterns: Set<String>)
 
-    // support merges += 'foo' syntax in groovy
-    abstract fun setMerges(patterns: Set<String>)
+  // support merges += 'foo' syntax in groovy
+  abstract fun setMerges(patterns: Set<String>)
 }

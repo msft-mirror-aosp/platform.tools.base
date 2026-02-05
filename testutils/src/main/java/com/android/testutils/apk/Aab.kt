@@ -18,20 +18,16 @@ package com.android.testutils.apk
 
 import java.io.File
 import java.nio.file.Path
-import java.util.zip.ZipEntry
 
 /** Represents an Android bundle file. */
 class Aab(file: File) : Zip(file) {
 
-    fun getDexListForModule(module: String): List<Dex> {
-        return getDexPathsForModule(module).map { Dex(it) }
-    }
+  fun getDexListForModule(module: String): List<Dex> {
+    return getDexPathsForModule(module).map { Dex(it) }
+  }
 
-    fun getDexPathsForModule(module: String): List<Path> {
-        var index = 1
-        return generateSequence {
-            getEntry("$module/dex/classes${if (index == 1) "" else index}.dex")
-                ?.also { index++ }
-        }.toList()
-    }
+  fun getDexPathsForModule(module: String): List<Path> {
+    var index = 1
+    return generateSequence { getEntry("$module/dex/classes${if (index == 1) "" else index}.dex")?.also { index++ } }.toList()
+  }
 }

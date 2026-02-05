@@ -28,191 +28,177 @@ import java.nio.file.attribute.FileTime
 
 /** Utility to write tests for incremental tasks. */
 class IncrementalTestHelper(
-    private val project: GradleTestProject,
-    private val buildTasks: List<String>,
-    private val filesOrDirsToTrackChanges: Set<File> = emptySet()
+  private val project: GradleTestProject,
+  private val buildTasks: List<String>,
+  private val filesOrDirsToTrackChanges: Set<File> = emptySet(),
 ) {
 
-    constructor(
-        project: GradleTestProject,
-        buildTask: String,
-        filesOrDirsToTrackChanges: Set<File> = emptySet()
-    ) : this(project, listOf(buildTask), filesOrDirsToTrackChanges)
+  constructor(
+    project: GradleTestProject,
+    buildTask: String,
+    filesOrDirsToTrackChanges: Set<File> = emptySet(),
+  ) : this(project, listOf(buildTask), filesOrDirsToTrackChanges)
 
-    /** The files to track changes. (These are regular files, not directories.) */
-    private lateinit var filesToTrackChanges: Set<File>
+  /** The files to track changes. (These are regular files, not directories.) */
+  private lateinit var filesToTrackChanges: Set<File>
 
-    // The timestamps and contents of the tracked files after the first (full) build.
-    private lateinit var fileTimestamps: Map<File, FileTime>
-    private lateinit var fileContents: Map<File, ByteArray>
+  // The timestamps and contents of the tracked files after the first (full) build.
+  private lateinit var fileTimestamps: Map<File, FileTime>
+  private lateinit var fileContents: Map<File, ByteArray>
 
-    /** The changes of the tracked files after the second (incremental) build. */
-    private lateinit var fileChanges: Map<File, ChangeType>
+  /** The changes of the tracked files after the second (incremental) build. */
+  private lateinit var fileChanges: Map<File, ChangeType>
 
-    private var executorUpdater: ((GradleTaskExecutor) -> Unit)? = null
+  private var executorUpdater: ((GradleTaskExecutor) -> Unit)? = null
+
+  /** Provides a callback to update the default executor (project.executor()) with custom properties. */
+  fun updateExecutor(executorUpdater: (GradleTaskExecutor) -> Unit): IncrementalTestHelper {
+    this.executorUpdater = executorUpdater
+    return this
+  }
+
+  /** Records the timestamps and contents of the tracked files. */
+  private fun recordTimestampsAndContents() {
+    filesToTrackChanges =
+      filesOrDirsToTrackChanges
+        .flatMap { fileOrDir ->
+          if (fileOrDir.isDirectory) {
+            fileOrDir.walk().filter { it.isFile }.toList()
+          } else {
+            listOf(fileOrDir)
+          }
+        }
+        .toSet()
+
+    val timestamps = mutableMapOf<File, FileTime>()
+    val contents = mutableMapOf<File, ByteArray>()
+    for (file in filesToTrackChanges) {
+      check(file.exists()) { "File ${file.path} does not exist." }
+      check(!file.isDirectory) { "File ${file.path} is a directory." }
+
+      // Use Files.getLastModifiedTime instead of File.lastModified to prevent flakiness of
+      // timestamps, according to the discussion at
+      // https://android-review.googlesource.com/c/platform/frameworks/support/+/932356/13/lifecycle/integration-tests/gradletest/src/test/kotlin/androidx/lifecycle/IncrementalAnnotationProcessingTest.kt#110
+      timestamps[file] = Files.getLastModifiedTime(file.toPath())
+      contents[file] = file.readBytes()
+    }
+    fileTimestamps = timestamps.toMap()
+    fileContents = contents.toMap()
+  }
+
+  /** Records the changes of the tracked files. */
+  private fun recordChanges() {
+    fileChanges =
+      filesToTrackChanges
+        .map { file ->
+          check(file.exists()) { "File ${file.path} does not exist." }
+          check(!file.isDirectory) { "File ${file.path} is a directory." }
+
+          val timestampChanged = Files.getLastModifiedTime(file.toPath()) != checkNotNull(fileTimestamps[file])
+          val contentsChanged = !file.readBytes().contentEquals(checkNotNull(fileContents[file]))
+
+          file to
+            (if (timestampChanged) {
+              if (contentsChanged) {
+                ChangeType.CHANGED
+              } else {
+                ChangeType.CHANGED_TIMESTAMPS_BUT_NOT_CONTENTS
+              }
+            } else {
+              if (contentsChanged) {
+                error(
+                  "File ${file.path} has changed contents but unchanged timestamps, which can cause flaky tests.\n" +
+                    "To work around this, introduce a few milliseconds of sleep between builds."
+                )
+              } else {
+                ChangeType.UNCHANGED
+              }
+            })
+        }
+        .toMap()
+  }
+
+  /** Runs a full build. */
+  fun runFullBuild(): IncrementalTestHelperAfterFullBuild {
+    project.executor().apply(executorUpdater ?: {}).run(listOf("clean") + buildTasks)
+
+    recordTimestampsAndContents()
+
+    return IncrementalTestHelperAfterFullBuild(this)
+  }
+
+  class IncrementalTestHelperAfterFullBuild(private val incrementalTestHelper: IncrementalTestHelper) {
+
+    /** Applies a change. */
+    fun applyChange(change: () -> Unit): IncrementalTestHelperAfterIncrementalChange {
+      change()
+      return IncrementalTestHelperAfterIncrementalChange(incrementalTestHelper)
+    }
+  }
+
+  class IncrementalTestHelperAfterIncrementalChange(private val incrementalTestHelper: IncrementalTestHelper) {
+
+    /** Runs an incremental build. */
+    fun runIncrementalBuild(): IncrementalTestHelperAfterIncrementalBuild {
+      // Wait a little between 2 builds, so we can detect timestamp changes reliably
+      TestUtils.waitForFileSystemTick()
+      with(incrementalTestHelper) {
+        val result = project.executor().apply(executorUpdater ?: {}).run(buildTasks)
+
+        recordChanges()
+
+        return IncrementalTestHelperAfterIncrementalBuild(incrementalTestHelper, result)
+      }
+    }
+  }
+
+  class IncrementalTestHelperAfterIncrementalBuild(
+    private val incrementalTestHelper: IncrementalTestHelper,
+    private val buildResult: GradleBuildResult,
+  ) {
 
     /**
-     * Provides a callback to update the default executor (project.executor()) with custom
-     * properties.
+     * Checks if the actual task states match the given expected task states.
+     *
+     * @param expectedTaskStates the expected task states
+     * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of expected tasks must equal the number of
+     *   actual tasks)
      */
-    fun updateExecutor(executorUpdater: (GradleTaskExecutor) -> Unit): IncrementalTestHelper {
-        this.executorUpdater = executorUpdater
-        return this
+    fun assertTaskStates(
+      expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
+      exhaustive: Boolean = false,
+    ): IncrementalTestHelperAfterIncrementalBuild {
+      TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
+      return this
     }
 
-    /** Records the timestamps and contents of the tracked files. */
-    private fun recordTimestampsAndContents() {
-        filesToTrackChanges = filesOrDirsToTrackChanges.flatMap { fileOrDir ->
-            if (fileOrDir.isDirectory) {
-                fileOrDir.walk().filter { it.isFile }.toList()
-            } else {
-                listOf(fileOrDir)
-            }
-        }.toSet()
-
-        val timestamps = mutableMapOf<File, FileTime>()
-        val contents = mutableMapOf<File, ByteArray>()
-        for (file in filesToTrackChanges) {
-            check(file.exists()) { "File ${file.path} does not exist." }
-            check(!file.isDirectory) { "File ${file.path} is a directory." }
-
-            // Use Files.getLastModifiedTime instead of File.lastModified to prevent flakiness of
-            // timestamps, according to the discussion at
-            // https://android-review.googlesource.com/c/platform/frameworks/support/+/932356/13/lifecycle/integration-tests/gradletest/src/test/kotlin/androidx/lifecycle/IncrementalAnnotationProcessingTest.kt#110
-            timestamps[file] = Files.getLastModifiedTime(file.toPath())
-            contents[file] = file.readBytes()
+    /** Asserts file changes. */
+    fun assertFileChanges(expectedFileChanges: Map<File, ChangeType>): IncrementalTestHelperAfterIncrementalBuild {
+      val assertionFailures = mutableListOf<String>()
+      for ((file, expectedChangeType) in expectedFileChanges) {
+        val actualChangeType = incrementalTestHelper.fileChanges[file] ?: ChangeType.NEW
+        if (actualChangeType != expectedChangeType) {
+          assertionFailures.add("File ${file.path} has expected state $expectedChangeType" + " but its actual state is $actualChangeType")
         }
-        fileTimestamps = timestamps.toMap()
-        fileContents = contents.toMap()
+      }
+      assertWithMessage(assertionFailures.joinToString("\n")).that(assertionFailures).isEmpty()
+      return this
     }
-
-    /** Records the changes of the tracked files. */
-    private fun recordChanges() {
-        fileChanges = filesToTrackChanges.map { file ->
-            check(file.exists()) { "File ${file.path} does not exist." }
-            check(!file.isDirectory) { "File ${file.path} is a directory." }
-
-            val timestampChanged =
-                Files.getLastModifiedTime(file.toPath()) != checkNotNull(fileTimestamps[file])
-            val contentsChanged = !file.readBytes().contentEquals(checkNotNull(fileContents[file]))
-
-            file to (if (timestampChanged) {
-                if (contentsChanged) {
-                    ChangeType.CHANGED
-                } else {
-                    ChangeType.CHANGED_TIMESTAMPS_BUT_NOT_CONTENTS
-                }
-            } else {
-                if (contentsChanged) {
-                    error(
-                        "File ${file.path} has changed contents but unchanged timestamps, which can cause flaky tests.\n" +
-                                "To work around this, introduce a few milliseconds of sleep between builds."
-                    )
-                } else {
-                    ChangeType.UNCHANGED
-                }
-            })
-        }.toMap()
-    }
-
-    /** Runs a full build. */
-    fun runFullBuild(): IncrementalTestHelperAfterFullBuild {
-        project.executor()
-            .apply(executorUpdater ?: {})
-            .run(listOf("clean") + buildTasks)
-
-        recordTimestampsAndContents()
-
-        return IncrementalTestHelperAfterFullBuild(this)
-    }
-
-    class IncrementalTestHelperAfterFullBuild(
-        private val incrementalTestHelper: IncrementalTestHelper
-    ) {
-
-        /** Applies a change. */
-        fun applyChange(change: () -> Unit): IncrementalTestHelperAfterIncrementalChange {
-            change()
-            return IncrementalTestHelperAfterIncrementalChange(incrementalTestHelper)
-        }
-    }
-
-    class IncrementalTestHelperAfterIncrementalChange(
-        private val incrementalTestHelper: IncrementalTestHelper
-    ) {
-
-        /** Runs an incremental build. */
-        fun runIncrementalBuild(): IncrementalTestHelperAfterIncrementalBuild {
-            // Wait a little between 2 builds, so we can detect timestamp changes reliably
-            TestUtils.waitForFileSystemTick()
-            with(incrementalTestHelper) {
-                val result = project.executor()
-                    .apply(executorUpdater ?: {})
-                    .run(buildTasks)
-
-                recordChanges()
-
-                return IncrementalTestHelperAfterIncrementalBuild(
-                    incrementalTestHelper,
-                    result
-                )
-            }
-        }
-    }
-
-    class IncrementalTestHelperAfterIncrementalBuild(
-        private val incrementalTestHelper: IncrementalTestHelper,
-        private val buildResult: GradleBuildResult
-    ) {
-
-        /**
-         * Checks if the actual task states match the given expected task states.
-         *
-         * @param expectedTaskStates the expected task states
-         * @param exhaustive whether the list of expected tasks is exhaustive (whether the number of
-         *     expected tasks must equal the number of actual tasks)
-         */
-        fun assertTaskStates(
-            expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
-            exhaustive: Boolean = false
-        ): IncrementalTestHelperAfterIncrementalBuild {
-            TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
-            return this
-        }
-
-        /** Asserts file changes. */
-        fun assertFileChanges(expectedFileChanges: Map<File, ChangeType>):
-                IncrementalTestHelperAfterIncrementalBuild {
-            val assertionFailures = mutableListOf<String>()
-            for ((file, expectedChangeType) in expectedFileChanges) {
-                val actualChangeType = incrementalTestHelper.fileChanges[file] ?: ChangeType.NEW
-                if (actualChangeType != expectedChangeType) {
-                    assertionFailures.add(
-                        "File ${file.path} has expected state $expectedChangeType" +
-                                " but its actual state is $actualChangeType"
-                    )
-                }
-            }
-            assertWithMessage(
-                assertionFailures.joinToString("\n")
-            ).that(assertionFailures).isEmpty()
-            return this
-        }
-    }
+  }
 }
 
 /** Type of file change. */
 enum class ChangeType {
 
-    /** A new file was created. */
-    NEW,
+  /** A new file was created. */
+  NEW,
 
-    /** The file has changed timestamp and contents. */
-    CHANGED,
+  /** The file has changed timestamp and contents. */
+  CHANGED,
 
-    /** The file has changed timestamp but not contents. */
-    CHANGED_TIMESTAMPS_BUT_NOT_CONTENTS,
+  /** The file has changed timestamp but not contents. */
+  CHANGED_TIMESTAMPS_BUT_NOT_CONTENTS,
 
-    /** The file has unchanged timestamp and contents. */
-    UNCHANGED
+  /** The file has unchanged timestamp and contents. */
+  UNCHANGED,
 }

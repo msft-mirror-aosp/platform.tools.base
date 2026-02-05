@@ -19,18 +19,9 @@ package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.res.
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
-fun fragmentLoginXml(
-  fragmentClass: String,
-  minApiLevel: Int,
-  packageName: String,
-  useAndroidX: Boolean
-): String {
-  val autofillHintsEmail = renderIf(minApiLevel > 25) {
-    """android:autofillHints="@string/prompt_email""""
-  }
-  val autofillHintsPassword = renderIf(minApiLevel > 25) {
-    """android:autofillHints="@string/prompt_password""""
-  }
+fun fragmentLoginXml(fragmentClass: String, minApiLevel: Int, packageName: String, useAndroidX: Boolean): String {
+  val autofillHintsEmail = renderIf(minApiLevel > 25) { """android:autofillHints="@string/prompt_email"""" }
+  val autofillHintsPassword = renderIf(minApiLevel > 25) { """android:autofillHints="@string/prompt_password"""" }
 
   return """<?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}

@@ -28,89 +28,75 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Test enabling and disabling device tests through the variant builder APIs.
- */
+/** Test enabling and disabling device tests through the variant builder APIs. */
 class UnitTestComponentDefaultsTest {
 
-    @get:Rule
-    val appWithNewUnitTestBehavior = GradleRule.from {
-        androidApplication {
-            android {
-                buildTypes {
-                    create("qa") {
-                        it.isDebuggable = true
-                    }
-                }
-                testBuildType = "qa"
-                flavorDimensions += "color"
-                productFlavors {
-                    create("defaults") {
-                        it.dimension = "color"
-                    }
-                    create("override") {
-                        it.dimension = "color"
-                    }
-                }
-            }
-            pluginCallbacks += CustomizeUnitTestEnabling::class.java
+  @get:Rule
+  val appWithNewUnitTestBehavior =
+    GradleRule.from {
+      androidApplication {
+        android {
+          buildTypes { create("qa") { it.isDebuggable = true } }
+          testBuildType = "qa"
+          flavorDimensions += "color"
+          productFlavors {
+            create("defaults") { it.dimension = "color" }
+            create("override") { it.dimension = "color" }
+          }
         }
-        gradleProperties {
-            add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true)
-        }
+        pluginCallbacks += CustomizeUnitTestEnabling::class.java
+      }
+      gradleProperties { add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true) }
     }
 
-    class CustomizeUnitTestEnabling : ApplicationComponentCallback {
+  class CustomizeUnitTestEnabling : ApplicationComponentCallback {
 
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.beforeVariants(
-                androidComponents.selector().withName("overrideDebug")
-            ) { variantBuilder ->
-                variantBuilder.hostTests[UNIT_TEST_TYPE]?.enable = true
-            }
-            androidComponents.beforeVariants(
-                androidComponents.selector().withName("overrideQa")
-            ) { variantBuilder ->
-                variantBuilder.hostTests[UNIT_TEST_TYPE]?.enable = false
-            }
-            androidComponents.beforeVariants(
-                androidComponents.selector().withName("overrideRelease")
-            ) { variantBuilder ->
-                variantBuilder.enable = false
-            }
-        }
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.beforeVariants(androidComponents.selector().withName("overrideDebug")) { variantBuilder ->
+        variantBuilder.hostTests[UNIT_TEST_TYPE]?.enable = true
+      }
+      androidComponents.beforeVariants(androidComponents.selector().withName("overrideQa")) { variantBuilder ->
+        variantBuilder.hostTests[UNIT_TEST_TYPE]?.enable = false
+      }
+      androidComponents.beforeVariants(androidComponents.selector().withName("overrideRelease")) { variantBuilder ->
+        variantBuilder.enable = false
+      }
     }
+  }
 
-    @Test
-    fun checkUnitTestsAreEnabledOrDisabledBasedOnTheBuildType() {
-        val project = appWithNewUnitTestBehavior.build
-        val result = project.modelBuilder.with(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true).fetchModels()
-        assertThat(result).isNotNull()
-        val models = result.container.getProject(":app")
-        val basicAndroidProject = checkNotNull(models.basicAndroidProject)
-        fun unitTestArtifactsForVariant(variant: String): BasicArtifact? =
-            basicAndroidProject.variants.single {it.name == variant}.hostTestArtifacts[ARTIFACT_UNIT_TEST]
+  @Test
+  fun checkUnitTestsAreEnabledOrDisabledBasedOnTheBuildType() {
+    val project = appWithNewUnitTestBehavior.build
+    val result = project.modelBuilder.with(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true).fetchModels()
+    assertThat(result).isNotNull()
+    val models = result.container.getProject(":app")
+    val basicAndroidProject = checkNotNull(models.basicAndroidProject)
+    fun unitTestArtifactsForVariant(variant: String): BasicArtifact? =
+      basicAndroidProject.variants.single { it.name == variant }.hostTestArtifacts[ARTIFACT_UNIT_TEST]
 
-        assertThat(basicAndroidProject.variants.map { it.name })
-            .named("All variants (note overrideRelease is disabled completely, so it not present in this list)")
-            .containsExactly( "defaultsDebug", "overrideDebug", "defaultsQa", "overrideQa", "defaultsRelease")
-        assertThat(unitTestArtifactsForVariant("defaultsDebug"))
-            .named("The unit test component for defaultsDebug is disabled as the tested build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true")
-            .isNull()
-        assertThat(unitTestArtifactsForVariant("overrideDebug"))
-            .named("The unit test component for overrideDebug are enabled by the custom AGP variant API callback")
-            .isNotNull()
-        assertThat(unitTestArtifactsForVariant("defaultsQa"))
-            .named("The unit test component for defaultsQa are enabled by default as the test build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true")
-            .isNotNull()
-        assertThat(unitTestArtifactsForVariant("overrideQa"))
-            .named("The unit test component for overrideQa are disabled by the custom AGP variant API callback")
-            .isNull()
-        assertThat(unitTestArtifactsForVariant("defaultsRelease"))
-            .named("The unit test component for defaultsRelease is disabled as the tested build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true")
-            .isNull()
-    }
+    assertThat(basicAndroidProject.variants.map { it.name })
+      .named("All variants (note overrideRelease is disabled completely, so it not present in this list)")
+      .containsExactly("defaultsDebug", "overrideDebug", "defaultsQa", "overrideQa", "defaultsRelease")
+    assertThat(unitTestArtifactsForVariant("defaultsDebug"))
+      .named(
+        "The unit test component for defaultsDebug is disabled as the tested build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true"
+      )
+      .isNull()
+    assertThat(unitTestArtifactsForVariant("overrideDebug"))
+      .named("The unit test component for overrideDebug are enabled by the custom AGP variant API callback")
+      .isNotNull()
+    assertThat(unitTestArtifactsForVariant("defaultsQa"))
+      .named(
+        "The unit test component for defaultsQa are enabled by default as the test build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true"
+      )
+      .isNotNull()
+    assertThat(unitTestArtifactsForVariant("overrideQa"))
+      .named("The unit test component for overrideQa are disabled by the custom AGP variant API callback")
+      .isNull()
+    assertThat(unitTestArtifactsForVariant("defaultsRelease"))
+      .named(
+        "The unit test component for defaultsRelease is disabled as the tested build type is 'qa' and ${BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE.propertyName}=true"
+      )
+      .isNull()
+  }
 }

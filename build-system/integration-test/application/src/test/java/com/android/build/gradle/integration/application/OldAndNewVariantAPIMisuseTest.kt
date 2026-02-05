@@ -24,18 +24,18 @@ import org.junit.Rule
 import org.junit.Test
 
 class OldAndNewVariantAPIMisuseTest {
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-            .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
 
-    @Test
-    fun beforeVariantsActionAddedFromOldVariantApiBlock() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun beforeVariantsActionAddedFromOldVariantApiBlock() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -53,17 +53,20 @@ android {
         })
     }
 }
-""")
-        project.executor().expectFailure().run("clean", "assembleDebug").assertErrorContains(
-            "It is too late to add actions as the callbacks already executed."
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "assembleDebug")
+      .assertErrorContains("It is too late to add actions as the callbacks already executed.")
+  }
 
-    @Test
-    fun onVariantsActionAddedFromOldVariantApiBlock() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun onVariantsActionAddedFromOldVariantApiBlock() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -81,9 +84,12 @@ android {
         })
     }
 }
-""")
-        project.executor().expectFailure().run("clean", "assembleDebug").assertErrorContains(
-            "It is too late to add actions as the callbacks already executed."
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "assembleDebug")
+      .assertErrorContains("It is too late to add actions as the callbacks already executed.")
+  }
 }

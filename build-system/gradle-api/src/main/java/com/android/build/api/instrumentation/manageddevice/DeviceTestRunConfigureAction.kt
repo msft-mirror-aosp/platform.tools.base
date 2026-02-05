@@ -18,18 +18,16 @@ package com.android.build.api.instrumentation.manageddevice
 
 import com.android.build.api.dsl.Device
 import org.gradle.api.Incubating
-import org.gradle.api.model.ObjectFactory
 
 /**
- * Action for configuring the device specific [inputs][DeviceTestRunInput] for the
- * Managed Device Test Task.
+ * Action for configuring the device specific [inputs][DeviceTestRunInput] for the Managed Device Test Task.
  *
- * This class is used to take the [managed device DSL][Device] to create a group of
- * [cachable inputs][DeviceTestRunInput]
+ * This class is used to take the [managed device DSL][Device] to create a group of [cachable inputs][DeviceTestRunInput]
  *
  * This should be implemented for use with a Custom Managed Device Registration.
  *
  * Example [DeviceTestRunInput] and [Device] implementation for Configuration Action
+ *
  * ```
  * abstract class CustomInput: DeviceTestRunInput {
  *     /** name of device from DSL */
@@ -69,28 +67,20 @@ import org.gradle.api.model.ObjectFactory
  * }
  * ```
  *
- *
  * @param DeviceT: The interface of the Custom Managed Device this configure action corresponds to.
- * @param InputT: The specialized [DeviceTestRunInput] this configuration action generates for the
- * instrumentation test task.
- *
- * @suppress Do not use from production code. All properties in this interface are exposed for
- * prototype.
+ * @param InputT: The specialized [DeviceTestRunInput] this configuration action generates for the instrumentation test task.
+ * @suppress Do not use from production code. All properties in this interface are exposed for prototype.
  */
 @Incubating
-interface DeviceTestRunConfigureAction <DeviceT : Device, InputT: DeviceTestRunInput> {
+interface DeviceTestRunConfigureAction<DeviceT : Device, InputT : DeviceTestRunInput> {
 
-    /**
-     * Generates the cacheable inputs to the test run task to be consumed by the corresponding
-     * test run action.
-     *
-     * @param deviceDSL The DSL for the individual device for the test task.
-     *
-     * @return The cacheable inputs for the test task. This will be consumed as part of the
-     * [test run action][DeviceTestRunTaskAction]. As specified by the [ManagedDeviceTestRunFactory]
-     *
-     * @suppress Do not use from production code.This API exposed for prototype.
-     */
-    @Incubating
-    fun configureTaskInput(deviceDSL: DeviceT): InputT
+  /**
+   * Generates the cacheable inputs to the test run task to be consumed by the corresponding test run action.
+   *
+   * @param deviceDSL The DSL for the individual device for the test task.
+   * @return The cacheable inputs for the test task. This will be consumed as part of the [test run action][DeviceTestRunTaskAction]. As
+   *   specified by the [ManagedDeviceTestRunFactory]
+   * @suppress Do not use from production code.This API exposed for prototype.
+   */
+  @Incubating fun configureTaskInput(deviceDSL: DeviceT): InputT
 }

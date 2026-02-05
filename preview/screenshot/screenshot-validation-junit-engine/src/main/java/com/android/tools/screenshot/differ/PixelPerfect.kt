@@ -26,25 +26,24 @@ import java.math.RoundingMode
 /**
  * Pixel perfect image differ requiring images to be identical.
  *
- * The alpha channel is treated as pre-multiplied, meaning RGB channels may differ if the alpha
- * channel is 0 (fully transparent).
+ * The alpha channel is treated as pre-multiplied, meaning RGB channels may differ if the alpha channel is 0 (fully transparent).
  */
 // TODO(b/244752233): Support wide gamut images.
 class PixelPerfect(private var imageDiffThreshold: Float = 0f) : ImageDiffer {
-    override fun diff(a: BufferedImage, b: BufferedImage): DiffResult {
-        val pixelDiff = generatePixelDiffImage(a, b)
-        val highlights = pixelDiff.first
-        val numPixelsDifferent = pixelDiff.second
+  override fun diff(a: BufferedImage, b: BufferedImage): DiffResult {
+    val pixelDiff = generatePixelDiffImage(a, b)
+    val highlights = pixelDiff.first
+    val numPixelsDifferent = pixelDiff.second
 
-        val percentDiff: Double = numPixelsDifferent.toDouble() / (a.width * a.height)
-        val percentDiffString = "${BigDecimal(percentDiff * 100).setScale(2, RoundingMode.HALF_EVEN)}%"
-        val description = "Pixel percentage difference: $percentDiffString. $numPixelsDifferent of ${a.width * a.height} pixels are different"
-        return if (numPixelsDifferent == 0) {
-            Similar(description, null, percentDiff)
-        } else if (percentDiff.compareTo(imageDiffThreshold) <= 0) {
-            Similar(description, highlights, percentDiff)
-        } else {
-            Different(description, highlights, percentDiff)
-        }
+    val percentDiff: Double = numPixelsDifferent.toDouble() / (a.width * a.height)
+    val percentDiffString = "${BigDecimal(percentDiff * 100).setScale(2, RoundingMode.HALF_EVEN)}%"
+    val description = "Pixel percentage difference: $percentDiffString. $numPixelsDifferent of ${a.width * a.height} pixels are different"
+    return if (numPixelsDifferent == 0) {
+      Similar(description, null, percentDiff)
+    } else if (percentDiff.compareTo(imageDiffThreshold) <= 0) {
+      Similar(description, highlights, percentDiff)
+    } else {
+      Different(description, highlights, percentDiff)
     }
+  }
 }

@@ -30,32 +30,29 @@ import org.junit.rules.TemporaryFolder
 /** Tests the contents of [AndroidGradlePluginAttributionData.buildscriptDependenciesInfo]. */
 class BuildScriptDependenciesDataTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            HelloWorldAndroid.setupKotlin(files)
-        }
-        // Setting useLatestKgpVersion = true will add
-        // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
-        // to the build script classpath
-        useLatestKgpVersion = true
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { HelloWorldAndroid.setupKotlin(files) }
+      // Setting useLatestKgpVersion = true will add
+      // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
+      // to the build script classpath
+      useLatestKgpVersion = true
     }
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `test Kotlin Gradle plugin is present in buildscriptDependenciesInfo`() {
-        val attributionDir = temporaryFolder.newFolder()
-        rule.build.executor
-            .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionDir.path)
-            // buildscriptDependenciesInfo can't be collected when Isolated Projects is enabled
-            .withConfigurationCaching(ConfigurationCaching.ON)
-            .run("help")
+  @Test
+  fun `test Kotlin Gradle plugin is present in buildscriptDependenciesInfo`() {
+    val attributionDir = temporaryFolder.newFolder()
+    rule.build.executor
+      .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionDir.path)
+      // buildscriptDependenciesInfo can't be collected when Isolated Projects is enabled
+      .withConfigurationCaching(ConfigurationCaching.ON)
+      .run("help")
 
-        val attributionData = AndroidGradlePluginAttributionData.load(attributionDir)!!
-        assertThat(attributionData.buildscriptDependenciesInfo)
-            .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-    }
-
+    val attributionData = AndroidGradlePluginAttributionData.load(attributionDir)!!
+    assertThat(attributionData.buildscriptDependenciesInfo)
+      .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+  }
 }

@@ -46,8 +46,7 @@ import org.w3c.dom.Attr
 import org.w3c.dom.Element
 
 class ExportedFlagDetector : Detector(), XmlScanner {
-  override fun getApplicableElements() =
-    listOf(TAG_ACTIVITY, TAG_ACTIVITY_ALIAS, TAG_SERVICE, TAG_RECEIVER)
+  override fun getApplicableElements() = listOf(TAG_ACTIVITY, TAG_ACTIVITY_ALIAS, TAG_SERVICE, TAG_RECEIVER)
 
   override fun visitElement(context: XmlContext, element: Element) {
     val intentFilter = element.subtag(TAG_INTENT_FILTER)
@@ -56,19 +55,14 @@ class ExportedFlagDetector : Detector(), XmlScanner {
     if ((intentFilter != null || navGraph != null) && exported == null) {
       val message =
         """
-                As of Android 12, `android:exported` must be set; use `true` to make the activity \
-                available to other apps, and `false` otherwise.
-            """
+        As of Android 12, `android:exported` must be set; use `true` to make the activity \
+        available to other apps, and `false` otherwise.
+        """
           .trimIndent()
 
       // Check if the intent filter is for a launcher activity
       val incident =
-        if (
-          intentFilter
-            ?.subtag(TAG_ACTION)
-            ?.getAttributeNS(ANDROID_URI, ATTR_NAME)
-            ?.equals(MAIN_ACTION) == true
-        ) {
+        if (intentFilter?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true) {
           Incident(
             ISSUE,
             element,
@@ -109,20 +103,12 @@ class ExportedFlagDetector : Detector(), XmlScanner {
 
   private fun isNonExportedLaunchable(exported: Attr?, intentFilterTag: Element?) =
     exported?.value == VALUE_FALSE &&
-      intentFilterTag
-        ?.subtag(TAG_ACTION)
-        ?.getAttributeNS(ANDROID_URI, ATTR_NAME)
-        ?.equals(MAIN_ACTION) == true &&
-      intentFilterTag
-        .subtag(TAG_CATEGORY)
-        ?.getAttributeNS(ANDROID_URI, ATTR_NAME)
-        ?.equals(CATEGORY_LAUNCHER) == true
+      intentFilterTag?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true &&
+      intentFilterTag.subtag(TAG_CATEGORY)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(CATEGORY_LAUNCHER) == true
 
-  private fun createSetToTrueFix() =
-    fix().set().android().attribute(ATTR_EXPORTED).value(VALUE_TRUE).build()
+  private fun createSetToTrueFix() = fix().set().android().attribute(ATTR_EXPORTED).value(VALUE_TRUE).build()
 
-  private fun createSetToFalseFix() =
-    fix().set().android().attribute(ATTR_EXPORTED).value(VALUE_FALSE).build()
+  private fun createSetToFalseFix() = fix().set().android().attribute(ATTR_EXPORTED).value(VALUE_FALSE).build()
 
   companion object {
     private const val MAIN_ACTION = "android.intent.action.MAIN"

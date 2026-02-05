@@ -30,40 +30,34 @@ import org.mockito.kotlin.times
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledTestSuiteTargetBuilderTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteTargetBuilder = mock()
+  private val delegate: TestSuiteTargetBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuiteTargetBuilder by lazy {
-        object: AnalyticsEnabledTestSuiteTargetBuilder(delegate, stats) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledTestSuiteTargetBuilder by lazy { object : AnalyticsEnabledTestSuiteTargetBuilder(delegate, stats) {} }
 
-    @Test
-    fun testEnable() {
-        proxy.enable = true
-        Mockito.verify(delegate, times(1)).enable = true
+  @Test
+  fun testEnable() {
+    proxy.enable = true
+    Mockito.verify(delegate, times(1)).enable = true
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TEST_SUITE_TARGET_BUILDER_ENABLE_VALUE)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.TEST_SUITE_TARGET_BUILDER_ENABLE_VALUE)
+  }
 
-    @Test
-    fun testTargetDevices() {
-        val targetDevices = mutableListOf("device1")
-        Mockito.`when`(proxy.targetDevices).thenReturn(targetDevices)
-        val targetDevicesProxy = proxy.targetDevices
+  @Test
+  fun testTargetDevices() {
+    val targetDevices = mutableListOf("device1")
+    Mockito.`when`(proxy.targetDevices).thenReturn(targetDevices)
+    val targetDevicesProxy = proxy.targetDevices
 
-        Truth.assertThat(targetDevicesProxy).containsExactly("device1")
-        targetDevicesProxy.add("device2")
-        Truth.assertThat(proxy.targetDevices).containsExactly(
-            "device1", "device2")
+    Truth.assertThat(targetDevicesProxy).containsExactly("device1")
+    targetDevicesProxy.add("device2")
+    Truth.assertThat(proxy.targetDevices).containsExactly("device1", "device2")
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TEST_SUITE_TARGET_BUILDER_TARGET_DEVICES_VALUE)
-        Mockito.verify(delegate, times(2)).targetDevices
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.TEST_SUITE_TARGET_BUILDER_TARGET_DEVICES_VALUE)
+    Mockito.verify(delegate, times(2)).targetDevices
+  }
 }

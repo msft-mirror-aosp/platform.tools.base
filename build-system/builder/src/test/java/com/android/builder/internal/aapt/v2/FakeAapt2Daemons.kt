@@ -17,55 +17,54 @@
 package com.android.builder.internal.aapt.v2
 
 class NeverReadyAapt2Daemon {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            while(true) {
-                Thread.sleep(10000)
-            }
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      while (true) {
+        Thread.sleep(10000)
+      }
     }
+  }
 }
 
-
 class ExitsBeforeReadyAapt2Daemon {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            Thread.sleep(100)
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      Thread.sleep(100)
     }
+  }
 }
 
 class ExitsAfterReadyAapt2Daemon {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            println("Ready")
-            Thread.sleep(100)
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      println("Ready")
+      Thread.sleep(100)
     }
+  }
 }
 
-
 class ExitsDuringCompileOrLinkAapt2Daemon {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            println("Ready")
-            val reader = System.`in`.bufferedReader(Charsets.UTF_8)
-            var running = true
-            while (running) {
-                val action = reader.readLine()
-                when (action) {
-                    "c", "l" -> {
-                        System.err.println("Crashes")
-                        running = false
-                    }
-                    "quit" -> running = false
-                    else -> System.err.println("Unknown action $action\nDone")
-                }
-            }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      println("Ready")
+      val reader = System.`in`.bufferedReader(Charsets.UTF_8)
+      var running = true
+      while (running) {
+        val action = reader.readLine()
+        when (action) {
+          "c",
+          "l" -> {
+            System.err.println("Crashes")
+            running = false
+          }
+          "quit" -> running = false
+          else -> System.err.println("Unknown action $action\nDone")
         }
+      }
     }
+  }
 }

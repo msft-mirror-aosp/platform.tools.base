@@ -24,17 +24,14 @@ import javax.inject.Inject
 
 abstract class MinSdkSpecImpl @Inject constructor(dslService: DslServices) : MinSdkSpec {
 
-    override fun release(version: Int): MinSdkVersion {
-        return MinSdkVersionImpl(apiLevel = version, codeName = null)
-    }
+  override fun release(version: Int): MinSdkVersion {
+    return MinSdkVersionImpl(apiLevel = version, codeName = null)
+  }
 
-    override fun preview(codeName: String): MinSdkVersion {
-        val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
-        return MinSdkVersionImpl(apiLevel, codeName)
-    }
+  override fun preview(codeName: String): MinSdkVersion {
+    val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
+    return MinSdkVersionImpl(apiLevel, codeName)
+  }
 }
 
-internal data class MinSdkVersionImpl(
-    override val apiLevel: Int?,
-    override val codeName: String?
-): MinSdkVersion
+internal data class MinSdkVersionImpl(override val apiLevel: Int?, override val codeName: String?) : MinSdkVersion

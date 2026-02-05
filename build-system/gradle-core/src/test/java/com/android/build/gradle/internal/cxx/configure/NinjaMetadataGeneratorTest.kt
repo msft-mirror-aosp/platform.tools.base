@@ -16,24 +16,27 @@
 
 package com.android.build.gradle.internal.cxx.configure
 
-
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class NinjaMetadataGeneratorTest {
 
-    @Test
-    fun `check error matcher`() {
-        checkError("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Microsoft\\VC\\v160\\Google\\Google.Android.Cpp.Ninja.targets(639,7): error : NinjaRequireMinSdkVersion property value [] must be set to the same value as AndroidMinSdkVersion [15] [C:\\src\\Teapot\\GameApplication\\GameApplication.vcxproj]")
-        checkError("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Microsoft\\VC\\v160\\Google\\Google.Android.Cpp.Ninja.targets(639,7): error AGDE1000: NinjaRequireMinSdkVersion property value [] must be set to the same value as AndroidMinSdkVersion [15] [C:\\src\\Teapot\\GameEngine\\GameEngine.vcxproj]")
-        checkNotError("Build started 12/29/2021 5:14:45 PM.")
-    }
+  @Test
+  fun `check error matcher`() {
+    checkError(
+      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Microsoft\\VC\\v160\\Google\\Google.Android.Cpp.Ninja.targets(639,7): error : NinjaRequireMinSdkVersion property value [] must be set to the same value as AndroidMinSdkVersion [15] [C:\\src\\Teapot\\GameApplication\\GameApplication.vcxproj]"
+    )
+    checkError(
+      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\MSBuild\\Microsoft\\VC\\v160\\Google\\Google.Android.Cpp.Ninja.targets(639,7): error AGDE1000: NinjaRequireMinSdkVersion property value [] must be set to the same value as AndroidMinSdkVersion [15] [C:\\src\\Teapot\\GameEngine\\GameEngine.vcxproj]"
+    )
+    checkNotError("Build started 12/29/2021 5:14:45 PM.")
+  }
 
-    private fun checkError(line : String) {
-        assertThat(isError(line)).isTrue()
-    }
+  private fun checkError(line: String) {
+    assertThat(isError(line)).isTrue()
+  }
 
-    private fun checkNotError(line : String) {
-        assertThat(isError(line)).isFalse()
-    }
+  private fun checkNotError(line: String) {
+    assertThat(isError(line)).isFalse()
+  }
 }

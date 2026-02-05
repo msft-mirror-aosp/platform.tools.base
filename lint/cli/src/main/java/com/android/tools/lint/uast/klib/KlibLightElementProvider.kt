@@ -58,8 +58,7 @@ import org.jetbrains.uast.kotlin.internal.FirKotlinUastLibraryPsiProviderService
 import org.jetbrains.uast.kotlin.readWriteAccess
 
 /**
- * An experimental light element provider that tries to provide light elements (Java-like PSI) for
- * klibs. Note that it still defers to
+ * An experimental light element provider that tries to provide light elements (Java-like PSI) for klibs. Note that it still defers to
  * [com.android.tools.lint.uast.DecompiledPsiDeclarationProvider] for non-klib (jar) elements.
  */
 internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderService {
@@ -84,9 +83,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
   override fun KaSession.provide(symbol: KaSymbol, context: KtElement?): PsiElement? {
     val module = useSiteModule
 
-    logHeader {
-      "Providing symbol for: $symbol; name: ${symbol.name}; callableId: ${(symbol as? KaCallableSymbol)?.callableId}"
-    }
+    logHeader { "Providing symbol for: $symbol; name: ${symbol.name}; callableId: ${(symbol as? KaCallableSymbol)?.callableId}" }
 
     if (context != null) {
       log { "File path: ${context.containingFile?.virtualFile?.path}" }
@@ -127,10 +124,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     return result
   }
 
-  private fun KaSession.provideForFunctionSymbol(
-    symbol: KaFunctionSymbol,
-    module: KaModule,
-  ): PsiElement? {
+  private fun KaSession.provideForFunctionSymbol(symbol: KaFunctionSymbol, module: KaModule): PsiElement? {
     // symbol can be a property accessor contained within a property symbol.
     val functionOrPropertySymbol = symbol.containingDeclaration as? KaPropertySymbol ?: symbol
     val psiManager = PsiManager.getInstance(module.project)
@@ -138,26 +132,17 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     val lightClass =
       when {
         functionOrPropertySymbol.isTopLevel -> {
-          if (
-            functionOrPropertySymbol !is KaNamedFunctionSymbol &&
-              functionOrPropertySymbol !is KaPropertySymbol
-          ) {
-            log {
-              "RETURN ERROR: Can only create a facade class for top-level named function or property symbol"
-            }
+          if (functionOrPropertySymbol !is KaNamedFunctionSymbol && functionOrPropertySymbol !is KaPropertySymbol) {
+            log { "RETURN ERROR: Can only create a facade class for top-level named function or property symbol" }
             return null
           }
-          // TODO(b/461753685): Consider creating a facade class per package, .nm file, or similar.
+          // TODO(b/461753685): Consider creating a facade class per package, .nm file, or
+          // similar.
           // We create our own fake facade class per top-level function since .containingFile,
           // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with
           // klibs.
           val facade =
-            createFacadeForTopLevelCallable(
-              functionOrPropertySymbol,
-              module,
-              psiManager,
-              getPsiFile(functionOrPropertySymbol, psiManager),
-            )
+            createFacadeForTopLevelCallable(functionOrPropertySymbol, module, psiManager, getPsiFile(functionOrPropertySymbol, psiManager))
           if (facade == null) {
             log { "RETURN Did not create facade class, but that can be OK." }
             return null
@@ -165,8 +150,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
           facade
         }
         else -> {
-          val containingClass =
-            functionOrPropertySymbol.containingDeclaration as? KaNamedClassSymbol
+          val containingClass = functionOrPropertySymbol.containingDeclaration as? KaNamedClassSymbol
           if (containingClass == null) {
             log {
               "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${functionOrPropertySymbol.containingDeclaration}"
@@ -183,10 +167,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
       }
     val pointer = symbol.createPointer()
     val lightMethod =
-      lightClass.ownMethods.firstOrNull {
-        (it as? SymbolLightMethodBase)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) ==
-          true
-      }
+      lightClass.ownMethods.firstOrNull { (it as? SymbolLightMethodBase)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) == true }
     if (lightMethod == null) {
       log { "WARNING RETURN Could not find method in light class, but that can be OK." }
       return null
@@ -195,11 +176,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
   }
 
   @Suppress("UnstableApiUsage")
-  private fun KaSession.provideForPropertySymbol(
-    symbol: KaPropertySymbol,
-    module: KaModule,
-    context: KtElement?,
-  ): PsiElement? {
+  private fun KaSession.provideForPropertySymbol(symbol: KaPropertySymbol, module: KaModule, context: KtElement?): PsiElement? {
     // TODO: fields are incorrectly added, even for properties without a backing field.
     //  We might be able to fix in SLC, but we might be blocked by:
     //  https://youtrack.jetbrains.com/issue/KT-77281
@@ -238,13 +215,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
           // We create our own fake facade class per top-level property since .containingFile,
           // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with
           // klibs.
-          val facade =
-            createFacadeForTopLevelCallable(
-              symbol,
-              module,
-              psiManager,
-              getPsiFile(symbol, psiManager),
-            )
+          val facade = createFacadeForTopLevelCallable(symbol, module, psiManager, getPsiFile(symbol, psiManager))
           if (facade == null) {
             log { "RETURN Did not create facade class, but that can be OK." }
             return null
@@ -254,9 +225,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
         else -> {
           val containingClass = symbol.containingDeclaration as? KaNamedClassSymbol
           if (containingClass == null) {
-            log {
-              "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}"
-            }
+            log { "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}" }
             return null
           }
           val lightClass = provide(containingClass) as? SymbolLightClassBase
@@ -274,9 +243,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
       val accessorSymbolPointer = accessorSymbol.createPointer()
       val lightMethod =
         lightClass.ownMethods.firstOrNull {
-          (it as? SymbolLightMethodBase)
-            ?.extractSymbolPointer
-            ?.pointsToTheSameSymbolAs(accessorSymbolPointer) == true
+          (it as? SymbolLightMethodBase)?.extractSymbolPointer?.pointsToTheSameSymbolAs(accessorSymbolPointer) == true
         }
       if (lightMethod != null) {
         return lightMethod
@@ -286,9 +253,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
 
     val lightField =
       lightClass.ownFields.firstOrNull {
-        (it as? SymbolLightField)
-          ?.extractSymbolPointer
-          ?.pointsToTheSameSymbolAs(propertySymbolPointer) == true
+        (it as? SymbolLightField)?.extractSymbolPointer?.pointsToTheSameSymbolAs(propertySymbolPointer) == true
       }
     if (lightField != null) {
       return lightField
@@ -298,15 +263,10 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     return null
   }
 
-  private fun KaSession.provideForEnumEntrySymbol(
-    symbol: KaEnumEntrySymbol,
-    module: KaModule,
-  ): PsiElement? {
+  private fun KaSession.provideForEnumEntrySymbol(symbol: KaEnumEntrySymbol, module: KaModule): PsiElement? {
     val containingClass = symbol.containingDeclaration as? KaNamedClassSymbol
     if (containingClass == null) {
-      log {
-        "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}"
-      }
+      log { "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}" }
       return null
     }
     val lightClass = provide(containingClass) as? SymbolLightClassForClassOrObject
@@ -322,10 +282,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     return lightEnumEntry
   }
 
-  private fun KaSession.provideForClassLikeSymbol(
-    symbol: KaClassLikeSymbol,
-    module: KaModule,
-  ): PsiElement? {
+  private fun KaSession.provideForClassLikeSymbol(symbol: KaClassLikeSymbol, module: KaModule): PsiElement? {
     when (symbol) {
       is KaNamedClassSymbol -> {
         // Unlike functions and properties, the LCs for classes do not take a reference to the
@@ -333,9 +290,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
         // However, getContainingClass() and getOwnInnerClasses() both create fresh instances.
         // We need to "fix up" these instances, so we must intercept these methods/initializers.
         val psiManager = PsiManager.getInstance(module.project)
-        val cls =
-          createLightClassNoCache(classSymbol = symbol, ktModule = module, manager = psiManager)
-            as? SymbolLightClassForClassLike<*>
+        val cls = createLightClassNoCache(classSymbol = symbol, ktModule = module, manager = psiManager) as? SymbolLightClassForClassLike<*>
 
         if (cls == null) {
           log { "ERROR: Could not cast LC to SymbolLightClassForClassLike<*>" }
@@ -379,21 +334,12 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     }
 
     // _containingClass$delegate
-    val field =
-      SymbolLightClassForClassLike::class.java.getDeclaredField("_containingClass\$delegate")
+    val field = SymbolLightClassForClassLike::class.java.getDeclaredField("_containingClass\$delegate")
     field.isAccessible = true
 
     @Suppress("UNCHECKED_CAST") val lazyContainingClassOriginal = field.get(cls) as? Lazy<PsiClass?>
 
-    field.set(
-      cls,
-      lazyPub {
-        lazyContainingClassOriginal
-          ?.value
-          ?.let { it as? SymbolLightClassForClassLike<*> }
-          ?.also { fixUpClass(it) }
-      },
-    )
+    field.set(cls, lazyPub { lazyContainingClassOriginal?.value?.let { it as? SymbolLightClassForClassLike<*> }?.also { fixUpClass(it) } })
 
     // Request the inner classes.
     val unused = cls.ownInnerClasses
@@ -412,14 +358,11 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
         as? Key<PsiParameterizedCachedValue.Soft<List<SymbolLightClassBase>, PsiElement>> ?: return
 
     @Suppress("UNCHECKED_CAST")
-    val originalCachedValue =
-      key.get(cls) as? PsiParameterizedCachedValue<List<SymbolLightClassBase>, PsiElement> ?: return
+    val originalCachedValue = key.get(cls) as? PsiParameterizedCachedValue<List<SymbolLightClassBase>, PsiElement> ?: return
     val newCachedValue =
-      PsiParameterizedCachedValue.Soft<List<SymbolLightClassBase>, PsiElement>(cls.manager) { param
-        ->
+      PsiParameterizedCachedValue.Soft<List<SymbolLightClassBase>, PsiElement>(cls.manager) { param ->
         val innerClasses = originalCachedValue.getValue(param) // Will recompute, if necessary.
-        val freshList =
-          ArrayList<SymbolLightClassBase>(innerClasses ?: emptyList<SymbolLightClassBase>())
+        val freshList = ArrayList<SymbolLightClassBase>(innerClasses ?: emptyList<SymbolLightClassBase>())
         for (innerClass in freshList) {
           if (innerClass !is SymbolLightClassForClassLike<*>) {
             // TODO: Log?
@@ -427,10 +370,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
           }
           fixUpClass(innerClass)
         }
-        CachedValueProvider.Result.createSingleDependency(
-          innerClasses,
-          PsiModificationTracker.MODIFICATION_COUNT,
-        )
+        CachedValueProvider.Result.createSingleDependency(innerClasses, PsiModificationTracker.MODIFICATION_COUNT)
       }
     key.set(cls, newCachedValue)
   }

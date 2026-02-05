@@ -19,10 +19,9 @@ import com.android.tools.lint.detector.api.ApiConstraint.Companion.deserialize
 import com.android.tools.lint.detector.api.ApiConstraint.SdkApiConstraint.Companion.deserialize
 
 /**
- * Represents a series of half-open intervals, such as `[10, 12), [14, 25), [30,∞)`, and operations
- * for taking intersections of these, checking for membership, and so on. Note that the lowest
- * possible starting point is 1 rather than negative infinity. This is because of its primary
- * intended use case: representing API constraints.
+ * Represents a series of half-open intervals, such as `[10, 12), [14, 25), [30,∞)`, and operations for taking intersections of these,
+ * checking for membership, and so on. Note that the lowest possible starting point is 1 rather than negative infinity. This is because of
+ * its primary intended use case: representing API constraints.
  */
 sealed class Intervals {
   override fun toString(): String {
@@ -30,37 +29,32 @@ sealed class Intervals {
   }
 
   /**
-   * The starting point of the interval, inclusive. Note that this is only the major part of the
-   * number; the minor part can be looked up via [fromInclusiveMinor]. So an interval starting at
-   * "42.5" would return "42" from this method, and "5" from the other.
+   * The starting point of the interval, inclusive. Note that this is only the major part of the number; the minor part can be looked up via
+   * [fromInclusiveMinor]. So an interval starting at "42.5" would return "42" from this method, and "5" from the other.
    */
   abstract fun fromInclusive(): Int
 
   /**
-   * The *minor part* of the starting point of the interval, inclusive. Note that this is only the
-   * minor part of the number; the major part can be looked up via [fromInclusive]. So an interval
-   * starting at "42.5" would return "5" from this method, and "42" from the other.
+   * The *minor part* of the starting point of the interval, inclusive. Note that this is only the minor part of the number; the major part
+   * can be looked up via [fromInclusive]. So an interval starting at "42.5" would return "5" from this method, and "42" from the other.
    */
   abstract fun fromInclusiveMinor(): Int
 
   /**
-   * The ending point of the interval, exclusive. Note that this is only the major part of the
-   * number; the minor part can be looked up via [toExclusiveMinor]. So an interval ending at "42.5"
-   * would return "42" from this method, and "5" from the other.
+   * The ending point of the interval, exclusive. Note that this is only the major part of the number; the minor part can be looked up via
+   * [toExclusiveMinor]. So an interval ending at "42.5" would return "42" from this method, and "5" from the other.
    */
   abstract fun toExclusive(): Int
 
   /**
-   * The *minor part* of the ending point of the interval, exclusive. Note that this is only the
-   * minor part of the number; the major part can be looked up via [toExclusive]. So an interval
-   * ending at "42.5" would return "5" from this method, and "42" from the other.
+   * The *minor part* of the ending point of the interval, exclusive. Note that this is only the minor part of the number; the major part
+   * can be looked up via [toExclusive]. So an interval ending at "42.5" would return "5" from this method, and "42" from the other.
    */
   abstract fun toExclusiveMinor(): Int
 
   /**
-   * Represents this interval as a string. For example, the interval starting at 3 and ending after
-   * 6 would be shown as "x ≥ 10 and x < 12" , or "10 ≤ x < 12" in [compact] mode. The [variable]
-   * can be customized, for example, [ApiConstraint] uses "API level" instead.
+   * Represents this interval as a string. For example, the interval starting at 3 and ending after 6 would be shown as "x ≥ 10 and x < 12"
+   * , or "10 ≤ x < 12" in [compact] mode. The [variable] can be customized, for example, [ApiConstraint] uses "API level" instead.
    */
   abstract fun toString(variable: String = "x", compact: Boolean = false): String
 
@@ -85,19 +79,13 @@ sealed class Intervals {
   /** Returns true if this interval is **not** empty. */
   fun isNotEmpty() = !isEmpty()
 
-  /**
-   * Returns true if this interval includes everything (e.g. from lowest possible starting point up
-   * to infinity.)
-   */
+  /** Returns true if this interval includes everything (e.g. from lowest possible starting point up to infinity.) */
   abstract fun isAll(): Boolean
 
   /** Returns true if the given value is included within this interval */
   abstract fun contains(value: Int): Boolean
 
-  /**
-   * Serializes this constraint into a String, which can later be retrieved by calling
-   * [deserialize].
-   */
+  /** Serializes this constraint into a String, which can later be retrieved by calling [deserialize]. */
   abstract fun serialize(): String
 
   /** Is this [Intervals] at least as high as the given [other] intervals ? */
@@ -106,10 +94,9 @@ sealed class Intervals {
   /**
    * Will this API level or anything higher always match this constraint?
    *
-   * For example, if we know from minSdkVersion that SDK_INT >= 32, and we see a check if SDK_INT
-   * is >= 21, that check will always be true. That's what this method is for; this [ApiConstraint]
-   * is the SDK_INT check, and the passed in [minSdk] represents the minimum value of SDK_INT (the
-   * known constraint from minSdkVersion).
+   * For example, if we know from minSdkVersion that SDK_INT >= 32, and we see a check if SDK_INT is >= 21, that check will always be true.
+   * That's what this method is for; this [ApiConstraint] is the SDK_INT check, and the passed in [minSdk] represents the minimum value of
+   * SDK_INT (the known constraint from minSdkVersion).
    */
   fun alwaysAtLeast(minSdk: Intervals): Boolean {
     return minSdk and this == minSdk
@@ -127,17 +114,14 @@ sealed class Intervals {
   }
 
   /**
-   * Returns true if this is an "open ended" constraint, e.g. it goes up to infinity. True for
-   * something like "SDK_INT >= 31", and false for "SDK_INT < 24".
+   * Returns true if this is an "open ended" constraint, e.g. it goes up to infinity. True for something like "SDK_INT >= 31", and false for
+   * "SDK_INT < 24".
    */
   fun isOpenEnded(): Boolean {
     return isInfinity(toExclusive())
   }
 
-  /**
-   * Encoding of `major.minor` integer numbers into a single primitive integer. This simplifies
-   * various range checking etc.
-   */
+  /** Encoding of `major.minor` integer numbers into a single primitive integer. This simplifies various range checking etc. */
   @JvmInline
   private value class MajorMinor(val bits: Int) : Comparable<MajorMinor> {
     constructor(major: Int, minor: Int) : this((major shl MAJOR_SHIFT) + minor)
@@ -161,14 +145,11 @@ sealed class Intervals {
     }
   }
 
-  /**
-   * Represents a single half-open interval from `[fromInclusive.fromInclusiveMinor,
-   * toExclusive.toExclusiveMinor)`
-   */
+  /** Represents a single half-open interval from `[fromInclusive.fromInclusiveMinor, toExclusive.toExclusiveMinor)` */
   private class Span(
     /**
-     * The start of the span, encoded as the major version, left shifted [MAJOR_SHIFT] bits and then
-     * the minor version added in. From is inclusive, and to is exclusive.
+     * The start of the span, encoded as the major version, left shifted [MAJOR_SHIFT] bits and then the minor version added in. From is
+     * inclusive, and to is exclusive.
      */
     val from: MajorMinor,
     val to: MajorMinor,
@@ -178,10 +159,7 @@ sealed class Intervals {
       fromInclusiveMinor: Int,
       toExclusive: Int,
       toExclusiveMinor: Int,
-    ) : this(
-      MajorMinor(fromInclusive, fromInclusiveMinor),
-      MajorMinor(toExclusive, toExclusiveMinor),
-    )
+    ) : this(MajorMinor(fromInclusive, fromInclusiveMinor), MajorMinor(toExclusive, toExclusiveMinor))
 
     override fun fromInclusive(): Int =
       if (isEmpty()) {
@@ -483,15 +461,10 @@ sealed class Intervals {
 
     fun below(toExclusive: Int, minor: Int = 0): Intervals = Span(1, 0, toExclusive, minor)
 
-    fun range(fromInclusive: Int, toExclusive: Int): Intervals =
-      Span(fromInclusive, 0, toExclusive, 0)
+    fun range(fromInclusive: Int, toExclusive: Int): Intervals = Span(fromInclusive, 0, toExclusive, 0)
 
-    fun range(
-      fromInclusive: Int,
-      fromInclusiveMinor: Int,
-      toExclusive: Int,
-      toExclusiveMinor: Int,
-    ): Intervals = Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
+    fun range(fromInclusive: Int, fromInclusiveMinor: Int, toExclusive: Int, toExclusiveMinor: Int): Intervals =
+      Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
 
     fun deserialize(s: String): Intervals {
       if (s.contains(',')) {
@@ -617,44 +590,37 @@ sealed class Intervals {
     }
 
     /**
-     * Returns true if the given level (typically returned from [fromInclusive] or [toExclusive]
-     * represents infinity, e.g. it's an open-ended interval such as `x >= 10`, represented as the
-     * interval `[x, ∞)`.
+     * Returns true if the given level (typically returned from [fromInclusive] or [toExclusive] represents infinity, e.g. it's an
+     * open-ended interval such as `x >= 10`, represented as the interval `[x, ∞)`.
      */
     fun isInfinity(level: Int): Boolean {
       return level == INFINITY.bits
     }
 
     /**
-     * Returns true if these two spans represent the intervals that include everything except value
-     * "X". For example, for `exactly(21).not()`, we have the intervals 1 up to 21, and 22 up to
-     * infinity.
+     * Returns true if these two spans represent the intervals that include everything except value "X". For example, for
+     * `exactly(21).not()`, we have the intervals 1 up to 21, and 22 up to infinity.
      *
-     * In short, this identifies the scenario where we have this exact span list: `{(1,
-     * X), [X+1,∞)}`, meaning everything except X. We use this to identify this scenario to for
-     * example display this as just "x != X" instead of these more complicated intervals.
+     * In short, this identifies the scenario where we have this exact span list: `{(1, X), [X+1,∞)}`, meaning everything except X. We use
+     * this to identify this scenario to for example display this as just "x != X" instead of these more complicated intervals.
      */
     private fun isNotXInterval(first: Span, adjacent: Span): Boolean {
       return first.from == ZERO && adjacent.to == INFINITY && adjacent(first.to, adjacent.from)
     }
 
     /**
-     * Returns true if these version numbers are right next to each other. Normally, this is as
-     * simple as "is the value one less than the neighbor?". But with minor versions, there is some
-     * ambiguity. Consider the expression "x = 12". If we take inverse of this, we have the spans 0
-     * up to and not including 12. But for the other side, do we take 12.1 and up, or do we take 13
-     * and up? For now, we generally operate on whole numbers, unless the version is specifically
-     * constructed with a minor version.
+     * Returns true if these version numbers are right next to each other. Normally, this is as simple as "is the value one less than the
+     * neighbor?". But with minor versions, there is some ambiguity. Consider the expression "x = 12". If we take inverse of this, we have
+     * the spans 0 up to and not including 12. But for the other side, do we take 12.1 and up, or do we take 13 and up? For now, we
+     * generally operate on whole numbers, unless the version is specifically constructed with a minor version.
      *
-     * Sometimes we want to reverse this, for example, when we have the intervals corresponding to
-     * every value except 12, we want to display this as just "x != 12". This method handles
-     * checking for this adjacency.
+     * Sometimes we want to reverse this, for example, when we have the intervals corresponding to every value except 12, we want to display
+     * this as just "x != 12". This method handles checking for this adjacency.
      */
     private fun adjacent(left: MajorMinor, right: MajorMinor): Boolean {
       // It's unclear whether  !(x < N && x > N) should be limited to just the minor version .0 or
       // the entire range of N to N+1. For now simplify both to "x != N".
-      return (left.bits + 1 == right.bits ||
-        left.bits + API_LEVEL_DELTA == right.bits && left.minor == 0 && right.minor == 0)
+      return (left.bits + 1 == right.bits || left.bits + API_LEVEL_DELTA == right.bits && left.minor == 0 && right.minor == 0)
     }
   }
 }

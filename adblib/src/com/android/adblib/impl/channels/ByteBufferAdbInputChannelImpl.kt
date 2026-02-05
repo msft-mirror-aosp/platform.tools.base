@@ -20,30 +20,28 @@ import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
-internal class ByteBufferAdbInputChannelImpl(
-    private val sourceBuffer: ByteBuffer
-) : AdbInputChannel {
-    private var closed = false
+internal class ByteBufferAdbInputChannelImpl(private val sourceBuffer: ByteBuffer) : AdbInputChannel {
+  private var closed = false
 
-    override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        if (closed) {
-            throw ClosedChannelException()
-        }
-
-        if (sourceBuffer.remaining() == 0) {
-            return
-        }
-
-        // Write bytes from source buffer to destination
-        val count = Integer.min(sourceBuffer.remaining(), buffer.remaining())
-        val savedLimit = sourceBuffer.limit()
-        // copy sourceBuffer from [position, position + count]
-        sourceBuffer.limit(sourceBuffer.position() + count)
-        buffer.put(sourceBuffer)
-        sourceBuffer.limit(savedLimit)
+  override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    if (closed) {
+      throw ClosedChannelException()
     }
 
-    override fun close() {
-        closed = true
+    if (sourceBuffer.remaining() == 0) {
+      return
     }
+
+    // Write bytes from source buffer to destination
+    val count = Integer.min(sourceBuffer.remaining(), buffer.remaining())
+    val savedLimit = sourceBuffer.limit()
+    // copy sourceBuffer from [position, position + count]
+    sourceBuffer.limit(sourceBuffer.position() + count)
+    buffer.put(sourceBuffer)
+    sourceBuffer.limit(savedLimit)
+  }
+
+  override fun close() {
+    closed = true
+  }
 }

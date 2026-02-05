@@ -19,34 +19,38 @@ package com.android.build.api.dsl
 // Some basic interface with nesting to test DslProxy and associated classes.
 
 interface Person {
-    var name: String
-    var surname: String?
-    var age: Int?
-    var isRobot: Boolean
+  var name: String
+  var surname: String?
+  var age: Int?
+  var isRobot: Boolean
 
-    val address: Address
-    fun address(action: Address.() -> Unit)
+  val address: Address
 
-    fun sendMessage(message: String?)
-    fun something(vararg value: String)
-    fun something(someInt: Int, vararg value: String)
+  fun address(action: Address.() -> Unit)
 
-    fun voteFor(candidate: Person)
+  fun sendMessage(message: String?)
+
+  fun something(vararg value: String)
+
+  fun something(someInt: Int, vararg value: String)
+
+  fun voteFor(candidate: Person)
 }
 
 interface Address {
-    var street: String
-    var city: String
-    var zipCode: Int
-    val properties: MutableMap<String, String>
+  var street: String
+  var city: String
+  var zipCode: Int
+  val properties: MutableMap<String, String>
 }
 
 interface Town {
-    val places: MutableList<String>
-    val mayor: Person
-    fun mayor(action: Person.() -> Unit)
+  val places: MutableList<String>
+  val mayor: Person
+
+  fun mayor(action: Person.() -> Unit)
 }
 
 interface California {
-    val mountainView: Town
+  val mountainView: Town
 }

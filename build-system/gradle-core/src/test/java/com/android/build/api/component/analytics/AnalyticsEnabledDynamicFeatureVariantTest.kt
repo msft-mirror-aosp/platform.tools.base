@@ -30,178 +30,148 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import kotlin.test.fail
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
-import kotlin.test.fail
 
 class AnalyticsEnabledDynamicFeatureVariantTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: DynamicFeatureVariant = mock()
+  private val delegate: DynamicFeatureVariant = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledDynamicFeatureVariant by lazy {
-        AnalyticsEnabledDynamicFeatureVariant(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledDynamicFeatureVariant by lazy {
+    AnalyticsEnabledDynamicFeatureVariant(delegate, stats, FakeObjectFactory.factory)
+  }
 
-    @Test
-    fun getAndroidResources() {
-        val androidResources = mock<AndroidResources>()
-        whenever(delegate.androidResources).thenReturn(androidResources)
-        val proxiedAndroidResources = proxy.androidResources
-        Truth.assertThat(proxiedAndroidResources).isInstanceOf(
-            AnalyticsEnabledAndroidResources::class.java
+  @Test
+  fun getAndroidResources() {
+    val androidResources = mock<AndroidResources>()
+    whenever(delegate.androidResources).thenReturn(androidResources)
+    val proxiedAndroidResources = proxy.androidResources
+    Truth.assertThat(proxiedAndroidResources).isInstanceOf(AnalyticsEnabledAndroidResources::class.java)
+    Truth.assertThat((proxiedAndroidResources as AnalyticsEnabledAndroidResources).delegate).isEqualTo(androidResources)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.AAPT_OPTIONS_VALUE)
+    verify(delegate, times(1)).androidResources
+  }
+
+  @Test
+  fun getRenderscript() {
+    val renderscript = mock<Renderscript>()
+    whenever(delegate.renderscript).thenReturn(renderscript)
+    // simulate a user configuring packaging options for jniLibs and resources
+    proxy.renderscript
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.RENDERSCRIPT_VALUE)
+    verify(delegate, times(1)).renderscript
+  }
+
+  @Test
+  fun getPackaging() {
+    val packaging = mock<TestedApkPackaging>()
+    val jniLibsPackagingOptions = mock<JniLibsTestedApkPackaging>()
+    val resourcesPackagingOptions = mock<ResourcesPackaging>()
+    whenever(packaging.jniLibs).thenReturn(jniLibsPackagingOptions)
+    whenever(packaging.resources).thenReturn(resourcesPackagingOptions)
+    whenever(delegate.packaging).thenReturn(packaging)
+    // simulate a user configuring packaging options for jniLibs and resources
+    proxy.packaging.jniLibs
+    proxy.packaging.resources
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(
+        listOf(
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE,
         )
-        Truth.assertThat((proxiedAndroidResources as AnalyticsEnabledAndroidResources).delegate)
-            .isEqualTo(androidResources)
+      )
+    verify(delegate, times(1)).packaging
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.AAPT_OPTIONS_VALUE)
-        verify(delegate, times(1))
-            .androidResources
-    }
+  @Test
+  fun androidTest() {
+    @Suppress("DEPRECATION") val androidTest = mock<com.android.build.api.variant.AndroidTest>()
+    whenever(androidTest.applicationId).thenReturn(FakeGradleProperty("appId"))
+    whenever(delegate.androidTest).thenReturn(androidTest)
 
-    @Test
-    fun getRenderscript() {
-        val renderscript = mock<Renderscript>()
-        whenever(delegate.renderscript).thenReturn(renderscript)
-        // simulate a user configuring packaging options for jniLibs and resources
-        proxy.renderscript
+    proxy.androidTest.let { Truth.assertThat(it?.applicationId?.get()).isEqualTo("appId") }
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.RENDERSCRIPT_VALUE)
-        verify(delegate, times(1)).renderscript
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.ANDROID_TEST_VALUE, VariantPropertiesMethodType.APPLICATION_ID_VALUE))
+    verify(delegate, times(1)).androidTest
+  }
 
-    @Test
-    fun getPackaging() {
-        val packaging = mock<TestedApkPackaging>()
-        val jniLibsPackagingOptions = mock<JniLibsTestedApkPackaging>()
-        val resourcesPackagingOptions = mock<ResourcesPackaging>()
-        whenever(packaging.jniLibs).thenReturn(jniLibsPackagingOptions)
-        whenever(packaging.resources).thenReturn(resourcesPackagingOptions)
-        whenever(delegate.packaging).thenReturn(packaging)
-        // simulate a user configuring packaging options for jniLibs and resources
-        proxy.packaging.jniLibs
-        proxy.packaging.resources
+  @Test
+  fun testFixtures() {
+    val testFixtures = mock<TestFixtures>()
+    whenever(testFixtures.pseudoLocalesEnabled).thenReturn(FakeGradleProperty(false))
+    whenever(delegate.testFixtures).thenReturn(testFixtures)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-                listOf(
-                        VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE
-                )
-        )
-        verify(delegate, times(1)).packaging
-    }
+    proxy.testFixtures.let { Truth.assertThat(it?.pseudoLocalesEnabled?.get()).isEqualTo(false) }
 
-    @Test
-    fun androidTest() {
-        @Suppress("DEPRECATION")
-        val androidTest = mock<com.android.build.api.variant.AndroidTest>()
-        whenever(androidTest.applicationId).thenReturn(FakeGradleProperty("appId"))
-        whenever(delegate.androidTest).thenReturn(androidTest)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(
+        listOf(VariantPropertiesMethodType.TEST_FIXTURES_VALUE, VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE)
+      )
+    verify(delegate, times(1)).testFixtures
+  }
 
-        proxy.androidTest.let {
-            Truth.assertThat(it?.applicationId?.get()).isEqualTo("appId")
-        }
+  @Test
+  fun getDeviceTests() {
+    val deviceTest = mock<DeviceTest>()
+    whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
+    val deviceTestsProxy = proxy.deviceTests
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.ANDROID_TEST_VALUE,
-                VariantPropertiesMethodType.APPLICATION_ID_VALUE,
-            )
-        )
-        verify(delegate, times(1)).androidTest
-    }
+    Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
+    val deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledDeviceTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledDeviceTest).delegate).isEqualTo(deviceTest)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
+    verify(delegate, times(1)).deviceTests
+  }
 
-    @Test
-    fun testFixtures() {
-        val testFixtures = mock<TestFixtures>()
-        whenever(testFixtures.pseudoLocalesEnabled).thenReturn(FakeGradleProperty(false))
-        whenever(delegate.testFixtures).thenReturn(testFixtures)
+  @Test
+  fun getDeviceTests_for_android_test() {
+    @Suppress("DEPRECATION") val deviceTest = mock<com.android.build.api.variant.AndroidTest>()
+    whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
+    whenever(delegate.androidTest).thenReturn(deviceTest)
+    val deviceTestsProxy = proxy.deviceTests
 
-        proxy.testFixtures.let {
-            Truth.assertThat(it?.pseudoLocalesEnabled?.get()).isEqualTo(false)
-        }
+    Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
+    var deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.TEST_FIXTURES_VALUE,
-                VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE,
-            )
-        )
-        verify(delegate, times(1)).testFixtures
-    }
+    deviceTestProxy = proxy.androidTest ?: fail("androidTest method returned false")
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
 
-    @Test
-    fun getDeviceTests() {
-        val deviceTest = mock<DeviceTest>()
-        whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
-        val deviceTestsProxy = proxy.deviceTests
-
-        Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
-        val deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledDeviceTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledDeviceTest).delegate).isEqualTo(deviceTest)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
-        verify(delegate, times(1))
-            .deviceTests
-    }
-
-    @Test
-    fun getDeviceTests_for_android_test() {
-        @Suppress("DEPRECATION")
-        val deviceTest = mock<com.android.build.api.variant.AndroidTest>()
-        whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
-        whenever(delegate.androidTest).thenReturn(deviceTest)
-        val deviceTestsProxy = proxy.deviceTests
-
-        Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
-        var deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
-
-        deviceTestProxy = proxy.androidTest ?: fail("androidTest method returned false")
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.last().type
-        ).isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
-        verify(delegate, times(1))
-            .deviceTests
-        verify(delegate, times(1))
-            .androidTest
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.last().type)
+      .isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
+    verify(delegate, times(1)).deviceTests
+    verify(delegate, times(1)).androidTest
+  }
 }

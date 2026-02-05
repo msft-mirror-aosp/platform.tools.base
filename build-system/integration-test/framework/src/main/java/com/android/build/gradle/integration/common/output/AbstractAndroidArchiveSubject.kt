@@ -20,129 +20,95 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.StringSubject
 import java.util.function.Consumer
 
-/**
- * Base class for truth subject for AAR and APK.
- */
-abstract class AbstractAndroidArchiveSubject<S: AbstractAndroidArchiveSubject<S, T>, T: Zip> internal constructor(
-    metadata: FailureMetadata,
-    actual: T
-): AbstractZipSubject<S, T>(metadata, actual) {
+/** Base class for truth subject for AAR and APK. */
+abstract class AbstractAndroidArchiveSubject<S : AbstractAndroidArchiveSubject<S, T>, T : Zip>
+internal constructor(metadata: FailureMetadata, actual: T) : AbstractZipSubject<S, T>(metadata, actual) {
 
-    /**
-     * returns a [StringSubject] for the Android Manifest of the archive.
-     */
-    abstract fun manifest(): StringSubject
+  /** returns a [StringSubject] for the Android Manifest of the archive. */
+  abstract fun manifest(): StringSubject
 
-    /**
-     * Returns a [ClassesSubject] for all code in the archive
-     */
-    abstract fun classes(): ClassesSubject
+  /** Returns a [ClassesSubject] for all code in the archive */
+  abstract fun classes(): ClassesSubject
 
-    fun classes(action: ClassesSubject.() -> Unit) {
-        action(classes())
-    }
+  fun classes(action: ClassesSubject.() -> Unit) {
+    action(classes())
+  }
 
-    fun classes(action: Consumer<ClassesSubject>) {
-        action.accept(classes())
-    }
+  fun classes(action: Consumer<ClassesSubject>) {
+    action.accept(classes())
+  }
 
-    /**
-     * returns [ResourcesSubject] for the Android resources
-     *
-     * The names of the files do NOT include the res folder.
-     */
-    fun androidResources(): ResourcesSubject {
-        exists()
-        return check("androidResources()").about(FullJarResourcesSubject.jars()).that(ZipFolderView(actual(), "res"))
-    }
+  /**
+   * returns [ResourcesSubject] for the Android resources
+   *
+   * The names of the files do NOT include the res folder.
+   */
+  fun androidResources(): ResourcesSubject {
+    exists()
+    return check("androidResources()").about(FullJarResourcesSubject.jars()).that(ZipFolderView(actual(), "res"))
+  }
 
-    /**
-     * Creates a [ResourcesSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun androidResources(action: ResourcesSubject.() -> Unit) {
-        action(androidResources())
-    }
+  /** Creates a [ResourcesSubject] representing all the android resources, and configure it with the given action */
+  fun androidResources(action: ResourcesSubject.() -> Unit) {
+    action(androidResources())
+  }
 
-    /**
-     * Creates a [ResourcesSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun androidResources(action: Consumer<ResourcesSubject>) {
-        action.accept(androidResources())
-    }
+  /** Creates a [ResourcesSubject] representing all the android resources, and configure it with the given action */
+  fun androidResources(action: Consumer<ResourcesSubject>) {
+    action.accept(androidResources())
+  }
 
-    /**
-     * returns [ResourcesSubject] for the Android assets
-     *
-     * The names of the files do NOT include the assets folder.
-     */
-    fun assets(): ResourcesSubject {
-        exists()
-        return check("assets()").about(FullJarResourcesSubject.jars()).that(ZipFolderView(actual(), "assets"))
-    }
+  /**
+   * returns [ResourcesSubject] for the Android assets
+   *
+   * The names of the files do NOT include the assets folder.
+   */
+  fun assets(): ResourcesSubject {
+    exists()
+    return check("assets()").about(FullJarResourcesSubject.jars()).that(ZipFolderView(actual(), "assets"))
+  }
 
-    /**
-     * Creates a [ResourcesSubject] representing all the android assets, and configure it
-     * with the given action
-     */
-    fun assets(action: ResourcesSubject.() -> Unit) {
-        action(assets())
-    }
+  /** Creates a [ResourcesSubject] representing all the android assets, and configure it with the given action */
+  fun assets(action: ResourcesSubject.() -> Unit) {
+    action(assets())
+  }
 
-    /**
-     * Creates a [ResourcesSubject] representing all the android assets, and configure it
-     * with the given action
-     */
-    fun assets(action: Consumer<ResourcesSubject>) {
-        action.accept(assets())
-    }
+  /** Creates a [ResourcesSubject] representing all the android assets, and configure it with the given action */
+  fun assets(action: Consumer<ResourcesSubject>) {
+    action.accept(assets())
+  }
 
-    /**
-     * returns [JniSubject] for the Android resources
-     *
-     * The names of the files do NOT include the res folder.
-     */
-    abstract fun jniLibs(): JniSubject
+  /**
+   * returns [JniSubject] for the Android resources
+   *
+   * The names of the files do NOT include the res folder.
+   */
+  abstract fun jniLibs(): JniSubject
 
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun jniLibs(action: JniSubject.() -> Unit) {
-        action(jniLibs())
-    }
+  /** Creates a [ZipSubject] representing all the android resources, and configure it with the given action */
+  fun jniLibs(action: JniSubject.() -> Unit) {
+    action(jniLibs())
+  }
 
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun jniLibs(action: Consumer<JniSubject>) {
-        action.accept(jniLibs())
-    }
+  /** Creates a [ZipSubject] representing all the android resources, and configure it with the given action */
+  fun jniLibs(action: Consumer<JniSubject>) {
+    action.accept(jniLibs())
+  }
 
-    /**
-     * returns [ResourcesSubject] for the Java resources
-     *
-     * The names of the files do NOT include the res folder.
-     */
-    abstract fun javaResources(): ResourcesSubject
+  /**
+   * returns [ResourcesSubject] for the Java resources
+   *
+   * The names of the files do NOT include the res folder.
+   */
+  abstract fun javaResources(): ResourcesSubject
 
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun javaResources(action: ResourcesSubject.() -> Unit) {
-        action(javaResources())
-    }
+  /** Creates a [ZipSubject] representing all the android resources, and configure it with the given action */
+  fun javaResources(action: ResourcesSubject.() -> Unit) {
+    action(javaResources())
+  }
 
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun javaResources(action: Consumer<ResourcesSubject>) {
-        javaResources {
-            action.accept(this)
-        }
-    }
+  /** Creates a [ZipSubject] representing all the android resources, and configure it with the given action */
+  fun javaResources(action: Consumer<ResourcesSubject>) {
+    javaResources { action.accept(this) }
+  }
 }

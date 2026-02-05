@@ -25,49 +25,44 @@ import com.google.common.collect.ImmutableList
 /**
  * Implementation of [SyncIssueReporter].
  *
- * This records errors and warnings both as [SyncIssue] objects, but also records
- * the raw messages, allowing different ways to test the reported issues.
+ * This records errors and warnings both as [SyncIssue] objects, but also records the raw messages, allowing different ways to test the
+ * reported issues.
  *
  * This is similar to [FakeIssueReporter] from builder but also implements [SyncIssueReporter]
  */
-class FakeSyncIssueReporter(
-    private val throwOnError : Boolean = false
-) : SyncIssueReporter() {
-    override val syncIssues: ImmutableList<SyncIssue>
-        get() = ImmutableList.copyOf(_syncIssues)
+class FakeSyncIssueReporter(private val throwOnError: Boolean = false) : SyncIssueReporter() {
+  override val syncIssues: ImmutableList<SyncIssue>
+    get() = ImmutableList.copyOf(_syncIssues)
 
-    private val _syncIssues = mutableListOf<SyncIssue>()
+  private val _syncIssues = mutableListOf<SyncIssue>()
 
-    val messages = mutableListOf<String>()
-    val errors = mutableListOf<String>()
-    val warnings = mutableListOf<String>()
+  val messages = mutableListOf<String>()
+  val errors = mutableListOf<String>()
+  val warnings = mutableListOf<String>()
 
-    // we are in IDE mode for all tests recording sync issues.
-    override fun isInStandardEvaluationMode(): Boolean = false
+  // we are in IDE mode for all tests recording sync issues.
+  override fun isInStandardEvaluationMode(): Boolean = false
 
-    override fun reportIssue(type: Type,
-        severity: Severity,
-        exception: EvalIssueException
-    ) {
-        val issue = SyncIssueImpl(type, severity, exception)
-        _syncIssues.add(issue)
+  override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
+    val issue = SyncIssueImpl(type, severity, exception)
+    _syncIssues.add(issue)
 
-        messages.add(exception.message)
-        when(severity) {
-            Severity.ERROR -> errors.add(exception.message)
-            Severity.WARNING -> warnings.add(exception.message)
-        }
-
-        if (severity == Severity.ERROR && throwOnError) {
-            throw exception
-        }
+    messages.add(exception.message)
+    when (severity) {
+      Severity.ERROR -> errors.add(exception.message)
+      Severity.WARNING -> warnings.add(exception.message)
     }
 
-    override fun hasIssue(type: Type): Boolean {
-        return _syncIssues.any { issue -> issue.type == type.type }
+    if (severity == Severity.ERROR && throwOnError) {
+      throw exception
     }
+  }
 
-    override fun lockHandler() {
-        throw UnsupportedOperationException("lockHandler not implemented.")
-    }
+  override fun hasIssue(type: Type): Boolean {
+    return _syncIssues.any { issue -> issue.type == type.type }
+  }
+
+  override fun lockHandler() {
+    throw UnsupportedOperationException("lockHandler not implemented.")
+  }
 }

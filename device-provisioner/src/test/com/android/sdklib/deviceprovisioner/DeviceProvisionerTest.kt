@@ -37,10 +37,7 @@ class DeviceProvisionerTest : DeviceProvisionerTestFixture() {
     DeviceProvisioner.create(
       fakeSession.scope,
       fakeSession,
-      listOf(
-        PhysicalDeviceProvisionerPlugin(fakeSession.scope, deviceIcons),
-        DefaultProvisionerPlugin(fakeSession.scope, deviceIcons),
-      ),
+      listOf(PhysicalDeviceProvisionerPlugin(fakeSession.scope, deviceIcons), DefaultProvisionerPlugin(fakeSession.scope, deviceIcons)),
     )
 
   @Test
@@ -49,22 +46,14 @@ class DeviceProvisionerTest : DeviceProvisionerTestFixture() {
       setDevices(SerialNumbers.PHYSICAL2_WIFI, SerialNumbers.EMULATOR)
 
       val emulator =
-        async(Dispatchers.IO) {
-          provisioner.findConnectedDeviceHandle(
-            DeviceSelector.fromSerialNumber(SerialNumbers.EMULATOR),
-            5.seconds,
-          )
-        }
+        async(Dispatchers.IO) { provisioner.findConnectedDeviceHandle(DeviceSelector.fromSerialNumber(SerialNumbers.EMULATOR), 5.seconds) }
 
       val handle = emulator.await()
       assertThat(handle?.state?.connectedDevice?.serialNumber).isEqualTo(SerialNumbers.EMULATOR)
     }
   }
 
-  /**
-   * If there are exceptions during claim, then we should wait until the next time the device comes
-   * online, then try to offer it again.
-   */
+  /** If there are exceptions during claim, then we should wait until the next time the device comes online, then try to offer it again. */
   @Test
   fun deviceErrorDuringClaim() {
     runBlockingWithTimeout {
@@ -74,8 +63,7 @@ class DeviceProvisionerTest : DeviceProvisionerTestFixture() {
       // Make an error occur for both plugins
       fakeSession.deviceServices.shellNumTimeouts = 2
       setDevices(SerialNumbers.PHYSICAL1_USB)
-      fakeSession.hostServices.devices =
-        DeviceList(listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.ONLINE)), emptyList())
+      fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.ONLINE)), emptyList())
 
       yieldUntil {
         fakeSession.host.loggerFactory.logEntries.any {
@@ -83,20 +71,11 @@ class DeviceProvisionerTest : DeviceProvisionerTestFixture() {
         }
       }
 
-      fakeSession.hostServices.devices =
-        DeviceList(
-          listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.OFFLINE)),
-          emptyList(),
-        )
+      fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.OFFLINE)), emptyList())
 
-      yieldUntil {
-        fakeSession.host.loggerFactory.logEntries.any {
-          it.message == "Device ${SerialNumbers.PHYSICAL1_USB} is offline"
-        }
-      }
+      yieldUntil { fakeSession.host.loggerFactory.logEntries.any { it.message == "Device ${SerialNumbers.PHYSICAL1_USB} is offline" } }
 
-      fakeSession.hostServices.devices =
-        DeviceList(listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.ONLINE)), emptyList())
+      fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(SerialNumbers.PHYSICAL1_USB, DeviceState.ONLINE)), emptyList())
       channel.receiveUntilPassing { devices -> assertThat(devices).hasSize(1) }
     }
   }

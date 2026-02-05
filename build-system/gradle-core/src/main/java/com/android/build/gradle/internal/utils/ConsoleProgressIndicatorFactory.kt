@@ -22,43 +22,36 @@ import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 
 /**
- * Creates [ConsoleProgressIndicator] instances with appropriate terminal capability param, by safely
- * reading it from system variables, without affecting Gradle configuration cache.
+ * Creates [ConsoleProgressIndicator] instances with appropriate terminal capability param, by safely reading it from system variables,
+ * without affecting Gradle configuration cache.
  *
- * In AGP when need to create [ConsoleProgressIndicator], use this factory instead.
- * More info: b/379657438
+ * In AGP when need to create [ConsoleProgressIndicator], use this factory instead. More info: b/379657438
  */
 class ConsoleProgressIndicatorFactory(private val providerFactory: ProviderFactory) {
 
-    @Suppress("AvoidByLazy")
-    private val isTerminalSmart: Boolean by lazy {
-        providerFactory.of(IsTerminalSmartValueSource::class.java) {}.get()
+  @Suppress("AvoidByLazy")
+  private val isTerminalSmart: Boolean by lazy { providerFactory.of(IsTerminalSmartValueSource::class.java) {}.get() }
+
+  fun create(): ConsoleProgressIndicator = ConsoleProgressIndicator(canPrintProgress = isTerminalSmart)
+
+  /** @param prefix use this string as a prefix for errors, info and warnings. */
+  fun create(prefix: String): ConsoleProgressIndicator =
+    object : ConsoleProgressIndicator(canPrintProgress = isTerminalSmart) {
+      override fun logError(s: String, e: Throwable?) {
+        super.logError(prefix + s, e)
+      }
+
+      override fun logInfo(s: String) {
+        super.logInfo(prefix + s)
+      }
+
+      override fun logWarning(s: String, e: Throwable?) {
+        super.logWarning(prefix + s, e)
+      }
     }
 
-    fun create(): ConsoleProgressIndicator =
-        ConsoleProgressIndicator(canPrintProgress = isTerminalSmart)
+  abstract class IsTerminalSmartValueSource : ValueSource<Boolean, ValueSourceParameters.None> {
 
-    /**
-     * @param prefix use this string as a prefix for errors, info and warnings.
-     */
-    fun create(prefix: String): ConsoleProgressIndicator =
-        object : ConsoleProgressIndicator(canPrintProgress = isTerminalSmart) {
-            override fun logError(s: String, e: Throwable?) {
-                super.logError(prefix + s, e)
-            }
-
-            override fun logInfo(s: String) {
-                super.logInfo(prefix + s)
-            }
-
-            override fun logWarning(s: String, e: Throwable?) {
-                super.logWarning(prefix + s, e)
-            }
-        }
-
-    abstract class IsTerminalSmartValueSource : ValueSource<Boolean, ValueSourceParameters.None> {
-
-        override fun obtain(): Boolean =
-            System.getenv("TERM") != "dumb"
-    }
+    override fun obtain(): Boolean = System.getenv("TERM") != "dumb"
+  }
 }

@@ -18,12 +18,11 @@ package com.android.builder.model
 
 class GradleToolingApiModelUpdater {
 
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            GradleToolingApiModelTest.getApiTester().updateFile(
-                "tools/base/build-system/builder-model/src/test/resources/com/android/builder/model/"
-            )
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      GradleToolingApiModelTest.getApiTester()
+        .updateFile("tools/base/build-system/builder-model/src/test/resources/com/android/builder/model/")
     }
+  }
 }

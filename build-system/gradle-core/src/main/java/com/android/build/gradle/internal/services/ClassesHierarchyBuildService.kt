@@ -23,33 +23,30 @@ import org.gradle.api.Project
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 
-/**
- * A build service for creating [ClassesHierarchyResolver] objects that share the same cache.
- */
-abstract class ClassesHierarchyBuildService : BuildService<BuildServiceParameters.None>,
-    AutoCloseable {
+/** A build service for creating [ClassesHierarchyResolver] objects that share the same cache. */
+abstract class ClassesHierarchyBuildService : BuildService<BuildServiceParameters.None>, AutoCloseable {
 
-    val issueHandler = InstrumentationIssueHandler()
+  val issueHandler = InstrumentationIssueHandler()
 
-    private val classesDataCache = ClassesDataCache()
+  private val classesDataCache = ClassesDataCache()
 
-    fun getClassesHierarchyResolverBuilder(): ClassesHierarchyResolver.Builder {
-        return ClassesHierarchyResolver.Builder(classesDataCache)
+  fun getClassesHierarchyResolverBuilder(): ClassesHierarchyResolver.Builder {
+    return ClassesHierarchyResolver.Builder(classesDataCache)
+  }
+
+  override fun close() {
+    classesDataCache.close()
+    issueHandler.close()
+  }
+
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<ClassesHierarchyBuildService, BuildServiceParameters.None>(
+      project,
+      ClassesHierarchyBuildService::class.java,
+    ) {
+
+    override fun configure(parameters: BuildServiceParameters.None) {
+      // do nothing
     }
-
-    override fun close() {
-        classesDataCache.close()
-        issueHandler.close()
-    }
-
-    class RegistrationAction(project: Project) :
-        ServiceRegistrationAction<ClassesHierarchyBuildService, BuildServiceParameters.None>(
-            project,
-            ClassesHierarchyBuildService::class.java
-        ) {
-
-        override fun configure(parameters: BuildServiceParameters.None) {
-            // do nothing
-        }
-    }
+  }
 }

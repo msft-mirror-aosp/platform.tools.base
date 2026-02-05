@@ -21,14 +21,14 @@ import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.google.common.truth.Expect
+import java.nio.file.Path
+import java.util.ArrayList
+import java.util.HashMap
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Path
-import java.util.ArrayList
-import java.util.HashMap
 
 /**
  * Tests to ensure that no two tasks share an output.
@@ -36,67 +36,54 @@ import java.util.HashMap
  * This currently only tests the tasks set up in the conventional project setup.
  */
 class NoTaskOutputFileOverlapTest {
-    @get:Rule
-    val projectDirectory = TemporaryFolder()
+  @get:Rule val projectDirectory = TemporaryFolder()
 
-    @get:Rule
-    val expect = Expect.create()!!
+  @get:Rule val expect = Expect.create()!!
 
-    init {
-        importOfflineMavenRepo()
+  init {
+    importOfflineMavenRepo()
+  }
+
+  @Test
+  fun testLibrary() {
+    val projectDir = projectDirectory.newFolder("library").toPath()
+    val project = TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.LIBRARY).build()
+    val android = project.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
+    android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
+    android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+    android.namespace = "com.example.namespace"
+    val plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
+    plugin.createAndroidTasks(project)
+
+    validateNoOverlappingTaskOutputs(project, projectDir)
+  }
+
+  @Test
+  fun testApplication() {
+    val projectDir = projectDirectory.newFolder("library").toPath()
+    val project = TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.APP).build()
+    val android = project.extensions.getByType(ApplicationExtension::class.java)
+    android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
+    android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+    android.namespace = "com.example.namespace"
+    val plugin = project.plugins.getPlugin(AppPlugin::class.java)
+    plugin.createAndroidTasks(project)
+
+    validateNoOverlappingTaskOutputs(project, projectDir)
+  }
+
+  private fun validateNoOverlappingTaskOutputs(project: Project, projectDir: Path) {
+    val outputToTasks = HashMap<String, MutableList<Task>>()
+    for (task in project.tasks) {
+      task.outputs.files.forEach { file ->
+        val path = projectDir.relativize(file.toPath()).toString()
+        outputToTasks.getOrPut(path, { ArrayList() }).add(task)
+      }
     }
-
-    @Test
-    fun testLibrary() {
-        val projectDir = projectDirectory.newFolder("library").toPath()
-        val project = TestProjects.builder(projectDir)
-            .withPlugin(TestProjects.Plugin.LIBRARY)
-            .build()
-        val android = project.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
-        android.compileSdk {
-            version = release(TestConstants.COMPILE_SDK_VERSION)
-        }
-        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
-        android.namespace = "com.example.namespace"
-        val plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
-        plugin.createAndroidTasks(project)
-
-        validateNoOverlappingTaskOutputs(project, projectDir)
+    outputToTasks.forEach { output, tasks ->
+      if (tasks.size > 1) {
+        expect.fail("Output file or directory $output shared between multiple tasks $tasks")
+      }
     }
-    @Test
-    fun testApplication() {
-        val projectDir = projectDirectory.newFolder("library").toPath()
-        val project = TestProjects.builder(projectDir)
-            .withPlugin(TestProjects.Plugin.APP)
-            .build()
-        val android = project.extensions.getByType(ApplicationExtension::class.java)
-        android.compileSdk {
-            version = release(TestConstants.COMPILE_SDK_VERSION)
-        }
-        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
-        android.namespace = "com.example.namespace"
-        val plugin = project.plugins.getPlugin(AppPlugin::class.java)
-        plugin.createAndroidTasks(project)
-
-        validateNoOverlappingTaskOutputs(project, projectDir)
-    }
-
-
-    private fun validateNoOverlappingTaskOutputs(
-        project: Project,
-        projectDir: Path
-    ) {
-        val outputToTasks = HashMap<String, MutableList<Task>>()
-        for (task in project.tasks) {
-            task.outputs.files.forEach { file ->
-                val path = projectDir.relativize(file.toPath()).toString()
-                outputToTasks.getOrPut(path, { ArrayList() }).add(task)
-            }
-        }
-        outputToTasks.forEach { output, tasks ->
-            if (tasks.size > 1) {
-                expect.fail("Output file or directory $output shared between multiple tasks $tasks")
-            }
-        }
-    }
+  }
 }

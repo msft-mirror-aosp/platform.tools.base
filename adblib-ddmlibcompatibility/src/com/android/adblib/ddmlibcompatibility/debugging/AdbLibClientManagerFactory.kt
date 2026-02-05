@@ -18,12 +18,10 @@ package com.android.adblib.ddmlibcompatibility.debugging
 import com.android.adblib.AdbSession
 import com.android.ddmlib.clientmanager.ClientManager
 
-/**
- * Factory for [ClientManager] instances based on [AdbSession].
- */
+/** Factory for [ClientManager] instances based on [AdbSession]. */
 object AdbLibClientManagerFactory {
-    @JvmStatic
-    fun createClientManager(session: AdbSession): ClientManager {
-      return AdbLibClientManager(session)
-    }
+  @JvmStatic
+  fun createClientManager(session: AdbSession): ClientManager {
+    return AdbLibClientManager(session)
+  }
 }

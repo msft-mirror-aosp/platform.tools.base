@@ -64,19 +64,14 @@ class IgnoreWithoutReasonDetector : Detector(), Detector.UastScanner {
           category = Category.TESTING,
           priority = 2,
           severity = Severity.WARNING,
-          implementation =
-            Implementation(
-              IgnoreWithoutReasonDetector::class.java,
-              EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-            ),
+          implementation = Implementation(IgnoreWithoutReasonDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)),
         )
         .setOptions(listOf(ALLOW_COMMENT))
   }
 
   override fun applicableAnnotations(): List<String> = listOf("org.junit.Ignore")
 
-  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-    type == AnnotationUsageType.DEFINITION
+  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == AnnotationUsageType.DEFINITION
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -109,19 +104,13 @@ class IgnoreWithoutReasonDetector : Detector(), Detector.UastScanner {
         } else {
           null
         }
-      context.report(
-        ISSUE,
-        parent,
-        context.getLocation(node),
-        "Test is ignored without giving any explanation",
-        fix,
-      )
+      context.report(ISSUE, parent, context.getLocation(node), "Test is ignored without giving any explanation", fix)
     }
   }
 
   /**
-   * Returns true if the given annotation element is adjacent (modulo whitespace, as long as the
-   * whitespace does not contain a blank line) to a comment
+   * Returns true if the given annotation element is adjacent (modulo whitespace, as long as the whitespace does not contain a blank line)
+   * to a comment
    */
   private fun hasComment(element: PsiElement?): Boolean {
     element ?: return false

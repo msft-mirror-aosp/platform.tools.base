@@ -20,7 +20,6 @@ package com.android.build.api.dsl
  * DSL object to configure max SDK version.
  *
  * For example,
- *
  * ```
  * android {
  *   defaultConfig {
@@ -33,25 +32,16 @@ package com.android.build.api.dsl
  */
 interface MaxSdkSpec {
 
-    /**
-     * The Max SDK version.
-     */
-    var version: MaxSdkVersion?
+  /** The Max SDK version. */
+  var version: MaxSdkVersion?
 
-    /**
-     * To set max SDK version, use this function to compute the [MaxSdkVersion] and assign it to
-     * [MaxSdkSpec.version].
-     */
-    fun release(version: Int): MaxSdkVersion
+  /** To set max SDK version, use this function to compute the [MaxSdkVersion] and assign it to [MaxSdkSpec.version]. */
+  fun release(version: Int): MaxSdkVersion
 }
 
-/**
- * DSL object to represent max SDK version.
- */
+/** DSL object to represent max SDK version. */
 interface MaxSdkVersion {
 
-    /**
-     * API level of the max SDK version.
-     */
-    val apiLevel: Int
+  /** API level of the max SDK version. */
+  val apiLevel: Int
 }

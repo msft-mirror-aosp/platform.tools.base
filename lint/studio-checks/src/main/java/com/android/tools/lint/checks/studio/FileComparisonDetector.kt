@@ -33,16 +33,14 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UastBinaryOperator
 
 /**
- * Makes sure we compare files properly to handle cross platform issues like case insensitive file
- * systems
+ * Makes sure we compare files properly to handle cross platform issues like case insensitive file systems
  *
  * TODO: Check for calling file.toURL or file.toURI.toURL: use our sdk utils instead.
  */
 class FileComparisonDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(FileComparisonDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(FileComparisonDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -66,8 +64,7 @@ class FileComparisonDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UBinaryExpression::class.java, UCallExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UBinaryExpression::class.java, UCallExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
     return object : UElementHandler() {

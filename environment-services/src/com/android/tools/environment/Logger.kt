@@ -21,58 +21,55 @@ import java.util.ServiceLoader
 
 /** Interface to log messages with different severity and optional [Throwable]. */
 interface Logger {
-    fun warn(message: String, throwable: Throwable?)
+  fun warn(message: String, throwable: Throwable?)
 
-    fun warn(message: String) = warn(message, null)
+  fun warn(message: String) = warn(message, null)
 
-    fun error(message: String, throwable: Throwable?)
+  fun error(message: String, throwable: Throwable?)
 
-    fun error(message: String) = error(message, null)
+  fun error(message: String) = error(message, null)
 
-    fun error(throwable: Throwable) = error(throwable.message ?: "", throwable)
+  fun error(throwable: Throwable) = error(throwable.message ?: "", throwable)
 
-    fun debug(message: String, throwable: Throwable?)
+  fun debug(message: String, throwable: Throwable?)
 
-    fun debug(message: String) = debug(message, null)
+  fun debug(message: String) = debug(message, null)
 
-    fun debug(throwable: Throwable) = debug(throwable.message ?: "", throwable)
+  fun debug(throwable: Throwable) = debug(throwable.message ?: "", throwable)
 
-    fun info(message: String, throwable: Throwable?)
+  fun info(message: String, throwable: Throwable?)
 
-    fun info(message: String) = info(message, null)
+  fun info(message: String) = info(message, null)
 
-    fun info(throwable: Throwable) = info(throwable.message ?: "", throwable)
+  fun info(throwable: Throwable) = info(throwable.message ?: "", throwable)
 
-    val isDebugEnabled: Boolean
+  val isDebugEnabled: Boolean
 
-    /** Interface for the service providing functionality to construct a logger. */
-    interface LoggerProvider {
+  /** Interface for the service providing functionality to construct a logger. */
+  interface LoggerProvider {
 
-        /**
-         * Creates a logger with the [name]. The name will be part of the output the message,
-         * helping to better locate the origin of the it. It is recommended to use the FQCN of the
-         * class logging the message to easier locate the origin.
-         */
-        fun createLogger(name: String): Logger
+    /**
+     * Creates a logger with the [name]. The name will be part of the output the message, helping to better locate the origin of the it. It
+     * is recommended to use the FQCN of the class logging the message to easier locate the origin.
+     */
+    fun createLogger(name: String): Logger
 
-        /**
-         * One can replace the current logging by adding a [LoggerProvider] with a higher priority
-         * to the classpath. The [LoggerProvider] with the highest priority wins.
-         */
-        val priority: Int
+    /**
+     * One can replace the current logging by adding a [LoggerProvider] with a higher priority to the classpath. The [LoggerProvider] with
+     * the highest priority wins.
+     */
+    val priority: Int
+  }
+
+  companion object {
+    @JvmStatic
+    fun getInstance(name: String): Logger {
+      val serviceLoader = ServiceLoader.load(LoggerProvider::class.java, this::class.java.classLoader)
+      val loggerProvider =
+        serviceLoader.maxByOrNull { it.priority } ?: throw ServiceConfigurationError("Could not find any LoggerProviders")
+      return loggerProvider.createLogger(name)
     }
 
-    companion object {
-        @JvmStatic
-        fun getInstance(name: String): Logger {
-            val serviceLoader = ServiceLoader.load(LoggerProvider::class.java, this::class.java.classLoader)
-            val loggerProvider =
-                serviceLoader.maxByOrNull { it.priority } ?:
-                throw ServiceConfigurationError("Could not find any LoggerProviders")
-            return loggerProvider.createLogger(name)
-        }
-
-        @JvmStatic
-        fun <T> getInstance(clazz: Class<T>) = getInstance(clazz.name)
-    }
+    @JvmStatic fun <T> getInstance(clazz: Class<T>) = getInstance(clazz.name)
+  }
 }

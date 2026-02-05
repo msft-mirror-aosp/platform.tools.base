@@ -30,15 +30,18 @@ fun secondFragmentKt(
   firstFragmentClass: String,
   secondFragmentClass: String,
   secondFragmentLayoutName: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-    val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(secondFragmentLayoutName)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$secondFragmentLayoutName, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$secondFragmentLayoutName, container, false)"
 
-    return """package ${escapeKotlinIdentifier(packageName)}
+  return """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
@@ -76,7 +79,7 @@ ${renderIf(isViewBindingSupported) {"""
             isViewBindingSupported,
             id = "button_second",
             className = "Button",
-            parentView = "view")}.setOnClickListener {
+            parentView = "view",)}.setOnClickListener {
             findNavController().navigate(R.id.action_${secondFragmentClass}_to_${firstFragmentClass})
         }
     }

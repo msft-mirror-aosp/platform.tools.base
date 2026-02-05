@@ -17,26 +17,20 @@
 package com.android.build.gradle.internal.cxx.configure
 
 import com.android.build.gradle.internal.PropertiesValueSource
-import org.gradle.api.provider.ProviderFactory
 import java.io.File
 import java.io.StringReader
 import java.util.Properties
+import org.gradle.api.provider.ProviderFactory
 
 /**
- * Retrieve the project local properties if they are available.
- * If there is no local properties file then an empty set of properties is returned.
+ * Retrieve the project local properties if they are available. If there is no local properties file then an empty set of properties is
+ * returned.
  */
-fun gradleLocalProperties(projectRootDir : File, providers: ProviderFactory) : Properties {
-    val properties = Properties()
-    val propertiesContent =
-        providers.of(PropertiesValueSource::class.java) {
-            it.parameters.projectRoot.set(projectRootDir)
-        }.get()
+fun gradleLocalProperties(projectRootDir: File, providers: ProviderFactory): Properties {
+  val properties = Properties()
+  val propertiesContent = providers.of(PropertiesValueSource::class.java) { it.parameters.projectRoot.set(projectRootDir) }.get()
 
-    StringReader(propertiesContent).use { reader ->
-        properties.load(reader)
-    }
+  StringReader(propertiesContent).use { reader -> properties.load(reader) }
 
-    return properties
+  return properties
 }
-

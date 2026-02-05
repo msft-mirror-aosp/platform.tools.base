@@ -17,69 +17,48 @@
 package com.android.testutils
 
 /**
- * Base class to write given/expect test using lambdas configuring the [GivenT] and [ResulT]
- * objects.
+ * Base class to write given/expect test using lambdas configuring the [GivenT] and [ResulT] objects.
  *
- * A good use case is when the input and the result are multiple objects and you want to compare
- * them in a single test. Using basic POJOs for both inputs and results allows you to use [given]
- * and [expect] as a DSL to configure them.
+ * A good use case is when the input and the result are multiple objects and you want to compare them in a single test. Using basic POJOs
+ * for both inputs and results allows you to use [given] and [expect] as a DSL to configure them.
  *
  * Use with:
  *
- * given {
- *     a = 1
- *     b = 2
- * }
+ * given { a = 1 b = 2 }
  *
- * `when` {
- *     Result(
- *        sum = it.a + it.b,
- *        subtraction = it.a - it.b
- *     )
- *  }
+ * `when` { Result( sum = it.a + it.b, subtraction = it.a - it.b ) }
  *
- *  expect {
- *     sum = 3
- *     subtraction = -1
- *  }
+ * expect { sum = 3 subtraction = -1 }
  */
-abstract class AbstractBuildGivenBuildExpectTest<GivenT, ResultT> :
-    AbstractGivenExpectTest<GivenT, ResultT>() {
+abstract class AbstractBuildGivenBuildExpectTest<GivenT, ResultT> : AbstractGivenExpectTest<GivenT, ResultT>() {
 
-    private var givenAction: (GivenT.() -> Unit)? = null
+  private var givenAction: (GivenT.() -> Unit)? = null
 
-    /**
-     * Registers an action block returning the given state as a single object
-     */
-    protected open fun given(action: GivenT.() -> Unit) {
-        checkState(TestState.START)
-        givenAction = action
-        state = TestState.GIVEN
-    }
+  /** Registers an action block returning the given state as a single object */
+  protected open fun given(action: GivenT.() -> Unit) {
+    checkState(TestState.START)
+    givenAction = action
+    state = TestState.GIVEN
+  }
 
-    /**
-     * Registers an action block return the expected result values. This also runs the test.
-     */
-    protected fun expect(expectedProvider: ResultT.() -> Unit) {
-        val given = instantiateGiven().also {
-            givenAction?.invoke(it) ?: throw RuntimeException("No given data")
-        }
-        runTest(
-            given,
-            instantiateResult().also {
-                initResultDefaults(given, it)
-                expectedProvider.invoke(it)
-            }
-        )
-    }
+  /** Registers an action block return the expected result values. This also runs the test. */
+  protected fun expect(expectedProvider: ResultT.() -> Unit) {
+    val given = instantiateGiven().also { givenAction?.invoke(it) ?: throw RuntimeException("No given data") }
+    runTest(
+      given,
+      instantiateResult().also {
+        initResultDefaults(given, it)
+        expectedProvider.invoke(it)
+      },
+    )
+  }
 
-    /**
-     * pre-process the result with the given, before passing it to the expect action
-     */
-    protected open fun initResultDefaults(given: GivenT, result: ResultT) {
-        // do nothing
-    }
+  /** pre-process the result with the given, before passing it to the expect action */
+  protected open fun initResultDefaults(given: GivenT, result: ResultT) {
+    // do nothing
+  }
 
-    abstract fun instantiateGiven(): GivenT
-    abstract fun instantiateResult(): ResultT
+  abstract fun instantiateGiven(): GivenT
+
+  abstract fun instantiateResult(): ResultT
 }

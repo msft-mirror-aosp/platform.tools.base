@@ -21,102 +21,95 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * When [BooleanOption.USE_NEW_DSL] is deleted, also delete [CrashlyticsTest] and rename this one
- * to `CrashlyticsTest`.
- */
+/** When [BooleanOption.USE_NEW_DSL] is deleted, also delete [CrashlyticsTest] and rename this one to `CrashlyticsTest`. */
 class CrashlyticsNewDslTest {
 
-    @get:Rule
-    val project = GradleRule.configure().from {
-        androidApplication {
-            applyPlugin(PluginType.Custom("com.google.gms.google-services", "4.4.4"))
-            applyPlugin(PluginType.Custom("com.google.firebase.crashlytics", "3.0.6"))
-            android {
-                defaultConfig {
-                    minSdk = 24
-                }
-            }
-            dependencies {
-                implementation("com.google.firebase:firebase-crashlytics:20.0.3")
-                implementation("com.google.firebase:firebase-analytics:23.0.0")
-            }
+  @get:Rule
+  val project =
+    GradleRule.configure().from {
+      androidApplication {
+          applyPlugin(PluginType.Custom("com.google.gms.google-services", "4.4.4"))
+          applyPlugin(PluginType.Custom("com.google.firebase.crashlytics", "3.0.6"))
+          android { defaultConfig { minSdk = 24 } }
+          dependencies {
+            implementation("com.google.firebase:firebase-crashlytics:20.0.3")
+            implementation("com.google.firebase:firebase-analytics:23.0.0")
+          }
         }
-            .files {
-                add("google-services.json", GOOGLE_SERVICES_JSON_CONTENTS)
-            }
+        .files { add("google-services.json", GOOGLE_SERVICES_JSON_CONTENTS) }
     }
 
-    @Test
-    fun assembleDebug() {
-        project.build.executor
-            .withArgument("-Duser.home=${customUserHome()}")
-            .run("assembleDebug")
-    }
+  @Test
+  fun assembleDebug() {
+    project.build.executor.withArgument("-Duser.home=${customUserHome()}").run("assembleDebug")
+  }
 
-    @Test
-    fun assembleRelease() {
-        project.build.executor
-            .withArgument("-Duser.home=${customUserHome()}")
-            .run("assembleRelease")
-    }
+  @Test
+  fun assembleRelease() {
+    project.build.executor.withArgument("-Duser.home=${customUserHome()}").run("assembleRelease")
+  }
 
-    private fun customUserHome(): File =
-        project.build.directory.resolve("user-home").also {
-            FileUtils.mkdirs(it.toFile())
-            if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_DARWIN) {
-                FileUtils.mkdirs(it.resolve("Library/Caches").toFile())
-            }
-        }.toFile()
+  private fun customUserHome(): File =
+    project.build.directory
+      .resolve("user-home")
+      .also {
+        FileUtils.mkdirs(it.toFile())
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_DARWIN) {
+          FileUtils.mkdirs(it.resolve("Library/Caches").toFile())
+        }
+      }
+      .toFile()
 
-    companion object {
-        val GOOGLE_SERVICES_JSON_CONTENTS = """
-            {
-              "project_info": {
-                "project_number": "314159265358",
-                "firebase_url": "https://crashlytics-test.firebaseio.com",
-                "project_id": "crashlytics-test",
-                "storage_bucket": "crashlytics-test.appspot.com"
+  companion object {
+    val GOOGLE_SERVICES_JSON_CONTENTS =
+      """
+      {
+        "project_info": {
+          "project_number": "314159265358",
+          "firebase_url": "https://crashlytics-test.firebaseio.com",
+          "project_id": "crashlytics-test",
+          "storage_bucket": "crashlytics-test.appspot.com"
+        },
+        "client": [
+          {
+            "client_info": {
+              "mobilesdk_app_id": "1:314159265358:android:0000000000000000",
+              "android_client_info": {
+                "package_name": "pkg.name.app"
+              }
+            },
+            "oauth_client": [
+              {
+                "client_id": "314159265358-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+                "client_type": 3
+              }
+            ],
+            "api_key": [
+              {
+                "current_key": "AIzaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+              }
+            ],
+            "services": {
+              "analytics_service": {
+                "status": 1
               },
-              "client": [
-                {
-                  "client_info": {
-                    "mobilesdk_app_id": "1:314159265358:android:0000000000000000",
-                    "android_client_info": {
-                      "package_name": "pkg.name.app"
-                    }
-                  },
-                  "oauth_client": [
-                    {
-                      "client_id": "314159265358-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-                      "client_type": 3
-                    }
-                  ],
-                  "api_key": [
-                    {
-                      "current_key": "AIzaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-                    }
-                  ],
-                  "services": {
-                    "analytics_service": {
-                      "status": 1
-                    },
-                    "appinvite_service": {
-                      "status": 1,
-                      "other_platform_oauth_client": []
-                    },
-                    "ads_service": {
-                      "status": 2
-                    }
-                  }
-                }
-              ],
-              "configuration_version": "1"
+              "appinvite_service": {
+                "status": 1,
+                "other_platform_oauth_client": []
+              },
+              "ads_service": {
+                "status": 2
+              }
             }
-        """.trimIndent()
-    }
+          }
+        ],
+        "configuration_version": "1"
+      }
+      """
+        .trimIndent()
+  }
 }

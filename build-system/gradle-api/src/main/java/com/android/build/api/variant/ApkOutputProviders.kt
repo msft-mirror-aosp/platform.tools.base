@@ -16,18 +16,14 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.Incubating
 import org.gradle.api.Task
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
 
 /**
- * Provides APIs to obtain ordered collection of APK batches, each intended for local
- * installation, facilitating staged installations.
+ * Provides APIs to obtain ordered collection of APK batches, each intended for local installation, facilitating staged installations.
  *
- * As an example , let's take a Gradle [org.gradle.api.Task] that needs all the Apks for
- * local deployment:
- *
+ * As an example , let's take a Gradle [org.gradle.api.Task] that needs all the Apks for local deployment:
  * ```kotlin
  *  abstract class FetchApkTask: DefaultTask() {
  *    @get:Internal
@@ -61,17 +57,17 @@ import org.gradle.api.tasks.TaskProvider
  */
 interface ApkOutputProviders {
 
-    /**
-     * Add Variant's Apk Output for a specific device specification to a Task.
-     * The Apk Output includes an ordered collection of batches of Apks to install on a device
-     * that matches the device specification available at the configuration time.
-     * @param taskProvider the [TaskProvider] returned by Gradle's Task manager when registering the
-     * Task of type [TaskT].
-     * @param taskInput The method reference the [TaskT] will use to retrieve the current artifact
-     * @param deviceSpec the device specification
-     */
-    fun <TaskT: Task> provideApkOutputToTask(
-        taskProvider: TaskProvider<TaskT>,
-        taskInput: (TaskT) -> Property<ApkOutput>,
-        deviceSpec: DeviceSpec)
+  /**
+   * Add Variant's Apk Output for a specific device specification to a Task. The Apk Output includes an ordered collection of batches of
+   * Apks to install on a device that matches the device specification available at the configuration time.
+   *
+   * @param taskProvider the [TaskProvider] returned by Gradle's Task manager when registering the Task of type [TaskT].
+   * @param taskInput The method reference the [TaskT] will use to retrieve the current artifact
+   * @param deviceSpec the device specification
+   */
+  fun <TaskT : Task> provideApkOutputToTask(
+    taskProvider: TaskProvider<TaskT>,
+    taskInput: (TaskT) -> Property<ApkOutput>,
+    deviceSpec: DeviceSpec,
+  )
 }

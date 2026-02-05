@@ -40,19 +40,11 @@ class ReverseServiceTest {
 
   @Before
   fun setUp() = runBlockingWithTimeout {
-    testSocket =
-      fakeAdbSession.channelFactory.createServerSocket().also { serverSocket ->
-        serverSocket.bind()
-      }
+    testSocket = fakeAdbSession.channelFactory.createServerSocket().also { serverSocket -> serverSocket.bind() }
     adbChannel = fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!)
     val serialNumber = "localhost:${testSocket.port}"
     reverseService =
-      ReverseService(
-        serialNumber,
-        fakeAdbSession.scope,
-        ResponseWriter(adbChannel, true),
-        fakeAdbSession,
-      ) { _, _, _ ->
+      ReverseService(serialNumber, fakeAdbSession.scope, ResponseWriter(adbChannel, true), fakeAdbSession) { _, _, _ ->
         mockReverseForwardStream
       }
     doAnswer { countDownLatch.countDown() }.whenever(mockReverseForwardStream).run()
@@ -105,10 +97,8 @@ class ReverseServiceTest {
   fun testListForward() = runBlockingWithTimeout {
     countDownLatch = CountDownLatch(2)
     val testSocket2 = fakeAdbSession.channelFactory.createServerSocket().apply { bind() }
-    whenever(mockReverseForwardStream.devicePort)
-      .thenReturn(getCommand(testSocket.port), getCommand(testSocket2.port))
-    whenever(mockReverseForwardStream.localPort)
-      .thenReturn("${testSocket.port}", "${testSocket2.port}")
+    whenever(mockReverseForwardStream.devicePort).thenReturn(getCommand(testSocket.port), getCommand(testSocket2.port))
+    whenever(mockReverseForwardStream.localPort).thenReturn("${testSocket.port}", "${testSocket2.port}")
     reverseService.handleReverse(getReverseCommand(testSocket), 0)
     reverseService.handleReverse(getReverseCommand(testSocket2), 1)
     countDownLatch.await()
@@ -118,8 +108,7 @@ class ReverseServiceTest {
     testSocket.accept().use { channel ->
       channel.assertCommand(OKAY)
       val payload =
-        "(reverse) ${getCommand(testSocket.port)} ${testSocket.port}\n" +
-          "(reverse) ${getCommand(testSocket2.port)} ${testSocket2.port}\n"
+        "(reverse) ${getCommand(testSocket.port)} ${testSocket.port}\n" + "(reverse) ${getCommand(testSocket2.port)} ${testSocket2.port}\n"
       channel.assertCommand(WRTE, payload = "${payload.hexLength}$payload")
       channel.assertCommand(CLSE)
     }

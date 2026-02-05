@@ -24,43 +24,38 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Regression test for b/215407138. Ensure that finalizeDsl blocks are run before all checks on the extension objects.
- */
+/** Regression test for b/215407138. Ensure that finalizeDsl blocks are run before all checks on the extension objects. */
 class CompileSdkSetThroughDSLFinalizeBlock {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication(createMinimumProject = false) {
-            // only set up namespace and manifest, but not the compileSdk as it'll come via the plugin.
-            android {
-                namespace = "com.example.app"
-            }
-            files.setupMinimumManifest()
-            pluginCallbacks += MyCallback::class.java
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(createMinimumProject = false) {
+        // only set up namespace and manifest, but not the compileSdk as it'll come via the
+        // plugin.
+        android { namespace = "com.example.app" }
+        files.setupMinimumManifest()
+        pluginCallbacks += MyCallback::class.java
+      }
     }
 
-    class MyCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.apply {
-                finalizeDsl { extension ->
-                    extension.compileSdk = 31
-                    extension.defaultConfig {
-                        minSdk = 19
-                        targetSdk = 31
-                    }
-                }
-            }
+  class MyCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.apply {
+        finalizeDsl { extension ->
+          extension.compileSdk = 31
+          extension.defaultConfig {
+            minSdk = 19
+            targetSdk = 31
+          }
         }
+      }
     }
+  }
 
-    @Test
-    fun testCompileSdkVersion() {
-        val result = rule.build.executor.run("tasks")
-        Truth.assertThat(result.failureMessage).isNull()
-    }
+  @Test
+  fun testCompileSdkVersion() {
+    val result = rule.build.executor.run("tasks")
+    Truth.assertThat(result.failureMessage).isNull()
+  }
 }

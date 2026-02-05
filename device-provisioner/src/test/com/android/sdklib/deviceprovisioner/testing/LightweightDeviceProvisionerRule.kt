@@ -22,10 +22,8 @@ import com.android.sdklib.deviceprovisioner.DeviceProvisioner
 import org.junit.rules.ExternalResource
 
 /** A lightweight rule providing a [DeviceProvisioner]. */
-class LightweightDeviceProvisionerRule(
-  private val fakeDeviceCreator: FakeDeviceCreator,
-  private val adbSessionProvider: () -> AdbSession,
-) : ExternalResource() {
+class LightweightDeviceProvisionerRule(private val fakeDeviceCreator: FakeDeviceCreator, private val adbSessionProvider: () -> AdbSession) :
+  ExternalResource() {
 
   lateinit var deviceProvisioner: DeviceProvisioner
     private set

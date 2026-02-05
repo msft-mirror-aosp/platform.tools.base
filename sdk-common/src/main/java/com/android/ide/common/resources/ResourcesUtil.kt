@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("ResourcesUtil")
+
 package com.android.ide.common.resources
 
 import com.android.SdkConstants
@@ -34,9 +35,8 @@ import java.util.function.Consumer
 private val RESOURCE_PROTOCOLS = arrayOf("apk", "jar", "file")
 
 /**
- * Replicates the key flattening done by AAPT. If the passed key contains '.', '-' or ':', they
- * will be replaced by '_' and a a new [String] returned. If none of those characters are
- * contained, the same [String] passed as input will be returned.
+ * Replicates the key flattening done by AAPT. If the passed key contains '.', '-' or ':', they will be replaced by '_' and a a new [String]
+ * returned. If none of those characters are contained, the same [String] passed as input will be returned.
  *
  * Please keep a few things in mind when using this method:
  * - The input string should be a valid resource name to begin with, otherwise the output may not be valid.
@@ -53,7 +53,8 @@ fun resourceNameToFieldName(resourceName: String): String {
   while (i < n) {
     var c = resourceName[i]
     if (isInvalidResourceFieldNameCharacter(c)) {
-      // We found one instance that we need to replace. Allocate the buffer, copy everything up to this point and start replacing.
+      // We found one instance that we need to replace. Allocate the buffer, copy everything up to
+      // this point and start replacing.
       val buffer = CharArray(resourceName.length)
       resourceName.toCharArray(buffer, 0, 0, i)
       buffer[i] = '_'
@@ -96,30 +97,23 @@ fun fileNameToResourceName(fileName: String): String {
 }
 
 /**
- * Finds unused resources in provided resources collection. Marks all used resources as 'reachable'
- * in original collection.
+ * Finds unused resources in provided resources collection. Marks all used resources as 'reachable' in original collection.
  *
  * @param rootsConsumer function to consume root resources once they are computed.
  */
-fun findUnusedResources(
-  resources: List<Resource>,
-  rootsConsumer: Consumer<List<Resource>>
-) = findUnusedResources(resources) { rootsConsumer.accept(it) }
+fun findUnusedResources(resources: List<Resource>, rootsConsumer: Consumer<List<Resource>>) =
+  findUnusedResources(resources) { rootsConsumer.accept(it) }
 
 /**
- * Finds unused resources in provided resources collection. Marks all used resources as 'reachable'
- * in original collection.
+ * Finds unused resources in provided resources collection. Marks all used resources as 'reachable' in original collection.
  *
  * @param rootsConsumer function to consume root resources once they are computed.
  */
-fun findUnusedResources(
-  resources: List<Resource>,
-  rootsConsumer: (List<Resource>) -> Unit
-): List<Resource> {
+fun findUnusedResources(resources: List<Resource>, rootsConsumer: (List<Resource>) -> Unit): List<Resource> {
   val seen = Collections.newSetFromMap(IdentityHashMap<Resource, Boolean>())
   fun visit(resource: Resource, parent: Resource?) {
     if (parent != null && parent.reachableParents != null) {
-      resource.addReachableParent(ResourceReachableOrigin(parent));
+      resource.addReachableParent(ResourceReachableOrigin(parent))
     }
     if (seen.contains(resource)) {
       return
@@ -133,7 +127,8 @@ fun findUnusedResources(
   rootsConsumer(roots)
   roots.forEach { visit(it, null) }
 
-  return resources.asSequence()
+  return resources
+    .asSequence()
     .filterNot { it.isReachable }
     .filter { it.type != ResourceType.PUBLIC }
     // Styles not yet handled correctly: don't mark as unused
@@ -175,7 +170,7 @@ fun toFileResourcePathString(resourcePath: String): PathString? {
  */
 @Deprecated(
   "Use `ResourceUrl.parse` instead and handle wrong resource type, invalid name, trailing whitespace etc.",
-  replaceWith = ReplaceWith("ResourceUrl.parse(id)?.name ?: id", imports = ["com.android.resources.ResourceUrl"])
+  replaceWith = ReplaceWith("ResourceUrl.parse(id)?.name ?: id", imports = ["com.android.resources.ResourceUrl"]),
 )
 fun stripPrefixFromId(id: String): String {
   return when {
@@ -186,8 +181,8 @@ fun stripPrefixFromId(id: String): String {
 }
 
 /**
- * Converts a color to hex-string representation: #AARRGGBB, including alpha channel.
- * If alpha is FF then the output is #RRGGBB with no alpha component.
+ * Converts a color to hex-string representation: #AARRGGBB, including alpha channel. If alpha is FF then the output is #RRGGBB with no
+ * alpha component.
  */
 fun colorToString(color: Color): String {
   var longColor = (color.red shl 16 or (color.green shl 8) or color.blue).toLong()
@@ -231,8 +226,7 @@ fun parseColor(s: String?): Color? {
 
     if (trimmed.length == 7) {
       longColor = longColor or -0x1000000
-    }
-    else if (trimmed.length != 9) {
+    } else if (trimmed.length != 9) {
       return null
     }
     return Color(longColor.toInt(), true)

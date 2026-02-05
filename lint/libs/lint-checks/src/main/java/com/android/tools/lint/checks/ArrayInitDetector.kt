@@ -41,8 +41,7 @@ import org.jetbrains.uast.UastCallKind
 /** Looks for inefficient array constructions. */
 class ArrayInitDetector : Detector(), SourceCodeScanner, XmlScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ArrayInitDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ArrayInitDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Unnecessary array initialization. */
     @JvmField
@@ -119,16 +118,13 @@ class ArrayInitDetector : Detector(), SourceCodeScanner, XmlScanner {
             if (constant is Number && constant.toDouble() == 0.0) {
               val sourcePsi = lambda.sourcePsi
               val reference = if (sourcePsi != null) " (`${sourcePsi.text}`)" else ""
-              val message =
-                "This initialization lambda$reference is unnecessary and is less efficient"
+              val message = "This initialization lambda$reference is unnecessary and is less efficient"
               val fix =
                 fix()
                   .name("Remove initialization")
                   .replace()
                   .apply {
-                    if (sourcePsi != null)
-                      pattern("\\s*\\Q${lambda.sourcePsi?.text}\\E")
-                        .range(context.getLocation(node))
+                    if (sourcePsi != null) pattern("\\s*\\Q${lambda.sourcePsi?.text}\\E").range(context.getLocation(node))
                     else all().reformat(true)
                   }
                   .with("")

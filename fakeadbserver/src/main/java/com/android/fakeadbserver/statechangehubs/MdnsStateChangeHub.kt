@@ -18,8 +18,8 @@ package com.android.fakeadbserver.statechangehubs
 import com.android.fakeadbserver.MdnsService
 
 /**
- * This class is the primary class that effects the changes to mdns services and propagates the
- * changes to existing, registered monitoring connections.
+ * This class is the primary class that effects the changes to mdns services and propagates the changes to existing, registered monitoring
+ * connections.
  */
 class MdnsStateChangeHub : StateChangeHub<MdnsStateChangeHandlerFactory>() {
 

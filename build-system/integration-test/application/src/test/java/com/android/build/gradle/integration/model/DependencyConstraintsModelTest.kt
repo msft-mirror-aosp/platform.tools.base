@@ -21,27 +21,20 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
-class DependencyConstraintsModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0")
-            }
-        }
+class DependencyConstraintsModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0") }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
+  }
 }

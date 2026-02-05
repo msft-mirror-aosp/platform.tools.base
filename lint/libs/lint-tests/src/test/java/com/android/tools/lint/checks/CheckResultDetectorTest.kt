@@ -306,12 +306,7 @@ class CheckResultDetectorTest : AbstractCheckTest() {
                 """
           )
           .indented(),
-        java(
-          "" +
-            "@CheckReturnValue\n" +
-            "package test.pkg;\n" +
-            "import javax.annotation.CheckReturnValue;\n"
-        ),
+        java("" + "@CheckReturnValue\n" + "package test.pkg;\n" + "import javax.annotation.CheckReturnValue;\n"),
         errorProneCanIgnoreReturnValueSource,
         javaxCheckReturnValueSource,
         SUPPORT_ANNOTATIONS_JAR,

@@ -52,263 +52,249 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.SourceProvider
 import org.gradle.api.file.DirectoryProperty
 
-/** Builder for dsl info classes.
+/**
+ * Builder for dsl info classes.
  *
- * This allows setting all temporary items on the builder before actually
- * instantiating the configuration, in order to keep it immutable.
+ * This allows setting all temporary items on the builder before actually instantiating the configuration, in order to keep it immutable.
  *
  * Use [getBuilder] as an entry point.
  */
-class DslInfoBuilder<CommonExtensionT: CommonExtension, DslInfoT: ComponentDslInfo> private constructor(
-    private val dimensionCombination: DimensionCombination,
-    val componentType: ComponentType,
-    private val defaultConfig: DefaultConfig,
-    private val defaultSourceProvider: SourceProvider,
-    private val buildType: BuildType,
-    private val buildTypeSourceProvider: SourceProvider?,
-    private val signingConfigOverride: SigningConfig?,
-    private val manifestDataProvider: ManifestDataProvider,
-    private val variantServices: VariantServices,
-    private val extension: CommonExtensionT,
-    private val buildDirectory: DirectoryProperty,
+class DslInfoBuilder<CommonExtensionT : CommonExtension, DslInfoT : ComponentDslInfo>
+private constructor(
+  private val dimensionCombination: DimensionCombination,
+  val componentType: ComponentType,
+  private val defaultConfig: DefaultConfig,
+  private val defaultSourceProvider: SourceProvider,
+  private val buildType: BuildType,
+  private val buildTypeSourceProvider: SourceProvider?,
+  private val signingConfigOverride: SigningConfig?,
+  private val manifestDataProvider: ManifestDataProvider,
+  private val variantServices: VariantServices,
+  private val extension: CommonExtensionT,
+  private val buildDirectory: DirectoryProperty,
 ) {
 
-    companion object {
-        /**
-         * Returns a new builder
-         */
-        @JvmStatic
-        fun <CommonExtensionT: CommonExtension, DslInfoT: ComponentDslInfo> getBuilder(
-            dimensionCombination: DimensionCombination,
-            componentType: ComponentType,
-            defaultConfig: DefaultConfig,
-            defaultSourceSet: SourceProvider,
-            buildType: BuildType,
-            buildTypeSourceSet: SourceProvider?,
-            signingConfigOverride: SigningConfig?,
-            manifestDataProvider: ManifestDataProvider,
-            variantServices: VariantServices,
-            extension: CommonExtensionT,
-            buildDirectory: DirectoryProperty,
-            dslServices: DslServices
-        ): DslInfoBuilder<CommonExtensionT, DslInfoT> {
-            return DslInfoBuilder(
-                dimensionCombination,
-                componentType,
-                defaultConfig,
-                defaultSourceSet,
-                buildType,
-                buildTypeSourceSet,
-                signingConfigOverride?.let { signingOverride ->
-                    dslServices.newDecoratedInstance(
-                        SigningConfig::class.java,
-                        signingOverride.name,
-                        dslServices
-                    ).also {
-                        it.initWith(signingOverride)
-                    }
-                },
-                manifestDataProvider,
-                variantServices,
-                extension,
-                buildDirectory,
-            )
-        }
+  companion object {
+    /** Returns a new builder */
+    @JvmStatic
+    fun <CommonExtensionT : CommonExtension, DslInfoT : ComponentDslInfo> getBuilder(
+      dimensionCombination: DimensionCombination,
+      componentType: ComponentType,
+      defaultConfig: DefaultConfig,
+      defaultSourceSet: SourceProvider,
+      buildType: BuildType,
+      buildTypeSourceSet: SourceProvider?,
+      signingConfigOverride: SigningConfig?,
+      manifestDataProvider: ManifestDataProvider,
+      variantServices: VariantServices,
+      extension: CommonExtensionT,
+      buildDirectory: DirectoryProperty,
+      dslServices: DslServices,
+    ): DslInfoBuilder<CommonExtensionT, DslInfoT> {
+      return DslInfoBuilder(
+        dimensionCombination,
+        componentType,
+        defaultConfig,
+        defaultSourceSet,
+        buildType,
+        buildTypeSourceSet,
+        signingConfigOverride?.let { signingOverride ->
+          dslServices.newDecoratedInstance(SigningConfig::class.java, signingOverride.name, dslServices).also {
+            it.initWith(signingOverride)
+          }
+        },
+        manifestDataProvider,
+        variantServices,
+        extension,
+        buildDirectory,
+      )
+    }
+  }
+
+  private lateinit var variantName: String
+  private lateinit var multiFlavorName: String
+
+  val name: String
+    get() {
+      if (!::variantName.isInitialized) {
+        computeNames()
+      }
+
+      return variantName
     }
 
-    private lateinit var variantName: String
-    private lateinit var multiFlavorName: String
-
-    val name: String
-        get() {
-            if (!::variantName.isInitialized) {
-                computeNames()
-            }
-
-            return variantName
-        }
-
-    val flavorName: String
-        get() {
-            if (!::multiFlavorName.isInitialized) {
-                computeNames()
-            }
-            return multiFlavorName
-
-        }
-
-    private val flavors = mutableListOf<Pair<ProductFlavor, SourceProvider>>()
-
-    var variantSourceProvider: DefaultAndroidSourceSet? = null
-    var multiFlavorSourceProvider: DefaultAndroidSourceSet? = null
-    var productionVariant: TestedVariantDslInfo? = null
-
-    fun addProductFlavor(
-        productFlavor: ProductFlavor,
-        sourceProvider: SourceProvider
-    ) {
-        if (::variantName.isInitialized) {
-            throw RuntimeException("call to getName() before calling all addProductFlavor")
-        }
-        flavors.add(Pair(productFlavor, sourceProvider))
+  val flavorName: String
+    get() {
+      if (!::multiFlavorName.isInitialized) {
+        computeNames()
+      }
+      return multiFlavorName
     }
 
-    private fun createComponentIdentity(): ComponentIdentity = ComponentIdentityImpl(
-        name,
-        flavorName,
-        dimensionCombination.buildType,
-        dimensionCombination.productFlavors
+  private val flavors = mutableListOf<Pair<ProductFlavor, SourceProvider>>()
+
+  var variantSourceProvider: DefaultAndroidSourceSet? = null
+  var multiFlavorSourceProvider: DefaultAndroidSourceSet? = null
+  var productionVariant: TestedVariantDslInfo? = null
+
+  fun addProductFlavor(productFlavor: ProductFlavor, sourceProvider: SourceProvider) {
+    if (::variantName.isInitialized) {
+      throw RuntimeException("call to getName() before calling all addProductFlavor")
+    }
+    flavors.add(Pair(productFlavor, sourceProvider))
+  }
+
+  private fun createComponentIdentity(): ComponentIdentity =
+    ComponentIdentityImpl(name, flavorName, dimensionCombination.buildType, dimensionCombination.productFlavors)
+
+  private fun createApplicationVariantDslInfo(): ApplicationVariantDslInfo {
+    return ApplicationVariantDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      dataProvider = manifestDataProvider,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      publishInfo =
+        createPublishingInfoForApp(
+          (extension as InternalApplicationExtension).publishing as ApplicationPublishingImpl,
+          name,
+          extension.dynamicFeatures.isNotEmpty(),
+          variantServices.issueReporter,
+        ),
+      signingConfigOverride = signingConfigOverride,
+      extension = extension,
     )
+  }
 
-    private fun createApplicationVariantDslInfo(): ApplicationVariantDslInfo {
-        return ApplicationVariantDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            dataProvider = manifestDataProvider,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            publishInfo = createPublishingInfoForApp(
-                (extension as InternalApplicationExtension).publishing as ApplicationPublishingImpl,
-                name,
-                extension.dynamicFeatures.isNotEmpty(),
-                variantServices.issueReporter
-            ),
-            signingConfigOverride = signingConfigOverride,
-            extension = extension
-        )
-    }
+  private fun createLibraryVariantDslInfo(): LibraryVariantDslInfo {
+    return LibraryVariantDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      dataProvider = manifestDataProvider,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      publishInfo =
+        createPublishingInfoForLibrary(
+          (extension as InternalLibraryExtension).publishing as LibraryPublishingImpl,
+          name,
+          buildType,
+          flavors.map { it.first },
+          extension.buildTypes,
+          extension.productFlavors,
+          variantServices.issueReporter,
+        ),
+      extension = extension,
+    )
+  }
 
-    private fun createLibraryVariantDslInfo(): LibraryVariantDslInfo {
-        return LibraryVariantDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            dataProvider = manifestDataProvider,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            publishInfo = createPublishingInfoForLibrary(
-                (extension as InternalLibraryExtension).publishing as LibraryPublishingImpl,
-                name,
-                buildType,
-                flavors.map { it.first },
-                extension.buildTypes,
-                extension.productFlavors,
-                variantServices.issueReporter
-            ),
-            extension = extension
-        )
-    }
+  private fun createDynamicFeatureVariantDslInfo(): DynamicFeatureVariantDslInfo {
+    return DynamicFeatureVariantDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      dataProvider = manifestDataProvider,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      extension = extension as InternalDynamicFeatureExtension,
+    )
+  }
 
-    private fun createDynamicFeatureVariantDslInfo(): DynamicFeatureVariantDslInfo {
-        return DynamicFeatureVariantDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            dataProvider = manifestDataProvider,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            extension = extension as InternalDynamicFeatureExtension
-        )
-    }
+  private fun createTestProjectVariantDslInfo(): TestProjectVariantDslInfo {
+    return TestProjectVariantDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      dataProvider = manifestDataProvider,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      signingConfigOverride = signingConfigOverride,
+      extension = extension as InternalTestExtension,
+    )
+  }
 
-    private fun createTestProjectVariantDslInfo(): TestProjectVariantDslInfo {
-        return TestProjectVariantDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            dataProvider = manifestDataProvider,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            signingConfigOverride = signingConfigOverride,
-            extension = extension as InternalTestExtension
-        )
-    }
+  private fun createTestFixturesComponentDslInfo(): TestFixturesComponentDslInfo {
+    return TestFixturesDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      mainVariantDslInfo = productionVariant!!,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      extension = extension,
+    )
+  }
 
-    private fun createTestFixturesComponentDslInfo(): TestFixturesComponentDslInfo {
-        return TestFixturesDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            mainVariantDslInfo = productionVariant!!,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            extension = extension
-        )
-    }
+  internal fun createHostTestComponentDslInfo(): HostTestComponentDslInfoImpl {
+    return HostTestComponentDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      mainVariantDslInfo = productionVariant!!,
+      extension = extension as InternalTestedExtension,
+    )
+  }
 
-    internal fun createHostTestComponentDslInfo(): HostTestComponentDslInfoImpl {
-        return HostTestComponentDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            mainVariantDslInfo = productionVariant!!,
-            extension = extension as InternalTestedExtension
-        )
-    }
+  internal fun createAndroidTestComponentDslInfo(): AndroidTestComponentDslInfo {
+    return AndroidTestComponentDslInfoImpl(
+      componentIdentity = createComponentIdentity(),
+      componentType = componentType,
+      defaultConfig = defaultConfig,
+      buildTypeObj = buildType,
+      productFlavorList = flavors.map { it.first },
+      dataProvider = manifestDataProvider,
+      services = variantServices,
+      buildDirectory = buildDirectory,
+      mainVariantDslInfo = productionVariant!!,
+      signingConfigOverride = signingConfigOverride,
+      extension = extension as InternalTestedExtension,
+    )
+  }
 
-    internal fun createAndroidTestComponentDslInfo(): AndroidTestComponentDslInfo {
-        return AndroidTestComponentDslInfoImpl(
-            componentIdentity = createComponentIdentity(),
-            componentType = componentType,
-            defaultConfig = defaultConfig,
-            buildTypeObj = buildType,
-            productFlavorList = flavors.map { it.first },
-            dataProvider = manifestDataProvider,
-            services = variantServices,
-            buildDirectory = buildDirectory,
-            mainVariantDslInfo = productionVariant!!,
-            signingConfigOverride = signingConfigOverride,
-            extension = extension as InternalTestedExtension
-        )
+  fun createDslInfo(): DslInfoT {
+    return when (componentType) {
+      ComponentTypeImpl.BASE_APK -> createApplicationVariantDslInfo()
+      ComponentTypeImpl.LIBRARY -> createLibraryVariantDslInfo()
+      ComponentTypeImpl.OPTIONAL_APK -> createDynamicFeatureVariantDslInfo()
+      ComponentTypeImpl.TEST_APK -> createTestProjectVariantDslInfo()
+      ComponentTypeImpl.TEST_FIXTURES -> createTestFixturesComponentDslInfo()
+      ComponentTypeImpl.ANDROID_TEST -> createAndroidTestComponentDslInfo()
+      else -> {
+        throw RuntimeException("Unknown component type ${componentType.name}")
+      }
     }
+      as DslInfoT
+  }
 
-    fun createDslInfo(): DslInfoT {
-        return when (componentType) {
-            ComponentTypeImpl.BASE_APK -> createApplicationVariantDslInfo()
-            ComponentTypeImpl.LIBRARY -> createLibraryVariantDslInfo()
-            ComponentTypeImpl.OPTIONAL_APK -> createDynamicFeatureVariantDslInfo()
-            ComponentTypeImpl.TEST_APK -> createTestProjectVariantDslInfo()
-            ComponentTypeImpl.TEST_FIXTURES -> createTestFixturesComponentDslInfo()
-            ComponentTypeImpl.ANDROID_TEST -> createAndroidTestComponentDslInfo()
-            else -> {
-                throw RuntimeException("Unknown component type ${componentType.name}")
-            }
-        } as DslInfoT
-    }
+  fun createVariantSources(): VariantSources {
+    return VariantSources(
+      name,
+      componentType,
+      defaultSourceProvider,
+      buildTypeSourceProvider,
+      flavors.map { it.second }.toImmutableList(),
+      multiFlavorSourceProvider,
+      variantSourceProvider,
+    )
+  }
 
-    fun createVariantSources(): VariantSources {
-        return VariantSources(
-            name,
-            componentType,
-            defaultSourceProvider,
-            buildTypeSourceProvider,
-            flavors.map { it.second }.toImmutableList(),
-            multiFlavorSourceProvider,
-            variantSourceProvider
-        )
-    }
-
-    /**
-     * computes the name for the variant and the multi-flavor combination
-     */
-    private fun computeNames() {
-        variantName = computeName(dimensionCombination, componentType) {
-            multiFlavorName = it
-        }
-    }
+  /** computes the name for the variant and the multi-flavor combination */
+  private fun computeNames() {
+    variantName = computeName(dimensionCombination, componentType) { multiFlavorName = it }
+  }
 }

@@ -31,9 +31,7 @@ import org.jetbrains.annotations.TestOnly
 
 /** This class provides lookup for R8 method descriptors of its backported methods. */
 class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set<String>) {
-  constructor(
-    methodDescriptors: Array<String>
-  ) : this(methodDescriptors, extractNames(methodDescriptors))
+  constructor(methodDescriptors: Array<String>) : this(methodDescriptors, extractNames(methodDescriptors))
 
   private fun isDesugaredName(name: String): Boolean {
     return names.contains(name)
@@ -64,9 +62,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
   }
 
   /**
-   * The [isDesugaredClass] method returns true if a class is **fully** desugared. But there are
-   * scenarios where we want to know if a class is at least partially desugared. This method returns
-   * true in that case.
+   * The [isDesugaredClass] method returns true if a class is **fully** desugared. But there are scenarios where we want to know if a class
+   * is at least partially desugared. This method returns true in that case.
    */
   fun isClassPartiallyDesugared(owner: String): Boolean {
     val target = owner.replace('.', '/')
@@ -83,9 +80,7 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
   }
 
   fun isDesugaredField(owner: String, name: String): Boolean {
-    val signatureComparator: Comparator<String> = Comparator { o1, _ ->
-      compare(owner, name, "", o1)
-    }
+    val signatureComparator: Comparator<String> = Comparator { o1, _ -> compare(owner, name, "", o1) }
     return Arrays.binarySearch(methodDescriptors, "placeholder", signatureComparator) >= 0
   }
 
@@ -130,9 +125,7 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
           // but don't treat these as the same
           1
         } else if (
-          (ownerIndex == owner.length) &&
-            (nameIndex == 0 || nameIndex == name.length) &&
-            (descIndex == 0 || descIndex == desc.length)
+          (ownerIndex == owner.length) && (nameIndex == 0 || nameIndex == name.length) && (descIndex == 0 || descIndex == desc.length)
         ) {
           0
         } else {
@@ -162,11 +155,9 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Get library desugaring rules for the given project. Note that the project may not have
-     * library desugaring configured; this computes the default set of desugared methods that
-     * *would* be used for this project if enabled. The usecase for this is to look up existing
-     * violations and suggest turning on core library desugaring if the violating API is part of the
-     * desugaring API surface.
+     * Get library desugaring rules for the given project. Note that the project may not have library desugaring configured; this computes
+     * the default set of desugared methods that *would* be used for this project if enabled. The usecase for this is to look up existing
+     * violations and suggest turning on core library desugaring if the violating API is part of the desugaring API surface.
      */
     fun getBundledLibraryDesugaringRules(project: Project): DesugaredMethodLookup {
       val sourceSetType = SourceSetType.MAIN
@@ -187,41 +178,37 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
       // and download the jar file, and you can extract the text files within.
       // Diff them to figure out the delta for any higher SDK versions and handle
       // that similarly to what is done below.
-      return DesugaredMethodLookup::class
-        .java
-        .getResourceAsStream("/desugared_apis_30_1.txt")
-        ?.let { inputStream ->
-          // merge both built-in checks and the extra desugaring ones
-          // we have to merge carefully since we sometimes have to drop
-          // entries from one when the other list fully supports the whole
-          // class. For example, the built-in rules backport a handful
-          // of individual methods in java/util/Objects, but in the library
-          // desugaring list, the whole class is included, so we should
-          // drop the individual entries.
-          val lines = defaultDesugaredMethods.toMutableList()
-          lines.addAll(inputStream.bufferedReader(Charsets.UTF_8).readLines())
+      return DesugaredMethodLookup::class.java.getResourceAsStream("/desugared_apis_30_1.txt")?.let { inputStream ->
+        // merge both built-in checks and the extra desugaring ones
+        // we have to merge carefully since we sometimes have to drop
+        // entries from one when the other list fully supports the whole
+        // class. For example, the built-in rules backport a handful
+        // of individual methods in java/util/Objects, but in the library
+        // desugaring list, the whole class is included, so we should
+        // drop the individual entries.
+        val lines = defaultDesugaredMethods.toMutableList()
+        lines.addAll(inputStream.bufferedReader(Charsets.UTF_8).readLines())
 
-          if (minSdk >= 21) {
-            lines.add("java/util/Collection#parallelStream()Ljava/util/stream/Stream;")
-            lines.add("java/util/stream/BaseStream#parallel()Ljava/util/stream/BaseStream;")
-            lines.add("java/util/stream/DoubleStream#parallel()Ljava/util/stream/BaseStream;")
-            lines.add("java/util/stream/IntStream#parallel()Ljava/util/stream/BaseStream;")
-            lines.add("java/util/stream/LongStream#parallel()Ljava/util/stream/BaseStream;")
-          }
+        if (minSdk >= 21) {
+          lines.add("java/util/Collection#parallelStream()Ljava/util/stream/Stream;")
+          lines.add("java/util/stream/BaseStream#parallel()Ljava/util/stream/BaseStream;")
+          lines.add("java/util/stream/DoubleStream#parallel()Ljava/util/stream/BaseStream;")
+          lines.add("java/util/stream/IntStream#parallel()Ljava/util/stream/BaseStream;")
+          lines.add("java/util/stream/LongStream#parallel()Ljava/util/stream/BaseStream;")
+        }
 
-          lines.sort()
+        lines.sort()
 
-          assert(lines.isNotEmpty() && !lines[0].endsWith('\r'))
-          removeMembersFromSupportedClasses(lines)
-        } ?: emptyList()
+        assert(lines.isNotEmpty() && !lines[0].endsWith('\r'))
+        removeMembersFromSupportedClasses(lines)
+      } ?: emptyList()
     }
 
     /**
-     * Checks whether the method for the given [owner], [name] and internal [desc] string is
-     * desugared. If [project] is not null, provides the surrounding context for the lookup (which
-     * should take into account build system configuration like which version of d8/r8 is used and
-     * the corresponding desugaring list.) If [containingClass] is not null, it's the [PsiClass]
-     * corresponding to [owner], which can be used for hierarchy search.
+     * Checks whether the method for the given [owner], [name] and internal [desc] string is desugared. If [project] is not null, provides
+     * the surrounding context for the lookup (which should take into account build system configuration like which version of d8/r8 is used
+     * and the corresponding desugaring list.) If [containingClass] is not null, it's the [PsiClass] corresponding to [owner], which can be
+     * used for hierarchy search.
      */
     fun isDesugaredMethod(
       owner: String,
@@ -248,11 +235,10 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Checks whether the field for the given [owner] and [name] is desugared. If [project] is not
-     * null, provides the surrounding context for the lookup (which should take into account build
-     * system configuration like which version of d8/r8 is used and the corresponding desugaring
-     * list.) If [containingClass] is not null, it's the [PsiClass] corresponding to [owner], which
-     * can be used for hierarchy search.
+     * Checks whether the field for the given [owner] and [name] is desugared. If [project] is not null, provides the surrounding context
+     * for the lookup (which should take into account build system configuration like which version of d8/r8 is used and the corresponding
+     * desugaring list.) If [containingClass] is not null, it's the [PsiClass] corresponding to [owner], which can be used for hierarchy
+     * search.
      */
     fun isDesugaredField(
       owner: String,
@@ -276,22 +262,16 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Checks whether the given [owner] is fully desugared. If [project] is not null, provides the
-     * surrounding context for the lookup (which should take into account build system configuration
-     * like which version of d8/r8 is used and the corresponding desugaring list.)
+     * Checks whether the given [owner] is fully desugared. If [project] is not null, provides the surrounding context for the lookup (which
+     * should take into account build system configuration like which version of d8/r8 is used and the corresponding desugaring list.)
      */
-    fun isDesugaredClass(
-      owner: String,
-      sourceSetType: SourceSetType,
-      project: Project? = null,
-    ): Boolean {
+    fun isDesugaredClass(owner: String, sourceSetType: SourceSetType, project: Project? = null): Boolean {
       return getLookup(project, sourceSetType).isDesugaredClass(owner)
     }
 
     /**
-     * Looks up the [DesugaredMethodLookup] instance to use for analysis in the given project, or if
-     * null (or if dealing with an older project definition not specifying desugaring files), falls
-     * back to the default.
+     * Looks up the [DesugaredMethodLookup] instance to use for analysis in the given project, or if null (or if dealing with an older
+     * project definition not specifying desugaring files), falls back to the default.
      */
     fun getLookup(project: Project?, sourceSetType: SourceSetType): DesugaredMethodLookup {
       if (project != null) {
@@ -337,9 +317,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Sets the set of back-ported methods to be used for analysis to the descriptors from the given
-     * [paths]. Returns null if everything is okay, and otherwise returns the first path that could
-     * not be processed (e.g. file doesn't exist, insufficient permissions, etc.)
+     * Sets the set of back-ported methods to be used for analysis to the descriptors from the given [paths]. Returns null if everything is
+     * okay, and otherwise returns the first path that could not be processed (e.g. file doesn't exist, insufficient permissions, etc.)
      */
     fun setDesugaredMethods(paths: List<String>): String? {
       val lines = ArrayList<String>(1024)
@@ -411,8 +390,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Remove any entries from the signature list for an individual method or field if the whole
-     * class is already listed as fully supported. (These would confuse the binary search.)
+     * Remove any entries from the signature list for an individual method or field if the whole class is already listed as fully supported.
+     * (These would confuse the binary search.)
      */
     private fun removeMembersFromSupportedClasses(lines: MutableList<String>): MutableList<String> {
       if (lines.isNotEmpty()) {
@@ -441,8 +420,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Returns the lookup to the default state. This is temporary; once we switch to this being
-     * initialized from the lint model there will be no static state here.
+     * Returns the lookup to the default state. This is temporary; once we switch to this being initialized from the lint model there will
+     * be no static state here.
      */
     @TestOnly
     fun reset() {
@@ -450,9 +429,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     }
 
     /**
-     * Returns true if this looks like a reference that can be desugared in a consuming library.
-     * This captures the rough packages related to library desugaring (but can also return true for
-     * packages that are not included).
+     * Returns true if this looks like a reference that can be desugared in a consuming library. This captures the rough packages related to
+     * library desugaring (but can also return true for packages that are not included).
      */
     fun canBeDesugaredLater(owner: String?): Boolean {
       owner ?: return false
@@ -738,9 +716,8 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
       )
 
     /**
-     * Temporarily mutable such that we can set this from a command line flag instead of
-     * initializing it via the lint model (while we're still working out how this is best passed --
-     * as strings, files, shipped as resource files in r8 that the lint model points to, etc.)
+     * Temporarily mutable such that we can set this from a command line flag instead of initializing it via the lint model (while we're
+     * still working out how this is best passed -- as strings, files, shipped as resource files in r8 that the lint model points to, etc.)
      */
     var lookup: DesugaredMethodLookup = DesugaredMethodLookup(defaultDesugaredMethods, emptySet())
   }

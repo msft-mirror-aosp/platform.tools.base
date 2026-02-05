@@ -18,10 +18,9 @@ package com.android.tools.journeys.testengine.robo.platform
 import io.grpc.ManagedChannel
 
 /**
- * A service provider interface for creating a channel provider instance.
- * The JourneysTestEngine will use Java's ServiceLoader to find an
+ * A service provider interface for creating a channel provider instance. The JourneysTestEngine will use Java's ServiceLoader to find an
  * implementation of this factory on the classpath.
  */
 fun interface ChannelProviderFactory {
-    fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel
+  fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel
 }

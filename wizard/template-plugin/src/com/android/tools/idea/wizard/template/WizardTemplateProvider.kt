@@ -16,9 +16,7 @@
 
 package com.android.tools.idea.wizard.template
 
-/**
- * An abstract class, which a template plugin implements as an extension point.
- */
+/** An abstract class, which a template plugin implements as an extension point. */
 abstract class WizardTemplateProvider {
   abstract fun getTemplates(): List<Template>
 }

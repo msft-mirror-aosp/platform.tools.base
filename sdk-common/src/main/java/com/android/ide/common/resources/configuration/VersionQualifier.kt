@@ -19,27 +19,17 @@ import com.android.sdklib.AndroidApiLevel
 import java.util.Objects
 
 /** Resource qualifier for Platform version. */
-class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVersion: Boolean) :
-  ResourceQualifier() {
+class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVersion: Boolean) : ResourceQualifier() {
 
   constructor() : this(null, false)
 
-  constructor(
-    androidApiLevel: AndroidApiLevel
-  ) : this(androidApiLevel, androidApiLevel.majorVersion >= 36)
+  constructor(androidApiLevel: AndroidApiLevel) : this(androidApiLevel, androidApiLevel.majorVersion >= 36)
 
-  constructor(
-    majorVersion: Int
-  ) : this(
-    if (majorVersion != DEFAULT_API_LEVEL.majorVersion) AndroidApiLevel(majorVersion) else null,
-    false,
-  )
+  constructor(majorVersion: Int) : this(if (majorVersion != DEFAULT_API_LEVEL.majorVersion) AndroidApiLevel(majorVersion) else null, false)
 
   init {
     val minorVersion = androidApiLevel?.minorVersion ?: 0
-    require(minorVersion == 0 || includeMinorVersion) {
-      "Minor version must be included unless it is 0."
-    }
+    require(minorVersion == 0 || includeMinorVersion) { "Minor version must be included unless it is 0." }
   }
 
   @Deprecated("Use androidApiLevel instead.", ReplaceWith("androidApiLevel?.majorVersion"))
@@ -80,10 +70,7 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVe
     return qualifierApiLevel == null || thisApiLevel <= qualifierApiLevel
   }
 
-  override fun isBetterMatchThan(
-    compareTo: ResourceQualifier?,
-    reference: ResourceQualifier,
-  ): Boolean {
+  override fun isBetterMatchThan(compareTo: ResourceQualifier?, reference: ResourceQualifier): Boolean {
     if (compareTo == null) return true
 
     val thisApiLevel = androidApiLevel ?: DEFAULT_API_LEVEL
@@ -92,13 +79,11 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVe
 
     return when {
       // what we have is already the best possible match (exact match)
-      compareApiLevel == referenceApiLevel &&
-        compareTo.includeMinorVersion == reference.includeMinorVersion -> false
+      compareApiLevel == referenceApiLevel && compareTo.includeMinorVersion == reference.includeMinorVersion -> false
       // What we have already matches the API level, but the included minor version doesn't. Only
       // use this qualifier if it's an exact match.
       compareApiLevel == referenceApiLevel ->
-        this.androidApiLevel == referenceApiLevel &&
-          this.includeMinorVersion == reference.includeMinorVersion
+        this.androidApiLevel == referenceApiLevel && this.includeMinorVersion == reference.includeMinorVersion
       // got new exact value, this is the best!
       thisApiLevel == referenceApiLevel -> true
       // In all case we're going to prefer the higher version (since they have been filtered to not
@@ -126,8 +111,8 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVe
   companion object {
 
     /**
-     * Default version. This means the property is not set. Using -1 allows comparisons within this
-     * class to be done numerically, rather than dealing with nulls.
+     * Default version. This means the property is not set. Using -1 allows comparisons within this class to be done numerically, rather
+     * than dealing with nulls.
      */
     private val DEFAULT_API_LEVEL = AndroidApiLevel(-1)
 
@@ -138,8 +123,7 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVe
     const val NAME = "Platform Version"
 
     /**
-     * Creates and returns a qualifier from the given folder segment. If the segment is incorrect,
-     * `null` is returned.
+     * Creates and returns a qualifier from the given folder segment. If the segment is incorrect, `null` is returned.
      *
      * @param segment the folder segment from which to create a qualifier
      * @return a new VersionQualifier object or `null`
@@ -150,10 +134,7 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVe
 
       val majorVersion = match.groupValues[1].toIntOrNull() ?: return null
       val minorVersion = match.groupValues[3].toIntOrNull()
-      return VersionQualifier(
-        AndroidApiLevel(majorVersion, minorVersion ?: 0),
-        minorVersion != null,
-      )
+      return VersionQualifier(AndroidApiLevel(majorVersion, minorVersion ?: 0), minorVersion != null)
     }
   }
 }

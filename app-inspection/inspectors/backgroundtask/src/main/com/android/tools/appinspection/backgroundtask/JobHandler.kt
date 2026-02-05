@@ -74,17 +74,13 @@ interface JobHandler {
 class JobHandlerImpl(private val connection: Connection) : JobHandler {
 
   /**
-   * Use a thread-local variable for schedule job parameters, so a value can be temporarily stored
-   * when we enter [JobScheduler.schedule(JobInfo)] and retrieved when we exit it. Using a
-   * ThreadLocal protects against the situation when multiple threads schedule jobs at the same
-   * time.
+   * Use a thread-local variable for schedule job parameters, so a value can be temporarily stored when we enter
+   * [JobScheduler.schedule(JobInfo)] and retrieved when we exit it. Using a ThreadLocal protects against the situation when multiple
+   * threads schedule jobs at the same time.
    */
   private var scheduleJobInfo by threadLocal<JobInfo?> { null }
 
-  /**
-   * Job ID is user-defined, so we still need to send event ID to guarantee uniqueness across energy
-   * events.
-   */
+  /** Job ID is user-defined, so we still need to send event ID to guarantee uniqueness across energy events. */
   private val jobIdToEventId = mutableMapOf<Int, Long>()
 
   override fun onScheduleJobEntry(job: JobInfo) {
@@ -179,14 +175,10 @@ class JobHandlerImpl(private val connection: Connection) : JobHandler {
     }
   }
 
-  private fun BackgroundTaskInspectorProtocol.JobParameters.Builder.setUp(
-    params: JobParametersWrapper
-  ) {
+  private fun BackgroundTaskInspectorProtocol.JobParameters.Builder.setUp(params: JobParametersWrapper) {
     jobId = params.jobId
     addAllTriggeredContentAuthorities(params.triggeredContentAuthorities?.toList() ?: listOf())
-    addAllTriggeredContentUris(
-      params.triggeredContentUris?.toList()?.map { it.toString() } ?: listOf()
-    )
+    addAllTriggeredContentUris(params.triggeredContentUris?.toList()?.map { it.toString() } ?: listOf())
     isOverrideDeadlineExpired = params.isOverrideDeadlineExpired
     extras = params.extras.toString()
     transientExtras = params.transientExtras.toString()

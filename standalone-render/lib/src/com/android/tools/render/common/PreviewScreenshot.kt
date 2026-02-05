@@ -21,10 +21,10 @@ import java.io.Serializable
 
 /** Information required to render a screenshot of a preview. */
 interface PreviewScreenshot : Serializable {
-    val methodFQN: String
-    val previewParams: Map<String, String>
-    val previewId: String
+  val methodFQN: String
+  val previewParams: Map<String, String>
+  val previewId: String
 
-    /** Creates a [ScreenshotPreviewElement]. */
-    fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement
+  /** Creates a [ScreenshotPreviewElement]. */
+  fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement
 }

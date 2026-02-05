@@ -1,15 +1,14 @@
 package com.android.build.gradle.integration.testing;
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.ide.common.process.ProcessException;
 import com.android.testutils.apk.Apk;
-import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Test separate test module that tests an application with some complicated dependencies : - the
@@ -26,12 +25,8 @@ public class SeparateTestWithoutMinificationWithDependenciesTest {
 
     @Before
     public void setup() throws IOException, InterruptedException {
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean");
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("assemble");
+        project.executor().run("clean");
+        project.executor().run("assemble");
     }
 
     @Test

@@ -22,13 +22,14 @@ import org.junit.Test
 
 class TaskCategoryTest {
 
-    @Test
-    fun `all primary task categories have a description`() {
-        TaskCategory.values().filter { it.isPrimary }.forEach {
-            assertWithMessage("All primary task categories should have a description as it will be " +
-                    "shown to users on the IDE side.")
-                .that(it.description)
-                .isNotEmpty()
-        }
-    }
+  @Test
+  fun `all primary task categories have a description`() {
+    TaskCategory.values()
+      .filter { it.isPrimary }
+      .forEach {
+        assertWithMessage("All primary task categories should have a description as it will be " + "shown to users on the IDE side.")
+          .that(it.description)
+          .isNotEmpty()
+      }
+  }
 }

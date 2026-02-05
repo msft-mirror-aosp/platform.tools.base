@@ -21,34 +21,28 @@ import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-open class AnalyticsEnabledHostTestBuilder(
-    private val delegate: HostTestBuilder,
-    val stats: GradleBuildVariant.Builder,
-): HostTestBuilder {
-    override var enable: Boolean
-        get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            delegate.enable = value
-        }
+open class AnalyticsEnabledHostTestBuilder(private val delegate: HostTestBuilder, val stats: GradleBuildVariant.Builder) : HostTestBuilder {
+  override var enable: Boolean
+    get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    override val type: String
-        get() = delegate.type
+  override val type: String
+    get() = delegate.type
 
-    override var enableCodeCoverage: Boolean
-        get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "HostTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE
-            delegate.enableCodeCoverage = value
-        }
+  override var enableCodeCoverage: Boolean
+    get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "HostTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE
+      delegate.enableCodeCoverage = value
+    }
 
-    override var includeAndroidResources: Boolean
-        get() = throw PropertyAccessNotAllowedException("isIncludeAndroidResources", "HostTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_INCLUDE_ANDROID_RESOURCES_VALUE
-            delegate.includeAndroidResources = value
-        }
+  override var includeAndroidResources: Boolean
+    get() = throw PropertyAccessNotAllowedException("isIncludeAndroidResources", "HostTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_SUITE_INCLUDE_ANDROID_RESOURCES_VALUE
+      delegate.includeAndroidResources = value
+    }
 }

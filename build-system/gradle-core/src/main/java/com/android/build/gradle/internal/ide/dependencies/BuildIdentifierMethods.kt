@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("BuildIdentifierMethods")
+
 package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.build.gradle.internal.dependency.VariantDependencies
@@ -26,30 +27,25 @@ import org.gradle.api.provider.Provider
 const val UNKNOWN_BUILD_NAME = "__unknown__"
 
 fun ProjectComponentIdentifier.getIdString(): String {
-    return buildTreePath
+  return buildTreePath
 }
 
 /**
- * Gets the build tree path of the project. This relies on the fact that the
- * current project is always the root of resolved configuration.
+ * Gets the build tree path of the project. This relies on the fact that the current project is always the root of resolved configuration.
  */
 fun getProjectBuildTreePath(variantDependencies: VariantDependencies): Provider<String> {
-   return variantDependencies.getResolutionResult(
-        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
-    ).rootComponent.map {
-        (it.id as? ProjectComponentIdentifier)?.buildTreePath ?: UNKNOWN_BUILD_NAME
-    }
+  return variantDependencies.getResolutionResult(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH).rootComponent.map {
+    (it.id as? ProjectComponentIdentifier)?.buildTreePath ?: UNKNOWN_BUILD_NAME
+  }
 }
 
 /**
- * Gets the build path of the Gradle build that contains the project. This relies on the fact that
- * the current project is always the root of resolved configuration.
+ * Gets the build path of the Gradle build that contains the project. This relies on the fact that the current project is always the root of
+ * resolved configuration.
  */
 @Deprecated("Use getProjectBuildTreePath instead of getting the build path in isolation")
 fun getBuildPath(variantDependencies: VariantDependencies): Provider<String> {
-    return variantDependencies.getResolutionResult(
-        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
-    ).rootComponent.map {
-        (it.id as? ProjectComponentIdentifier)?.build?.buildPath ?: UNKNOWN_BUILD_NAME
-    }
+  return variantDependencies.getResolutionResult(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH).rootComponent.map {
+    (it.id as? ProjectComponentIdentifier)?.build?.buildPath ?: UNKNOWN_BUILD_NAME
+  }
 }

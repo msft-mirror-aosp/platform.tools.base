@@ -43,8 +43,7 @@ import org.jetbrains.uast.UTypeReferenceExpression
 
 class KotlincFE10Detector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(KotlincFE10Detector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(KotlincFE10Detector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -194,8 +193,7 @@ class KotlincFE10Detector : Detector(), SourceCodeScanner {
           return
         }
         recordReport(location, fqName)
-        val message =
-          "$fqName appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        val message = "$fqName appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
         context.report(ISSUE, node, location, message)
       }
 

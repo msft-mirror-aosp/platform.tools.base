@@ -73,51 +73,24 @@ public class PrivateApiLookupTest : AbstractCheckTest() {
   fun testMethodEntries() {
     assertEquals(
       Restriction.MAYBE_MAX_O,
-      db.getMethodRestriction(
-        "android/app/Activity",
-        "dispatchPictureInPictureModeChanged",
-        "(ZLandroid/content/res/Configuration;)",
-      ),
+      db.getMethodRestriction("android/app/Activity", "dispatchPictureInPictureModeChanged", "(ZLandroid/content/res/Configuration;)"),
     )
-    assertEquals(
-      Restriction.MAYBE_MAX_P,
-      db.getMethodRestriction("android.animation.LayoutTransition", "cancel", "()"),
-    )
+    assertEquals(Restriction.MAYBE_MAX_P, db.getMethodRestriction("android.animation.LayoutTransition", "cancel", "()"))
     assertEquals(
       Restriction.DENY,
-      db.getMethodRestriction(
-        "android/app/Notification",
-        "dumpDebug",
-        "(Landroid/util/proto/ProtoOutputStream;J)V",
-      ),
+      db.getMethodRestriction("android/app/Notification", "dumpDebug", "(Landroid/util/proto/ProtoOutputStream;J)V"),
     )
     assertEquals(
       Restriction.UNKNOWN,
-      db.getMethodRestriction(
-        "android/graphics/drawable/BitmapDrawable",
-        "setTargetDensity",
-        "(Landroid/util/DisplayMetrics;)V",
-      ),
+      db.getMethodRestriction("android/graphics/drawable/BitmapDrawable", "setTargetDensity", "(Landroid/util/DisplayMetrics;)V"),
     )
   }
 
   fun testFieldEntries() {
-    assertEquals(
-      Restriction.DENY,
-      db.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"),
-    )
-    assertEquals(
-      Restriction.MAYBE,
-      db.getFieldRestriction("android/content/ContentProviderOperation", "mUri"),
-    )
-    assertEquals(
-      Restriction.MAYBE_MAX_P,
-      db.getFieldRestriction("android.animation.ValueAnimator", "sDurationScale"),
-    )
-    assertEquals(
-      Restriction.MAYBE_MAX_R,
-      db.getFieldRestriction("android.app.StatusBarManager", "DISABLE_NOTIFICATION_TICKER"),
-    )
+    assertEquals(Restriction.DENY, db.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"))
+    assertEquals(Restriction.MAYBE, db.getFieldRestriction("android/content/ContentProviderOperation", "mUri"))
+    assertEquals(Restriction.MAYBE_MAX_P, db.getFieldRestriction("android.animation.ValueAnimator", "sDurationScale"))
+    assertEquals(Restriction.MAYBE_MAX_R, db.getFieldRestriction("android.app.StatusBarManager", "DISABLE_NOTIFICATION_TICKER"))
   }
 
   fun testCorruptedCacheHandling() {
@@ -127,10 +100,7 @@ public class PrivateApiLookupTest : AbstractCheckTest() {
     cacheDir = createClient().getCacheDir(null, true)!!
     logBuffer.setLength(0)
     lookup = PrivateApiLookup.Companion.get(LookupTestClient())!!
-    assertEquals(
-      Restriction.DENY,
-      lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"),
-    )
+    assertEquals(Restriction.DENY, lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"))
     assertEquals("", logBuffer.toString()) // No warnings
 
     // Custom cache dir: should also work
@@ -138,10 +108,7 @@ public class PrivateApiLookupTest : AbstractCheckTest() {
     cacheDir.mkdirs()
     logBuffer.setLength(0)
     lookup = PrivateApiLookup.Companion.get(LookupTestClient())!!
-    assertEquals(
-      Restriction.DENY,
-      lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"),
-    )
+    assertEquals(Restriction.DENY, lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"))
     assertEquals("", logBuffer.toString()) // No warnings
 
     // Now truncate cache file
@@ -176,10 +143,7 @@ public class PrivateApiLookupTest : AbstractCheckTest() {
     raf.setLength(0)
     raf.close()
     lookup = PrivateApiLookup.Companion.get(LookupTestClient())!!
-    assertEquals(
-      Restriction.DENY,
-      lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"),
-    )
+    assertEquals(Restriction.DENY, lookup.getFieldRestriction("android/Manifest\$permission", "INSTALL_EXISTING_PACKAGES"))
     assertEquals("", logBuffer.toString()) // No warnings
   }
 }

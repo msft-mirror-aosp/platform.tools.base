@@ -21,30 +21,20 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 /**
- * Interface to hide the implementation class.
- * Also allows consumers of this library to easily test since [UsbDeviceCollectorImpl]
- * is final.
+ * Interface to hide the implementation class. Also allows consumers of this library to easily test since [UsbDeviceCollectorImpl] is final.
  */
 interface UsbDeviceCollector {
-  /**
-   * returns list of [UsbDevice]
-   */
+  /** returns list of [UsbDevice] */
   fun listUsbDevices(): CompletableFuture<List<UsbDevice>>
 
-  /**
-   * returns if the given platform is supported.
-   */
+  /** returns if the given platform is supported. */
   fun isSupported(platform: String): Boolean
 
-  /**
-   * Returns an enum representing the platform OS
-   */
+  /** Returns an enum representing the platform OS */
   fun getPlatform(): Platform
 }
 
-/**
- * Returns [UsbDevice] by parsing usb devices command output.
- */
+/** Returns [UsbDevice] by parsing usb devices command output. */
 class UsbDeviceCollectorImpl : UsbDeviceCollector {
   override fun listUsbDevices(): CompletableFuture<List<UsbDevice>> {
     val currentOS = Platform.currentOS()
@@ -53,14 +43,11 @@ class UsbDeviceCollectorImpl : UsbDeviceCollector {
     return execute(currentOS.command!!).thenApply { it -> currentOS.parser().parse(it) }
   }
 
-
   override fun isSupported(platform: String) = Platform.currentOS(platform).supported
 
   override fun getPlatform() = Platform.currentOS()
 
   private fun execute(command: String): CompletableFuture<InputStream> {
-    return CompletableFuture.supplyAsync {
-      ProcessBuilder(command.split(" ")).redirectErrorStream(true).start().inputStream
-    }
+    return CompletableFuture.supplyAsync { ProcessBuilder(command.split(" ")).redirectErrorStream(true).start().inputStream }
   }
 }

@@ -39,31 +39,19 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-    lint()
-      .files(manifest().minSdk(1), tryWithResources, multiCatch, gradleVersion231)
-      .run()
-      .expect(expected)
+    lint().files(manifest().minSdk(1), tryWithResources, multiCatch, gradleVersion231).run().expect(expected)
   }
 
   fun testTryWithResourcesOkDueToCompileSdk() {
-    lint()
-      .files(manifest().minSdk(19), tryWithResources, multiCatch, gradleVersion231)
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(19), tryWithResources, multiCatch, gradleVersion231).run().expectClean()
   }
 
   fun testTryWithResourcesOkDueToDesugar() {
-    lint()
-      .files(manifest().minSdk(19), tryWithResources, multiCatch, gradleVersion24_language18)
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(19), tryWithResources, multiCatch, gradleVersion24_language18).run().expectClean()
   }
 
   fun testTryWithResourcesOutsideAndroid() {
-    lint()
-      .files(manifest().minSdk(1), tryWithResources, multiCatch, gradle("apply plugin: 'java'\n"))
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(1), tryWithResources, multiCatch, gradle("apply plugin: 'java'\n")).run().expectClean()
   }
 
   fun testTryWithResourcesOldGradlePlugin() {
@@ -85,17 +73,11 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-    lint()
-      .files(manifest().minSdk(1), gradleVersion24_language17, tryWithResources)
-      .run()
-      .expect(expected)
+    lint().files(manifest().minSdk(1), gradleVersion24_language17, tryWithResources).run().expect(expected)
   }
 
   fun testTryWithResourcesDesugar() {
-    lint()
-      .files(manifest().minSdk(1), gradleVersion24_language18, tryWithResources)
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(1), gradleVersion24_language18, tryWithResources).run().expectClean()
   }
 
   fun testDesugarMethods() {

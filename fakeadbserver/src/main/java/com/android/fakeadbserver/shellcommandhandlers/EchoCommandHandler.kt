@@ -21,37 +21,24 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-/**
- * A shell command handler that writes its argument(s) to `stdout`, followed by a newline
- */
-class EchoCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "echo"
-) {
+/** A shell command handler that writes its argument(s) to `stdout`, followed by a newline */
+class EchoCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "echo") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        shellCommandArgs?.also {
-            shellCommandOutput.writeStdout(
-                expandEnvironmentalVariables(
-                    device, shellCommandArgs
-                )
-            )
-        }
-        shellCommandOutput.writeStdout("\n")
-        shellCommandOutput.writeExitCode(0)
-    }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    shellCommandArgs?.also { shellCommandOutput.writeStdout(expandEnvironmentalVariables(device, shellCommandArgs)) }
+    shellCommandOutput.writeStdout("\n")
+    shellCommandOutput.writeExitCode(0)
+  }
 
-    private fun expandEnvironmentalVariables(
-        device: DeviceState,
-        shellCommandArgs: String
-    ): String {
-        return shellCommandArgs.replace("\$USER_ID", if (device.isRoot) "0" else "2000")
-    }
+  private fun expandEnvironmentalVariables(device: DeviceState, shellCommandArgs: String): String {
+    return shellCommandArgs.replace("\$USER_ID", if (device.isRoot) "0" else "2000")
+  }
 }

@@ -111,19 +111,10 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkIntRange(
-    context: JavaContext,
-    annotation: UAnnotation,
-    argument: UElement,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkIntRange(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     if (argument is UIfExpression) {
-      argument.thenExpression?.let { thenExpression ->
-        checkIntRange(context, annotation, thenExpression, usageInfo)
-      }
-      argument.elseExpression?.let { elseExpression ->
-        checkIntRange(context, annotation, elseExpression, usageInfo)
-      }
+      argument.thenExpression?.let { thenExpression -> checkIntRange(context, annotation, thenExpression, usageInfo) }
+      argument.elseExpression?.let { elseExpression -> checkIntRange(context, annotation, elseExpression, usageInfo) }
       return
     } else if (argument is UParenthesizedExpression) {
       checkIntRange(context, annotation, argument.expression, usageInfo)
@@ -143,19 +134,10 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkFloatRange(
-    context: JavaContext,
-    annotation: UAnnotation,
-    argument: UElement,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkFloatRange(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     if (argument is UIfExpression) {
-      argument.thenExpression?.let { thenExpression ->
-        checkFloatRange(context, annotation, thenExpression, usageInfo)
-      }
-      argument.elseExpression?.let { elseExpression ->
-        checkFloatRange(context, annotation, elseExpression, usageInfo)
-      }
+      argument.thenExpression?.let { thenExpression -> checkFloatRange(context, annotation, thenExpression, usageInfo) }
+      argument.elseExpression?.let { elseExpression -> checkFloatRange(context, annotation, elseExpression, usageInfo) }
       return
     } else if (argument is UParenthesizedExpression) {
       checkFloatRange(context, annotation, argument.expression, usageInfo)
@@ -171,12 +153,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     val constant = ConstantEvaluator.evaluate(context, argument)
     if (constant !is Number) {
       // Number arrays
-      if (
-        constant is FloatArray ||
-          constant is DoubleArray ||
-          constant is IntArray ||
-          constant is LongArray
-      ) {
+      if (constant is FloatArray || constant is DoubleArray || constant is IntArray || constant is LongArray) {
         if (constant is FloatArray) {
           for (value in constant) {
             if (!constraint.isValid(value.toDouble())) {
@@ -238,12 +215,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkSize(
-    context: JavaContext,
-    annotation: UAnnotation,
-    argument: UElement,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkSize(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     val actual: Long
     var isString = false
 
@@ -253,12 +225,8 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (argument.isNewArrayWithInitializer()) {
       actual = (argument as UCallExpression).valueArgumentCount.toLong()
     } else if (argument is UIfExpression) {
-      argument.thenExpression?.let { thenExpression ->
-        checkSize(context, annotation, thenExpression, usageInfo)
-      }
-      argument.elseExpression?.let { elseExpression ->
-        checkSize(context, annotation, elseExpression, usageInfo)
-      }
+      argument.thenExpression?.let { thenExpression -> checkSize(context, annotation, thenExpression, usageInfo) }
+      argument.elseExpression?.let { elseExpression -> checkSize(context, annotation, elseExpression, usageInfo) }
       return
     } else if (argument is UParenthesizedExpression) {
       checkSize(context, annotation, argument.expression, usageInfo)
@@ -310,20 +278,13 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     /** Returns true if the given [qualifiedName] is a range annotation */
     fun isIntRange(qualifiedName: String?): Boolean {
-      if (
-        INT_RANGE_ANNOTATION.isEquals(qualifiedName) || AOSP_INT_RANGE_ANNOTATION == qualifiedName
-      ) {
+      if (INT_RANGE_ANNOTATION.isEquals(qualifiedName) || AOSP_INT_RANGE_ANNOTATION == qualifiedName) {
         return true
       }
       return false
     }
 
-    fun getIntRangeError(
-      context: JavaContext,
-      annotation: UAnnotation,
-      argument: UElement,
-      usageInfo: AnnotationUsageInfo,
-    ): String? {
+    fun getIntRangeError(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo): String? {
       if (argument.isNewArrayWithInitializer()) {
         val newExpression = argument as UCallExpression
         for (topExpression in newExpression.valueArguments) {
@@ -380,28 +341,20 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       } else null
     }
 
-    private fun getRangeConstraint(
-      context: JavaContext,
-      resolvable: UResolvable?,
-    ): RangeConstraint? {
+    private fun getRangeConstraint(context: JavaContext, resolvable: UResolvable?): RangeConstraint? {
       val resolved = resolvable?.resolve() ?: return null
       // TODO: What about parameters or local variables here?
       // UAST-wise we could look for UDeclaration but it turns out
       // UDeclaration also extends PsiModifierListOwner!
       val constraint =
-        (resolved.toUElement() as? UAnnotated)?.let {
-          RangeConstraint.create(it, context.evaluator)
-        }
-          ?: if (resolved is PsiModifierListOwner)
-            RangeConstraint.create(resolved, context.evaluator)
-          else null
+        (resolved.toUElement() as? UAnnotated)?.let { RangeConstraint.create(it, context.evaluator) }
+          ?: if (resolved is PsiModifierListOwner) RangeConstraint.create(resolved, context.evaluator) else null
 
       if (resolvable is USimpleNameReferenceExpression) {
         val surroundingIf = resolvable.getParentOfType<UIfExpression>(true)
         if (surroundingIf != null) {
           val condition = surroundingIf.condition.skipParenthesizedExprDown()
-          val newConstraint =
-            getRangeConstraints(resolvable, condition, constraint) ?: return constraint
+          val newConstraint = getRangeConstraints(resolvable, condition, constraint) ?: return constraint
           newConstraint.inferred = true
           val elseExpression = surroundingIf.elseExpression
           if (elseExpression != null && resolvable.isBelow(elseExpression)) {
@@ -429,18 +382,8 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (condition !is UBinaryExpression) return null
       val operator = condition.operator
       if (operator == UastBinaryOperator.LOGICAL_AND) {
-        val left =
-          getRangeConstraints(
-            resolvable,
-            condition.leftOperand.skipParenthesizedExprDown(),
-            previousConstraint,
-          )
-        val right =
-          getRangeConstraints(
-            resolvable,
-            condition.rightOperand.skipParenthesizedExprDown(),
-            previousConstraint,
-          )
+        val left = getRangeConstraints(resolvable, condition.leftOperand.skipParenthesizedExprDown(), previousConstraint)
+        val right = getRangeConstraints(resolvable, condition.rightOperand.skipParenthesizedExprDown(), previousConstraint)
         return when {
           left == null && right == null -> null
           left != null && right != null -> right and left

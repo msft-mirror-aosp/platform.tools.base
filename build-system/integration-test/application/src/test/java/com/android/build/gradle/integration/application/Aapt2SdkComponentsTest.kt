@@ -24,20 +24,19 @@ import org.junit.Test
 
 class Aapt2SdkComponentsTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        buildFileType = BuildFileType.KTS
-        androidApplication { }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      buildFileType = BuildFileType.KTS
+      androidApplication {}
     }
 
-    @Test
-    fun testAapt2Tools() {
-        val build = rule.build
-        build.androidApplication()
-            .files
-            .update("build.gradle.kts") {
-                append(
-                    """
+  @Test
+  fun testAapt2Tools() {
+    val build = rule.build
+    build.androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
                 abstract class Aapt2PathTask : DefaultTask() {
                     @get:Nested
                     abstract val aapt2: Property<com.android.build.api.variant.Aapt2>
@@ -56,9 +55,10 @@ class Aapt2SdkComponentsTest {
                 val taskProvider = tasks.register<Aapt2PathTask>("getAapt2Tools") {
                     this.aapt2.set(androidComponents.sdkComponents.aapt2)
                 }
-            """.trimIndent()
-                )
-            }
-        build.executor.run("getAapt2Tools")
+            """
+          .trimIndent()
+      )
     }
+    build.executor.run("getAapt2Tools")
+  }
 }

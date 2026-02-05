@@ -19,20 +19,17 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 
-internal open class SettingsTargetSdkSpecImpl: TargetSdkSpec {
+internal open class SettingsTargetSdkSpecImpl : TargetSdkSpec {
 
-    override var version: TargetSdkVersion? = null
+  override var version: TargetSdkVersion? = null
 
-    override fun release(version: Int): TargetSdkVersion {
-        return SettingsTargetSdkVersionImpl(apiLevel = version, codeName = null)
-    }
+  override fun release(version: Int): TargetSdkVersion {
+    return SettingsTargetSdkVersionImpl(apiLevel = version, codeName = null)
+  }
 
-    override fun preview(version: String): TargetSdkVersion {
-        return SettingsTargetSdkVersionImpl(apiLevel = null, codeName = version)
-    }
+  override fun preview(version: String): TargetSdkVersion {
+    return SettingsTargetSdkVersionImpl(apiLevel = null, codeName = version)
+  }
 }
 
-internal data class SettingsTargetSdkVersionImpl(
-    override val apiLevel: Int?,
-    override val codeName: String?
-): TargetSdkVersion
+internal data class SettingsTargetSdkVersionImpl(override val apiLevel: Int?, override val codeName: String?) : TargetSdkVersion

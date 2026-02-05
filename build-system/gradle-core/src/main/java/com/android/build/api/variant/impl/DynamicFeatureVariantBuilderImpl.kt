@@ -32,82 +32,69 @@ import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class DynamicFeatureVariantBuilderImpl @Inject constructor(
-    globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-    dslInfo: DynamicFeatureVariantDslInfo,
-    componentIdentity: ComponentIdentity,
-    variantBuilderServices: VariantBuilderServices
-) : VariantBuilderImpl(
-    globalVariantBuilderConfig,
-    dslInfo,
-    componentIdentity,
-    variantBuilderServices
-), DynamicFeatureVariantBuilder {
+open class DynamicFeatureVariantBuilderImpl
+@Inject
+constructor(
+  globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+  dslInfo: DynamicFeatureVariantDslInfo,
+  componentIdentity: ComponentIdentity,
+  variantBuilderServices: VariantBuilderServices,
+) : VariantBuilderImpl(globalVariantBuilderConfig, dslInfo, componentIdentity, variantBuilderServices), DynamicFeatureVariantBuilder {
 
-    override var androidTestEnabled: Boolean
-        get() = androidTest.enable
-        set(value) {
-            androidTest.enable = value
-        }
-
-    override var enableAndroidTest: Boolean
-        get() = androidTest.enable
-        set(value) {
-            androidTest.enable = value
-        }
-
-    override var enableTestFixtures: Boolean = dslInfo.testFixtures?.enable ?: false
-    override var debuggable: Boolean = dslInfo.isDebuggable
-
-    override fun <T : VariantBuilder> createUserVisibleVariantObject(
-            projectServices: ProjectServices,
-            stats: GradleBuildVariant.Builder?): T =
-        if (stats == null) {
-            this as T
-        } else {
-            projectServices.objectFactory.newInstance(
-                AnalyticsEnabledDynamicFeatureVariantBuilder::class.java,
-                this,
-                stats
-            ) as T
-        }
-
-    internal var _enableMultiDex: Boolean? = dslInfo.dexingDslInfo.isMultiDexEnabled
-    override var enableMultiDex: Boolean?
-        get() {
-            throw PropertyAccessNotAllowedException("enableMultiDex", "DynamicFeatureVariantBuilder")
-        }
-        set(value) {
-            _enableMultiDex = value
-        }
-
-    override val deviceTests: Map<String, DeviceTestBuilderImpl> =
-        DeviceTestBuilderImpl.create(
-            dslInfo.dslDefinedDeviceTests,
-            variantBuilderServices,
-            globalVariantBuilderConfig,
-            { targetSdkVersion },
-            _enableMultiDex,
-            debuggable,
-        )
-
-    override val androidTest: AndroidTestBuilder by lazy(LazyThreadSafetyMode.NONE) {
-        AndroidTestBuilderImpl(
-            deviceTests.get(DeviceTestBuilder.ANDROID_TEST_TYPE)
-                ?: throw RuntimeException("No androidTest component defined on this variant")
-        )
+  override var androidTestEnabled: Boolean
+    get() = androidTest.enable
+    set(value) {
+      androidTest.enable = value
     }
 
-    override val hostTests: Map<String, HostTestBuilder> =
-        HostTestBuilderImpl.create(
-            dslInfo.dslDefinedHostTests,
-            dslInfo.experimentalProperties,
-        )
+  override var enableAndroidTest: Boolean
+    get() = androidTest.enable
+    set(value) {
+      androidTest.enable = value
+    }
 
-    override val suites: Map<String, TestSuiteBuilder> =
-        TestSuiteBuilderImpl.create(
-            dslInfo.dslDefinedTestSuites,
-            variantBuilderServices,
-            dslInfo.experimentalProperties,
-        )
+  override var enableTestFixtures: Boolean = dslInfo.testFixtures?.enable ?: false
+  override var debuggable: Boolean = dslInfo.isDebuggable
+
+  override fun <T : VariantBuilder> createUserVisibleVariantObject(
+    projectServices: ProjectServices,
+    stats: GradleBuildVariant.Builder?,
+  ): T =
+    if (stats == null) {
+      this as T
+    } else {
+      projectServices.objectFactory.newInstance(AnalyticsEnabledDynamicFeatureVariantBuilder::class.java, this, stats) as T
+    }
+
+  internal var _enableMultiDex: Boolean? = dslInfo.dexingDslInfo.isMultiDexEnabled
+  override var enableMultiDex: Boolean?
+    get() {
+      throw PropertyAccessNotAllowedException("enableMultiDex", "DynamicFeatureVariantBuilder")
+    }
+    set(value) {
+      _enableMultiDex = value
+    }
+
+  override val deviceTests: Map<String, DeviceTestBuilderImpl> =
+    DeviceTestBuilderImpl.create(
+      dslInfo.dslDefinedDeviceTests,
+      variantBuilderServices,
+      globalVariantBuilderConfig,
+      { targetSdkVersion },
+      _enableMultiDex,
+      debuggable,
+    )
+
+  override val androidTest: AndroidTestBuilder by
+    lazy(LazyThreadSafetyMode.NONE) {
+      AndroidTestBuilderImpl(
+        deviceTests.get(DeviceTestBuilder.ANDROID_TEST_TYPE) ?: throw RuntimeException("No androidTest component defined on this variant")
+      )
+    }
+
+  override val hostTests: Map<String, HostTestBuilder> =
+    HostTestBuilderImpl.create(dslInfo.dslDefinedHostTests, dslInfo.experimentalProperties)
+
+  override val suites: Map<String, TestSuiteBuilder> =
+    TestSuiteBuilderImpl.create(dslInfo.dslDefinedTestSuites, variantBuilderServices, dslInfo.experimentalProperties)
 }

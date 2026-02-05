@@ -20,71 +20,60 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class HumanReadableProfileErrorsTests {
-    @Test
-    fun testIllegalRules() {
-        assertThat(parseRule("HSPLA;->foo**")).isEqualTo(
-            13 to unexpectedEnd('(')
-        )
-        assertThat(parseRule("HSPLA;bla")).isEqualTo(
-             6 to unexpectedChar('-', 'b')
-        )
-        assertThat(parseRule("pack.age.Foo")).isEqualTo(
-            0 to illegalTokenMessage('p')
-        )
-        assertThat(parseRule("HSPLA;->foo()LA;bla")).isEqualTo(
-            16 to unexpectedTextAfterRule("bla")
-        )
-    }
+  @Test
+  fun testIllegalRules() {
+    assertThat(parseRule("HSPLA;->foo**")).isEqualTo(13 to unexpectedEnd('('))
+    assertThat(parseRule("HSPLA;bla")).isEqualTo(6 to unexpectedChar('-', 'b'))
+    assertThat(parseRule("pack.age.Foo")).isEqualTo(0 to illegalTokenMessage('p'))
+    assertThat(parseRule("HSPLA;->foo()LA;bla")).isEqualTo(16 to unexpectedTextAfterRule("bla"))
+  }
 
-    @Test
-    fun testIncorrectFlags() {
-        assertThat(parseRule("HSPLFoo;")).isEqualTo(
-            0 to flagsForClassRuleMessage("HSP")
-        )
-        assertThat(parseRule("LFoo;->method()V")).isEqualTo(
-            0 to emptyFlagsForMethodRuleMessage()
-        )
-    }
+  @Test
+  fun testIncorrectFlags() {
+    assertThat(parseRule("HSPLFoo;")).isEqualTo(0 to flagsForClassRuleMessage("HSP"))
+    assertThat(parseRule("LFoo;->method()V")).isEqualTo(0 to emptyFlagsForMethodRuleMessage())
+  }
 
-    @Test
-    fun testErrorsInMultipleRules() {
-        val errors = mutableListOf<String>()
-        val diagnostics = Diagnostics { error -> errors.add(error) }
-        val name = "incorrect-composer-hrp.txt"
-        val hrp = HumanReadableProfile(testData(name), diagnostics)
-        assertThat(hrp).isNull()
-        assertThat(errors).containsExactly(
-            "$name:1:47 error: ${
+  @Test
+  fun testErrorsInMultipleRules() {
+    val errors = mutableListOf<String>()
+    val diagnostics = Diagnostics { error -> errors.add(error) }
+    val name = "incorrect-composer-hrp.txt"
+    val hrp = HumanReadableProfile(testData(name), diagnostics)
+    assertThat(hrp).isNull()
+    assertThat(errors)
+      .containsExactly(
+        "$name:1:47 error: ${
                 illegalTokenMessage(';').withSnippet(
-                    "HSPLandroidx/compose/runtime/ComposerImp;->foo;**", 46
+                    "HSPLandroidx/compose/runtime/ComposerImp;->foo;**", 46,
                 )
             }",
-            "$name:3:64 error: ${
+        "$name:3:64 error: ${
                 unexpectedEnd('(').withSnippet(
-                    "HSPLandroidx/compose/runtime/ComposerImpl;->startMovableGroup**", 63
+                    "HSPLandroidx/compose/runtime/ComposerImpl;->startMovableGroup**", 63,
                 )
-            }"
-        )
-    }
+            }",
+      )
+  }
 
-    @Test
-    fun testWithSnippet() {
-        assertThat("message".withSnippet("rule", 2)).isEqualTo(
-            """
-                message
-                rule
-                  ^
-            """.trimIndent()
-        )
-    }
+  @Test
+  fun testWithSnippet() {
+    assertThat("message".withSnippet("rule", 2))
+      .isEqualTo(
+        """
+        message
+        rule
+          ^
+        """
+          .trimIndent()
+      )
+  }
 }
 
-private fun parseRule(
-    line: String
-): Pair<Int, String> {
-    var result : Pair<Int, String>? = null
-    val onError: (Int, String) -> Unit = { index, error -> result = index to error }
-    val rule = parseRule(line, onError, RuleFragmentParser(line.length))
-    assertThat(rule).isNull()
-    return result!!
+private fun parseRule(line: String): Pair<Int, String> {
+  var result: Pair<Int, String>? = null
+  val onError: (Int, String) -> Unit = { index, error -> result = index to error }
+  val rule = parseRule(line, onError, RuleFragmentParser(line.length))
+  assertThat(rule).isNull()
+  return result!!
 }

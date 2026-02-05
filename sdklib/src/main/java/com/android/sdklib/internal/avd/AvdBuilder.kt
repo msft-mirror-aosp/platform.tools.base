@@ -30,27 +30,23 @@ import kotlin.io.path.name
 /**
  * AvdBuilder is a mutable class for reading and editing the definition of an AVD.
  *
- * An AVD is written to disk as a set of config files, which consist of key / value string pairs.
- * Part of the role of this class is to handle the conversion of those strings to and from
- * higher-level types stored in fields.
+ * An AVD is written to disk as a set of config files, which consist of key / value string pairs. Part of the role of this class is to
+ * handle the conversion of those strings to and from higher-level types stored in fields.
  *
- * Some fields are translated directly into a single config key/value entry. This is the easy case.
- * Some are translated into several key/value entries. The most troublesome, however, are those
- * which can become an arbitrary number of entries: Device expands into many entries determined by
- * its XML definition as well as code, and a system image or skin may import arbitrary entries from
- * a file stored on disk.
+ * Some fields are translated directly into a single config key/value entry. This is the easy case. Some are translated into several
+ * key/value entries. The most troublesome, however, are those which can become an arbitrary number of entries: Device expands into many
+ * entries determined by its XML definition as well as code, and a system image or skin may import arbitrary entries from a file stored on
+ * disk.
  *
- * Given this, when reading an AVD from disk, it is difficult to know whether a config entry
- * originated from a Device, system image, skin, or explicit user setting, particularly if the
- * config was made by a different version of Studio.
+ * Given this, when reading an AVD from disk, it is difficult to know whether a config entry originated from a Device, system image, skin,
+ * or explicit user setting, particularly if the config was made by a different version of Studio.
  *
- * Thus, we do not read config properties from disk other than the ones explicitly defined here. If
- * the Device, skin, or system image is changed, we want to be sure that we are not including
- * properties defined by the previous device. This also means that if a newer version of Studio
- * creates a device with new config entries, editing it will not preserve those properties.
+ * Thus, we do not read config properties from disk other than the ones explicitly defined here. If the Device, skin, or system image is
+ * changed, we want to be sure that we are not including properties defined by the previous device. This also means that if a newer version
+ * of Studio creates a device with new config entries, editing it will not preserve those properties.
  *
- * User settings and boot props are simpler than the config.ini case: boot.props are determined
- * entirely by the Device, and user settings are independent of other fields.
+ * User settings and boot props are simpler than the config.ini case: boot.props are determined entirely by the Device, and user settings
+ * are independent of other fields.
  */
 class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device) {
   var avdName: String
@@ -73,10 +69,9 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   var sdCard: SdCard? = null
   var skin: Skin? = null
   /**
-   * An image or video to be used as the background environment of an XR device. If this is a
-   * fully-constructed AVD, this should be a relative path, which is interpreted relative to
-   * [avdFolder]. If it is an AVD in the process of being created, this should be an absolute path;
-   * it will be copied to the AVD directory upon creation.
+   * An image or video to be used as the background environment of an XR device. If this is a fully-constructed AVD, this should be a
+   * relative path, which is interpreted relative to [avdFolder]. If it is an AVD in the process of being created, this should be an
+   * absolute path; it will be copied to the AVD directory upon creation.
    */
   var environment: Path? = null
 
@@ -111,10 +106,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     binding.read(this, DeviceManager.getHardwareProperties(device))
 
     // Default to a skin based on the device screen
-    skin =
-      device.getScreenSize(device.defaultState.orientation)?.let {
-        GenericSkin(it.width, it.height)
-      }
+    skin = device.getScreenSize(device.defaultState.orientation)?.let { GenericSkin(it.width, it.height) }
 
     cpuCoreCount = EmulatedProperties.defaultCpuCount(device)
     ram = EmulatedProperties.defaultRamSize(device)
@@ -156,18 +148,15 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   }
 
   /**
-   * When the AVD folder changes, updates absolute paths that point to a location within the old AVD
-   * folder to a corresponding location within the new AVD folder.
+   * When the AVD folder changes, updates absolute paths that point to a location within the old AVD folder to a corresponding location
+   * within the new AVD folder.
    */
   private fun updateInternalPaths(oldFolder: Path, newFolder: Path) {
     when (val sdCard = sdCard) {
       is ExternalSdCard -> {
         if (sdCard.path.startsWith(oldFolder.toString())) {
           // TODO(b/370815882): Consider whether ExternalSdCard.path should be a Path
-          this.sdCard =
-            ExternalSdCard(
-              newFolder.resolve(sdCard.path.substring(oldFolder.toString().length + 1)).toString()
-            )
+          this.sdCard = ExternalSdCard(newFolder.resolve(sdCard.path.substring(oldFolder.toString().length + 1)).toString())
         }
       }
       else -> {}
@@ -176,9 +165,8 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   companion object {
     /**
-     * Values that we unconditionally set before setting other properties. They may be overridden by
-     * Device-determined properties. If they need to be configurable, they can be converted to
-     * fields.
+     * Values that we unconditionally set before setting other properties. They may be overridden by Device-determined properties. If they
+     * need to be configurable, they can be converted to fields.
      */
     val defaultConfigKeys = mapOf(ConfigKey.SKIN_DYNAMIC to "yes")
 
@@ -189,12 +177,8 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
         AvdBuilder::showDeviceFrame bindToKey ConfigKey.SHOW_DEVICE_FRAME,
         AvdBuilder::cpuCoreCount bindToKey ConfigKey.CPU_CORES,
         AvdBuilder::ram bindVia StorageConverter(allowUnitSuffix = false) toKey ConfigKey.RAM_SIZE,
-        AvdBuilder::vmHeap bindVia
-          StorageConverter(allowUnitSuffix = false) toKey
-          ConfigKey.VM_HEAP_SIZE,
-        AvdBuilder::internalStorage bindVia
-          StorageConverter(defaultUnit = Storage.Unit.B) toKey
-          ConfigKey.DATA_PARTITION_SIZE,
+        AvdBuilder::vmHeap bindVia StorageConverter(allowUnitSuffix = false) toKey ConfigKey.VM_HEAP_SIZE,
+        AvdBuilder::internalStorage bindVia StorageConverter(defaultUnit = Storage.Unit.B) toKey ConfigKey.DATA_PARTITION_SIZE,
         AvdBuilder::frontCamera bindToKey ConfigKey.CAMERA_FRONT,
         AvdBuilder::backCamera bindToKey ConfigKey.CAMERA_BACK,
         AvdBuilder::gpuMode bindToKey ConfigKey.GPU_MODE,
@@ -222,17 +206,12 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     }
 
     /**
-     * Updates the user-settings.ini of an AVD; this is simpler than updating the entire AVD. The
-     * supplied properties will be merged with the existing properties. A property can be cleared by
-     * setting its key to null in [userSettings].
+     * Updates the user-settings.ini of an AVD; this is simpler than updating the entire AVD. The supplied properties will be merged with
+     * the existing properties. A property can be cleared by setting its key to null in [userSettings].
      */
     fun updateUserSettings(avdFolder: Path, userSettings: Map<String, String?>, logger: ILogger) {
       val currentSettings = AvdInfo.parseUserSettingsFile(avdFolder, logger)
-      writeIniFile(
-        iniFile = avdFolder.resolve(USER_SETTINGS_INI),
-        values = currentSettings + userSettings,
-        addEncoding = true,
-      )
+      writeIniFile(iniFile = avdFolder.resolve(USER_SETTINGS_INI), values = currentSettings + userSettings, addEncoding = true)
     }
   }
 }

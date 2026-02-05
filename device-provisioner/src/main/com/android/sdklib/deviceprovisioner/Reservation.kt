@@ -26,14 +26,14 @@ data class Reservation(
   /** The time this reservation started; null if we don't know. */
   val startTime: Instant?,
   /**
-   * The time this reservation expires; null if there is no definite expiration time. If the
-   * reservation is in the COMPLETE or ERROR state, this is the time it entered that state.
+   * The time this reservation expires; null if there is no definite expiration time. If the reservation is in the COMPLETE or ERROR state,
+   * this is the time it entered that state.
    */
   val endTime: Instant?,
 
   /**
-   * Maximum possible duration of the reservation. Current duration might be less than this duration
-   * but may not exceed this value. null if there is no maximum duration.
+   * Maximum possible duration of the reservation. Current duration might be less than this duration but may not exceed this value. null if
+   * there is no maximum duration.
    */
   val maxDuration: Duration?,
 )

@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.ResValuesCreationCon
  * ```
  */
 interface ResValuesTaskCreationAction {
-    val resValuesCreationConfig: ResValuesCreationConfig
+  val resValuesCreationConfig: ResValuesCreationConfig
 }
 
-class ResValuesTaskCreationActionImpl(
-    creationConfig: ComponentCreationConfig
-): ResValuesTaskCreationAction {
+class ResValuesTaskCreationActionImpl(creationConfig: ComponentCreationConfig) : ResValuesTaskCreationAction {
 
-    override val resValuesCreationConfig: ResValuesCreationConfig =
-        creationConfig.resValuesCreationConfig!!
+  override val resValuesCreationConfig: ResValuesCreationConfig = creationConfig.resValuesCreationConfig!!
 }

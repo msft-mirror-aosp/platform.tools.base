@@ -34,54 +34,39 @@ import java.nio.file.Path
  * @param path the Gradle path of the project
  * @param createMinimumProject whether to initialized default values on required properties
  */
-internal class AndroidDynamicFeatureDefinitionImpl(
-    path: String,
-    createMinimumProject: Boolean
-): AndroidProjectDefinitionImpl<DynamicFeatureExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_DYNAMIC_FEATURE)
+internal class AndroidDynamicFeatureDefinitionImpl(path: String, createMinimumProject: Boolean) :
+  AndroidProjectDefinitionImpl<DynamicFeatureExtension>(path) {
+  init {
+    applyPlugin(PluginType.ANDROID_DYNAMIC_FEATURE)
+  }
+
+  override val android: DynamicFeatureExtension =
+    DslProxy.createProxy(DynamicFeatureExtension::class.java, dslRecorder).also {
+      if (createMinimumProject) {
+        initDefaultValues(it)
+      }
     }
-
-    override val android: DynamicFeatureExtension =
-        DslProxy.createProxy(
-            DynamicFeatureExtension::class.java,
-            dslRecorder,
-        ).also {
-            if (createMinimumProject) {
-                initDefaultValues(it)
-            }
-        }
 }
 
-/**
- * Specialized interface for dynamic feature [AndroidProject] to use in the test
- */
-interface AndroidDynamicFeatureProject: AndroidProject<AndroidProjectDefinition<DynamicFeatureExtension>>
+/** Specialized interface for dynamic feature [AndroidProject] to use in the test */
+interface AndroidDynamicFeatureProject : AndroidProject<AndroidProjectDefinition<DynamicFeatureExtension>>
 
-/**
- * Implementation of [AndroidProject]
- */
-internal class AndroidFeatureImpl(
-    location: Path,
-    projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
-    namespace: String,
-) : AndroidProjectImpl<AndroidProjectDefinition<DynamicFeatureExtension>>(
-    location,
-    projectDefinition,
-    namespace,
-), AndroidDynamicFeatureProject {
+/** Implementation of [AndroidProject] */
+internal class AndroidFeatureImpl(location: Path, projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>, namespace: String) :
+  AndroidProjectImpl<AndroidProjectDefinition<DynamicFeatureExtension>>(location, projectDefinition, namespace),
+  AndroidDynamicFeatureProject {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidDynamicFeatureProject =
-        ReversibleAndroidDynamicFeatureProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidDynamicFeatureProject =
+    ReversibleAndroidDynamicFeatureProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AndroidDynamicFeatureProject]
- */
+/** Reversible version of [AndroidDynamicFeatureProject] */
 internal class ReversibleAndroidDynamicFeatureProject(
-    parentProject: AndroidDynamicFeatureProject,
-    fileChangeController: FileChangeController
-) : ReversibleAndroidProject<AndroidDynamicFeatureProject, AndroidProjectDefinition<DynamicFeatureExtension>>(
+  parentProject: AndroidDynamicFeatureProject,
+  fileChangeController: FileChangeController,
+) :
+  ReversibleAndroidProject<AndroidDynamicFeatureProject, AndroidProjectDefinition<DynamicFeatureExtension>>(
     parentProject,
-    fileChangeController
-), AndroidDynamicFeatureProject
+    fileChangeController,
+  ),
+  AndroidDynamicFeatureProject

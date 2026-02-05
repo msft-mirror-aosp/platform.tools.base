@@ -110,9 +110,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-    type != AnnotationUsageType.BINARY &&
-      type != AnnotationUsageType.DEFINITION &&
-      type != AnnotationUsageType.ASSIGNMENT_LHS
+    type != AnnotationUsageType.BINARY && type != AnnotationUsageType.DEFINITION && type != AnnotationUsageType.ASSIGNMENT_LHS
 
   /** Keeps track of which UAST nodes have already been reported by [checkDuplicateAndReport]. */
   private val visitedAnnotationUsages = mutableSetOf<PsiElement>()
@@ -179,23 +177,16 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (functionSymbol == null) return false
     if (!functionSymbol.returnType.isPrimitive) return false
     if (functionSymbol.valueParameters.size > paramCount) return false
-    return nameFilter.invoke(
-      functionSymbol.callableId?.callableName?.asString() ?: "<no name provided>"
-    )
+    return nameFilter.invoke(functionSymbol.callableId?.callableName?.asString() ?: "<no name provided>")
   }
 
-  private fun KaSession.isPrimitiveTypeConvertingMethod(
-    functionSymbol: KaFunctionSymbol?
-  ): Boolean =
+  private fun KaSession.isPrimitiveTypeConvertingMethod(functionSymbol: KaFunctionSymbol?): Boolean =
     isPrimitiveTypeMethod(functionSymbol, 0) { name ->
-      name.substring(0, 2) == "to" &&
-        PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
+      name.substring(0, 2) == "to" && PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
     }
 
   private fun KaSession.isPrimitiveTypeReturningMethod(functionSymbol: KaFunctionSymbol?): Boolean =
-    isPrimitiveTypeMethod(functionSymbol, 1) { name ->
-      name == "inv" || name == "and" || name == "or" || name == "xor"
-    }
+    isPrimitiveTypeMethod(functionSymbol, 1) { name -> name == "inv" || name == "and" || name == "or" || name == "xor" }
 
   private fun checkTypeDefConstant(
     context: JavaContext,
@@ -235,13 +226,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       } else {
         val operator = argument.operator
         if (operator === UastPrefixOperator.BITWISE_NOT) {
-          checkDuplicateAndReport(
-            context,
-            TYPE_DEF,
-            argument,
-            context.getLocation(argument),
-            "Flag not allowed here",
-          )
+          checkDuplicateAndReport(context, TYPE_DEF, argument, context.getLocation(argument), "Flag not allowed here")
         } else if (operator === UastPrefixOperator.UNARY_MINUS) {
           reportTypeDef(context, annotation, argument, errorNode, usageInfo)
         }
@@ -286,13 +271,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             operator === UastBinaryOperator.BITWISE_OR ||
             operator === UastBinaryOperator.BITWISE_XOR
         ) {
-          checkDuplicateAndReport(
-            context,
-            TYPE_DEF,
-            argument,
-            context.getLocation(argument),
-            "Flag not allowed here",
-          )
+          checkDuplicateAndReport(context, TYPE_DEF, argument, context.getLocation(argument), "Flag not allowed here")
         }
       }
     } else {
@@ -303,30 +282,17 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (ktElement != null) {
         analyze(ktElement) {
           val calleeSymbol = ktElement.resolveToCall()?.singleFunctionCallOrNull()?.symbol
-          if (
-            isPrimitiveTypeConvertingMethod(calleeSymbol) ||
-              isPrimitiveTypeReturningMethod(calleeSymbol)
-          ) {
-            val receiver =
-              (argument as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
+          if (isPrimitiveTypeConvertingMethod(calleeSymbol) || isPrimitiveTypeReturningMethod(calleeSymbol)) {
+            val receiver = (argument as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
             if (receiver != null) {
               // e.g., RECEIVER.toLong(), we should check if RECEIVER is allowed instead.
               checkTypeDefConstant(context, annotation, receiver, receiver, flag, usageInfo)
               val parameterCount = calleeSymbol?.valueParameters?.size ?: -1
               // e.g., RECEIVER.xor(ARGUMENT)
               if (parameterCount == 1) {
-                val callExpression =
-                  argument.selector.skipParenthesizedExprDown() as? UCallExpression
-                val callArgument =
-                  callExpression?.valueArguments?.firstOrNull()?.skipParenthesizedExprDown()
-                checkTypeDefConstant(
-                  context,
-                  annotation,
-                  callArgument,
-                  callArgument,
-                  flag,
-                  usageInfo,
-                )
+                val callExpression = argument.selector.skipParenthesizedExprDown() as? UCallExpression
+                val callArgument = callExpression?.valueArguments?.firstOrNull()?.skipParenthesizedExprDown()
+                checkTypeDefConstant(context, annotation, callArgument, callArgument, flag, usageInfo)
               }
             }
             // Return early to avoid false-positives, even if we could not find the receiver.
@@ -344,70 +310,28 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           if (resolved.type is PsiArrayType) {
             // Allow checking the initializer here even if the field itself
             // isn't final or static; check that the individual values are okay
-            checkTypeDefConstant(
-              context,
-              annotation,
-              argument,
-              errorNode ?: argument,
-              flag,
-              resolved,
-              usageInfo,
-            )
+            checkTypeDefConstant(context, annotation, argument, errorNode ?: argument, flag, resolved, usageInfo)
             return
           }
 
           // If it's a static or final constant, check that it's one of the allowed ones
-          if (
-            resolved.hasModifierProperty(PsiModifier.STATIC) &&
-              resolved.hasModifierProperty(PsiModifier.FINAL)
-          ) {
-            checkTypeDefConstant(
-              context,
-              annotation,
-              argument,
-              errorNode ?: argument,
-              flag,
-              resolved,
-              usageInfo,
-            )
+          if (resolved.hasModifierProperty(PsiModifier.STATIC) && resolved.hasModifierProperty(PsiModifier.FINAL)) {
+            checkTypeDefConstant(context, annotation, argument, errorNode ?: argument, flag, resolved, usageInfo)
           } else {
             val lastAssignment = UastLintUtils.findLastAssignment(resolved, argument)
 
             if (lastAssignment != null) {
-              checkTypeDefConstant(
-                context,
-                annotation,
-                lastAssignment,
-                errorNode ?: argument,
-                flag,
-                usageInfo,
-              )
+              checkTypeDefConstant(context, annotation, lastAssignment, errorNode ?: argument, flag, usageInfo)
             } else if (
               usageInfo.type != AnnotationUsageType.VARIABLE_REFERENCE &&
                 usageInfo.type != AnnotationUsageType.FIELD_REFERENCE &&
                 context.evaluator.getAnnotations(resolved, true).any { isAnnotatedWithTypeDef(it) }
             ) {
-              checkTypeDefConstant(
-                context,
-                annotation,
-                argument,
-                errorNode ?: argument,
-                flag,
-                resolved,
-                usageInfo,
-              )
+              checkTypeDefConstant(context, annotation, argument, errorNode ?: argument, flag, resolved, usageInfo)
             }
           }
         } else if (resolved is PsiMethod) {
-          checkTypeDefConstant(
-            context,
-            annotation,
-            argument,
-            errorNode ?: argument,
-            flag,
-            resolved,
-            usageInfo,
-          )
+          checkTypeDefConstant(context, annotation, argument, errorNode ?: argument, flag, resolved, usageInfo)
         }
       } else if (argument is UCallExpression) {
         if (argument.isNewArrayWithInitializer() || argument.isArrayInitializer()) {
@@ -423,15 +347,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         } else {
           val resolved = argument.resolve()
           if (resolved is PsiMethod) {
-            checkTypeDefConstant(
-              context,
-              annotation,
-              argument,
-              errorNode ?: argument,
-              flag,
-              resolved,
-              usageInfo,
-            )
+            checkTypeDefConstant(context, annotation, argument, errorNode ?: argument, flag, resolved, usageInfo)
           }
         }
       }
@@ -451,10 +367,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (rangeAnnotation != null && value !is PsiField) {
       // Allow @IntRange on this number, but only if it's a literal, not if it's some
       // other (unrelated) constant
-      if (
-        RangeDetector.getIntRangeError(context, rangeAnnotation.annotation, argument, usageInfo) ==
-          null
-      ) {
+      if (RangeDetector.getIntRangeError(context, rangeAnnotation.annotation, argument, usageInfo) == null) {
         return
       }
     }
@@ -532,14 +445,9 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
                   // value. (This is just checking the most basic scenario; there are a bunch
                   // of ways this comparison be done, by value comparisons, by early returns, by
                   // earlier switch cases etc.)
-                  val condition =
-                    argument
-                      .getParentOfType<UIfExpression>()
-                      ?.condition
-                      ?.skipParenthesizedExprDown() as? UBinaryExpression
+                  val condition = argument.getParentOfType<UIfExpression>()?.condition?.skipParenthesizedExprDown() as? UBinaryExpression
                   if (
-                    (condition?.operator == IDENTITY_NOT_EQUALS ||
-                      condition?.operator == NOT_EQUALS) &&
+                    (condition?.operator == IDENTITY_NOT_EQUALS || condition?.operator == NOT_EQUALS) &&
                       provided[0] == getResolvedValue(condition.rightOperand, argument)
                   ) {
                     if (condition.leftOperand.asSourceString() == argument.asSourceString()) {
@@ -570,8 +478,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             val retValue =
               if (body is UBlockExpression) {
                 if (body.expressions.size == 1) {
-                  (body.expressions[0].skipParenthesizedExprDown() as? UReturnExpression)
-                    ?.returnExpression
+                  (body.expressions[0].skipParenthesizedExprDown() as? UReturnExpression)?.returnExpression
                 } else {
                   null
                 }
@@ -582,15 +489,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
               // Constant reference
               val const = retValue.resolve() ?: return
               if (const is PsiField) {
-                checkTypeDefConstant(
-                  context,
-                  annotation,
-                  retValue,
-                  errorNode,
-                  flag,
-                  const,
-                  usageInfo,
-                )
+                checkTypeDefConstant(context, annotation, retValue, errorNode, flag, const, usageInfo)
               }
               return
             } else if (retValue !is ULiteralExpression) {
@@ -602,8 +501,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
       }
 
-      val fieldInitialization =
-        skipParenthesizedExprUp((argument as? ULiteralExpression)?.uastParent) as? UField
+      val fieldInitialization = skipParenthesizedExprUp((argument as? ULiteralExpression)?.uastParent) as? UField
       val initializerExpression = allowed as UCallExpression
       val initializers = initializerExpression.valueArguments
       var psiValue: PsiElement? = null
@@ -642,14 +540,8 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           analyze(sourcePsi) {
             val calleeSymbol = sourcePsi.resolveToCall()?.singleFunctionCallOrNull()?.symbol
             // e.g., CONST.toLong(), we should compare with CONST, not the entire expression.
-            if (
-              isPrimitiveTypeConvertingMethod(calleeSymbol) ||
-                isPrimitiveTypeReturningMethod(calleeSymbol)
-            ) {
-              val receiver =
-                (expression as? UQualifiedReferenceExpression)
-                  ?.receiver
-                  ?.skipParenthesizedExprDown()
+            if (isPrimitiveTypeConvertingMethod(calleeSymbol) || isPrimitiveTypeReturningMethod(calleeSymbol)) {
+              val receiver = (expression as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
               val resolvedReceiver = (receiver as? UResolvable)?.resolve()
               if (resolvedReceiver != null && resolvedReceiver.isEquivalentTo(psiValue)) {
                 return
@@ -663,11 +555,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       // we'd be reading out literal values which we don't want to do
       if (value is PsiField && rangeAnnotation == null) {
         val initializer = UastFacade.getInitializerBody(value)?.skipParenthesizedExprDown()
-        if (
-          initializer != null &&
-            initializer !is ULiteralExpression &&
-            initializer.sourcePsi !is PsiLiteralExpression
-        ) {
+        if (initializer != null && initializer !is ULiteralExpression && initializer.sourcePsi !is PsiLiteralExpression) {
           checkTypeDefConstant(context, annotation, initializer, errorNode, flag, usageInfo)
           return
         }
@@ -680,33 +568,18 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
 
       // noinspection LintImplPsiEquals
-      if (
-        value is PsiVariable &&
-          argument is UReferenceExpression &&
-          argument.resolve() == value &&
-          variableIsChecked(argument, value)
-      ) {
+      if (value is PsiVariable && argument is UReferenceExpression && argument.resolve() == value && variableIsChecked(argument, value)) {
         return
       }
 
-      reportTypeDef(
-        context,
-        argument,
-        errorNode,
-        flag,
-        initializers,
-        usageInfo,
-        annotation,
-        unmatched,
-      )
+      reportTypeDef(context, argument, errorNode, flag, initializers, usageInfo, annotation, unmatched)
     }
   }
 
   /**
-   * For a given variable [reference] (which is declared in [variable] and has an associated typedef
-   * annotation), returns true if that variable is "checked" in some way such that the broad typedef
-   * may not apply (e.g. it's inside an if statement where we have checked the variable value as
-   * part of the condition, or the variable has been reassigned, etc).
+   * For a given variable [reference] (which is declared in [variable] and has an associated typedef annotation), returns true if that
+   * variable is "checked" in some way such that the broad typedef may not apply (e.g. it's inside an if statement where we have checked the
+   * variable value as part of the condition, or the variable has been reassigned, etc).
    */
   @Suppress("LintImplPsiEquals")
   private fun variableIsChecked(reference: UElement, variable: PsiVariable): Boolean {
@@ -724,18 +597,14 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           return super.visitVariable(node)
         }
 
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
+        override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
           if (node == reference) {
             foundTarget = true
           } else if (foundStart && !foundTarget) {
             val resolved = node.resolve()
             if (resolved == variable) {
               var parent = node.uastParent
-              if (
-                parent is UBinaryExpression && parent.isAssignment() && parent.leftOperand == node
-              ) {
+              if (parent is UBinaryExpression && parent.isAssignment() && parent.leftOperand == node) {
                 isChecked = true
               } else {
                 var prev: UElement = node
@@ -868,8 +737,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     val rangeAnnotation = usageInfo.findSameScope { RangeDetector.isIntRange(it.qualifiedName) }
     if (rangeAnnotation != null) {
       // Allow @IntRange on this number
-      val rangeError =
-        RangeDetector.getIntRangeError(context, rangeAnnotation.annotation, node, usageInfo)
+      val rangeError = RangeDetector.getIntRangeError(context, rangeAnnotation.annotation, node, usageInfo)
       if (rangeError != null && rangeError.isNotEmpty()) {
         message += " or " + Character.toLowerCase(rangeError[0]) + rangeError.substring(1)
       }
@@ -881,31 +749,16 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     val locationNode = errorNode ?: node
     val fix: LintFix? = createQuickFix(locationNode, allowedValues, node)
-    checkDuplicateAndReport(
-      context,
-      TYPE_DEF,
-      locationNode,
-      context.getLocation(locationNode),
-      message,
-      fix,
-    )
+    checkDuplicateAndReport(context, TYPE_DEF, locationNode, context.getLocation(locationNode), message, fix)
   }
 
-  private fun createQuickFix(
-    node: UElement,
-    values: List<UExpression>,
-    context: UElement,
-  ): LintFix? {
+  private fun createQuickFix(node: UElement, values: List<UExpression>, context: UElement): LintFix? {
     var currentValue: Any? = null
     if (node is ULiteralExpression) {
       currentValue = node.value
     } else if (node is UReferenceExpression) {
       val field = node.resolve() as? PsiField
-      if (
-        field != null &&
-          field.hasModifierProperty(PsiModifier.FINAL) &&
-          field.hasModifierProperty(PsiModifier.STATIC)
-      ) {
+      if (field != null && field.hasModifierProperty(PsiModifier.FINAL) && field.hasModifierProperty(PsiModifier.STATIC)) {
         currentValue = field.computeConstantValue()
       }
     }
@@ -925,13 +778,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       val fullName = qualifiedName + "." + resolved.name
       val current = !foundCurrent && value.evaluate() == currentValue
       val fix =
-        fix()
-          .name("Change to $shortName${if (current) " ($currentValue)" else ""}")
-          .replace()
-          .all()
-          .with(fullName)
-          .shortenNames()
-          .build()
+        fix().name("Change to $shortName${if (current) " ($currentValue)" else ""}").replace().all().with(fullName).shortenNames().build()
       if (current) {
         // Place the fix that matches the current value first!
         fixes.add(0, fix)
@@ -976,14 +823,12 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   /**
-   * Match messages from this detector in the baseline. Over time, the set of constants included by
-   * a typedef can change, and these are included in the error message. That makes the baseline
-   * messages stop matching in the baselines.
+   * Match messages from this detector in the baseline. Over time, the set of constants included by a typedef can change, and these are
+   * included in the error message. That makes the baseline messages stop matching in the baselines.
    *
-   * To deal with this we don't want to just ignore the constant list; instead, we'll match them as
-   * long as the new message contains all the constants in the old message plus some extra ones.
-   * This generally works because typedefs tend to add constant, not remove them. We can live with
-   * the occasional mismatched baseline messages if an API ever does this since it's rare.
+   * To deal with this we don't want to just ignore the constant list; instead, we'll match them as long as the new message contains all the
+   * constants in the old message plus some extra ones. This generally works because typedefs tend to add constant, not remove them. We can
+   * live with the occasional mismatched baseline messages if an API ever does this since it's rare.
    */
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
     // Make sure the prefix up to ':' matches (e.g. we won't match a change from "Must be one of" to

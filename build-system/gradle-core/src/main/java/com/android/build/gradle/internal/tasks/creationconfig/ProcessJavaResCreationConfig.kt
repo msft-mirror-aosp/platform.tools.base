@@ -24,40 +24,29 @@ import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 
 /**
- * Configuration needed to create the [com.android.build.gradle.internal.tasks.ProcessJavaResTask],
- * implementations should mostly delegate to [com.android.build.gradle.internal.component.ComponentCreationConfig].
+ * Configuration needed to create the [com.android.build.gradle.internal.tasks.ProcessJavaResTask], implementations should mostly delegate
+ * to [com.android.build.gradle.internal.component.ComponentCreationConfig].
  */
-interface ProcessJavaResCreationConfig: TaskCreationConfig {
+interface ProcessJavaResCreationConfig : TaskCreationConfig {
 
-    /**
-     * Extra [org.gradle.api.file.FileCollection] that may contains bytecodes and resources that should be added.
-     */
-    val extraClasses: Collection<FileCollection>
+  /** Extra [org.gradle.api.file.FileCollection] that may contains bytecodes and resources that should be added. */
+  val extraClasses: Collection<FileCollection>
 
-    /**
-     * Is build-in kotlin support enabled.
-     */
-    val useBuiltInKotlinSupport: Boolean
+  /** Is build-in kotlin support enabled. */
+  val useBuiltInKotlinSupport: Boolean
 
-    /**
-     * In case an APK is built, should jacoco runtime be packaged.
-     */
-    val packageJacocoRuntime: Boolean
+  /** In case an APK is built, should jacoco runtime be packaged. */
+  val packageJacocoRuntime: Boolean
 
-    /**
-     * Configuration for all annotation processors.
-     */
-    val annotationProcessorConfiguration: Configuration?
+  /** Configuration for all annotation processors. */
+  val annotationProcessorConfiguration: Configuration?
 
-    /**
-     * The Java/Kotlin `resources` directories if there are any.
-     */
-    val sources: FlatSourceDirectoriesImpl?
+  /** The Java/Kotlin `resources` directories if there are any. */
+  val sources: FlatSourceDirectoriesImpl?
 
-    /**g
-     * Saves the [com.android.build.gradle.internal.tasks.ProcessJavaResTask] to the
-     * [com.android.build.gradle.internal.scope.TaskContainer] for access through the old
-     * variant API.
-     */
-    fun setJavaResTask(task: TaskProvider<out Sync>)
+  /**
+   * g Saves the [com.android.build.gradle.internal.tasks.ProcessJavaResTask] to the [com.android.build.gradle.internal.scope.TaskContainer]
+   * for access through the old variant API.
+   */
+  fun setJavaResTask(task: TaskProvider<out Sync>)
 }

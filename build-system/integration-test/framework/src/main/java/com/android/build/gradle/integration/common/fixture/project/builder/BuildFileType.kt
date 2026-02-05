@@ -17,15 +17,17 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 sealed class BuildFileType private constructor(val extension: String) {
-    abstract fun getNewWriter(): BuildWriter
+  abstract fun getNewWriter(): BuildWriter
 
-    data object GROOVY: BuildFileType(extension = "") {
-        override fun getNewWriter(): BuildWriter = GroovyBuildWriter()
-    }
-    data object KTS: BuildFileType(".kts") {
-        override fun getNewWriter(): BuildWriter = KtsBuildWriter()
-    }
-    data object DCL: BuildFileType(".dcl") {
-        override fun getNewWriter(): BuildWriter = DeclarativeBuildWriter()
-    }
+  data object GROOVY : BuildFileType(extension = "") {
+    override fun getNewWriter(): BuildWriter = GroovyBuildWriter()
+  }
+
+  data object KTS : BuildFileType(".kts") {
+    override fun getNewWriter(): BuildWriter = KtsBuildWriter()
+  }
+
+  data object DCL : BuildFileType(".dcl") {
+    override fun getNewWriter(): BuildWriter = DeclarativeBuildWriter()
+  }
 }

@@ -32,87 +32,57 @@ import java.nio.file.Path
  * Support for Android Asset Pack in the [GradleRule] fixture
  */
 
-/**
- * Specialized interface for [GenericProjectDefinition]
- */
-interface AssetPackDefinition: GradleProjectDefinition {
-    val assetPack: AssetPackExtension
-    fun assetPack(action: AssetPackExtension.() -> Unit)
+/** Specialized interface for [GenericProjectDefinition] */
+interface AssetPackDefinition : GradleProjectDefinition {
+  val assetPack: AssetPackExtension
 
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
+  fun assetPack(action: AssetPackExtension.() -> Unit)
+
+  /** executes the lambda that adds/updates/removes files from the project */
+  fun files(action: GradleProjectFiles.() -> Unit)
 }
 
-/**
- * Implementation of [AssetPackDefinition]
- */
-internal class AssetPackDefinitionImpl(
-    path: String,
-) : GradleProjectDefinitionImpl(path),
-    AssetPackDefinition {
+/** Implementation of [AssetPackDefinition] */
+internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path), AssetPackDefinition {
 
-    init {
-        applyPlugin(PluginType.ANDROID_ASSET_PACK)
+  init {
+    applyPlugin(PluginType.ANDROID_ASSET_PACK)
+  }
+
+  override val files: GradleProjectFiles = DelayedGradleProjectFiles()
+
+  override fun files(action: GradleProjectFiles.() -> Unit) {
+    action(files)
+  }
+
+  override val assetPack: AssetPackExtension = DslProxy.createProxy(AssetPackExtension::class.java, dslRecorder)
+
+  override fun assetPack(action: AssetPackExtension.() -> Unit) {
+    action(assetPack)
+  }
+
+  override fun writeExtension(writer: BuildWriter, location: Path) {
+    writer.apply {
+      block("assetPack") { dslRecorder.writeContent(this) }
+
+      emptyLine()
     }
-
-    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
-
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
-
-    override val assetPack: AssetPackExtension =
-        DslProxy.createProxy(
-            AssetPackExtension::class.java,
-            dslRecorder,
-        )
-
-    override fun assetPack(action: AssetPackExtension.() -> Unit) {
-        action(assetPack)
-    }
-
-    override fun writeExtension(writer: BuildWriter, location: Path) {
-        writer.apply {
-            block("assetPack") {
-                dslRecorder.writeContent(this)
-            }
-
-            emptyLine()
-        }
-    }
+  }
 }
 
-/**
- * Specialized interface for AssetPack [GradleProject] to use in the test
- */
-interface AssetPackProject: GradleProject<AssetPackDefinition>
+/** Specialized interface for AssetPack [GradleProject] to use in the test */
+interface AssetPackProject : GradleProject<AssetPackDefinition>
 
-/**
- * Implementation of [AndroidProject]
- */
-internal class AssetPackImpl(
-    location: Path,
-    projectDefinition: AssetPackDefinition,
-) : GradleProjectImpl<AssetPackDefinition>(
-    location,
-    projectDefinition,
-),
-    AssetPackProject {
+/** Implementation of [AndroidProject] */
+internal class AssetPackImpl(location: Path, projectDefinition: AssetPackDefinition) :
+  GradleProjectImpl<AssetPackDefinition>(location, projectDefinition), AssetPackProject {
 
-    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
+  override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AssetPackProject =
-        ReversibleAssetPackProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AssetPackProject =
+    ReversibleAssetPackProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AssetPackProject]
- */
-internal class ReversibleAssetPackProject(
-    parentProject: AssetPackProject,
-    fileChangeController: FileChangeController
-) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
-    parentProject,
-    fileChangeController,
-), AssetPackProject
-
+/** Reversible version of [AssetPackProject] */
+internal class ReversibleAssetPackProject(parentProject: AssetPackProject, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(parentProject, fileChangeController), AssetPackProject

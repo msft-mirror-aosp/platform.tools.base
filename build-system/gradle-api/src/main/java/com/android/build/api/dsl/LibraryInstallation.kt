@@ -21,5 +21,4 @@ package com.android.build.api.dsl
  *
  * This is accessed via [LibraryExtension.installation]
  */
-interface LibraryInstallation : Installation {
-}
+interface LibraryInstallation : Installation {}

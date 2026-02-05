@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.common.res.menu
 
 fun simpleMenu(packageName: String, activityClass: String): String =
-"""<menu xmlns:android="http://schemas.android.com/apk/res/android"
+  """<menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="$packageName.$activityClass" >

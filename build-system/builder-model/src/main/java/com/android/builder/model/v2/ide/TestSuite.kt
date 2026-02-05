@@ -22,30 +22,20 @@ import com.android.builder.model.v2.models.HostJarTestSuiteSource
 import com.android.builder.model.v2.models.SourceType
 import com.android.builder.model.v2.models.TestApkTestSuiteSource
 
-interface TestSuite: AndroidModel {
+interface TestSuite : AndroidModel {
 
-    /**
-     * Name of the test suite.
-     */
-    val name: String
+  /** Name of the test suite. */
+  val name: String
 
-    /**
-     * Configured junit engines for this test suite.
-     */
-    val junitEngineInfo: JUnitEngineInfo
+  /** Configured junit engines for this test suite. */
+  val junitEngineInfo: JUnitEngineInfo
 
-    /**
-     * Generated [SourceType.ASSETS] source folder(s) for this test suite.
-     */
-    val generatedAssets: Collection<AssetsTestSuiteSource>
+  /** Generated [SourceType.ASSETS] source folder(s) for this test suite. */
+  val generatedAssets: Collection<AssetsTestSuiteSource>
 
-    /**
-     * Generated [SourceType.HOST_JAR] source folders for this test suite.
-     */
-    val generatedHostJars: Collection<HostJarTestSuiteSource>
+  /** Generated [SourceType.HOST_JAR] source folders for this test suite. */
+  val generatedHostJars: Collection<HostJarTestSuiteSource>
 
-    /**
-     * Generated [SourceType.TEST_APK] sources folder for this test suite.
-     */
-    val generatedTestApks: Collection<TestApkTestSuiteSource>
+  /** Generated [SourceType.TEST_APK] sources folder for this test suite. */
+  val generatedTestApks: Collection<TestApkTestSuiteSource>
 }

@@ -17,7 +17,8 @@
 package com.android.build.gradle.internal.packaging
 
 // ATTENTION - keep this in sync with com.android.build.gradle.internal.dsl.PackagingOptions JavaDoc
-val defaultExcludes: Set<String> = setOf(
+val defaultExcludes: Set<String> =
+  setOf(
     "/META-INF/LICENSE",
     "/META-INF/LICENSE.txt",
     "/META-INF/MANIFEST.MF",
@@ -63,8 +64,8 @@ val defaultExcludes: Set<String> = setOf(
     "**/_*/**",
 
     // Exclude kotlin metadata files
-    "**/*.kotlin_metadata"
-)
+    "**/*.kotlin_metadata",
+  )
 
 // ATTENTION - keep this in sync with com.android.build.gradle.internal.dsl.PackagingOptions JavaDoc
 val defaultMerges: Set<String> = setOf("/META-INF/services/**", "jacoco-agent.properties")

@@ -45,30 +45,33 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.dexing.DexingType
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestsRegistry
-import java.io.File
-import javax.inject.Inject
 
 @Suppress("DEPRECATION")
-open class KmpHostTestImpl @Inject constructor(
-    dslInfo: KmpUnitTestDslInfoImpl,
-    internalServices: VariantServices,
-    buildFeatures: BuildFeatureValues,
-    variantDependencies: VariantDependencies,
-    paths: VariantPathHelper,
-    artifacts: ArtifactsImpl,
-    taskContainer: MutableTaskContainer,
-    services: TaskCreationServices,
-    global: GlobalTaskCreationConfig,
-    androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
-    override val mainVariant: KmpVariantImpl,
-    manifestFile: File,
-    val testRegistry: KotlinTestsRegistry
-): KmpComponentImpl<KmpUnitTestDslInfoImpl>(
+open class KmpHostTestImpl
+@Inject
+constructor(
+  dslInfo: KmpUnitTestDslInfoImpl,
+  internalServices: VariantServices,
+  buildFeatures: BuildFeatureValues,
+  variantDependencies: VariantDependencies,
+  paths: VariantPathHelper,
+  artifacts: ArtifactsImpl,
+  taskContainer: MutableTaskContainer,
+  services: TaskCreationServices,
+  global: GlobalTaskCreationConfig,
+  androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
+  override val mainVariant: KmpVariantImpl,
+  manifestFile: File,
+  val testRegistry: KotlinTestsRegistry,
+) :
+  KmpComponentImpl<KmpUnitTestDslInfoImpl>(
     dslInfo,
     internalServices,
     buildFeatures,
@@ -79,95 +82,90 @@ open class KmpHostTestImpl @Inject constructor(
     services,
     global,
     androidKotlinCompilation,
-    manifestFile
-), HostTestCreationConfig, HostTest, UnitTest, com.android.build.api.component.UnitTest {
+    manifestFile,
+  ),
+  HostTestCreationConfig,
+  HostTest,
+  UnitTest,
+  com.android.build.api.component.UnitTest {
 
-    override fun <T> onTestedVariant(action: (VariantCreationConfig) -> T): T {
-        return action.invoke(mainVariant)
+  override fun <T> onTestedVariant(action: (VariantCreationConfig) -> T): T {
+    return action.invoke(mainVariant)
+  }
+
+  override val instrumentationRunner: Provider<String>
+    get() = getDefaultInstrumentationTestRunner(internalServices, DexingType.MONO_DEX)
+
+  override val testedApplicationId: Provider<String>
+    get() = mainVariant.applicationId
+
+  override val targetSdkVersion: AndroidVersion
+    get() = global.unitTestOptions.targetSdkVersion ?: minSdk
+
+  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig by
+    lazy(LazyThreadSafetyMode.NONE) {
+      ManifestPlaceholdersCreationConfigImpl(
+        // no dsl for this
+        emptyMap(),
+        internalServices,
+      )
     }
 
-    override val instrumentationRunner: Provider<String>
-        get() = getDefaultInstrumentationTestRunner(internalServices, DexingType.MONO_DEX)
-    override val testedApplicationId: Provider<String>
-        get() = mainVariant.applicationId
-    override val targetSdkVersion: AndroidVersion
-        get() = global.unitTestOptions.targetSdkVersion ?: minSdk
+  override val manifestPlaceholders: MapProperty<String, String>
+    get() = manifestPlaceholdersCreationConfig.placeholders
 
-    override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig by lazy(LazyThreadSafetyMode.NONE) {
-        ManifestPlaceholdersCreationConfigImpl(
-            // no dsl for this
-            emptyMap(),
-            internalServices
-        )
+  override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
+    if (androidResourcesIncluded) {
+      AndroidResourcesCreationConfigImpl(this, dslInfo, dslInfo.androidResourcesDsl!!, internalServices)
+    } else {
+      null
+    }
+  }
+
+  override val codeCoverageEnabled: Boolean
+    get() = global.androidTestOptions.codeCoverageEnabled
+
+  override val androidResourcesIncluded: Boolean
+    get() = buildFeatures.androidResources
+
+  override fun <ParamT : InstrumentationParameters> transformClassesWith(
+    classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
+    scope: InstrumentationScope,
+    instrumentationParamsConfig: (ParamT) -> Unit,
+  ) {
+    instrumentation.transformClassesWith(classVisitorFactoryImplClass, scope, instrumentationParamsConfig)
+  }
+
+  override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
+    instrumentation.setAsmFramesComputationMode(mode)
+  }
+
+  override val androidResources: AndroidResourcesImpl? =
+    if (androidResourcesIncluded) {
+      initializeAaptOptionsFromDsl(dslInfo.androidResourcesDsl!!.androidResources, buildFeatures, internalServices)
+    } else {
+      null
     }
 
-    override val manifestPlaceholders: MapProperty<String, String>
-        get() = manifestPlaceholdersCreationConfig.placeholders
+  val testTaskConfigurationActions = mutableListOf<(Test) -> Unit>()
 
-    override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
-        if (androidResourcesIncluded) {
-            AndroidResourcesCreationConfigImpl(
-                this,
-                dslInfo,
-                dslInfo.androidResourcesDsl!!,
-                internalServices
-            )
-        } else {
-            null
-        }
-    }
+  @Synchronized
+  override fun configureTestTask(action: (Test) -> Unit) {
+    testTaskConfigurationActions.add(action)
+  }
 
-    override val codeCoverageEnabled: Boolean
-        get() = global.androidTestOptions.codeCoverageEnabled
+  @Synchronized
+  override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
+    registerTaskWithKotlinRegistry(testTask)
+    testTaskConfigurationActions.forEach { testTask.configure { testTask -> it(testTask) } }
+  }
 
-    override val androidResourcesIncluded: Boolean
-        get() = buildFeatures.androidResources
+  override fun finalizeAndLock() {}
 
-    override fun <ParamT : InstrumentationParameters> transformClassesWith(
-        classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
-        scope: InstrumentationScope,
-        instrumentationParamsConfig: (ParamT) -> Unit
-    ) {
-        instrumentation.transformClassesWith(
-            classVisitorFactoryImplClass,
-            scope,
-            instrumentationParamsConfig
-        )
-    }
+  override val hostTestName: String
+    get() = HostTestBuilder.UNIT_TEST_TYPE
 
-    override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
-        instrumentation.setAsmFramesComputationMode(mode)
-    }
-
-    override val androidResources: AndroidResourcesImpl? =
-        if (androidResourcesIncluded) {
-            initializeAaptOptionsFromDsl(dslInfo.androidResourcesDsl!!.androidResources, buildFeatures, internalServices)
-        } else {
-            null
-        }
-
-    val testTaskConfigurationActions = mutableListOf<(Test) -> Unit>()
-
-    @Synchronized
-    override fun configureTestTask(action: (Test) -> Unit) {
-        testTaskConfigurationActions.add(action)
-    }
-
-    @Synchronized
-    override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
-        registerTaskWithKotlinRegistry(testTask)
-        testTaskConfigurationActions.forEach {
-            testTask.configure { testTask -> it(testTask) }
-        }
-    }
-
-    override fun finalizeAndLock() {
-    }
-
-    override val hostTestName: String
-        get() = HostTestBuilder.UNIT_TEST_TYPE
-
-    private fun registerTaskWithKotlinRegistry(testTask: TaskProvider<out Test>) {
-        testRegistry.registerTestTask(testTask)
-    }
+  private fun registerTaskWithKotlinRegistry(testTask: TaskProvider<out Test>) {
+    testRegistry.registerTestTask(testTask)
+  }
 }

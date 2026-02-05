@@ -23,42 +23,37 @@ import org.junit.Rule
 import org.junit.Test
 
 class SdkComponentsTest {
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldAppKts.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldAppKts.forPlugin("com.android.application")).create()
 
-    /**
-     * Ensure that SdkComponents' sdkDirectory and ndkDirectory APIs are functional.
-     */
-    @Test
-    fun testAccessToSdkAndNdkDirectories() {
-        project.ktsBuildFile.appendText(
-            """
-            abstract class PrintDirectories: DefaultTask() {
-                @get:InputFiles
-                abstract val sdkDirectory: DirectoryProperty
+  /** Ensure that SdkComponents' sdkDirectory and ndkDirectory APIs are functional. */
+  @Test
+  fun testAccessToSdkAndNdkDirectories() {
+    project.ktsBuildFile.appendText(
+      """
+      abstract class PrintDirectories: DefaultTask() {
+          @get:InputFiles
+          abstract val sdkDirectory: DirectoryProperty
 
-                @get:InputFiles
-                abstract val ndkDirectory: DirectoryProperty
+          @get:InputFiles
+          abstract val ndkDirectory: DirectoryProperty
 
-                @TaskAction
-                fun run() {
-                    println("SDK directory: ${'$'}{sdkDirectory.get()}")
-                    println("NDK directory: ${'$'}{ndkDirectory.get()}")
-                }
-            }
-            tasks.register<PrintDirectories>("printDirectories") {
-                sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
-                ndkDirectory.set(androidComponents.sdkComponents.ndkDirectory)
-            }
-            """.trimIndent()
-        )
+          @TaskAction
+          fun run() {
+              println("SDK directory: ${'$'}{sdkDirectory.get()}")
+              println("NDK directory: ${'$'}{ndkDirectory.get()}")
+          }
+      }
+      tasks.register<PrintDirectories>("printDirectories") {
+          sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
+          ndkDirectory.set(androidComponents.sdkComponents.ndkDirectory)
+      }
+      """
+        .trimIndent()
+    )
 
-        val result = project.executor().run("printDirectories")
-        Truth.assertThat(result.didWorkTasks).contains(":printDirectories")
-        Truth.assertThat(result.stdout.findAll("SDK directory").count()).isEqualTo(1)
-        Truth.assertThat(result.stdout.findAll("NDK directory").count()).isEqualTo(1)
-    }
+    val result = project.executor().run("printDirectories")
+    Truth.assertThat(result.didWorkTasks).contains(":printDirectories")
+    Truth.assertThat(result.stdout.findAll("SDK directory").count()).isEqualTo(1)
+    Truth.assertThat(result.stdout.findAll("NDK directory").count()).isEqualTo(1)
+  }
 }

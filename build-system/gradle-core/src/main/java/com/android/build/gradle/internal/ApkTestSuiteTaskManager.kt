@@ -25,20 +25,17 @@ import com.android.build.gradle.tasks.ProcessTestManifest
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Task manager responsible for creating all tasks necessary to process a
- * [TestSuiteSourceSet.TestApk] source set.
- */
+/** Task manager responsible for creating all tasks necessary to process a [TestSuiteSourceSet.TestApk] source set. */
 class ApkTestSuiteTaskManager {
 
-    fun createTasks(
-        sourceContainer: TestSuiteSourceContainer,
-        source: TestSuiteSourceSet.TestApk,
-        taskFactory: TaskFactory,
-        creationConfig: TestSuiteCreationConfig
-    ): TaskProvider<out Task> {
-        val taskConfig = forTestSuite(creationConfig, sourceContainer, source)
-        assert(taskConfig != null) { "ApkTestSuiteTaskManager create tasks should be called for Apk and Libraries only" }
-        return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig!!))
-    }
+  fun createTasks(
+    sourceContainer: TestSuiteSourceContainer,
+    source: TestSuiteSourceSet.TestApk,
+    taskFactory: TaskFactory,
+    creationConfig: TestSuiteCreationConfig,
+  ): TaskProvider<out Task> {
+    val taskConfig = forTestSuite(creationConfig, sourceContainer, source)
+    assert(taskConfig != null) { "ApkTestSuiteTaskManager create tasks should be called for Apk and Libraries only" }
+    return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig!!))
+  }
 }

@@ -20,30 +20,26 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
+import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class DexArchivesKotlinTest {
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    /** Regression test for http://b/65363841.  */
-    @Test
-    fun testIncrementalDexing() {
-        val javaContent = "package com.example.helloworld;\n" + "public class MyClass {}"
-        val srcToRemove = FileUtils.join(project.mainSrcDir, "com/example/helloworld/MyClass.java")
-        FileUtils.mkdirs(srcToRemove.parentFile)
-        Files.write(srcToRemove.toPath(), javaContent.toByteArray(Charsets.UTF_8))
-        project.executor().run("assembleDebug")
+  /** Regression test for http://b/65363841. */
+  @Test
+  fun testIncrementalDexing() {
+    val javaContent = "package com.example.helloworld;\n" + "public class MyClass {}"
+    val srcToRemove = FileUtils.join(project.mainSrcDir, "com/example/helloworld/MyClass.java")
+    FileUtils.mkdirs(srcToRemove.parentFile)
+    Files.write(srcToRemove.toPath(), javaContent.toByteArray(Charsets.UTF_8))
+    project.executor().run("assembleDebug")
 
-        FileUtils.delete(srcToRemove)
-        val kotlinContent = "package com.example.helloworld;\n class MyClass"
-        val kotlinSrc = FileUtils.join(project.mainSrcDir, "com/example/helloworld/MyClass.kt")
-        Files.write(kotlinSrc.toPath(), kotlinContent.toByteArray(Charsets.UTF_8))
-        project.executor().run("assembleDebug")
-    }
+    FileUtils.delete(srcToRemove)
+    val kotlinContent = "package com.example.helloworld;\n class MyClass"
+    val kotlinSrc = FileUtils.join(project.mainSrcDir, "com/example/helloworld/MyClass.kt")
+    Files.write(kotlinSrc.toPath(), kotlinContent.toByteArray(Charsets.UTF_8))
+    project.executor().run("assembleDebug")
+  }
 }
-

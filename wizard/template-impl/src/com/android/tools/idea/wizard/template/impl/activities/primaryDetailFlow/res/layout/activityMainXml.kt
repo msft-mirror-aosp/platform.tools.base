@@ -17,12 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun activityMainXml(
-  navHostFragmentId: String,
-  detailNameFragmentLayout: String,
-  mainNavigationGraphId: String,
-  useAndroidX: Boolean
-) = """
+fun activityMainXml(navHostFragmentId: String, detailNameFragmentLayout: String, mainNavigationGraphId: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"
