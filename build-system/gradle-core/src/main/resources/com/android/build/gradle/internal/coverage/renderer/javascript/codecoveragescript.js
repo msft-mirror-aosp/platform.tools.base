@@ -478,55 +478,35 @@ const CoverageReportApp = {
         }
     },
 
-    filterTreeData(modules, term) {
+    filterHierarchicalData(modules, term) {
         if (!term) return modules;
 
-        const filterClasses = (classes = []) => {
-            return classes.filter(c => c.name.toLowerCase().includes(term));
-        };
+        term = term.toLowerCase();
 
-        const filterPackages = (packages = []) => {
-            return packages.map(pkg => {
+        return modules.map(module => {
+            if (module.name.toLowerCase().includes(term)) {
+                return { ...module };
+            }
+            const filteredPackages = (module.packages || []).map(pkg => {
                 if (pkg.name.toLowerCase().includes(term)) {
-                    return { ...pkg }; // Keep package and all its children if package name matches
+                    return { ...pkg };
                 }
-                const filteredClasses = filterClasses(pkg.classes);
+
+                const filteredClasses = (pkg.classes || []).filter(cls =>
+                    cls.name.toLowerCase().includes(term)
+                );
+
                 if (filteredClasses.length > 0) {
-                    return { ...pkg, classes: filteredClasses }; // Keep package if a child class matches
+                    return { ...pkg, classes: filteredClasses };
                 }
+
                 return null;
             }).filter(Boolean);
-        };
 
-        const filterTestSuites = (suites = []) => {
-            return suites.map(ts => {
-                if (ts.name.toLowerCase().includes(term)) {
-                    return { ...ts }; // Keep test suite and all its descendants
-                }
-                const filteredPackages = filterPackages(ts.packages);
-                if (filteredPackages.length > 0) {
-                    return { ...ts, packages: filteredPackages }; // Keep suite if a child package/class matches
-                }
-                return null;
-            }).filter(Boolean);
-        };
-
-        return modules.map(mod => {
-            if (mod.name.toLowerCase().includes(term)) {
-                return { ...mod }; // Keep module and all its descendants
+            if (filteredPackages.length > 0) {
+                return { ...module, packages: filteredPackages };
             }
 
-            if (this.state.currentHierarchy === 'source') {
-                const filteredPackages = filterPackages(mod.packages || []);
-                if (filteredPackages.length > 0) {
-                    return { ...mod, packages: filteredPackages };
-                }
-            } else {
-                const filteredTestSuites = filterTestSuites(mod.testSuites || []);
-                if (filteredTestSuites.length > 0) {
-                    return { ...mod, testSuites: filteredTestSuites };
-                }
-            }
             return null;
         }).filter(Boolean);
     },
@@ -538,6 +518,8 @@ const CoverageReportApp = {
         if (filters.module !== 'all') {
             modulesSource = modulesSource.filter(m => m.name === filters.module);
         }
+
+        const searchedModules = this.filterHierarchicalData(modulesSource, filters.search);
 
         const getEffectiveCoverage = (item) => {
             if (!item.testSuiteCoverages) return [];
@@ -558,7 +540,7 @@ const CoverageReportApp = {
 
         let data;
         if (viewMode === 'tree') {
-            data = modulesSource.map(m => {
+            data = searchedModules.map(m => {
                 const moduleWithCoverage = addEffectiveCoverage(m, 'module');
                 moduleWithCoverage.packages = (m.packages || []).map(p => {
                     const pkgWithCoverage = addEffectiveCoverage(p, 'package');
@@ -568,13 +550,15 @@ const CoverageReportApp = {
                 return moduleWithCoverage;
             });
         } else {
-            const allPackages = modulesSource.flatMap(m =>
+            const allPackages = searchedModules.flatMap(m =>
                 (m.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: m.name }))
             );
-            const allClasses = allPackages.flatMap(p =>
-                (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: p.moduleName }))
+            const allClasses = searchedModules.flatMap(m =>
+                (m.packages || []).flatMap(p =>
+                    (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: m.name }))
+                )
             );
-            const allModules = modulesSource.map(m => addEffectiveCoverage(m, 'module'));
+            const allModules = searchedModules.map(m => addEffectiveCoverage(m, 'module'));
 
             if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule);
             else if (selectedModule) data = allPackages.filter(p => p.moduleName === selectedModule);
@@ -583,13 +567,6 @@ const CoverageReportApp = {
             else data = allModules;
         }
 
-        if (filters.search) {
-             if (viewMode === 'tree') {
-                 data = this.filterTreeData(data, filters.search.toLowerCase());
-             } else {
-                 data = data.filter(item => item.name.toLowerCase().includes(filters.search));
-             }
-        }
         return data;
     },
 
