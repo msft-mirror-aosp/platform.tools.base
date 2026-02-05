@@ -150,7 +150,7 @@ const CoverageReportApp = {
         const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name).filter(name => name !== 'Aggregated'));
         const uniqueTestSuites = [...new Set(allTestSuites)];
         const testSuiteOptions = [
-            { name: 'Aggregated', value: 'Aggregated' },
+            { name: 'All', value: 'Aggregated' },
             ...uniqueTestSuites.map(tsName => ({ name: tsName, value: tsName }))
         ];
         this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
