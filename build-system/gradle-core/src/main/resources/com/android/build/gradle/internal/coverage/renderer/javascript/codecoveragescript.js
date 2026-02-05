@@ -661,15 +661,13 @@ const CoverageReportApp = {
         subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
 
         if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes')) {
-            const contextTitle = (currentView === 'packages')
-                ? (filters.testSuite !== 'Aggregated' ? 'Test Suite' : 'Module')
-                : 'Package';
+            const contextTitle = (currentView === 'packages') ? 'Module' : 'Package';
             topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
             subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">${contextTitle}</th>`;
 
-            if (currentView === 'classes' && filters.testSuite !== 'Aggregated') {
+            if (currentView === 'classes') {
                 topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Test Suite</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Module</th>`;
             }
         }
 
@@ -758,17 +756,11 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    const contextCellContent = this.state.filters.testSuite === 'Aggregated'
-                        ? item.moduleName
-                        : item.testSuiteName;
-
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${contextCellContent}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
-                    if (this.state.filters.testSuite !== 'Aggregated') {
-                        nameCell += `<td class="py-3 px-6">${item.testSuiteName || ''}</td>`;
-                    }
+                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
+                    nameCell += `<td class="py-3 px-6">${item.moduleName || ''}</td>`;
                     break;
                 default:
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
