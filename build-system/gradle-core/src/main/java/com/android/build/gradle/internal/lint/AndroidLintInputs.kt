@@ -331,17 +331,23 @@ abstract class ProjectInputs {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val buildFile: ConfigurableFileCollection
 
-  internal fun initialize(variant: VariantWithTests, lintMode: LintMode) {
-    initialize(variant.main, lintMode)
+  internal fun initialize(variant: VariantWithTests, lintMode: LintMode, checkDependencies: Boolean? = null) {
+    initialize(variant.main, lintMode, checkDependencies)
   }
 
-  internal fun initialize(creationConfig: ComponentCreationConfig, lintMode: LintMode) {
+  internal fun initialize(creationConfig: ComponentCreationConfig, lintMode: LintMode, checkDependenciesOverride: Boolean? = null) {
     val globalConfig = creationConfig.global
 
     initializeFromProject(creationConfig.services.projectInfo, lintMode)
     projectType.setDisallowChanges(creationConfig.componentType.toLintModelModuleType())
 
-    lintOptions.initialize(globalConfig.lintOptions, lintMode)
+    if (creationConfig.services.projectOptions[BooleanOption.LINT_REPORT_AGGREGATION]) {
+      lintOptions.initialize(globalConfig.lintOptions, lintMode, checkDependenciesOverride)
+    } else {
+      lintOptions.initialize(globalConfig.lintOptions, lintMode)
+    }
+
+
     resourcePrefix.setDisallowChanges(globalConfig.resourcePrefix)
 
     dynamicFeatures.setDisallowChanges(globalConfig.dynamicFeatures)
@@ -353,10 +359,15 @@ abstract class ProjectInputs {
     neverShrinking.setDisallowChanges(globalConfig.hasNoBuildTypeMinified)
   }
 
-  internal fun initializeForStandalone(project: Project, javaExtension: JavaPluginExtension, dslLintOptions: Lint, lintMode: LintMode) {
+  internal fun initializeForStandalone(project: Project, projectOptions: ProjectOptions, javaExtension: JavaPluginExtension, dslLintOptions: Lint, lintMode: LintMode, checkDependenciesOverride: Boolean? = null) {
     initializeFromProject(ProjectInfo(project), lintMode)
     projectType.setDisallowChanges(LintModelModuleType.JAVA_LIBRARY)
-    lintOptions.initialize(dslLintOptions, lintMode)
+    if (projectOptions[BooleanOption.LINT_REPORT_AGGREGATION]) {
+      lintOptions.initialize(dslLintOptions, lintMode, checkDependenciesOverride)
+    } else {
+      lintOptions.initialize(dslLintOptions, lintMode)
+    }
+
     resourcePrefix.setDisallowChanges("")
     dynamicFeatures.setDisallowChanges(setOf())
     val javaCompileTask =
@@ -464,7 +475,7 @@ abstract class LintOptionsInput {
   @get:Input abstract val ignoreTestSources: Property<Boolean>
   @get:Input abstract val ignoreTestFixturesSources: Property<Boolean>
 
-  fun initialize(lintOptions: Lint, lintMode: LintMode) {
+  fun initialize(lintOptions: Lint, lintMode: LintMode, checkDependenciesOverrideForAggregateReporting: Boolean? = null) {
     disable.setDisallowChanges(lintOptions.disable)
     enable.setDisallowChanges(lintOptions.enable)
     checkOnly.setDisallowChanges(lintOptions.checkOnly)
@@ -479,7 +490,7 @@ abstract class LintOptionsInput {
     checkGeneratedSources.setDisallowChanges(lintOptions.checkGeneratedSources)
     explainIssues.setDisallowChanges(lintOptions.explainIssues)
     showAll.setDisallowChanges(lintOptions.showAll)
-    checkDependencies.setDisallowChanges(lintOptions.checkDependencies)
+    checkDependencies.setDisallowChanges(checkDependenciesOverrideForAggregateReporting ?: lintOptions.checkDependencies)
     lintOptions.lintConfig?.let { lintConfig.set(it) }
     lintConfig.disallowChanges()
     // The baseline file does not affect analysis, but otherwise it is an input.

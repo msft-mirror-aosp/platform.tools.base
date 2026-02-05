@@ -58,6 +58,7 @@ public class LintCliFlags {
     private boolean ignoreTestFixtures;
     private boolean checkGenerated;
     private boolean checkDependencies = true;
+    private boolean checkDependenciesSet = false;
     private boolean noWarnings;
     private boolean allErrors;
     private boolean fatalOnly;
@@ -373,6 +374,12 @@ public class LintCliFlags {
     /** Sets whether lint should check dependencies too */
     public void setCheckDependencies(boolean checkDependencies) {
         this.checkDependencies = checkDependencies;
+        this.checkDependenciesSet = true;
+    }
+
+    /** Returns whether check dependencies was explicitly set */
+    public boolean isCheckDependenciesSet() {
+        return checkDependenciesSet;
     }
 
     /**

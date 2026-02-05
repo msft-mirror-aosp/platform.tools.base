@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +27,51 @@ import org.junit.Test
 class LintReportAggregationTest {
 
   @get:Rule
-  val rule = GradleRule.configure().from { androidApplication(":app") { android { namespace = "com.example.android.lint.kotlin" } } }
+  val rule =
+    GradleRule.configure().from {
+      androidApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          lint {
+            checkDependencies = false
+            abortOnError = false
+            enable += "SdCardPath"
+            textReport = true
+          }
+        }
+        files.add(
+          "src/main/java/com/example/app/App.java",
+          """
+          package com.example.app;
+          public class App {
+              public void foo() {
+                  String s = "/sdcard/foo";
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        dependencies { implementation(project(":lib")) }
+      }
+      androidLibrary(":lib") {
+        android {
+          namespace = "com.example.lib"
+          lint { enable += "AuthLeak" }
+        }
+        files.add(
+          "src/main/java/com/example/lib/Lib.java",
+          """
+          package com.example.lib;
+          public class Lib {
+              public void bar() {
+                  String s = "http://user:password@host/foo";
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
 
   @Test
   fun testLintReportAggregationEnabled() {
@@ -44,5 +89,33 @@ class LintReportAggregationTest {
     assertThat(result.tasks).contains(":app:lintReportDebug")
     assertThat(result.tasks).doesNotContain(":app:createLocalLintReportDebug")
     assertThat(result.tasks).doesNotContain(":app:createAggregatedLintReportDebug")
+  }
+
+  @Test
+  fun testLintReportAggregationSeparation() {
+    verifyLintReportAggregationSeparation()
+  }
+
+  @Test
+  fun testLintReportAggregationSeparationWithCheckDependencies() {
+    rule.build.androidApplication(":app").reconfigure { android { lint { checkDependencies = true } } }
+    verifyLintReportAggregationSeparation()
+  }
+
+  private fun verifyLintReportAggregationSeparation() {
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lintDebug")
+    val localReport = rule.build.directory.resolve("app/build/reports/local-lint-results-debug.txt")
+    assertThat(localReport).exists()
+    // App issue (SdCardPath) should be present
+    assertThat(localReport).contains("SdCardPath")
+    // Lib issue (AuthLeak) should NOT be present
+    assertThat(localReport).doesNotContain("AuthLeak")
+
+    val aggregatedReport = rule.build.directory.resolve("app/build/reports/aggregated-lint-results-debug.txt")
+    assertThat(aggregatedReport).exists()
+    // App issue (SdCardPath) should be present
+    assertThat(aggregatedReport).contains("SdCardPath")
+    // Lib issue (AuthLeak) should be present
+    assertThat(aggregatedReport).contains("AuthLeak")
   }
 }
