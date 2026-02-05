@@ -83,13 +83,14 @@ abstract class MergeArtProfileTask : MergeFileTask() {
       if (!ignoreFrom.get().isNullOrEmpty() || ignoreFromAllExternalDependencies.get() == true) {
         it.inputFiles.setFrom(
           getFilteredFiles(
-            ignoreFrom.get(),
-            ignoreFromAllExternalDependencies.get(),
-            libraryArtifacts,
-            it.inputFiles,
-            LoggerWrapper.getLogger(MergeArtProfileTask::class.java),
-            LibraryArtifactType.BASELINE_PROFILES,
-          )
+              ignoreFrom.get(),
+              ignoreFromAllExternalDependencies.get(),
+              libraryArtifacts,
+              it.inputFiles,
+              LoggerWrapper.getLogger(MergeArtProfileTask::class.java),
+              LibraryArtifactType.BASELINE_PROFILES,
+            )
+            .map { file -> file.file }
         )
       }
 

@@ -138,7 +138,7 @@ fun runR8(
     mainDexListFiles = listOf(),
     mainDexRulesFiles = mainDexRulesFiles,
     inputProguardMapping = null,
-    proguardConfigurationFiles = listOf(),
+    keepRuleWithOrigins = listOf(),
     proguardConfigurations = proguardConfigurations,
     errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
     legacyMultiDexEnabled = dexingType == DexingType.LEGACY_MULTIDEX,

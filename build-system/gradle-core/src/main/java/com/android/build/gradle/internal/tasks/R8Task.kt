@@ -48,6 +48,7 @@ import com.android.build.gradle.options.SyncOptions
 import com.android.build.gradle.tasks.PackageAndroidArtifact.Companion.THROW_ON_ERROR_ISSUE_REPORTER
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexingType
+import com.android.builder.dexing.KeepRuleFile
 import com.android.builder.dexing.MainDexListConfig
 import com.android.builder.dexing.PartialShrinking
 import com.android.builder.dexing.PartialShrinkingConfig
@@ -500,7 +501,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         }
       )
       it.mainDexListOutput.set(mainDexListOutput.orNull?.asFile)
-      it.proguardConfigurationFiles.from(
+      it.proguardConfigurationFiles.set(
         reconcileDefaultProguardFile(
           getFilteredFiles(
             ignoreFromInKeepRules.get(),
@@ -627,7 +628,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       referencedInputs: List<File>,
       classes: List<File>,
       resourcesJar: File,
-      proguardConfigurationFiles: Collection<File>,
+      keepRuleWithOrigins: List<KeepRuleFile>,
       inputProguardMapping: File?,
       proguardConfigurations: MutableList<String>,
       mappingFile: File,
@@ -687,13 +688,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           missingKeepRulesOutput.toPath(),
         )
 
-      val proguardConfig =
-        ProguardConfig(
-          proguardConfigurationFiles.map { it.toPath() },
-          inputProguardMapping?.toPath(),
-          proguardConfigurations,
-          proguardOutputFiles,
-        )
+      val proguardConfig = ProguardConfig(keepRuleWithOrigins, inputProguardMapping?.toPath(), proguardConfigurations, proguardOutputFiles)
 
       val mainDexListConfig =
         if (legacyMultiDexEnabled) {
@@ -764,7 +759,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       abstract val referencedInputs: ConfigurableFileCollection
       abstract val classes: ConfigurableFileCollection
       abstract val resourcesJar: RegularFileProperty
-      abstract val proguardConfigurationFiles: ConfigurableFileCollection
+      abstract val proguardConfigurationFiles: ListProperty<KeepRuleFile>
       abstract val inputProguardMapping: RegularFileProperty
       abstract val proguardConfigurations: ListProperty<String>
       abstract val mappingFile: RegularFileProperty
@@ -813,7 +808,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           parameters.referencedInputs.files.toList(),
           parameters.classes.files.toList(),
           parameters.resourcesJar.asFile.get(),
-          parameters.proguardConfigurationFiles.files.toList(),
+          parameters.proguardConfigurationFiles.get(),
           parameters.inputProguardMapping.orNull?.asFile,
           parameters.proguardConfigurations.get(),
           parameters.mappingFile.get().asFile,
