@@ -97,7 +97,7 @@ open class GradleContext(
   }
 
   companion object {
-    fun getStringLiteralValue(value: String, valueCookie: Any): String? {
+    fun getStringLiteralValue(value: String, valueCookie: Any?): String? {
       if (value.length > 2) {
         if (value.startsWith('\'') && value.endsWith('\'')) { // Groovy strings
           return value.removeSurrounding("'")

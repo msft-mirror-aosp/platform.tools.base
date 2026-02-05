@@ -171,6 +171,59 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
   private val blockedDependencies = HashMap<Project, BlockedDependencies>()
 
+  /**
+   * See [currentSdkVersionAssignmentInfo].
+   *
+   * The property is always "version", so this is not stored.
+   */
+  private class SdkVersionAssignmentInfo(val rhsStartOffset: Int, val rhsEndOffset: Int) {
+    companion object {
+      fun getSdkVersionAssignmentInfoFromDslPropertyAssignment(
+        context: GradleContext,
+        property: String,
+        valueCookie: Any,
+        parent: String,
+        parentParent: String?,
+      ): SdkVersionAssignmentInfo? {
+        if (property != "version") return null
+        if (!(parent == "compileSdk" && parentParent == "android" || parent == "targetSdk" && parentParent == "defaultConfig")) return null
+        val location = context.gradleVisitor.createLocation(context, valueCookie)
+        val startOffset = location.start?.offset?.takeIf { it >= 0 } ?: return null
+        val endOffset = location.end?.offset?.takeIf { it >= 0 } ?: return null
+        return SdkVersionAssignmentInfo(startOffset, endOffset)
+      }
+    }
+  }
+
+  /**
+   * Stores information about a new-style DSL SDK version assignment, like:
+   * ```
+   * android {
+   *   compileSdk {
+   *     //      v DSL property assignment
+   *     //        v Method call
+   *     version = release(35) {
+   *       // this lambda is optional
+   *       sdkExtension = 12
+   *     }
+   *     // or
+   *     version = preview("BAKLAVA")
+   *   }
+   *
+   *   defaultConfig {
+   *     targetSdk {
+   *       version = release(35)
+   *     }
+   *   }
+   * }
+   * ```
+   *
+   * We store info when visiting the DSL property assignment, and use the info when visiting the "release" or "preview" method call (since
+   * method calls can take many shapes, using named arguments, etc., so interpreting as text when visiting the property assignment is not a
+   * good approach).
+   */
+  private var currentSdkVersionAssignmentInfo: SdkVersionAssignmentInfo? = null
+
   // ---- Implements XmlScanner ----
 
   override fun getApplicableAttributes(): Collection<String>? {
@@ -280,7 +333,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   private fun checkSdkVersion(
     context: GradleContext,
     value: String,
-    valueCookie: Any,
+    valueCookie: Any?,
     statementCookie: Any,
     sdkProperty: String,
     isNewStyleDsl: Boolean, // TODO: Call checkSdkVersion with isNewStyleDsl = true.
@@ -312,7 +365,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
 
     if (value.startsWith("0")) {
-      checkOctal(context, value, valueCookie)
+      checkOctal(context, value, valueCookie ?: statementCookie)
     }
 
     // Integer or platform hash (old approach):
@@ -427,6 +480,10 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     valueCookie: Any,
     statementCookie: Any,
   ) {
+
+    currentSdkVersionAssignmentInfo =
+      SdkVersionAssignmentInfo.getSdkVersionAssignmentInfoFromDslPropertyAssignment(context, property, valueCookie, parent, parentParent)
+
     // Handle SDK versions (target, min, compile), and return early if it was an SDK version.
     when (property) {
       "targetSdkVersion",
@@ -1115,8 +1172,30 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     unnamedArguments: List<String>,
     cookie: Any,
   ) {
-    val plugin = namedArguments["plugin"]
+    currentSdkVersionAssignmentInfo?.let { info ->
+      if (!(statement == "release" || statement == "preview")) return@let
+      if (!(parent == "targetSdk" || parent == "compileSdk")) return@let
+      val startOffset = context.gradleVisitor.getStartOffset(context, cookie)
+      if (startOffset < info.rhsStartOffset) return@let
+      if (startOffset >= info.rhsEndOffset) {
+        currentSdkVersionAssignmentInfo = null
+        return@let
+      }
+
+      when (statement) {
+        "release" -> {
+          val value = namedArguments["version"] ?: unnamedArguments.firstOrNull() ?: return@let
+          checkSdkVersion(context, value, null, cookie, parent, isNewStyleDsl = true)
+        }
+        "preview" -> {
+          val value = namedArguments["codeName"] ?: unnamedArguments.firstOrNull() ?: return@let
+          checkSdkVersion(context, value, null, cookie, "${parent}Preview", isNewStyleDsl = true)
+        }
+      }
+    }
+
     if (statement == "apply" && parent == null) {
+      val plugin = namedArguments["plugin"]
       val isOldAppPlugin = OLD_APP_PLUGIN_ID == plugin
       if (isOldAppPlugin || OLD_LIB_PLUGIN_ID == plugin) {
         val replaceWith = if (isOldAppPlugin) APP_PLUGIN_ID else LIB_PLUGIN_ID

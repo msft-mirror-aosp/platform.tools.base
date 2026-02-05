@@ -70,6 +70,7 @@ import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VE
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VERSION_YEAR
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_WEAR_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.TargetSdkRequirements.PREVIOUS_MINIMUM_TARGET_SDK_VERSION
+import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kts
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
 import com.android.tools.lint.checks.infrastructure.TestIssueRegistry
 import com.android.tools.lint.checks.infrastructure.TestLintTask
@@ -95,6 +96,17 @@ import java.util.zip.GZIPOutputStream
 import junit.framework.TestCase
 import org.junit.rules.TemporaryFolder
 import org.mockito.Mockito
+
+val SDK_ISSUES =
+  arrayOf(
+    DEPENDENCY,
+    MIN_SDK_TOO_LOW,
+    STRING_INTEGER,
+    ACCIDENTAL_OCTAL,
+    EXPIRING_TARGET_SDK_VERSION,
+    EXPIRED_TARGET_SDK_VERSION,
+    TARGET_NEWER,
+  )
 
 /**
  * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom GradleDetector subclass, LintIdeGradleDetector,
@@ -3003,6 +3015,325 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -10 +10 @@
         -        minSdk 7
         +        minSdk 16
+        """
+      )
+  }
+
+  fun testCompileSdkVersionNewDslKotlin() {
+    lint()
+      .files(
+        kts(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            compileSdk {
+              version = release($HIGHEST_KNOWN_STABLE_API)
+              version = release("20")
+              version = release(  20)
+              version = release("android-S")
+              version = release(  "S")
+              version = release(1000)
+
+              version = preview($HIGHEST_KNOWN_STABLE_API)
+              version = preview("20")
+              version = preview(  20)
+              version = preview("android-S")
+              version = preview(  "S")
+              version = preview(1000)
+
+
+              version = release( // 1
+                  version = "S",
+              ) {
+                sdkExtension = 12
+              }
+
+              version = preview( // 2
+                  codeName = "S",
+              )
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:8: Error: Use an integer rather than a string here (replace "20" with just 20) [StringShouldBeInt]
+            version = release("20")
+                      ~~~~~~~~~~~~~
+        build.gradle.kts:10: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release("android-S")
+                      ~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:11: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle.kts:22: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release( // 1
+                      ^
+        build.gradle.kts:9: Warning: A newer version of compileSdk than 20 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(  20)
+                      ~~~~~~~~~~~~~
+        build.gradle.kts:18: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle.kts:28: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview( // 2
+                      ^
+        4 errors, 3 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 8: Replace with integer:
+        @@ -8 +8 @@
+        -    version = release("20")
+        +    version = release(20)
+        Fix for build.gradle.kts line 10: Replace with preview:
+        @@ -10 +10 @@
+        -    version = release("android-S")
+        +    version = preview("android-S")
+        Fix for build.gradle.kts line 11: Replace with preview:
+        @@ -11 +11 @@
+        -    version = release(  "S")
+        +    version = preview(  "S")
+        Fix for build.gradle.kts line 22: Replace with preview:
+        @@ -22 +22 @@
+        -    version = release( // 1
+        +    version = preview( // 1
+        Fix for build.gradle.kts line 9: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -9 +9 @@
+        -    version = release(  20)
+        +    version = release(  $HIGHEST_KNOWN_STABLE_API)
+        """
+      )
+  }
+
+  fun testCompileSdkVersionNewDslGroovy() {
+    lint()
+      .files(
+        gradle(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            compileSdk {
+              version = release(010)
+
+              version = release($HIGHEST_KNOWN_STABLE_API)
+              version = release(  20)
+              version = release(  "20")
+              version = release(  "S")
+
+              version = release( // 1
+                  "S",
+              ) {
+                sdkExtension = 12
+              }
+
+              version = preview( // 2
+                  "S",
+              )
+
+              // Different syntax.
+              version(release(35))
+              version(release 35)
+              version release(35)
+              version = release 35
+
+              // Invalid. Lint will not see it, and project will not build:
+              // version release 35
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle:11: Error: Use an integer rather than a string here (replace "20" with just 20) [StringShouldBeInt]
+            version = release(  "20")
+                      ~~~~~~~~~~~~~~~
+        build.gradle:12: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle:14: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release( // 1
+                      ^
+        build.gradle:7: Warning: A newer version of compileSdk than 8 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(010)
+                      ~~~~~~~~~~~~
+        build.gradle:10: Warning: A newer version of compileSdk than 20 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(  20)
+                      ~~~~~~~~~~~~~
+        build.gradle:20: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview( // 2
+                      ^
+        build.gradle:25: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version(release(35))
+                    ~~~~~~~~~~~
+        build.gradle:26: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version(release 35)
+                   ~~~~~~~~~~~~
+        build.gradle:27: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version release(35)
+                    ~~~~~~~~~~~
+        build.gradle:28: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release 35
+                      ~~~~~~~~~~
+        build.gradle:7: Error: The leading 0 turns this number into octal which is probably not what was intended (interpreted as 8) [AccidentalOctal]
+            version = release(010)
+                      ~~~~~~~~~~~~
+        4 errors, 7 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 11: Replace with integer:
+        @@ -11 +11 @@
+        -    version = release(  "20")
+        +    version = release(  20)
+        Fix for build.gradle line 12: Replace with preview:
+        @@ -12 +12 @@
+        -    version = release(  "S")
+        +    version = preview(  "S")
+        Fix for build.gradle line 14: Replace with preview:
+        @@ -14 +14 @@
+        -    version = release( // 1
+        +    version = preview( // 1
+        Fix for build.gradle line 10: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -10 +10 @@
+        -    version = release(  20)
+        +    version = release(  $HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 25: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -25 +25 @@
+        -    version(release(35))
+        +    version(release($HIGHEST_KNOWN_STABLE_API))
+        Fix for build.gradle line 26: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -26 +26 @@
+        -    version(release 35)
+        +    version(release $HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 27: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -27 +27 @@
+        -    version release(35)
+        +    version release($HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 28: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -28 +28 @@
+        -    version = release 35
+        +    version = release $HIGHEST_KNOWN_STABLE_API
+        """
+      )
+  }
+
+  fun testTargetSdkVersionNewDslKotlin() {
+    lint()
+      .files(
+        kts(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            defaultConfig {
+              targetSdk {
+                version = release(35)
+                version = release("35")
+                version = preview("S")
+              }
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:9: Error: Use an integer rather than a string here (replace "35" with just 35) [StringShouldBeInt]
+              version = release("35")
+                        ~~~~~~~~~~~~~
+        build.gradle.kts:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+              version = release(35)
+                        ~~~~~~~~~~~
+        build.gradle.kts:10: Error: Google Play requires that apps target API level $MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+              version = preview("S")
+                        ~~~~~~~~~~~~
+        2 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 9: Replace with integer:
+        @@ -9 +9 @@
+        -      version = release("35")
+        +      version = release(35)
+        Fix for build.gradle.kts line 8: Update targetSdkVersion to 36:
+        @@ -8 +8 @@
+        -      version = release(35)
+        +      version = release(36)
+        """
+      )
+  }
+
+  fun testTargetSdkVersionNewDslGroovy() {
+    lint()
+      .files(
+        gradle(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            defaultConfig {
+              targetSdk {
+                version release(35)
+                version = release("35")
+                version preview("S")
+              }
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle:9: Error: Use an integer rather than a string here (replace "35" with just 35) [StringShouldBeInt]
+              version = release("35")
+                        ~~~~~~~~~~~~~
+        build.gradle:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+              version release(35)
+                      ~~~~~~~~~~~
+        build.gradle:10: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
+              version preview("S")
+                      ~~~~~~~~~~~~
+        2 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 9: Replace with integer:
+        @@ -9 +9 @@
+        -      version = release("35")
+        +      version = release(35)
+        Fix for build.gradle line 8: Update targetSdkVersion to 36:
+        @@ -8 +8 @@
+        -      version release(35)
+        +      version release(36)
         """
       )
   }
