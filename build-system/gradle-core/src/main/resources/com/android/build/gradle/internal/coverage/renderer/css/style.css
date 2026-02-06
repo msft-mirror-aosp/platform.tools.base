@@ -237,6 +237,8 @@ header {
     z-index: 99;
     min-width: 12rem;
     display: none;
+    max-height: 40vh;
+    overflow-y: auto;
 }
 .dropdown-menu:not(.hidden) { display: block; }
 .dropdown-item {
