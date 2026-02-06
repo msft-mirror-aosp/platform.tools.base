@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestResult.TestStatus;
+
 import com.google.common.collect.ImmutableMap;
 
 import org.kxml2.io.KXmlSerializer;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -50,6 +52,7 @@ public class XmlTestRunListener implements ITestRunListener {
     private static final String TEST_RESULT_FILE_SUFFIX = ".xml";
     private static final String TEST_RESULT_FILE_PREFIX = "test_result_";
 
+    private static final String TESTSUITES = "testsuites";
     private static final String TESTSUITE = "testsuite";
     private static final String TESTCASE = "testcase";
     private static final String ERROR = "error";
@@ -245,11 +248,7 @@ public class XmlTestRunListener implements ITestRunListener {
 
     void printTestResults(KXmlSerializer serializer, String timestamp, long elapsedTime)
             throws IOException {
-        serializer.startTag(ns, TESTSUITE);
-        String name = getTestSuiteName();
-        if (name != null) {
-            serializer.attribute(ns, ATTR_NAME, name);
-        }
+        serializer.startTag(ns, TESTSUITES);
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(mRunResult.getNumTests()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(
                 mRunResult.getNumAllFailedTests()));
@@ -262,6 +261,62 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, TIMESTAMP, timestamp);
         serializer.attribute(ns, HOSTNAME, mHostName);
 
+        Map<TestIdentifier, TestResult> testResults = mRunResult.getTestResults();
+
+        // Group by class name
+        Map<String, Map<TestIdentifier, TestResult>> classResults = new LinkedHashMap<>();
+        for (Map.Entry<TestIdentifier, TestResult> entry : testResults.entrySet()) {
+            String className = entry.getKey().getClassName();
+            classResults
+                    .computeIfAbsent(className, k -> new LinkedHashMap<>())
+                    .put(entry.getKey(), entry.getValue());
+        }
+
+        for (Map.Entry<String, Map<TestIdentifier, TestResult>> entry : classResults.entrySet()) {
+            printTestSuite(serializer, entry.getKey(), entry.getValue(), timestamp);
+        }
+
+        String systemError = getSystemError();
+        if (!systemError.isEmpty()) {
+            serializer.startTag(ns, SYSTEM_ERR);
+            serializer.text(systemError);
+            serializer.endTag(ns, SYSTEM_ERR);
+        }
+
+        serializer.endTag(ns, TESTSUITES);
+    }
+
+    private void printTestSuite(
+            KXmlSerializer serializer,
+            String className,
+            Map<TestIdentifier, TestResult> tests,
+            String timestamp)
+            throws IOException {
+        serializer.startTag(ns, TESTSUITE);
+        serializer.attribute(ns, ATTR_NAME, className);
+        int numTests = tests.size();
+        int numFailures = 0;
+        int numSkipped = 0;
+        long suiteElapsedTime = 0;
+        for (TestResult result : tests.values()) {
+            if (result.getStatus() == TestStatus.FAILURE) {
+                numFailures++;
+            } else if (result.getStatus() == TestStatus.IGNORED
+                    || result.getStatus() == TestStatus.ASSUMPTION_FAILURE) {
+                numSkipped++;
+            }
+            suiteElapsedTime += (result.getEndTime() - result.getStartTime());
+        }
+        serializer.attribute(ns, ATTR_TESTS, Integer.toString(numTests));
+        serializer.attribute(ns, ATTR_FAILURES, Integer.toString(numFailures));
+        // legacy - there are no errors in JUnit4
+        serializer.attribute(ns, ATTR_ERRORS, "0");
+        serializer.attribute(ns, ATTR_SKIPPED, Integer.toString(numSkipped));
+
+        serializer.attribute(ns, ATTR_TIME, Double.toString((double) suiteElapsedTime / 1000.f));
+        serializer.attribute(ns, TIMESTAMP, timestamp);
+        serializer.attribute(ns, HOSTNAME, mHostName);
+
         serializer.startTag(ns, PROPERTIES);
         for (Map.Entry<String,String> entry: getPropertiesAttributes().entrySet()) {
             serializer.startTag(ns, PROPERTY);
@@ -271,16 +326,8 @@ public class XmlTestRunListener implements ITestRunListener {
         }
         serializer.endTag(ns, PROPERTIES);
 
-        Map<TestIdentifier, TestResult> testResults = mRunResult.getTestResults();
-        for (Map.Entry<TestIdentifier, TestResult> testEntry : testResults.entrySet()) {
+        for (Map.Entry<TestIdentifier, TestResult> testEntry : tests.entrySet()) {
             print(serializer, testEntry.getKey(), testEntry.getValue());
-        }
-
-        String systemError = getSystemError();
-        if (!systemError.isEmpty()) {
-            serializer.startTag(ns, SYSTEM_ERR);
-            serializer.text(systemError);
-            serializer.endTag(ns, SYSTEM_ERR);
         }
 
         serializer.endTag(ns, TESTSUITE);
