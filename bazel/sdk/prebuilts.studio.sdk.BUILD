@@ -399,6 +399,15 @@ alias(
 )
 
 alias(
+    name = "system_image_android-CANARY_r11_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-CANARY_r11_default_arm64//:arm64-android-CANARY_r11-images",
+        "//conditions:default": "@system_image_android-CANARY_r11_default_x86_64//:x86_64-android-CANARY_r11-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "system_image_android-33_aosp_atd",
     actual = select({
         "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_aosp_atd_arm64//:arm64-android-33AospAtd-images",

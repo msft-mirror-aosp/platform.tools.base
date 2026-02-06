@@ -178,6 +178,22 @@ http_archive(
 )
 
 http_archive(
+    name = "system_image_android-CANARY_r11_default_arm64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "b9659724b354e5109a79f1e873704a1c971b05b9c9b47651977fbf122d807b2f",
+    strip_prefix = "arm64-v8a",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-CANARY_r11.zip",
+)
+
+http_archive(
+    name = "system_image_android-CANARY_r11_default_x86_64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "f894527999540871b4167d138ae7f9785916762a63965e4467186b21c815e54b",
+    strip_prefix = "x86_64",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-CANARY_r11.zip",
+)
+
+http_archive(
     name = "system_image_android-35PlayStore_default_arm64",
     build_file = "//tools/base/bazel/avd:system_images.BUILD",
     sha256 = "97cbd9b347a92ce6cfeb9817504cca162d9a0f230ee38cd216e21920ae91fea8",
