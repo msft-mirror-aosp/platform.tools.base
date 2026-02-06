@@ -4370,7 +4370,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                               ~~~~
         build.gradle:7: Error: The leading 0 turns this number into octal which is probably not what was intended (interpreted as 8) [AccidentalOctal]
           compileSdk = 010
-          ~~~~~~~~~~~~~~~~
+                       ~~~
         1 error, 6 warnings
         """
       )
