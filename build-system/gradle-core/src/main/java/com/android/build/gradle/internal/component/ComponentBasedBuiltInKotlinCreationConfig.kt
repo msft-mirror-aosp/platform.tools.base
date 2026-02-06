@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.AnnotationProcessor
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -29,12 +30,15 @@ import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.toAndroidVariantType
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
@@ -57,6 +61,10 @@ class ComponentBasedBuiltInKotlinCreationConfig(val componentCreationConfig: Com
 
   override val bootClasspath: Provider<List<RegularFile>>
     get() = componentCreationConfig.global.bootClasspath
+
+  @Suppress("UNCHECKED_CAST")
+  override val javacTask: TaskProvider<JavaCompile>
+    get() = componentCreationConfig.taskContainer.javacTask as TaskProvider<JavaCompile>
 
   override fun getJavaClasspath(
     configType: AndroidArtifacts.ConsumedConfigType,
@@ -115,22 +123,39 @@ class ComponentBasedBuiltInKotlinCreationConfig(val componentCreationConfig: Com
   override val annotationProcessor: AnnotationProcessor
     get() = componentCreationConfig.javaCompilation.annotationProcessor
 
+  override val global: GlobalTaskCreationConfig
+    get() = componentCreationConfig.global
+
+  override val lifecycleTasks: LifecycleTasksImpl
+    get() = componentCreationConfig.lifecycleTasks
+
   override fun setupFriends(friendPaths: ConfigurableFileCollection) {
     // Set friendPaths to allow tests/test fixtures to access internal functions/properties of the
     // main component
     if (componentCreationConfig is NestedComponentCreationConfig) {
-      val mainComponent = componentCreationConfig.mainVariant
-      val mainComponentClassesJar =
-        PublishingSpecs.getVariantPublishingSpec(mainComponent.componentType)
-          .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!
-          .outputType
-      friendPaths.from(mainComponent.artifacts.get(mainComponentClassesJar))
+      setupFriendsForNestedComponent(friendPaths, componentCreationConfig.mainVariant)
     }
 
     // Set friendPaths to allow tests to access internal functions/properties of test fixtures
     if (componentCreationConfig is TestComponentCreationConfig) {
-      val testFixturesComponent =
-        componentCreationConfig.mainVariant.nestedComponents.filterIsInstance<TestFixturesCreationConfig>().firstOrNull()
+      setupFriendsForTestComponent(friendPaths, componentCreationConfig.mainVariant)
+    }
+  }
+
+  companion object {
+    fun setupFriendsForNestedComponent(friendPaths: ConfigurableFileCollection, targetVariant: VariantCreationConfig) {
+      // Set friendPaths to allow tests/test fixtures to access internal functions/properties of the
+      // main component
+      val mainComponentClassesJar =
+        PublishingSpecs.getVariantPublishingSpec(targetVariant.componentType)
+          .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!
+          .outputType
+      friendPaths.from(targetVariant.artifacts.get(mainComponentClassesJar))
+    }
+
+    fun setupFriendsForTestComponent(friendPaths: ConfigurableFileCollection, targetVariant: VariantCreationConfig) {
+      // Set friendPaths to allow tests to access internal functions/properties of test fixtures
+      val testFixturesComponent = targetVariant.nestedComponents.filterIsInstance<TestFixturesCreationConfig>().firstOrNull()
       if (testFixturesComponent != null) {
         val testFixturesClassesJar =
           PublishingSpecs.getVariantPublishingSpec(testFixturesComponent.componentType)

@@ -29,6 +29,8 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
@@ -50,6 +52,8 @@ interface BuiltInKotlinCreationConfig : TaskCreationConfig {
 
   fun getAnnotationProcessorJars(): FileCollection
 
+  val javacTask: TaskProvider<JavaCompile>
+
   /** Get the compile classpath for compiling sources in this component */
   fun getJavaClasspath(
     configType: AndroidArtifacts.ConsumedConfigType,
@@ -59,6 +63,23 @@ interface BuiltInKotlinCreationConfig : TaskCreationConfig {
 
   val builtInKotlinSupportMode: BuiltInKotlinSupportMode
   val builtInKaptSupportMode: BuiltInKaptSupportMode
+
+  /**
+   * Whether we should provide Kotlin support for this component.
+   *
+   * The value is `true` when
+   * - built-in Kotlin is enabled
+   * - or built-in Kotlin is disabled, but we want to provide Kotlin support for test-fixture / screenshot-test components
+   */
+  val useBuiltInKotlinSupport: Boolean
+    get() =
+      builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported ||
+        builtInKotlinSupportMode is BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest
+
+  val useBuiltInKaptSupport: Boolean
+    get() =
+      builtInKaptSupportMode is BuiltInKaptSupportMode.Supported ||
+        builtInKaptSupportMode is BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest
 
   /** Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or null if not. */
   fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>?

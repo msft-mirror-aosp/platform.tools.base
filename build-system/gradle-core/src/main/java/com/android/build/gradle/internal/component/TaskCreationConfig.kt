@@ -17,8 +17,10 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.utils.appendCapitalized
 
 /** Basic configuration for creating [org.gradle.api.Task]s */
@@ -37,6 +39,11 @@ interface TaskCreationConfig {
    * component or test suites source it was created for.
    */
   val artifacts: ArtifactsImpl
+
+  /** Access to the global task creation configuration */
+  val global: GlobalTaskCreationConfig
+
+  val lifecycleTasks: LifecycleTasksImpl
 
   fun computeTaskNameInternal(prefix: String, suffix: String): String = prefix.appendCapitalized(name, suffix)
 

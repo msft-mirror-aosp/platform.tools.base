@@ -35,6 +35,7 @@ import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
@@ -144,7 +145,6 @@ import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
-import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KgpVersion
@@ -772,8 +772,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   protected open fun postJavacCreation(creationConfig: ComponentCreationConfig) {
 
-    val projectScope = creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-
     // Use the deprecated public artifact types to register the pre/post JavaC hooks as well as
     // the javac output itself.
     // It is necessary to do so in case some third-party plugin is using those deprecated public
@@ -790,53 +788,52 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         .setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, variantData.allPostJavacGeneratedBytecode)
     }
 
-    if (creationConfig.useBuiltInKotlinSupport) {
-      creationConfig.artifacts
+    setupCompilationContext(
+      artifacts = creationConfig.artifacts,
+      useBuiltInKotlinSupport = creationConfig.useBuiltInKotlinSupport,
+      useBuiltInKaptSupport = creationConfig.useBuiltInKaptSupport,
+    )
+  }
+
+  internal fun setupCompilationContext(artifacts: ArtifactsImpl, useBuiltInKotlinSupport: Boolean, useBuiltInKaptSupport: Boolean) {
+    val projectScope = artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+
+    if (useBuiltInKotlinSupport) {
+      artifacts
         .forScope(ScopedArtifacts.Scope.PROJECT)
-        .setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, creationConfig.artifacts, InternalArtifactType.BUILT_IN_KOTLINC)
+        .setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, artifacts, InternalArtifactType.BUILT_IN_KOTLINC)
     }
 
-    if (creationConfig.useBuiltInKaptSupport) {
-      creationConfig.artifacts
+    if (useBuiltInKaptSupport) {
+      artifacts
         .forScope(ScopedArtifacts.Scope.PROJECT)
-        .setInitialContent(
-          ScopedArtifact.POST_COMPILATION_CLASSES,
-          creationConfig.artifacts,
-          InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR,
-        )
+        .setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, artifacts, InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR)
     }
 
-    creationConfig.artifacts
+    artifacts
       .forScope(ScopedArtifacts.Scope.PROJECT)
       .setInitialContent(
         ScopedArtifact.POST_COMPILATION_CLASSES,
-        creationConfig.services.fileCollection().from(creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)),
+        project.objects.fileCollection().from(artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)),
       )
 
-    creationConfig.artifacts
-      .forScope(ScopedArtifacts.Scope.PROJECT)
-      .setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, creationConfig.artifacts, JAVAC)
+    artifacts.forScope(ScopedArtifacts.Scope.PROJECT).setInitialContent(ScopedArtifact.POST_COMPILATION_CLASSES, artifacts, JAVAC)
 
     // add back all the user added post compilation classes that we stored in this internal
     // artifact type for book keeping reasons.
-    creationConfig.artifacts
-      .forScope(ScopedArtifacts.Scope.PROJECT)
-      .setInitialContent(ScopedArtifact.CLASSES, projectScope.userAddedClasses)
+    artifacts.forScope(ScopedArtifacts.Scope.PROJECT).setInitialContent(ScopedArtifact.CLASSES, projectScope.userAddedClasses)
 
-    creationConfig.artifacts
+    artifacts
       .forScope(ScopedArtifacts.Scope.PROJECT)
       .setInitialContent(
         ScopedArtifact.CLASSES,
-        creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
+        artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
       )
   }
 
-  /**
-   * Creates the task for creating *.class files using javac. These tasks are created regardless of whether Jack is used or not, but
-   * assemble will not depend on them if it is. They are always used when running unit tests.
-   */
+  /** Creates the task for creating *.class files using java compiler and kotlin compiler */
   protected fun createJavacTask(creationConfig: ComponentCreationConfig): TaskProvider<out JavaCompile> {
-    val usingKapt = isKotlinKaptPluginApplied(project) || project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID)
+    val usingKapt = isKotlinKaptPluginApplied(project)
     val usingKsp = isKspPluginApplied(project)
     val javaPreCompileTaskCreationConfig = createJavaPreCompileConfig(creationConfig, usingKapt, usingKsp)
     taskFactory.register(JavaPreCompileTask.CreationAction(javaPreCompileTaskCreationConfig))
@@ -845,29 +842,29 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     creationConfig.attachRegisteredActionsToJavaCompileTask(javacTask)
     postJavacCreation(creationConfig)
 
-    maybeCreateKotlinTasks(creationConfig)
+    val builtInCreationConfig = ComponentBasedBuiltInKotlinCreationConfig(creationConfig)
+    maybeCreateKotlinTasks(builtInCreationConfig)
 
     return javacTask
   }
 
-  private fun maybeCreateKotlinTasks(creationConfig: ComponentCreationConfig) {
+  internal fun maybeCreateKotlinTasks(creationConfig: BuiltInKotlinCreationConfig) {
     if (!creationConfig.useBuiltInKotlinSupport) {
       return
     }
     val kotlinServices = creationConfig.services.builtInKotlinServices
 
-    val builtInCreationConfig = ComponentBasedBuiltInKotlinCreationConfig(creationConfig)
-    val kotlinCompileTaskProvider = KotlinCompileCreationAction(builtInCreationConfig, kotlinServices).registerTask()
+    val kotlinCompileTaskProvider = KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
     val kaptGenerateStubsProvider =
       if (creationConfig.useBuiltInKaptSupport) {
         if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
           copyKaptExtensionProperties(kotlinServices)
         }
         val kaptExtensionConfig = creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
-        val kaptCreationAction = KaptCreationAction(builtInCreationConfig, project, kotlinServices, kaptExtensionConfig)
+        val kaptCreationAction = KaptCreationAction(creationConfig, project, kotlinServices, kaptExtensionConfig)
         kaptCreationAction.registerTask()
         val kaptStubGenerationCreationAction =
-          KaptStubGenerationCreationAction(builtInCreationConfig, kotlinServices, kotlinCompileTaskProvider, kaptExtensionConfig)
+          KaptStubGenerationCreationAction(creationConfig, kotlinServices, kotlinCompileTaskProvider, kaptExtensionConfig)
         kaptStubGenerationCreationAction.registerTask()
       } else {
         null
@@ -879,7 +876,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       maybeCreateKotlinExtensionConfiguration()
     }
 
-    val kotlinCompilation = builtInCreationConfig.createKotlinCompilation()
+    val kotlinCompilation = creationConfig.createKotlinCompilation(creationConfig.javacTask)
     addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
   }
 
@@ -1833,9 +1830,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     taskFactory.register(PreBuildCreationAction(creationConfig))
   }
 
-  abstract class AbstractPreBuildCreationAction<TaskT : AndroidVariantTask, ComponentT : ComponentCreationConfig>(
-    creationConfig: ComponentT
-  ) : VariantTaskCreationAction<TaskT, ComponentT>(creationConfig, false) {
+  abstract class AbstractPreBuildCreationAction<TaskT : AndroidVariantTask, ComponentT : TaskCreationConfig>(creationConfig: ComponentT) :
+    VariantTaskCreationAction<TaskT, ComponentT>(creationConfig, false) {
 
     override val name: String
       get() = computeTaskName("pre", "Build")
@@ -1852,8 +1848,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     }
   }
 
-  class PreBuildCreationAction(creationConfig: ComponentCreationConfig) :
-    AbstractPreBuildCreationAction<AndroidVariantTask, ComponentCreationConfig>(creationConfig) {
+  class PreBuildCreationAction(creationConfig: TaskCreationConfig) :
+    AbstractPreBuildCreationAction<AndroidVariantTask, TaskCreationConfig>(creationConfig) {
 
     override val type: Class<AndroidVariantTask>
       get() = AndroidVariantTask::class.java

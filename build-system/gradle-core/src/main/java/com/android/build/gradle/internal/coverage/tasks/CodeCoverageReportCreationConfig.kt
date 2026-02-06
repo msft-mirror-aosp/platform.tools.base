@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.api.artifact.Artifacts
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
@@ -28,6 +29,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.builder.core.ComponentTypeImpl
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
@@ -121,4 +123,10 @@ class CodeCoverageReportCreationConfigImpl(
         .firstOrNull { it.mainVariant.name == name && it is DeviceTestCreationConfig && it.codeCoverageEnabled && it.componentType.isApk }
         ?.artifacts
         ?.get(InternalArtifactType.CODE_COVERAGE)
+
+  override val global: GlobalTaskCreationConfig
+    get() = variantCreationConfig.global
+
+  override val lifecycleTasks: LifecycleTasksImpl
+    get() = variantCreationConfig.lifecycleTasks
 }

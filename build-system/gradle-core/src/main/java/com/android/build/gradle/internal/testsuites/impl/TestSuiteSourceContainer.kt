@@ -21,13 +21,14 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.gradle.internal.ApkTestSuiteTaskManager
-import com.android.build.gradle.internal.HostJarTestSuiteTaskManager
+import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
+import com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -41,7 +42,7 @@ import org.gradle.api.tasks.TaskProvider
  * test suite.
  */
 class TestSuiteSourceContainer(
-  project: Project,
+  val project: Project,
   private val targetVariantName: String,
   private val testSuiteName: String,
   internal val source: TestSuiteSourceSet,
@@ -65,14 +66,19 @@ class TestSuiteSourceContainer(
    *
    * @return the top level or lifecycle task for this [source] to be processed entirely.
    */
-  fun createTasks(taskCreationServices: TaskCreationServices, creationConfig: TestSuiteCreationConfig): TaskProvider<out Task>? {
+  fun createTasks(
+    testSuiteTaskManager: TestSuiteTaskManager,
+    taskCreationServices: TaskCreationServices,
+    creationConfig: TestSuiteCreationConfig,
+  ): TaskProvider<out Task>? {
     return when (source.type) {
       TestSuiteSourceType.ASSETS -> {
         // nothing to do for assets based source folder so far.
         null
       }
       TestSuiteSourceType.HOST_JAR -> {
-        HostJarTestSuiteTaskManager().createTasks(this, source as HostJarTestSuiteSourceSet, taskFactory, taskCreationServices)
+        HostJarTestSuiteTaskManager(project, testSuiteTaskManager)
+          .createTasks(creationConfig, this, source as HostJarTestSuiteSourceSet, taskFactory, taskCreationServices)
       }
       TestSuiteSourceType.TEST_APK -> {
         ApkTestSuiteTaskManager().createTasks(this, source as TestApkTestSuiteSourceSet, taskFactory, creationConfig)
