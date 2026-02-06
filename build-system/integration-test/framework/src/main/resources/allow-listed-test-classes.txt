@@ -412,7 +412,6 @@ com.android.build.gradle.integration.library.PublishLegacyMultidexLibTest
 com.android.build.gradle.integration.library.SameNamedLibsTest
 com.android.build.gradle.integration.lint.AndroidLintAnalysisTaskCacheabilityTest
 com.android.build.gradle.integration.lint.AndroidLintAnalysisTaskTest
-com.android.build.gradle.integration.lint.AndroidLintCopyReportTaskTest
 com.android.build.gradle.integration.lint.KotlinMultiplatformAndroidLintTest
 com.android.build.gradle.integration.lint.LintAnalysisPerComponentTest
 com.android.build.gradle.integration.lint.LintApiDatabaseTest
