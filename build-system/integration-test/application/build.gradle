@@ -100,7 +100,6 @@ test {
             categories = categories.collect { it.charAt(0).isUpperCase() ? defaultPackage + it : it }
             includeCategories categories as String[]
         }
-        excludeCategories "com.android.build.gradle.integration.common.category.OnlineTests"
     }
 
     exclude "com/android/build/gradle/integration/automatic/**"
