@@ -1523,6 +1523,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
       flags.put(BooleanFlag.GENERATE_MANIFEST_CLASS, projectOptions[BooleanOption.GENERATE_MANIFEST_CLASS])
       flags.put(BooleanFlag.OLD_VARIANT_API_IN_USE, oldVariantApiInUse)
       flags.put(BooleanFlag.R8_GRADUAL_API, projectOptions[BooleanOption.R8_GRADUAL_API])
+      flags.put(BooleanFlag.BUILT_IN_KOTLIN_DEFAULT_ENABLED, projectOptions[BooleanOption.BUILT_IN_KOTLIN])
 
       return AndroidGradlePluginProjectFlagsImpl(flags.build())
     }

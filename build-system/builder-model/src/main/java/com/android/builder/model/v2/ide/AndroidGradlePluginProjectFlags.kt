@@ -105,7 +105,10 @@ interface AndroidGradlePluginProjectFlags {
     OLD_VARIANT_API_IN_USE(false),
 
     /** Whether the Gradual API is enabled */
-    R8_GRADUAL_API(false);
+    R8_GRADUAL_API(false),
+
+    /** Whether built-in Kotlin is enabled by default in this Gradle build */
+    BUILT_IN_KOTLIN_DEFAULT_ENABLED(false);
 
     /**
      * Returns the value of this flag for the given gradle project flags.
