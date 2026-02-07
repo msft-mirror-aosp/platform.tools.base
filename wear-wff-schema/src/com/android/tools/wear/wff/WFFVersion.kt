@@ -29,4 +29,8 @@ enum class WFFVersion(val version: String) {
   WFFVersion4("4");
 
   val schemaUrl: URL = checkNotNull(this::class.java.getResource("/specification/documents/$version/watchface.xsd"))
+
+  companion object {
+    fun fromString(version: String?): WFFVersion? = entries.firstOrNull { it.version == version }
+  }
 }
