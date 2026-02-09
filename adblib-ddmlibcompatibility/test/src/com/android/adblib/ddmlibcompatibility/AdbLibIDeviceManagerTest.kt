@@ -1,11 +1,15 @@
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerTest.TestIDeviceManagerListener.EventType
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
+import com.android.adblib.waitUntilState
 import com.android.annotations.concurrency.WorkerThread
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
@@ -15,6 +19,7 @@ import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.sdklib.AndroidApiLevel
 import kotlin.math.max
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -45,7 +50,12 @@ class AdbLibIDeviceManagerTest {
   @Test
   fun hasInitialDeviceList_returnsFalse_whenAdbCannotBeQueried() = runBlockingWithTimeout {
     // Prepare
+    val tracker = fakeAdbRule.adbSession.connectedDevicesTracker
+    tracker.connectedDevices.first { it.flowStatus.isActive }
     fakeAdbRule.fakeAdb.stop()
+    // Note that there is a propagation delay for ADB server failures to appear in `connectedDevices.flowStatus`.
+    // `AdbLibIDeviceManager` implementation relies on this status to validate the device list.
+    tracker.connectedDevices.first { it.flowStatus.isRetrying }
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
     // Act: Wait a little to give AdbLibIDeviceManager a chance to query devices
@@ -68,7 +78,9 @@ class AdbLibIDeviceManagerTest {
   @Test
   fun hasInitialDeviceList_true_impliesDeviceListIsPopulated() = runBlockingWithTimeout {
     // Prepare
-    fakeAdbRule.fakeAdb.connectDevice("1234", "Google", "Pixel 9", "Baklava", AndroidApiLevel(36), HostConnectionType.USB)
+    val deviceId = "1234"
+    fakeAdbRule.fakeAdb.connectDevice(deviceId, "Google", "Pixel 9", "Baklava", AndroidApiLevel(36), HostConnectionType.USB)
+    fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
     // Act / Assert
@@ -92,10 +104,14 @@ class AdbLibIDeviceManagerTest {
   @Test
   fun tracksDeviceStateChanges() = runBlockingWithTimeout {
     // Prepare
+    val deviceId = "dev1234"
     val iDeviceManagerListener = TestIDeviceManagerListener()
     val fakeDevice =
-      fakeAdb.connectDevice("dev1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+      fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.BOOTLOADER
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice("dev1234")
+    connectedDevice.waitUntilState(com.android.adblib.DeviceState.BOOTLOADER)
 
     // Act / Assert
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
@@ -130,6 +146,9 @@ class AdbLibIDeviceManagerTest {
     val fakeDevice =
       fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
+    connectedDevice.waitUntilOnline()
 
     // Act / Assert
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
@@ -213,11 +232,13 @@ class AdbLibIDeviceManagerTest {
   @Test
   fun testAndroidDebugBridgeRemovedEventIsTriggered_onShutdown() = runBlockingWithTimeout {
     // Prepare
+    val deviceId = "dev1234"
     val iDeviceManagerListener = TestIDeviceManagerListener()
+    fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
+    connectedDevice.waitUntilOnline()
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
-    val fakeDevice =
-      fakeAdb.connectDevice("dev1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
-    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
     // Act / Assert
     yieldUntil { deviceManager.devices.size == 1 }
