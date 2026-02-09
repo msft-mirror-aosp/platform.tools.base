@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 
@@ -102,6 +103,24 @@ class LintReportAggregationTest {
     verifyLintReportAggregationSeparation()
   }
 
+  @Test
+  fun testAppUpdateLintBaseline() {
+    configureBaseline()
+    checkLintBaselineUpdate(task = ":app:updateLintBaselineDebug", expectAppBaseline = true, expectLibBaseline = false)
+  }
+
+  @Test
+  fun testLibUpdateLintBaseline() {
+    configureBaseline()
+    checkLintBaselineUpdate(task = ":lib:updateLintBaselineDebug", expectAppBaseline = false, expectLibBaseline = true)
+  }
+
+  @Test
+  fun testTopLevelUpdateLintBaseline() {
+    configureBaseline()
+    checkLintBaselineUpdate(task = "updateLintBaseline", expectAppBaseline = true, expectLibBaseline = true)
+  }
+
   private fun verifyLintReportAggregationSeparation() {
     rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lintDebug")
     val localReport = rule.build.directory.resolve("app/build/reports/local-lint-results-debug.txt")
@@ -117,5 +136,37 @@ class LintReportAggregationTest {
     assertThat(aggregatedReport).contains("SdCardPath")
     // Lib issue (AuthLeak) should be present
     assertThat(aggregatedReport).contains("AuthLeak")
+  }
+
+  private fun configureBaseline() {
+    rule.build.androidApplication(":app").reconfigure { android { lint { baseline = File("lint-baseline.xml") } } }
+    rule.build.androidLibrary(":lib").reconfigure { android { lint { baseline = File("lint-baseline.xml") } } }
+  }
+
+  private fun checkLintBaselineUpdate(task: String, expectAppBaseline: Boolean, expectLibBaseline: Boolean) {
+    val build = rule.build
+    val appBaseline = build.directory.resolve("app/lint-baseline.xml")
+    val libBaseline = build.directory.resolve("lib/lint-baseline.xml")
+
+    assertThat(appBaseline).doesNotExist()
+    assertThat(libBaseline).doesNotExist()
+
+    build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(task)
+
+    if (expectAppBaseline) {
+      assertThat(appBaseline).exists()
+      assertThat(appBaseline).contains("SdCardPath")
+      assertThat(appBaseline).doesNotContain("AuthLeak")
+    } else {
+      assertThat(appBaseline).doesNotExist()
+    }
+
+    if (expectLibBaseline) {
+      assertThat(libBaseline).exists()
+      assertThat(libBaseline).contains("AuthLeak")
+      assertThat(libBaseline).doesNotContain("SdCardPath")
+    } else {
+      assertThat(libBaseline).doesNotExist()
+    }
   }
 }

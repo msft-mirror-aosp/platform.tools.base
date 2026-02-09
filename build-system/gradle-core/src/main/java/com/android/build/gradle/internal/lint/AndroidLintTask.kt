@@ -580,6 +580,14 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     override val description: String
       get() = "Update the lint baseline using the ${creationConfig.name} variant"
 
+    override val checkDependenciesOverride: Boolean?
+      get() =
+        if (creationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
+          false
+        } else {
+          super.checkDependenciesOverride
+        }
+
     override fun configureOutputSettings(task: AndroidLintTask) {
       // do nothing
     }
