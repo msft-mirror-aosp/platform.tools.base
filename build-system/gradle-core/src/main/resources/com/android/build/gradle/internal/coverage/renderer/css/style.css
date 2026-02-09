@@ -121,8 +121,9 @@ header {
     background: var(--bg-header);
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
-    padding: 1rem 1.5rem;
+    padding: 0;
 }
+.header-top-row { padding: 1rem 1.5rem; }
 .header-content {
     max-width: 1800px;
     margin: 0 auto;
@@ -158,6 +159,8 @@ header {
     color: var(--text-darkest);
     margin-top: 0.125rem; /* Small gap between label and value */
 }
+
+.header-toolbar { padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color); background-color: var(--bg-body); }
 
 .icon-btn { padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); transition: background 0.2s; }
 .icon-btn:hover { background-color: var(--bg-hover); }
@@ -199,8 +202,7 @@ header {
     margin-bottom: 0.5rem;
     flex: 0 0 auto;
 }
-.filter-controls { display: flex; flex-direction: column; gap: 1rem; justify-content: space-between; }
-@media (min-width: 640px) { .filter-controls { flex-direction: row; align-items: center; } }
+.filter-controls { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem;}
 
 .btn-group { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .dropdown-btn {
