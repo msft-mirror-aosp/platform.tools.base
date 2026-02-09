@@ -18,8 +18,9 @@ _FLAGS = [
 
 def _get_generate_compose_preview_tests(build_env: bazel.BuildEnv) -> List[str]:
   """Queries bazel for tests and filters them."""
-  target_tests = build_env.bazel_query(*_TARGETS).stdout.decode('utf-8').splitlines()
-  return [t for t in target_tests if 'generate_compose_preview' in t]
+  query = [f'attr(tags, "generate_compose_preview", {" + ".join(_TARGETS)})']
+  target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
+  return target_tests
 
 def uitools_evals(build_env: bazel.BuildEnv):
   """Runs ui tools evals target."""
