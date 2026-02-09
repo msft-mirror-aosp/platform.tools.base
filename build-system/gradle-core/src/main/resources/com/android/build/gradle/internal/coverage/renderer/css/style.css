@@ -132,6 +132,33 @@ header {
 }
 .header-title { font-size: 1.5rem; font-weight: 600; color: var(--text-darkest); }
 .header-date { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+.header-stats {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.stat-label {
+    font-size: 0.7rem; /* 11.2px */
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.05em; /* Adds a bit of space for clarity */
+}
+
+.stat-value {
+    font-size: 0.95rem; /* 15.2px */
+    font-weight: 700;
+    color: var(--text-darkest);
+    margin-top: 0.125rem; /* Small gap between label and value */
+}
+
 .icon-btn { padding: 0.5rem; border-radius: 0.5rem; color: var(--text-muted); transition: background 0.2s; }
 .icon-btn:hover { background-color: var(--bg-hover); }
 
@@ -162,32 +189,6 @@ header {
     overflow: hidden;
     min-height: 0;
 }
-
-/* --- Cards & Grid --- */
-.grid-stats {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    flex: 0 0 auto;
-}
-@media (min-width: 768px) { .grid-stats { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .grid-stats { grid-template-columns: repeat(3, 1fr); } }
-
-.summary-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s;
-}
-.summary-card:hover { box-shadow: var(--shadow-md); }
-
-.card-flex { display: flex; justify-content: space-between; align-items: flex-start; }
-.stat-label { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.5rem; }
-.stat-value { font-size: 1.875rem; font-weight: 700; color: var(--text-darkest); }
-.stat-icon { padding: 0.75rem; border-radius: 0.5rem; background: var(--bg-selected); color: var(--text-blue-600); }
 
 /* --- Filters & Toolbar --- */
 .filter-bar {

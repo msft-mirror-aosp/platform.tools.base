@@ -545,7 +545,7 @@ const CoverageReportApp = {
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
-        this.updateSummaryCards(dataToRender);
+        this.updateHeaderStats(dataToRender);
         this.renderTable(dataToRender);
 
         this.updateTooltipsForOverflow();
@@ -668,7 +668,7 @@ const CoverageReportApp = {
         return data;
     },
 
-    updateSummaryCards(dataToRender) {
+    updateHeaderStats(dataToRender) {
         const { viewMode, currentView } = this.state;
         let relevantClasses;
         let moduleCount = 0;
