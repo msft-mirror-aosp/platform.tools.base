@@ -72,6 +72,8 @@ import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.build.gradle.tasks.SourceJarTask
+import com.android.build.gradle.tasks.TestReportTask
+import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.ZipMergingTask
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
@@ -241,10 +243,15 @@ class LibraryTaskManager(
     taskFactory.register(ExtractSupportedLocalesTask.CreationAction(libraryVariant))
 
     createBundleTask(libraryVariant)
+  }
 
-    if (libraryVariant.publishInfo?.components?.isNotEmpty() ?: false) {
+  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>) {
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
+    if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
+      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+
       val jacocoAntConfiguration =
-        JacocoConfigurations.getJacocoAntTaskConfiguration(project, libraryVariant.global.testCoverage.jacocoVersion)
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, variantInfo.variant.global.testCoverage.jacocoVersion)
       taskFactory.register(
         CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
           jacocoAntConfiguration,
@@ -254,10 +261,11 @@ class LibraryTaskManager(
     }
   }
 
-  override fun createReportAggregationTask() {
-    super.createReportAggregationTask()
+  override fun registerTestAndCodeCoverageReportTasks() {
+    super.registerTestAndCodeCoverageReportTasks()
     if (variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
       taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
+      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
     }
   }
 
