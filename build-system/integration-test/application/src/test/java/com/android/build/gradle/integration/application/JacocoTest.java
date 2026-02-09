@@ -249,19 +249,5 @@ public class JacocoTest {
             ScannerSubject.assertThat(scanner)
                     .contains(JacocoConfigurations.ANT_CONFIGURATION_NAME);
         }
-        // jacoco ant configuration is not set when android test coverage disabled and
-        // aggregated test reporting is disabled
-        TestFileUtils.searchAndReplace(
-                project.getBuildFile(),
-                "android.buildTypes.debug.enableAndroidTestCoverage = true",
-                "android.buildTypes.debug.enableAndroidTestCoverage = false");
-        result =
-                project.executor()
-                        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
-                        .run(":dep");
-        try (Scanner scanner = result.getStdout()) {
-            ScannerSubject.assertThat(scanner)
-                    .doesNotContain(JacocoConfigurations.ANT_CONFIGURATION_NAME);
-        }
     }
 }

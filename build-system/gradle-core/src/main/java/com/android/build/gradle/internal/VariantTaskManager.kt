@@ -153,9 +153,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   }
 
   protected open fun createReportAggregationTask() {
-    if (isReportAggregationEnabled) {
-      taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
-    }
+    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   fun createPostApiTasks() {
@@ -197,15 +195,14 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     doCreateTasksForVariant(componentInfo)
 
-    if (isReportAggregationEnabled) {
-      val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
-      taskFactory.register(
-        CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-          jacocoAntConfiguration,
-          CodeCoverageReportCreationConfigImpl(variant, testComponents),
-        )
+    // Register code coverage collection task for report aggregation
+    val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
+    taskFactory.register(
+      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
+        jacocoAntConfiguration,
+        CodeCoverageReportCreationConfigImpl(variant, testComponents),
       )
-    }
+    )
 
     // now that the onVariants callback has run and tasks have been created,
     // register all the listeners so we can ensure there is a Task providing the artifact
