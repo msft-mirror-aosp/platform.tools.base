@@ -175,41 +175,12 @@ const CoverageReportApp = {
     },
 
     populateFilters() {
-        // Test Suites
-        const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name).filter(name => name !== 'Aggregated'));
-        const uniqueTestSuites = [...new Set(allTestSuites)];
-        const testSuiteOptions = [
-            { name: 'All', value: 'Aggregated' },
-            ...uniqueTestSuites.map(tsName => ({ name: tsName, value: tsName }))
-        ];
-        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
         this.allPackages = this.fullReport.modules.flatMap(m => (m.packages || []).map(p => ({ name: p.name, moduleName: m.name })) );
         this.allClasses = this.fullReport.modules.flatMap(m =>
             (m.packages || []).flatMap(p =>
                 (p.classes || []).map(c => ({ name: c.name, packageName: p.name, moduleName: m.name }))
             )
         );
-
-        // Modules
-        const moduleOptions = [{name: 'All', value: 'all'}, ...this.fullReport.modules.map(m => ({name: m.name, value: m.name}))];
-        this.elements.moduleFilterList.innerHTML = moduleOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        //Packages
-        const packageOptions = [{name: 'All', value: 'all'}, ...this.allPackages.map(p => ({name: p.name, value: p.name}))];
-        this.elements.packageFilterList.innerHTML = packageOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        //Classes
-        const classOptions = [{name: 'All', value: 'all'}, ...this.allClasses.map(c => ({name: c.name, value: c.name}))];
-        this.elements.classFilterList.innerHTML = classOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
 
         // Variants
         let allVariants = [];
@@ -420,7 +391,6 @@ const CoverageReportApp = {
         if(!target) return;
 
         const { value } = target.dataset;
-        this.state.filters[filterType] = value;
 
         switch (filterType) {
             case 'module':
@@ -430,25 +400,10 @@ const CoverageReportApp = {
                 break;
             case 'package':
                 this.state.filters.package = value;
-                if (value === 'all') {
-                    this.state.filters.class = 'all';
-                } else {
-                    const pkgInfo = this.allPackages.find(p => p.name === value);
-                    if (pkgInfo) {
-                        this.state.filters.module = pkgInfo.moduleName;
-                    }
-                    this.state.filters.class = 'all';
-                }
+                this.state.filters.class = 'all';
                 break;
             case 'class':
                 this.state.filters.class = value;
-                if (value !== 'all') {
-                    const classInfo = this.allClasses.find(c => c.name === value);
-                    if (classInfo) {
-                        this.state.filters.module = classInfo.moduleName;
-                        this.state.filters.package = classInfo.packageName;
-                    }
-                }
                 break;
             case 'testSuite':
                  this.state.filters.testSuite = value;
@@ -592,6 +547,7 @@ const CoverageReportApp = {
     },
 
     render() {
+        this.updateDynamicFilters();
         this.updateActiveTabs();
         this.renderBreadcrumbs();
         let dataToRender = this.getFilteredData();
@@ -751,6 +707,63 @@ const CoverageReportApp = {
 
         this.elements.totalModules.textContent = moduleCount;
         this.elements.totalClasses.textContent = relevantClasses.length;
+    },
+
+    updateDynamicFilters() {
+        const { selectedModule, selectedPackage } = this.state;
+        let contextModules = this.fullReport.modules;
+
+        if (selectedModule) {
+            contextModules = contextModules.filter(m => m.name === selectedModule);
+        }
+
+        let contextPackages = contextModules.flatMap(m => m.packages || []);
+        if (selectedPackage) {
+            contextPackages = contextPackages.filter(p => p.name === selectedPackage);
+        }
+
+        const moduleOptions = [
+            { name: 'All', value: 'all' },
+            ...contextModules.map(m => ({ name: m.name, value: m.name }))
+        ];
+
+        const testSuiteOptions = [
+            { name: 'All', value: 'Aggregated' },
+            ...[...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name))
+                .filter(name => name !== 'Aggregated'))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        const packageOptions = [
+            { name: 'All', value: 'all' },
+            ...[...new Set(contextPackages.map(p => p.name))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        const classOptions = [
+            { name: 'All', value: 'all' },
+            ...[...new Set(contextPackages.flatMap(p => p.classes || []).map(c => c.name))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        this.elements.moduleFilterList.innerHTML = moduleOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.packageFilterList.innerHTML = packageOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.classFilterList.innerHTML = classOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
     },
 
     renderTable(dataToRender) {
