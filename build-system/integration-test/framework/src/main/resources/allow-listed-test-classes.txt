@@ -456,7 +456,6 @@ com.android.build.gradle.integration.lint.LintStandaloneModelTest
 com.android.build.gradle.integration.lint.LintStandaloneNoSdkTest
 com.android.build.gradle.integration.lint.LintStandaloneTest
 com.android.build.gradle.integration.lint.LintStandaloneVitalTest
-com.android.build.gradle.integration.lint.LintStringFormatDetectorTest
 com.android.build.gradle.integration.lint.LintSuppressTest
 com.android.build.gradle.integration.lint.LintSystemPropertiesTest
 com.android.build.gradle.integration.lint.LintTextOutputTest
