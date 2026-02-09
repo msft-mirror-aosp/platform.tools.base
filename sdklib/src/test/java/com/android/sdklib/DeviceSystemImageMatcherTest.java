@@ -355,6 +355,30 @@ public final class DeviceSystemImageMatcherTest {
     }
 
     @Test
+    public void matchesApiMinorLevelCompatible() {
+        Device device =
+                mockDevice(
+                        "default",
+                        new AndroidApiLevel(36, 1),
+                        new AndroidApiLevel(Integer.MAX_VALUE));
+        ISystemImage image = mockImage(Collections.emptyList(), new AndroidVersion(36, 1), false);
+
+        assertTrue(DeviceSystemImageMatcher.matches(device, image));
+    }
+
+    @Test
+    public void matchesApiMinorLevelIncompatible() {
+        Device device =
+                mockDevice(
+                        "default",
+                        new AndroidApiLevel(36, 1),
+                        new AndroidApiLevel(Integer.MAX_VALUE));
+        ISystemImage image = mockImage(Collections.emptyList(), new AndroidVersion(36, 0), false);
+
+        assertFalse(DeviceSystemImageMatcher.matches(device, image));
+    }
+
+    @Test
     public void matchesPlayImageRequiresPlayDevice() {
         Device device = mockDevice("default");
         ISystemImage image = mockImage(Collections.emptyList(), 33, true);
@@ -385,6 +409,14 @@ public final class DeviceSystemImageMatcherTest {
     }
 
     private static Device mockDevice(@Nullable String tagId, int minApiLevel, int maxApiLevel) {
+        return mockDevice(
+                tagId, new AndroidApiLevel(minApiLevel), new AndroidApiLevel(maxApiLevel));
+    }
+
+    private static Device mockDevice(
+            @Nullable String tagId,
+            @NonNull AndroidApiLevel minVersion,
+            @NonNull AndroidApiLevel maxVersion) {
         Screen screen = Mockito.mock(Screen.class);
 
         Hardware hardware = Mockito.mock(Hardware.class);
@@ -395,9 +427,8 @@ public final class DeviceSystemImageMatcherTest {
         Mockito.when(device.getDefaultHardware()).thenReturn(hardware);
 
         Software software = Mockito.mock(Software.class);
-        Mockito.when(software.getMinSdkLevel()).thenReturn(minApiLevel);
-        Mockito.when(software.getMaxSdkLevel()).thenReturn(maxApiLevel);
-        Mockito.when(device.getSoftware(0)).thenReturn(software);
+        Mockito.when(software.getMinAndroidApiLevel()).thenReturn(minVersion);
+        Mockito.when(software.getMaxAndroidApiLevel()).thenReturn(maxVersion);
         Mockito.when(device.getAllSoftware()).thenReturn(ImmutableList.of(software));
 
         return device;
@@ -411,9 +442,15 @@ public final class DeviceSystemImageMatcherTest {
     @NonNull
     private static ISystemImage mockImage(
             @NonNull List<IdDisplay> tags, int apiLevel, boolean hasPlayStore) {
+        return mockImage(tags, new AndroidVersion(apiLevel), hasPlayStore);
+    }
+
+    @NonNull
+    private static ISystemImage mockImage(
+            @NonNull List<IdDisplay> tags, @NonNull AndroidVersion version, boolean hasPlayStore) {
         ISystemImage image = Mockito.mock(ISystemImage.class);
         Mockito.when(image.getTags()).thenReturn(tags);
-        Mockito.when(image.getAndroidVersion()).thenReturn(new AndroidVersion(apiLevel));
+        Mockito.when(image.getAndroidVersion()).thenReturn(version);
 
         Mockito.when(image.hasPlayStore()).thenReturn(hasPlayStore);
 

@@ -17,6 +17,7 @@
 package com.android.sdklib.devices;
 
 import com.android.annotations.NonNull;
+import com.android.sdklib.AndroidApiLevel;
 
 import java.util.Collection;
 import java.util.EnumSet;
@@ -25,8 +26,9 @@ import java.util.Objects;
 import java.util.Set;
 
 public class Software {
-    private int mMinSdkLevel = 0;
-    private int mMaxSdkLevel = Integer.MAX_VALUE;
+    private AndroidApiLevel mMinAndroidApiLevel = new AndroidApiLevel(0, 0);
+    private AndroidApiLevel mMaxAndroidApiLevel =
+            new AndroidApiLevel(Integer.MAX_VALUE, Integer.MAX_VALUE);
     private boolean mPlayStoreEnabled = false;
     private boolean mLiveWallpaperSupport;
 
@@ -36,19 +38,35 @@ public class Software {
     private boolean mStatusBar;
 
     public int getMinSdkLevel() {
-        return mMinSdkLevel;
+        return mMinAndroidApiLevel.getMajorVersion();
     }
 
     public void setMinSdkLevel(int sdkLevel) {
-        mMinSdkLevel = sdkLevel;
+        mMinAndroidApiLevel = new AndroidApiLevel(sdkLevel);
+    }
+
+    public AndroidApiLevel getMinAndroidApiLevel() {
+        return mMinAndroidApiLevel;
+    }
+
+    public void setMinAndroidApiLevel(AndroidApiLevel version) {
+        mMinAndroidApiLevel = version;
     }
 
     public int getMaxSdkLevel() {
-        return mMaxSdkLevel;
+        return mMaxAndroidApiLevel.getMajorVersion();
     }
 
     public void setMaxSdkLevel(int sdkLevel) {
-        mMaxSdkLevel = sdkLevel;
+        mMaxAndroidApiLevel = new AndroidApiLevel(sdkLevel);
+    }
+
+    public AndroidApiLevel getMaxAndroidApiLevel() {
+        return mMaxAndroidApiLevel;
+    }
+
+    public void setMaxAndroidApiLevel(AndroidApiLevel version) {
+        mMaxAndroidApiLevel = version;
     }
 
     public boolean isPlayStoreEnabled() {
@@ -111,8 +129,8 @@ public class Software {
 
     public Software deepCopy() {
         Software s = new Software();
-        s.setMinSdkLevel(getMinSdkLevel());
-        s.setMaxSdkLevel(getMaxSdkLevel());
+        s.setMinAndroidApiLevel(getMinAndroidApiLevel());
+        s.setMaxAndroidApiLevel(getMaxAndroidApiLevel());
         s.setLiveWallpaperSupport(hasLiveWallpaperSupport());
         s.addAllBluetoothProfiles(getBluetoothProfiles());
         s.setGlVersion(getGlVersion());
@@ -131,8 +149,8 @@ public class Software {
         }
 
         Software sw = (Software) o;
-        return Objects.equals(mMinSdkLevel, sw.mMinSdkLevel)
-                && Objects.equals(mMaxSdkLevel, sw.mMaxSdkLevel)
+        return Objects.equals(mMinAndroidApiLevel, sw.mMinAndroidApiLevel)
+                && Objects.equals(mMaxAndroidApiLevel, sw.mMaxAndroidApiLevel)
                 && Objects.equals(mLiveWallpaperSupport, sw.mLiveWallpaperSupport)
                 && Objects.equals(mBluetoothProfiles, sw.mBluetoothProfiles)
                 && Objects.equals(mGlVersion, sw.mGlVersion)
@@ -144,8 +162,8 @@ public class Software {
     /** A stable hash across JVM instances */
     public int hashCode() {
         return Objects.hash(
-                mMinSdkLevel,
-                mMaxSdkLevel,
+                mMinAndroidApiLevel,
+                mMaxAndroidApiLevel,
                 mLiveWallpaperSupport,
                 mBluetoothProfiles,
                 mGlVersion,
@@ -156,10 +174,10 @@ public class Software {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Software <mMinSdkLevel=");
-        sb.append(mMinSdkLevel);
-        sb.append(", mMaxSdkLevel=");
-        sb.append(mMaxSdkLevel);
+        sb.append("Software <mMinAndroidApiLevel=");
+        sb.append(mMinAndroidApiLevel);
+        sb.append(", mMaxAndroidApiLevel=");
+        sb.append(mMaxAndroidApiLevel);
         sb.append(", mLiveWallpaperSupport=");
         sb.append(mLiveWallpaperSupport);
         sb.append(", mBluetoothProfiles=");

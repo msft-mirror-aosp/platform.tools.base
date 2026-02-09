@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.ScreenOrientation;
 import com.android.resources.ScreenRound;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.SystemImageTags;
 
 import com.google.common.collect.ImmutableList;
@@ -205,18 +206,23 @@ public final class Device {
         return mDefaultState;
     }
 
+    @Nullable
+    public Software getSoftware(int apiVersion) {
+        return getSoftware(new AndroidApiLevel(apiVersion));
+    }
+
     /**
      * Returns the software configuration for the given API version.
      *
-     * @param apiVersion
-     *            The API version requested.
-     * @return The Software instance for the requested API version or null if
-     *         the API version is unsupported for this device.
+     * @param apiVersion The API version requested.
+     * @return The Software instance for the requested API version or null if the API version is
+     *     unsupported for this device.
      */
     @Nullable
-    public Software getSoftware(int apiVersion) {
+    public Software getSoftware(@NonNull AndroidApiLevel apiVersion) {
         for (Software s : mSoftware) {
-            if (apiVersion >= s.getMinSdkLevel() && apiVersion <= s.getMaxSdkLevel()) {
+            if (apiVersion.compareTo(s.getMinAndroidApiLevel()) >= 0
+                    && apiVersion.compareTo(s.getMaxAndroidApiLevel()) <= 0) {
                 return s;
             }
         }
