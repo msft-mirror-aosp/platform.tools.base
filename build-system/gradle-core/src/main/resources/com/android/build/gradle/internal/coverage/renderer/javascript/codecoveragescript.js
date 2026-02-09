@@ -132,6 +132,7 @@ const CoverageReportApp = {
             viewModeDropdown: document.getElementById('view-mode-dropdown'),
             viewModeList: document.getElementById('view-mode-list'),
             searchInput: document.getElementById('search-input'),
+            searchClearBtn: document.getElementById('search-clear-btn'),
             viewToggles: document.getElementById('view-toggles'),
             flatViewControls: document.getElementById('flat-view-controls'),
             tableHeaders: document.getElementById('table-headers'),
@@ -268,6 +269,23 @@ const CoverageReportApp = {
         this.elements.classFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'class'));
         this.elements.variantFilterList.addEventListener('change', this.handleVariantSelection.bind(this));
         this.elements.viewModeList.addEventListener('click', this.handleViewModeChange.bind(this));
+        this.elements.searchInput.addEventListener('input', () => {
+            const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+            this.state.filters.search = searchTerm;
+            if (searchTerm.length > 0) {
+                this.elements.searchClearBtn.classList.remove('hidden');
+            } else {
+                this.elements.searchClearBtn.classList.add('hidden');
+            }
+            this.render();
+        });
+        this.elements.searchClearBtn.addEventListener('click', () => {
+            this.elements.searchInput.value = '';
+            this.state.filters.search = '';
+            this.elements.searchClearBtn.classList.add('hidden');
+            this.render();
+            this.elements.searchInput.focus();
+        });
     },
 
     handleVariantSelection(e) {
