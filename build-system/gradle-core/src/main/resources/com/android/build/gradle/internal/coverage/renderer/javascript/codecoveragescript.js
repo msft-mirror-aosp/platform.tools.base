@@ -68,6 +68,8 @@ const App = {
     showSourceView(classData, context) {
         document.getElementById('report-view').style.display = 'none';
         document.getElementById('source-view').style.display = 'block';
+        document.getElementById('report-view-controls').classList.add('hidden');
+        document.getElementById('source-view-controls').classList.remove('hidden');
 
         SourceViewApp.loadAndRender(classData, context);
     },
@@ -75,6 +77,8 @@ const App = {
     showReportView() {
         document.getElementById('source-view').style.display = 'none';
         document.getElementById('report-view').style.display = 'block';
+        document.getElementById('source-view-controls').classList.add('hidden');
+        document.getElementById('report-view-controls').classList.remove('hidden');
     }
 }
 

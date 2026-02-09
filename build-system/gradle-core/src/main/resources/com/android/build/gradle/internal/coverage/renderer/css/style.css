@@ -349,6 +349,26 @@ a.breadcrumb-link {
 a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: underline; }
 .breadcrumb-current { color: var(--text-darkest); font-weight: 500; }
 
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--border-interactive);
+    border-radius: 0.375rem;
+    background-color: var(--bg-card);
+    font-weight: 500;
+    color: var(--text-dark);
+    transition: background-color 0.2s;
+}
+.action-btn:hover {
+    background-color: var(--bg-hover);
+}
+.action-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 /* --- SOURCE VIEW --- */
 
 #source-breadcrumbs {
@@ -356,6 +376,9 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     margin-top: 1rem;
     margin-bottom: 1rem;
     padding-left: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .source-grid {
