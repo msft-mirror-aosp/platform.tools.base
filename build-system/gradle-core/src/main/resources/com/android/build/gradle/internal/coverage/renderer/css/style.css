@@ -329,6 +329,26 @@ tbody tr:hover { background-color: var(--bg-selected) !important; }
 .collapsible-arrow.open { transform: rotate(90deg); }
 .invisible { visibility: hidden; }
 
+/* --- BREADCRUMBS --- */
+
+#flat-breadcrumbs {
+  margin-bottom: 1rem;
+}
+
+breadcrumb-separator { color: var(--text-muted); }
+
+a.breadcrumb-link {
+    color: var(--text-blue-600);
+    text-decoration: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
+    transition: background-color 0.2s;
+}
+
+a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: underline; }
+.breadcrumb-current { color: var(--text-darkest); font-weight: 500; }
+
 /* --- SOURCE VIEW --- */
 
 #source-breadcrumbs {

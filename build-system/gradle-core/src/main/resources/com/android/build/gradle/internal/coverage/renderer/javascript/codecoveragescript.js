@@ -134,6 +134,7 @@ const CoverageReportApp = {
             searchInput: document.getElementById('search-input'),
             searchClearBtn: document.getElementById('search-clear-btn'),
             viewToggles: document.getElementById('view-toggles'),
+            flatBreadcrumbs: document.getElementById('flat-breadcrumbs'),
             flatViewControls: document.getElementById('flat-view-controls'),
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
@@ -262,6 +263,7 @@ const CoverageReportApp = {
         this.elements.flatViewControls.addEventListener('click', this.handleViewToggle.bind(this));
         this.elements.coverageData.addEventListener('click', this.handleRowClick.bind(this));
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
+        this.elements.flatBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
 
         this.elements.testSuiteFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'testSuite'));
         this.elements.moduleFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'module'));
@@ -350,17 +352,51 @@ const CoverageReportApp = {
         }
     },
 
-    updateViewToggles() {
-        const { currentHierarchy, viewMode } = this.state;
-        const testSuitesButton = this.elements.flatViewControls.querySelector('[data-view="testSuites"]');
-
-        if (currentHierarchy === 'tests' && viewMode === 'flat') {
-            testSuitesButton.style.display = 'inline-block';
+    renderBreadcrumbs() {
+        if(this.state.viewMode !== 'flat') {
+            this.elements.flatBreadcrumbs.innerHTML = '';
+            return;
+        }
+        const { selectedModule, selectedPackage } = this.state; let html = '';
+        // "Project" is the root link
+        if(selectedModule) {
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
         } else {
-            testSuitesButton.style.display = 'none';
-            if (this.state.currentView === 'testSuites') {
-                this.state.currentView = 'packages'; // Fallback view
+            html += `<span class="breadcrumb-current">Project</span>`;
+        }
+        // Module level
+        if(selectedModule) {
+            html += `<span class="breadcrumb-separator">/</span>`;
+            if(selectedPackage) {
+                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${selectedModule}</a>`;
+            } else {
+                html += `<span class="breadcrumb-current">${selectedModule}</span>`;
             }
+        }
+        // Package level
+        if(selectedPackage) {
+            html += `<span class="breadcrumb-separator">/</span>`;
+            html += `<span class="breadcrumb-current">${selectedPackage}</span>`;
+        }
+        this.elements.flatBreadcrumbs.innerHTML = html;
+    },
+
+    handleBreadcrumbClick(e) {
+        const link = e.target.closest('a[data-action]');
+        if(!link) return;
+        e.preventDefault();
+        const action = link.dataset.action;
+        switch(action) {
+            case 'go-to-modules':
+                this.state.currentView = 'modules';
+                this.resetSelection();
+                this.render();
+                break;
+            case 'go-to-packages':
+                this.state.currentView = 'packages';
+                this.state.selectedPackage = null;
+                this.render();
+                break;
         }
     },
 
@@ -481,7 +517,7 @@ const CoverageReportApp = {
     },
 
     handleFlatRowClick(td) {
-        const { name, type, moduleName, testSuiteName } = td.dataset;
+        const { name, type, moduleName } = td.dataset;
         if (type === 'module') {
             this.state.selectedModule = name;
             this.state.currentView = 'packages';
@@ -520,15 +556,12 @@ const CoverageReportApp = {
 
     resetSelection() {
         this.state.selectedModule = null;
-        this.state.selectedTestSuite = null;
         this.state.selectedPackage = null;
     },
 
     getSortedData(data) {
         const { by, order } = this.state.sort;
         if (!by) return data;
-
-        const getNestedValue = (obj, path) => path.split('.').reduce((acc, part) => acc && acc[part], obj);
 
         return [...data].sort((a, b) => {
             let valueA, valueB;
@@ -560,6 +593,7 @@ const CoverageReportApp = {
 
     render() {
         this.updateActiveTabs();
+        this.renderBreadcrumbs();
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
@@ -614,30 +648,6 @@ const CoverageReportApp = {
 
     getFilteredData() {
         const { viewMode, currentView, selectedModule, selectedPackage, filters } = this.state;
-        let modulesSource = this.fullReport.modules;
-
-        if (filters.module !== 'all') {
-            modulesSource = modulesSource.filter(m => m.name === filters.module);
-        }
-
-        if (filters.package !== 'all') {
-            modulesSource = modulesSource.map(module => {
-                const filteredPackages = (module.packages || []).filter(p => p.name === filters.package);
-                return { ...module, packages: filteredPackages };
-            }).filter(m => m.packages.length > 0);
-        }
-
-        if (filters.class !== 'all') {
-            modulesSource = modulesSource.map(module => {
-                const filteredPackages = (module.packages || []).map(pkg => {
-                    const filteredClasses = (pkg.classes || []).filter(c => c.name === filters.class);
-                    return { ...pkg, classes: filteredClasses };
-                }).filter(p => p.classes.length > 0);
-                return { ...module, packages: filteredPackages };
-            }).filter(m => m.packages.length > 0);
-        }
-
-        const searchedModules = this.filterHierarchicalData(modulesSource, filters.search);
 
         const getEffectiveCoverage = (item) => {
             if (!item.testSuiteCoverages) return [];
@@ -654,36 +664,68 @@ const CoverageReportApp = {
             return newItem;
         };
 
-        let data;
-        if (viewMode === 'tree') {
-            data = searchedModules.map(m => {
-                const moduleWithCoverage = addEffectiveCoverage(m, 'module');
-                moduleWithCoverage.packages = (m.packages || []).map(p => {
-                    const pkgWithCoverage = addEffectiveCoverage(p, 'package');
-                    pkgWithCoverage.classes = (p.classes || []).map(c => addEffectiveCoverage(c, 'class'));
-                    return pkgWithCoverage;
-                });
-                return moduleWithCoverage;
+        let hierarchicalData = this.fullReport.modules.map(m => {
+            const moduleWithCoverage = addEffectiveCoverage(m, 'module');
+            moduleWithCoverage.packages = (m.packages || []).map(p => {
+                const pkgWithCoverage = addEffectiveCoverage(p, 'package');
+                pkgWithCoverage.classes = (p.classes || []).map(c => addEffectiveCoverage(c, 'class'));
+                return pkgWithCoverage;
             });
-        } else {
-            const allPackages = searchedModules.flatMap(m =>
-                (m.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: m.name }))
-            );
-            const allClasses = searchedModules.flatMap(m =>
-                (m.packages || []).flatMap(p =>
-                    (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: m.name }))
-                )
-            );
-            const allModules = searchedModules.map(m => addEffectiveCoverage(m, 'module'));
+            return moduleWithCoverage;
+        });
 
-            if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule);
-            else if (selectedModule) data = allPackages.filter(p => p.moduleName === selectedModule);
-            else if (currentView === 'packages') data = allPackages;
-            else if (currentView === 'classes') data = allClasses;
-            else data = allModules;
+        if (filters.search) {
+            hierarchicalData = this.filterHierarchicalData(hierarchicalData, filters.search);
         }
 
-        return data;
+        if (filters.module !== 'all') {
+            hierarchicalData = hierarchicalData.filter(m => m.name === filters.module);
+        }
+        if (filters.package !== 'all') {
+            hierarchicalData = hierarchicalData.map(m => ({
+                ...m,
+                packages: m.packages.filter(p => p.name === filters.package)
+            })).filter(m => m.packages.length > 0);
+        }
+        if (filters.class !== 'all') {
+            hierarchicalData = hierarchicalData.map(m => ({
+                ...m,
+                packages: m.packages.map(p => ({
+                    ...p,
+                    classes: p.classes.filter(c => c.name === filters.class)
+                })).filter(p => p.classes.length > 0)
+            })).filter(m => m.packages.length > 0);
+        }
+        if (viewMode === 'tree') {
+            return hierarchicalData;
+        }
+
+        let flatData;
+
+        if (selectedPackage) {
+            const module = hierarchicalData.find(m => m.name === selectedModule);
+            const pkg = module?.packages.find(p => p.name === selectedPackage);
+            flatData = (pkg?.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: pkg.name, moduleName: module.name }));
+        } else if (selectedModule) {
+            const module = hierarchicalData.find(m => m.name === selectedModule);
+            flatData = (module?.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: module.name }));
+        } else {
+            if (currentView === 'packages') {
+                flatData = hierarchicalData.flatMap(m =>
+                    (m.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: m.name }))
+                );
+            } else if (currentView === 'classes') {
+                flatData = hierarchicalData.flatMap(m =>
+                    (m.packages || []).flatMap(p =>
+                        (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: m.name }))
+                    )
+                );
+            } else {
+                flatData = hierarchicalData;
+            }
+        }
+
+        return flatData;
     },
 
     updateHeaderStats(dataToRender) {
@@ -712,7 +754,7 @@ const CoverageReportApp = {
     },
 
     renderTable(dataToRender) {
-        this.renderHeaders(dataToRender);
+        this.renderHeaders();
         if (this.state.viewMode === 'tree') {
             this.renderTreeRows(dataToRender);
         } else {
@@ -763,7 +805,7 @@ const CoverageReportApp = {
         };
     },
 
-    renderHeaders(data) {
+    renderHeaders() {
         const { viewMode, currentView, filters, sort } = this.state;
         const topHeader = document.createElement('tr');
         topHeader.className = "border-b border-gray-200";
@@ -806,6 +848,7 @@ const CoverageReportApp = {
         this.elements.tableHeaders.appendChild(topHeader);
         this.elements.tableHeaders.appendChild(subHeader);
     },
+
     renderTreeRows(modules) {
         const isSearching = !!this.state.filters.search;
 
@@ -841,11 +884,7 @@ const CoverageReportApp = {
         let html = modules.map(module => {
             let moduleContext = { moduleName: module.name };
             let childrenHtml = (module.packages || []).map(pkg => {
-                let testSuiteNameForCtx = '';
-                if (this.state.filters.testSuite !== 'Aggregated' && module.testSuites && module.testSuites.length > 0) {
-                     testSuiteNameForCtx = module.testSuites[0].name;
-                }
-                let packageContext = { ...moduleContext, packageName: pkg.name, testSuiteName: testSuiteNameForCtx };
+                let packageContext = { ...moduleContext, packageName: pkg.name };
                 return renderRow(pkg, 1, 'package', module.name, packageContext) +
                     (pkg.classes || []).map(cls => renderRow(cls, 2, 'class', pkg.name, packageContext)).join('');
             }).join('');
@@ -878,8 +917,8 @@ const CoverageReportApp = {
                     nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
                     nameCell += `<td class="py-3 px-6">${item.moduleName || ''}</td>`;
                     break;
-                default:
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                default: // modules
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.name}">${item.name}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');
