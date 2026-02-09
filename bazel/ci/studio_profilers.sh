@@ -11,8 +11,8 @@ BUILD_NUMBER="${BUILD_NUMBER:-SNAPSHOT}"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly ROOT_DIR="$(realpath "${SCRIPT_DIR}/../../../..")"
 
-# Gradle needs JAVA_HOME.
-export JAVA_HOME="${ROOT_DIR}/prebuilts/studio/jdk/jdk17/linux/"
+# Gradle needs JAVA_HOME that points to a JDK 21 (jbrjdk-next).
+export JAVA_HOME="${ROOT_DIR}/prebuilts/studio/jdk/jbrjdk-next/linux/"
 
 # Sherlock's Gradle build invokes Python sub-processes.
 export PYTHON3_DIR="${ROOT_DIR}/prebuilts/python/linux-x86/bin/"
