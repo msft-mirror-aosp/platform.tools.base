@@ -68,11 +68,11 @@ import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
-import com.android.sdklib.BuildToolInfo;
 import com.android.tools.utp.gradle.api.EmulatorControlConfig;
 import com.android.tools.utp.gradle.api.UtpDependencies;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -613,10 +613,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();
 
-    @InputFile
-    @PathSensitive(PathSensitivity.ABSOLUTE)
-    public abstract RegularFileProperty getAaptExecutable();
-
     public static class CreationAction
             extends VariantTaskCreationAction<
                     DeviceProviderInstrumentTestTask, InstrumentedTestCreationConfig> {
@@ -829,14 +825,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
             SdkComponentsKt.initialize(
                     task.getTestRunnerFactory().getBuildTools(), task, creationConfig);
-
-            task.getAaptExecutable().fileProvider(
-            task.getTestRunnerFactory().getSdkBuildService().flatMap((it) -> it.sdkLoader(
-                    task.getTestRunnerFactory().getBuildTools().getCompileSdkVersion(),
-                    task.getTestRunnerFactory().getBuildTools().getBuildToolsRevision()
-            ).getBuildToolInfoProvider()).map(
-                    (it) -> new File(it.getPath(BuildToolInfo.PathId.AAPT))));
-            task.getAaptExecutable().disallowChanges();
 
             task.getTestRunnerFactory()
                     .getExecutionEnum()
