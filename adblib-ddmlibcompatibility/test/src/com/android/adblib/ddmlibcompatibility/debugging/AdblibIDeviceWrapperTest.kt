@@ -1020,10 +1020,18 @@ class AdblibIDeviceWrapperTest {
     sdk: AndroidApiLevel = AndroidApiLevel(30),
     delayStdout: Duration = Duration.ZERO,
   ): Pair<ConnectedDevice, DeviceState> {
+    // Connect a fake device to the server and wait for it to come online.
     val fakeDevice = fakeAdb.connectDevice(serialNumber, "test1", "test2", "model", sdk, DeviceState.HostConnectionType.USB)
-    fakeDevice.deviceStatus = deviceStatus
     fakeDevice.delayStdout = delayStdout
-    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, deviceStatus)
+    // Ensure the initialization sequence OFFLINE -> ONLINE started in
+    // `fakeAdb.connectDevice` is complete, and we have a stable handle to the ConnectedDevice.
+    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, DeviceState.DeviceStatus.ONLINE)
+
+    if (deviceStatus != DeviceState.DeviceStatus.ONLINE) {
+      fakeDevice.deviceStatus = deviceStatus
+      connectedDevice.waitForDeviceState(deviceStatus)
+    }
+
     return Pair(connectedDevice, fakeDevice)
   }
 
@@ -1034,9 +1042,13 @@ class AdblibIDeviceWrapperTest {
   ): ConnectedDevice {
     val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
 
-    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
-    connectedDevice.waitUntilState(targetState)
+    connectedDevice.waitForDeviceState(deviceStatus)
     return connectedDevice
+  }
+
+  private suspend fun ConnectedDevice.waitForDeviceState(deviceStatus: DeviceState.DeviceStatus) {
+    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
+    waitUntilState(targetState)
   }
 
   private fun createAdblibIDeviceWrapper(connectedDevice: ConnectedDevice, bridge: AndroidDebugBridge): AdblibIDeviceWrapper {
