@@ -166,10 +166,6 @@ public class HardwareConfigHelper {
                 mDevice.getDefaultHardware().getButtonType() == ButtonType.SOFT);
     }
 
-    /** Returns true if the render size has been overridden. */
-    public boolean isRenderSizeOverridden() {
-        return mOverrideRenderWidth != -1 || mOverrideRenderHeight != -1;
-    }
 
     /**
      * Returns true if the given device is a generic device
