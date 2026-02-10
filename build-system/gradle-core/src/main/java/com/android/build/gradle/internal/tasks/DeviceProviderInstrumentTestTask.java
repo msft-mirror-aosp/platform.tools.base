@@ -56,7 +56,6 @@ import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
-import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestUtilsKt;
 import com.android.build.gradle.options.BooleanOption;
@@ -267,42 +266,28 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Override
     protected void doTaskAction() throws DeviceException, IOException, ExecutionException {
-        if (getRunWithBuiltInPlatform().get()) {
-            AndroidTestUtilsKt.runAndroidTest(
-                    getWorkerExecutor(),
-                    getBuildTools().adbExecutable(),
-                    getAaptExecutable(),
-                    getDeviceProviderFactory(),
-                    getTestData().get(),
-                    getBuddyApks(),
-                    getDeviceProviderFactory().getTimeOutInMs(),
-                    getInstallOptions(),
-                    getTestRunnerFactory().getKeepInstalledApks().map((it) -> !it)
-            );
-        } else {
-            run(
-                    getDeviceProviderFactory(),
-                    getBuddyApks().getFiles(),
-                    getResultsDir().get().getAsFile(),
-                    getAdditionalTestOutputEnabled().get(),
-                    getAdditionalTestOutputDir().get().getAsFile(),
-                    getCoverageDirectory().get().getAsFile(),
-                    getTestRunnerFactory(),
-                    getReportsDir().getAsFile().get(),
-                    getCodeCoverageEnabled().get(),
-                    getAnalyticsService().get(),
-                    getIgnoreFailures(),
-                    getLogger(),
-                    getTestData().get(),
-                    getTargetSerials(),
-                    getProjectPath().get(),
-                    getInstallOptions().getOrElse(ImmutableList.of()),
-                    testsFound(),
-                    getWorkerExecutor(),
-                    getObjectFactory(),
-                    getExecutorServiceAdapter(),
-                    dependencies);
-        }
+        run(
+                getDeviceProviderFactory(),
+                getBuddyApks().getFiles(),
+                getResultsDir().get().getAsFile(),
+                getAdditionalTestOutputEnabled().get(),
+                getAdditionalTestOutputDir().get().getAsFile(),
+                getCoverageDirectory().get().getAsFile(),
+                getTestRunnerFactory(),
+                getReportsDir().getAsFile().get(),
+                getCodeCoverageEnabled().get(),
+                getAnalyticsService().get(),
+                getIgnoreFailures(),
+                getLogger(),
+                getTestData().get(),
+                getTargetSerials(),
+                getProjectPath().get(),
+                getInstallOptions().getOrElse(ImmutableList.of()),
+                testsFound(),
+                getWorkerExecutor(),
+                getObjectFactory(),
+                getExecutorServiceAdapter(),
+                dependencies);
     }
 
     private static void run(
@@ -624,9 +609,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @PathSensitive(PathSensitivity.ABSOLUTE)
     @Optional
     public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
-
-    @Input
-    public abstract Property<Boolean> getRunWithBuiltInPlatform();
 
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();
@@ -988,9 +970,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                                                         .RUNTIME_CLASSPATH));
             }
             task.getRClasses().disallowChanges();
-            task.getRunWithBuiltInPlatform().set(
-                    projectOptions.getProvider(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM));
-            task.getRunWithBuiltInPlatform().disallowChanges();
 
             SdkComponentsKt.initialize(
                     task.getBuildTools(),
