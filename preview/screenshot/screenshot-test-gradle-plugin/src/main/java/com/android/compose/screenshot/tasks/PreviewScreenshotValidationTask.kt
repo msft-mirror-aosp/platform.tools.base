@@ -87,7 +87,10 @@ abstract class PreviewScreenshotValidationTask : Test() {
         }
       )
 
-      testEngineInput.copyJvmArgsTo(::jvmArgs)
+      val configFile = temporaryDir.resolve("preview_screenshot_config.properties")
+      testEngineInput.saveToPropertiesFile(configFile)
+      testEngineInput.configureCommonJvmArgs(::jvmArgs)
+      jvmArgs("-DPreviewScreenshotTestEngineInput.configFile=${configFile.absolutePath}")
       FileUtils.cleanOutputDir(reports.junitXml.outputLocation.get().asFile)
 
       try {
