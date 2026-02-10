@@ -244,7 +244,7 @@ enum class BooleanOption(
     "android.experimental.enableJavaResourceOptimizations",
     false,
     FeatureStage.Experimental,
-    FutureStage(Version.VERSION_10_0, true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+    FutureStage(Version.VERSION_10_0, false, FeatureStage.SoftlyEnforced(VERSION_10_0)),
   ),
   /**
    * Disables all constraints overriding all the other related flags.
