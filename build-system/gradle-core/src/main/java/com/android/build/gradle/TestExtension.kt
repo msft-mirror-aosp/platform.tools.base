@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.dsl.InternalTestExtension
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.TestExtensionImpl
+import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.build.gradle.options.BooleanOption
@@ -77,6 +78,12 @@ constructor(
    */
   val applicationVariants: DefaultDomainObjectSet<ApplicationVariant>
     get() {
+      dslServices.deprecationReporter.reportDeprecatedApi( // TODO(b/482133164): Investigate using StackWalker for better blame attribution.
+        newApiElement = "AndroidComponentsExtension",
+        oldApiElement = "applicationVariants",
+        url = "http://developer.android.com/build/r/new-dsl",
+        deprecationTarget = DeprecationReporter.DeprecationTarget.LEGACY_VARIANT_API,
+      )
       recordOldVariantApiUsage()
       return applicationVariantList as DefaultDomainObjectSet<ApplicationVariant>
     }

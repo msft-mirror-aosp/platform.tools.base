@@ -54,6 +54,11 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
       )
   }
 
+  /**
+   * Callback designed to trigger multiple obsolete API warnings during evaluation:
+   * 1. Accessing [BaseAppModuleExtension.applicationVariants] (Legacy Variant API)
+   * 2. Accessing [ApplicationVariant.javaCompile] (Legacy task access)
+   */
   class LegacyCallback : LegacyApplicationCallback {
     override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
       extension.applicationVariants.all { variant -> println(variant.javaCompile.name) }
@@ -82,9 +87,17 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
         Truth.assertThat(syncIssues).hasSize(0)
       }
       "Java" -> {
-        Truth.assertThat(syncIssues).hasSize(1)
-        val warningMsg = syncIssues.first().message
-        Truth.assertThat(warningMsg)
+        Truth.assertThat(syncIssues).hasSize(2)
+
+        val messages = syncIssues.map { it.message }
+
+        val variantApiWarning = messages.find { it.contains("API 'applicationVariants' is obsolete") }
+        Truth.assertThat(variantApiWarning).isNotNull()
+        Truth.assertThat(variantApiWarning).contains("AndroidComponentsExtension")
+
+        val taskAccessWarning = messages.find { it.contains("API 'variant.getJavaCompile()' is obsolete") }
+        Truth.assertThat(taskAccessWarning).isNotNull()
+        Truth.assertThat(taskAccessWarning)
           .contains(
             "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
               "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
@@ -113,6 +126,8 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
           ScannerSubject.assertThat(it).doesNotContain("API 'variant.getJavaCompile()' is obsolete")
         }
         "Java" -> {
+          ScannerSubject.assertThat(it).contains("API 'applicationVariants' is obsolete")
+
           ScannerSubject.assertThat(it)
             .contains(
               "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
