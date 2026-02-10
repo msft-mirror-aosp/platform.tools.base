@@ -276,7 +276,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
 
@@ -345,7 +345,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand_throwsIOException_whenInterrupted() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, deviceState) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
     // Introduce a delay to give a thread a chance to get interrupted
@@ -368,7 +368,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand_mapsAdbDeviceFailResponseException_toAdbCommandRejectedException() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     exceptionRule.expect(AdbCommandRejectedException::class.java)
     exceptionRule.expectCause(CoreMatchers.isA(AdbDeviceFailResponseException::class.java))
@@ -383,7 +383,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeRemoteCommandCanHandleAbbExec() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
     val appId = "com.foo.bar.app"
