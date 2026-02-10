@@ -154,8 +154,6 @@ def main():
       ci.run(studio_linux.studio_linux_large)
     case 'studio-linux_very_flaky':
       ci.run(studio_linux.studio_linux_very_flaky)
-    case 'studio-linux-k2':
-      ci.run(studio_linux.studio_linux_k2)
     case 'studio-win':
       ci.run(studio_win.studio_win)
     case 'studio-mac':
