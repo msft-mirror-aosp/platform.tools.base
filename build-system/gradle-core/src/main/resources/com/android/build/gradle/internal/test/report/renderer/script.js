@@ -329,7 +329,7 @@ const TestReportApp = {
 
       html += `
                 <tr class="table-row ${level > 0 ? 'hidden' : ''}" data-id="${uniqueId}" data-parent-id="${parentId}">
-                    <td class="sticky-name">
+                    <td class="sticky-name" title="${node.name}">
                         <div class="tree-toggle" style="padding-left: ${level * 1.0}rem;">
                             ${chevron} ${nameContent}
                         </div>
@@ -359,7 +359,7 @@ const TestReportApp = {
 
     this.elements.resultsData.innerHTML = items.map(item => `
             <tr class="table-row">
-                <td class="sticky-name">
+                <td class="sticky-name" title="${item.name}${item.parent ? ' (' + item.parent + ')' : ''}">
                      <div class="font-medium">${item.name}</div>
                      ${item.parent ? `<div class="text-xs text-gray">${item.parent}</div>` : ''}
                 </td>
