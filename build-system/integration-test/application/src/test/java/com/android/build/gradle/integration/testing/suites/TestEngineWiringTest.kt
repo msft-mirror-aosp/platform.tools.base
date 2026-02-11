@@ -140,6 +140,16 @@ class TestEngineWiringTest(
   }
 
   @Test
+  fun testLoggingRedirection() {
+    rule.build.executor.expectFailure().run("testFirstT1DebugTestSuite")
+
+    val logFile =
+      rule.build.subProject(modulePath).resolve("build/intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt").toFile()
+    Truth.assertThat(logFile.exists()).isTrue()
+    Truth.assertThat(logFile.readText()).contains("JUL getId::called")
+  }
+
+  @Test
   fun testBasicModel() {
     val project = rule.build
     val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()

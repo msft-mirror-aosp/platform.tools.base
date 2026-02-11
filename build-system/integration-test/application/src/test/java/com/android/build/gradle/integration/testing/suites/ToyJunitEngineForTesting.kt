@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
 import java.io.File
+import java.util.logging.Logger
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
@@ -35,8 +36,11 @@ class ToyJunitEngineForTesting : TestEngine {
 
   private val logger = TestEngineLogger(File(inputParams.getInputParameter(TestEngineInputProperty.LOGGING_FILE)))
 
+  private val julLogger = Logger.getLogger(ToyJunitEngineForTesting::class.java.name)
+
   override fun getId(): String {
     logger.info("getId::called\n")
+    julLogger.info("JUL getId::called")
     return "[engine:toy-junit-engine-for-tests]"
   }
 
