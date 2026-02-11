@@ -31,7 +31,6 @@ import java.util.logging.Logger
  * @property adb The [File] pointing to the ADB executable.
  * @property aapt The [File] pointing to the AAPT executable, used for parsing APKs.
  * @property deviceSerial The serial number of the target Android device.
- * @property deviceApiLevel The API level of the target device.
  * @property installTimeoutMs The maximum time to wait for an installation to complete, in milliseconds. A value of 0 means wait
  *   indefinitely.
  * @property logger The logger instance for recording command outputs and warnings.
@@ -41,11 +40,20 @@ class AdbApkInstaller(
   private val adb: File,
   private val aapt: File,
   private val deviceSerial: String,
-  private val deviceApiLevel: Int,
   private val installTimeoutMs: Long,
   private val logger: Logger = Logger.getLogger(AdbApkInstaller::class.java.name),
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
+
+  /** The API level of the target device. */
+  val deviceApiLevel: Int by lazy {
+    val result = runAdbShellCommand(listOf("getprop", "ro.build.version.sdk"))
+    if (result.exitCode == 0) {
+      result.output.trim().toIntOrNull() ?: throw RuntimeException("Failed to parse device API level for $deviceSerial: '${result.output}'")
+    } else {
+      throw RuntimeException("Failed to get device API level for $deviceSerial via ADB (exit code: ${result.exitCode})")
+    }
+  }
 
   companion object {
     private val packageNameRegex = "package:\\sname='(\\S*)'.*$".toRegex()

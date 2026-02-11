@@ -57,29 +57,30 @@ class AdbApkInstallerTest {
 
   /** Creates the test subject with a process builder that uses the mock map. */
   private fun createHelper(deviceApiLevel: Int, installTimeoutMs: Long = 60000L): AdbApkInstaller {
-    return AdbApkInstaller(
-      adb = adb,
-      aapt = aapt,
-      deviceSerial = "test-serial",
-      deviceApiLevel = deviceApiLevel,
-      installTimeoutMs = installTimeoutMs,
-      logger = mockLogger,
-    ) { command ->
-      val commandKey = getCommandKey(command)
-      executedCommands.getOrPut(commandKey) { mutableListOf() }.add(command.joinToString(" "))
-      val processQueue =
-        mockProcessMap[commandKey]
-          ?: throw AssertionError("No mock process found for command key: '$commandKey' (command: ${command.joinToString(" ")})")
-      val process = processQueue.removeFirstOrNull() ?: throw AssertionError("Mock process queue for command key '$commandKey' is empty.")
+    mockCommand("getprop ro.build.version.sdk", exitCode = 0, output = deviceApiLevel.toString())
+    val installer =
+      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = installTimeoutMs, logger = mockLogger) {
+        command ->
+        val commandKey = getCommandKey(command)
+        executedCommands.getOrPut(commandKey) { mutableListOf() }.add(command.joinToString(" "))
+        val processQueue =
+          mockProcessMap[commandKey]
+            ?: throw AssertionError("No mock process found for command key: '$commandKey' (command: ${command.joinToString(" ")})")
+        val process = processQueue.removeFirstOrNull() ?: throw AssertionError("Mock process queue for command key '$commandKey' is empty.")
 
-      mock { on { start() } doReturn process }
-    }
+        mock { on { start() } doReturn process }
+      }
+    // Pre-trigger lazy loads and clear logs for a clean starting state in tests.
+    installer.deviceApiLevel
+    executedCommands.clear()
+    return installer
   }
 
   /** Determines a unique key for a given command list. */
   private fun getCommandKey(command: List<String>): String {
     val commandString = command.joinToString(" ")
     return when {
+      commandString.contains("getprop ro.build.version.sdk") -> "getprop ro.build.version.sdk"
       commandString.contains("aapt dump badging") -> "aapt dump badging"
       commandString.contains("am get-current-user") -> "am get-current-user"
       commandString.contains("settings put global") -> "settings put global"
@@ -267,6 +268,42 @@ class AdbApkInstallerTest {
     val helper = createHelper(deviceApiLevel = 32)
     helper.preInstallationSetup("com.example.target")
     assertThat(executedCommands).isEmpty()
+  }
+
+  @Test
+  fun `deviceApiLevel throws exception on command failure`() {
+    adb = tempFolder.newFile("adb_fail")
+    val installer =
+      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
+        val process =
+          mock<Process> {
+            on { it.exitValue() } doReturn 1
+            on { it.inputStream } doReturn "".byteInputStream()
+            on { it.errorStream } doReturn "error".byteInputStream()
+          }
+        mock { on { start() } doReturn process }
+      }
+
+    val exception = assertFailsWith<RuntimeException> { installer.deviceApiLevel }
+    assertThat(exception.message).contains("Failed to get device API level")
+  }
+
+  @Test
+  fun `deviceApiLevel throws exception on invalid output`() {
+    adb = tempFolder.newFile("adb_invalid")
+    val installer =
+      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
+        val process =
+          mock<Process> {
+            on { it.exitValue() } doReturn 0
+            on { it.inputStream } doReturn "invalid".byteInputStream()
+            on { it.errorStream } doReturn "".byteInputStream()
+          }
+        mock { on { start() } doReturn process }
+      }
+
+    val exception = assertFailsWith<RuntimeException> { installer.deviceApiLevel }
+    assertThat(exception.message).contains("Failed to parse device API level")
   }
 
   @Test

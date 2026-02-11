@@ -19,7 +19,6 @@ package com.android.tools.androidtest.testengine
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ADB_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.APK_INSTALL_OPTIONS
-import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_API_LEVEL
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIAL
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTALL_TIMEOUT_MS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
@@ -45,23 +44,23 @@ data class AndroidTestExecutionContext(val request: ExecutionRequest) : EngineEx
 class AndroidTestConfiguration(request: ExecutionRequest) {
   private val config = request.configurationParameters
 
-  val adb: File = config.get(ADB_PATH).map { File(it) }.orElseThrow { RuntimeException("$ADB_PATH configuration is required") }
-  val aapt: File = config.get(AAPT_PATH).map { File(it) }.orElseThrow { RuntimeException("$AAPT_PATH configuration is required") }
-  val deviceSerial: String = config.get(DEVICE_SERIAL).orElseThrow { RuntimeException("$DEVICE_SERIAL configuration is required") }
-  val deviceApiLevel: Int =
-    config.get(DEVICE_API_LEVEL).map { it.toInt() }.orElseThrow { RuntimeException("$DEVICE_API_LEVEL configuration is required") }
-  val installTimeoutMs: Long = config.get(INSTALL_TIMEOUT_MS).map { it.toLong() }.orElse(0L)
+  private fun get(key: String): java.util.Optional<String> {
+    return config.get(key).or { java.util.Optional.ofNullable(System.getProperty(key)) }
+  }
 
-  val testedApks: List<File> = config.get(TESTED_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val testApks: List<File> = config.get(TEST_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val testUtilApks: List<File> = config.get(TEST_UTIL_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val apkInstallOptions: List<String> = config.get(APK_INSTALL_OPTIONS).map { it.split(",").map { opt -> opt.trim() } }.orElse(listOf())
-  val uninstallApksAfterTests: Boolean = config.get(UNINSTALL_AFTER_TESTS).map { it.toBoolean() }.orElse(true)
+  val adb: File = get(ADB_PATH).map { File(it) }.orElseThrow { RuntimeException("$ADB_PATH configuration is required") }
+  val aapt: File = get(AAPT_PATH).map { File(it) }.orElseThrow { RuntimeException("$AAPT_PATH configuration is required") }
+  val deviceSerial: String = get(DEVICE_SERIAL).orElseThrow { RuntimeException("$DEVICE_SERIAL configuration is required") }
+  val installTimeoutMs: Long = get(INSTALL_TIMEOUT_MS).map { it.toLong() }.orElse(0L)
+
+  val testedApks: List<File> = get(TESTED_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
+  val testApks: List<File> = get(TEST_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
+  val testUtilApks: List<File> = get(TEST_UTIL_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
+  val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS).map { it.split(",").map { opt -> opt.trim() } }.orElse(listOf())
+  val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS).map { it.toBoolean() }.orElse(true)
 
   val instrumentationRunnerClass: String =
-    config.get(INSTRUMENTATION_RUNNER_CLASS).orElseThrow { RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required") }
+    get(INSTRUMENTATION_RUNNER_CLASS).orElseThrow { RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required") }
   val instrumentationTargetPackageId: String =
-    config.get(INSTRUMENTATION_TARGET_PACKAGE_ID).orElseThrow {
-      RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
-    }
+    get(INSTRUMENTATION_TARGET_PACKAGE_ID).orElseThrow { RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required") }
 }
