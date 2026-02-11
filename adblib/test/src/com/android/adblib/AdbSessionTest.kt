@@ -33,13 +33,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -346,7 +344,7 @@ class AdbSessionTest {
       }
 
       // Every other collector throws an exception after receiving the first list
-      suspend fun launchCollector(index: Int): Job {
+      fun launchCollector(index: Int): Job {
         return launch {
           try {
             flow.collect { trackedDeviceList ->
@@ -492,113 +490,6 @@ class AdbSessionTest {
 
     // Assert
     Assert.assertEquals(0, deviceInfoList.size)
-  }
-
-  @Test
-  fun testDeviceCoroutineScopeWorksForOnlineDevice(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
-    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
-
-    // Act
-    var deviceCoroutineIsRunning = false
-    // Wait for device to show up in device tracker
-    session.hostServices.trackDevices().first { it.size == 1 }
-
-    // Create coroutine scope for device
-    val deviceScope = session.createDeviceScope(deviceSelector)
-    val job =
-      deviceScope.launch {
-        deviceCoroutineIsRunning = true
-        try {
-          while (true) {
-            delay(20)
-          }
-        } finally {
-          deviceCoroutineIsRunning = false
-        }
-      }
-
-    // Wait for coroutine to start
-    while (!deviceCoroutineIsRunning) {
-      yield()
-    }
-
-    // Disconnect device
-    fakeAdb.disconnectDevice(fakeDevice.deviceId)
-
-    // Wait for coroutine to stop
-    job.join()
-
-    // Assert
-    Assert.assertFalse(deviceCoroutineIsRunning)
-  }
-
-  @Test
-  fun testDeviceCoroutineScopeWorksForDisconnectedDevice(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val deviceSelector = DeviceSelector.fromSerialNumber("1234")
-
-    // Act
-    var deviceCoroutineIsRunning = false
-    // Create coroutine scope for device
-    val deviceScope = session.createDeviceScope(deviceSelector)
-    val job =
-      deviceScope.launch {
-        deviceCoroutineIsRunning = true
-        try {
-          while (true) {
-            delay(20)
-          }
-        } finally {
-          deviceCoroutineIsRunning = false
-        }
-      }
-
-    // Wait for coroutine to stop
-    job.join()
-
-    // Assert
-    Assert.assertFalse(deviceCoroutineIsRunning)
-  }
-
-  @Test
-  fun testDeviceCoroutineScopeIsCancelledWithSessionClose(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
-    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
-
-    // Act
-    var deviceCoroutineIsRunning = false
-    // Create coroutine scope for device
-    val deviceScope = session.createDeviceScope(deviceSelector)
-    val job =
-      deviceScope.launch {
-        deviceCoroutineIsRunning = true
-        try {
-          while (true) {
-            delay(20)
-          }
-        } finally {
-          deviceCoroutineIsRunning = false
-        }
-      }
-
-    // Wait for coroutine to start
-    while (!deviceCoroutineIsRunning) {
-      yield()
-    }
-
-    // Close the session should cancel the device scope
-    session.close()
-
-    // Wait for coroutine to stop
-    job.join()
-
-    // Assert
-    Assert.assertFalse(deviceCoroutineIsRunning)
   }
 
   @Test

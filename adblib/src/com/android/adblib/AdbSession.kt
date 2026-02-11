@@ -29,17 +29,12 @@ import com.android.adblib.utils.WarningsTracker
 import java.time.Duration
 import java.util.Objects
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
 
 /**
  * Provides access to various ADB services (e.g. [AdbHostServices], [AdbDeviceServices]) for a given [AdbSessionHost]. The [close] method
@@ -268,36 +263,6 @@ class TrackedDeviceList(
  */
 fun AdbSession.trackDeviceInfo(device: DeviceSelector): Flow<DeviceInfo> {
   return DeviceInfoTracker(this, device).createFlow()
-}
-
-/**
- * Returns a [CoroutineScope] that can be used to run coroutines that should be cancelled when the given [device] is disconnected (or ADB
- * connection is terminated).
- *
- * The returned scope is also cancelled when the [AdbSession] is [closed][AdbSession.close].
- *
- * The returned [CoroutineScope] uses a [CoroutineContext] with a [SupervisorJob] tied to the [device] lifecycle and a
- * [AdbSessionHost.ioDispatcher].
- *
- * @see [trackDeviceInfo]
- */
-fun AdbSession.createDeviceScope(device: DeviceSelector): CoroutineScope {
-  val session = this
-  val parentJob = session.scope.coroutineContext.job
-  return CoroutineScope(SupervisorJob(parentJob) + session.host.ioDispatcher).also { deviceScope ->
-    // Launch a coroutine that track the device state and cancel the scope
-    // when that device disconnects.
-    deviceScope.launch {
-      try {
-        // Use device info tracking flow
-        session.trackDeviceInfo(device).collect()
-      } finally {
-        val msg = "Device $device has been disconnected, cancelling job"
-        adbLogger(session.host).debug { msg }
-        deviceScope.cancel(CancellationException(msg))
-      }
-    }
-  }
 }
 
 /** Returns the [ConnectedDevicesTracker] associated to this session */
