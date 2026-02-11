@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.options.BooleanOption
 import java.nio.file.Path
 import kotlin.io.path.readText
 import org.gradle.api.Project
@@ -29,23 +30,32 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
 
-/** Test expected publishing output when AGP is used in Kotlin MPP projects. */
-class KotlinMultiplatformPublishingTest {
+/**
+ * Test expected publishing output when AGP is used in Kotlin MPP projects.
+ *
+ * Note: To be removed completely once we drop the support of using non built in kotlin. The test coverage of publishing in KMP is
+ * maintained by [KotlinMultiplatformPublishingTest]
+ */
+class LegacyKotlinMultiplatformPublishingTest {
 
   @get:Rule
   val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":lib") {
+    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().from {
+      androidLibrary {
+        applyPlugin(PluginType.KOTLIN_MPP)
         applyPlugin(PluginType.MAVEN_PUBLISH)
         pluginCallbacks += Callback::class.java
 
         android {
-          namespace = "com.example.lib"
-          minSdk = 24
-        }
+          defaultConfig.minSdk = 24
 
-        group = "com.example"
-        version = "0.1.2"
+          group = "com.example"
+          version = "0.1.2"
+        }
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
       }
     }
 
@@ -64,14 +74,16 @@ class KotlinMultiplatformPublishingTest {
         }
       }
 
-      project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+      val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+
+      kotlin.apply { androidTarget { target -> target.publishAllLibraryVariants() } }
     }
   }
 
   @Test
   fun testKotlinMultiplatform() {
     val build = rule.build
-    val lib = build.kotlinMultiplatformLibrary(":lib")
+    val lib = build.androidLibrary()
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -79,13 +91,15 @@ class KotlinMultiplatformPublishingTest {
 
     val mainModule = lib.buildDir.resolve("testRepo/com/example/lib/0.1.2/lib-0.1.2.module")
     val androidModule = lib.buildDir.resolve("testRepo/com/example/lib-android/0.1.2/lib-android-0.1.2.module")
+    val androidDebugModule = lib.buildDir.resolve("testRepo/com/example/lib-android-debug/0.1.2/lib-android-debug-0.1.2.module")
 
     assertThat(normalizeModuleFile(mainModule)).isEqualTo(getExpectedFile("lib.module"))
     assertThat(normalizeModuleFile(androidModule)).isEqualTo(getExpectedFile("lib-android.module"))
+    assertThat(normalizeModuleFile(androidDebugModule)).isEqualTo(getExpectedFile("lib-android-debug.module"))
   }
 
   private fun getExpectedFile(fileName: String): String {
-    return KotlinMultiplatformPublishingTest::class.java.let { klass ->
+    return LegacyKotlinMultiplatformPublishingTest::class.java.let { klass ->
       klass.getResourceAsStream("${klass.simpleName}/$fileName")!!.reader().use { it.readText().trim() }
     }
   }
