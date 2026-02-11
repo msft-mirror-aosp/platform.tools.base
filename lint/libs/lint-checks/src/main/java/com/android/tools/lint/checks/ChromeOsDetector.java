@@ -306,7 +306,7 @@ public class ChromeOsDetector extends Detector implements XmlScanner {
                         String message =
                                 String.format(
                                         "Permission exists without corresponding hardware `<uses-feature "
-                                                + "android:name=\"%1$s\" required=\"false\">` tag",
+                                                + "android:name=\"%1$s\" android:required=\"false\">` tag",
                                         unsupportedHardwareName);
                         LintFix fix = fix().data(KEY_FEATURE_NAME, unsupportedHardwareName);
                         Incident incident =
