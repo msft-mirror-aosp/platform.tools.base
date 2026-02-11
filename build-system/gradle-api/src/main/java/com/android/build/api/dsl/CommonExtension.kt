@@ -20,6 +20,7 @@ import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
@@ -67,7 +68,7 @@ interface CommonExtension : ExtensionAware {
   val compileOptions: CompileOptions
 
   /** A list of build features that can be enabled or disabled on the Android Project. */
-  val buildFeatures: BuildFeatures
+  @get:HiddenInDefinition val buildFeatures: BuildFeatures
 
   /**
    * Encapsulates all build type configurations for this project.
@@ -82,7 +83,7 @@ interface CommonExtension : ExtensionAware {
    *
    * @see BuildType
    */
-  val buildTypes: NamedDomainObjectContainer<out BuildType>
+  @get:HiddenInDefinition val buildTypes: NamedDomainObjectContainer<out BuildType>
 
   /**
    * Specifies options for the [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
@@ -129,14 +130,18 @@ interface CommonExtension : ExtensionAware {
    *
    * For more information about the properties you can configure in this block, see [Lint].
    */
-  val lint: Lint
+  @get:HiddenInDefinition val lint: Lint
 
   /**
    * Specifies options for the lint tool.
    *
    * For more information about the properties you can configure in this block, see [LintOptions].
    */
-  @Suppress("DEPRECATION") @get:Incubating @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint")) val lintOptions: LintOptions
+  @get:HiddenInDefinition
+  @Suppress("DEPRECATION")
+  @get:Incubating
+  @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint"))
+  val lintOptions: LintOptions
 
   /**
    * Specifies options and rules that determine which files the Android plugin packages into your APK.
@@ -180,7 +185,7 @@ interface CommonExtension : ExtensionAware {
    *
    * @see [ProductFlavor]
    */
-  val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
+  @get:HiddenInDefinition val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
 
   /**
    * Specifies defaults for variant properties that the Android plugin applies to all build variants.
@@ -190,7 +195,7 @@ interface CommonExtension : ExtensionAware {
    *
    * For more information about the properties you can configure in this block, see [DefaultConfig].
    */
-  val defaultConfig: DefaultConfig
+  @get:HiddenInDefinition val defaultConfig: DefaultConfig
 
   /**
    * Encapsulates signing configurations that you can apply to [ ] and [ ] configurations.
@@ -204,7 +209,7 @@ interface CommonExtension : ExtensionAware {
    *
    * @see [ApkSigningConfig]
    */
-  val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
+  @get:HiddenInDefinition val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
 
   /**
    * Specifies options for external native build using [CMake](https://cmake.org/) or
@@ -245,7 +250,7 @@ interface CommonExtension : ExtensionAware {
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
+  @get:HiddenInDefinition val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 
   /**
    * Specifies the names of product flavor dimensions for this project.
@@ -450,6 +455,7 @@ interface CommonExtension : ExtensionAware {
    */
   fun useLibrary(name: String, required: Boolean)
 
+  @get:HiddenInDefinition
   @get:Deprecated(message = "This API will be removed in AGP 7.0, replaced with AndroidComponents::sdkComponents")
   val sdkComponents: SdkComponents
 

@@ -219,6 +219,16 @@ constructor(
       return script.toString()
     }
 
+    private fun generateDclRepoScript(repositories: List<Path>): String {
+      val script = StringBuilder()
+      script.append("repositories {\n")
+      for (repo in repositories) {
+        script.append(mavenSnippetDcl(repo))
+      }
+      script.append("}\n")
+      return script.toString()
+    }
+
     fun mavenSnippet(repo: Path): String {
       return String.format(
         """maven {
@@ -228,6 +238,16 @@ constructor(
     artifact()
   }
  }
+""",
+        repo.toUri().toString(),
+      )
+    }
+
+    fun mavenSnippetDcl(repo: Path): String {
+      return String.format(
+        """maven {
+  url = uri("%s")
+  }
 """,
         repo.toUri().toString(),
       )
@@ -619,6 +639,10 @@ constructor(
     return generateRepoScript(getRepoDirectories())
   }
 
+  private fun generateProjectRepoDclScript(): String {
+    return generateDclRepoScript(getRepoDirectories())
+  }
+
   internal fun getAdditionalMavenRepo(): Path? {
     if (additionalMavenRepo == null) {
       return null
@@ -760,8 +784,10 @@ ext {
   private fun getSettingsFile(projectDir: File): File {
     val settingsGradle = File(projectDir, "settings.gradle")
     val settingsGradleKts = File(projectDir, "settings.gradle.kts")
-
-    return if (settingsGradleKts.exists() && !settingsGradle.exists()) {
+    val settingsGradleDcl = File(projectDir, "settings.gradle.dcl")
+    return if (settingsGradleDcl.exists()) {
+      settingsGradleDcl
+    } else if (settingsGradleKts.exists() && !settingsGradle.exists()) {
       settingsGradleKts
     } else {
       settingsGradle
@@ -1203,6 +1229,9 @@ ext {
    */
   private fun createSettingsFile(settingsFile: File, rootProjectName: String?) {
     var settingsContent = if (settingsFile.exists()) settingsFile.readText() else ""
+    if (settingsContent.isNotEmpty() && !settingsContent.endsWith("\n")) {
+      settingsContent += "\n"
+    }
 
     if (withPluginManagementBlock) {
       val projectParentDir = projectDir.parent
@@ -1234,20 +1263,32 @@ ext {
 
     if (withDependencyManagementBlock) {
       settingsContent +=
-        """
+        if (settingsFile.name.endsWith(".dcl")) {
+          """
+dependencyResolutionManagement {
+    ${generateProjectRepoDclScript()}
+}
 
+                    """
+            .trimIndent()
+        } else
+          """
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     ${generateProjectRepoScript()}
 }
 
                     """
-          .trimIndent()
+            .trimIndent()
     }
-
+    if (settingsFile.name.endsWith(".dcl")) {
+      settingsContent = settingsContent.replace("pluginManagement {", "pluginManagement { ${generateProjectRepoDclScript()}\n")
+    }
     val versionCatalogPath = "${File(projectDir.parent, "versionCatalog.gradle").toURI()}"
     settingsContent +=
-      if (settingsFile.name.endsWith(".kts")) {
+      if (settingsFile.name.endsWith(".dcl")) {
+        ""
+      } else if (settingsFile.name.endsWith(".kts")) {
         """
 
 apply(from = "$versionCatalogPath")

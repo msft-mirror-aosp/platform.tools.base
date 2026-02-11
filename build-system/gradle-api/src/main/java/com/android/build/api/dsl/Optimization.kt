@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.provider.SetProperty
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /**
  * DSL object for configurations aimed for optimizing build process(e.g. speed, correctness). This DSL object is applicable to buildTypes
@@ -51,5 +52,5 @@ interface Optimization {
    *
    * Default (convention) value is "**"
    */
-  @get:Incubating val packageScope: SetProperty<String>
+  @get:HiddenInDefinition @get:Incubating val packageScope: SetProperty<String>
 }

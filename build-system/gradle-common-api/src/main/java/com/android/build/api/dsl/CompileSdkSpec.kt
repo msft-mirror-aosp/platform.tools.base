@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
+
 /**
  * Specifies the API level to compile your project against, which is required by the Android plugin.
  *
@@ -54,26 +56,26 @@ package com.android.build.api.dsl
 interface CompileSdkSpec {
 
   /** The compile SDK version set for this project. */
-  var version: CompileSdkVersion?
+  @get:HiddenInDefinition @set:HiddenInDefinition var version: CompileSdkVersion?
 
   /**
    * To set compile SDK version with a released API level, use this function to compute the [CompileSdkVersion] and assign it to
    * [CompileSdkSpec.version] property. When using a released API level, you can also set minor API level and SDK extension level via
    * [CompileSdkReleaseSpec] block.
    */
-  fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion
+  @HiddenInDefinition fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion
 
   /**
    * To set compile SDK version with a released API level, use this function to compute the [CompileSdkVersion] and assign it to
    * [CompileSdkSpec.version] property.
    */
-  fun release(version: Int): CompileSdkVersion
+  @HiddenInDefinition fun release(version: Int): CompileSdkVersion
 
   /**
    * To set compile SDK version with a preview API level, use this function to compute the [CompileSdkVersion] and assign it to
    * [CompileSdkSpec.version] property.
    */
-  fun preview(codeName: String): CompileSdkVersion
+  @HiddenInDefinition fun preview(codeName: String): CompileSdkVersion
 
   /**
    * Specify an SDK add-on to compile your project against.
@@ -84,10 +86,11 @@ interface CompileSdkSpec {
    * @param name the name of the add-on
    * @param version the integer API level of the add-on
    */
-  fun addon(vendor: String, name: String, version: Int): CompileSdkVersion
+  @HiddenInDefinition fun addon(vendor: String, name: String, version: Int): CompileSdkVersion
 }
 
 /** DSL object to represent compile sdk version. */
+@HiddenInDefinition
 interface CompileSdkVersion {
 
   /** The API level to compile your project against. */

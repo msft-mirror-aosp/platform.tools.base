@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** Options for running tests. */
 interface TestOptions {
@@ -141,5 +142,5 @@ interface TestOptions {
    * The types of test suites available depend on the other plugins applied to your project.
    */
   /** @suppress */
-  @get:Incubating val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
+  @get:HiddenInDefinition @get:Incubating val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
 }

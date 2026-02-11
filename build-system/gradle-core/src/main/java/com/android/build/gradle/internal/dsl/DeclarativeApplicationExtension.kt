@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-pluginManagement {
-    apply(from="../commonLocalRepo.gradle", to=pluginManagement)
+
+package com.android.build.gradle.internal.dsl
+
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.AndroidApplicationModuleModel
+import com.android.build.gradle.internal.DependenciesExtension
+import org.gradle.api.internal.plugins.Definition
+
+interface DeclarativeApplicationExtension : ApplicationExtension, Definition<AndroidApplicationModuleModel> {
+  fun dependenciesDcl(action: DependenciesExtension.() -> Unit)
 }
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    apply(from="../commonLocalRepo.gradle", to=dependencyResolutionManagement)
-}
-
-defaults {
-    androidApp {
-        compileSdk = 34
-    }
-
-    androidLibrary {
-        compileSdk = 34
-    }
-}
-
-plugins {
-    id("com.android.ecosystem") version "dcl_plugin_version"
-}
-
-include(":lib")
-include(":app")

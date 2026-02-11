@@ -19,6 +19,7 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /**
  * Extension for the Android Gradle Plugin Application plugin.
@@ -48,14 +49,14 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    *
    * @see BuildType
    */
-  override val buildTypes: NamedDomainObjectContainer<out ApplicationBuildType>
+  @get:HiddenInDefinition override val buildTypes: NamedDomainObjectContainer<out ApplicationBuildType>
 
   /**
    * Encapsulates all build type configurations for this project.
    *
    * For more information about the properties you can configure in this block, see [ApplicationBuildType]
    */
-  fun buildTypes(action: NamedDomainObjectContainer<ApplicationBuildType>.() -> Unit)
+  @HiddenInDefinition fun buildTypes(action: NamedDomainObjectContainer<ApplicationBuildType>.() -> Unit)
 
   /**
    * Shortcut extension method to allow easy access to the predefined `debug` [ApplicationBuildType]
@@ -302,7 +303,7 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  override val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
+  @get:HiddenInDefinition override val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 
   /**
    * Encapsulates source set configurations for all variants.
@@ -310,7 +311,7 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  fun sourceSets(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit)
+  @HiddenInDefinition fun sourceSets(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit)
 
   /**
    * Specifies options for the lint tool.
@@ -408,14 +409,14 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    *
    * @see [ApplicationProductFlavor]
    */
-  override val productFlavors: NamedDomainObjectContainer<out ApplicationProductFlavor>
+  @get:HiddenInDefinition override val productFlavors: NamedDomainObjectContainer<out ApplicationProductFlavor>
 
   /**
    * Encapsulates all product flavors configurations for this project.
    *
    * For more information about the properties you can configure in this block, see [ApplicationProductFlavor]
    */
-  fun productFlavors(action: NamedDomainObjectContainer<ApplicationProductFlavor>.() -> Unit)
+  @HiddenInDefinition fun productFlavors(action: NamedDomainObjectContainer<ApplicationProductFlavor>.() -> Unit)
 
   /**
    * Specifies defaults for variant properties that the Android plugin applies to all build variants.
@@ -425,7 +426,7 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    *
    * For more information about the properties you can configure in this block, see [ApplicationDefaultConfig].
    */
-  override val defaultConfig: ApplicationDefaultConfig
+  @get:HiddenInDefinition override val defaultConfig: ApplicationDefaultConfig
 
   /**
    * Specifies defaults for variant properties that the Android plugin applies to all build variants.
@@ -449,14 +450,14 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    *
    * @see [ApkSigningConfig]
    */
-  override val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
+  @get:HiddenInDefinition override val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
 
   /**
    * Encapsulates signing configurations that you can apply to [BuildType] and [ProductFlavor] configurations.
    *
    * For more information about the properties you can configure in this block, see [ApkSigningConfig].
    */
-  fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
+  @HiddenInDefinition fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
 
   /**
    * Specifies options for external native build using [CMake](https://cmake.org/) or

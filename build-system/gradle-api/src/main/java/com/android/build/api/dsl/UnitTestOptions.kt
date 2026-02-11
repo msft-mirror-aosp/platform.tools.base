@@ -17,6 +17,7 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.tasks.testing.Test
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** Options for controlling unit tests execution. */
 interface UnitTestOptions {
@@ -74,5 +75,5 @@ interface UnitTestOptions {
    *
    * since 1.2.0
    */
-  fun all(configAction: (Test) -> Unit)
+  @HiddenInDefinition fun all(configAction: (Test) -> Unit)
 }

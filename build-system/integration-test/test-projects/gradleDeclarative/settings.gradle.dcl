@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.android.build.gradle
-
-import org.gradle.api.Incubating
-import org.gradle.api.Plugin
-import org.gradle.api.initialization.Settings
-import org.gradle.api.internal.plugins.software.RegistersSoftwareTypes
-
-@Incubating
-@RegistersSoftwareTypes(
-  com.android.build.gradle.internal.plugins.AppPlugin::class,
-  com.android.build.gradle.internal.plugins.LibraryPlugin::class,
-)
-class AndroidEcosystemPlugin : Plugin<Settings> {
-  override fun apply(target: Settings) = Unit
+pluginManagement {
 }
+plugins {
+    id("com.android.ecosystem").version("dcl_plugin_version")
+}
+
+defaults {
+    androidApp {
+        compileSdk = 34
+    }
+
+    androidLibrary {
+        compileSdk = 34
+    }
+}
+
+include(":lib")
+include(":app")

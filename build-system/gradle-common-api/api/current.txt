@@ -11,16 +11,16 @@ package com.android.build.api.dsl {
   }
 
   public interface CompileSdkSpec {
-    method public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
-    method @InaccessibleFromKotlin public com.android.build.api.dsl.CompileSdkVersion? getVersion();
-    method public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
-    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
-    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
-    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
-    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.CompileSdkVersion? version;
   }
 
-  public interface CompileSdkVersion {
+  @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public interface CompileSdkVersion {
     method @InaccessibleFromKotlin public String? getAddonName();
     method @InaccessibleFromKotlin public Integer? getApiLevel();
     method @InaccessibleFromKotlin public String? getCodeName();
@@ -149,22 +149,22 @@ package com.android.build.api.dsl {
   }
 
   public interface MinCompileSdkSpec {
-    method @InaccessibleFromKotlin public com.android.build.api.dsl.CompileSdkVersion? getVersion();
-    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
-    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
-    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
-    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.CompileSdkVersion? version;
   }
 
   public interface MinSdkSpec {
-    method @InaccessibleFromKotlin public com.android.build.api.dsl.MinSdkVersion? getVersion();
-    method public com.android.build.api.dsl.MinSdkVersion preview(String codeName);
-    method public com.android.build.api.dsl.MinSdkVersion release(int version);
-    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.MinSdkVersion?);
-    property public abstract com.android.build.api.dsl.MinSdkVersion? version;
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.MinSdkVersion? getVersion();
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.MinSdkVersion preview(String codeName);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.MinSdkVersion release(int version);
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public void setVersion(com.android.build.api.dsl.MinSdkVersion?);
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.MinSdkVersion? version;
   }
 
-  public interface MinSdkVersion {
+  @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public interface MinSdkVersion {
     method @InaccessibleFromKotlin public Integer? getApiLevel();
     method @InaccessibleFromKotlin public String? getCodeName();
     property public abstract Integer? apiLevel;
@@ -172,14 +172,14 @@ package com.android.build.api.dsl {
   }
 
   public interface TargetSdkSpec {
-    method @InaccessibleFromKotlin public com.android.build.api.dsl.TargetSdkVersion? getVersion();
-    method public com.android.build.api.dsl.TargetSdkVersion preview(String codeName);
-    method public com.android.build.api.dsl.TargetSdkVersion release(int version);
-    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.TargetSdkVersion?);
-    property public abstract com.android.build.api.dsl.TargetSdkVersion? version;
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.TargetSdkVersion? getVersion();
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.TargetSdkVersion preview(String codeName);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.TargetSdkVersion release(int version);
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public void setVersion(com.android.build.api.dsl.TargetSdkVersion?);
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.TargetSdkVersion? version;
   }
 
-  public interface TargetSdkVersion {
+  @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public interface TargetSdkVersion {
     method @InaccessibleFromKotlin public Integer? getApiLevel();
     method @InaccessibleFromKotlin public String? getCodeName();
     property public abstract Integer? apiLevel;

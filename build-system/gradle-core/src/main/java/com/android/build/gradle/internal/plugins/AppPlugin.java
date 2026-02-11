@@ -33,13 +33,16 @@ import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl;
+import com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal;
 import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.internal.dsl.decorator.DeclarativeDslDecorator;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
 import com.android.build.gradle.internal.tasks.ApplicationTaskManager;
@@ -59,6 +62,9 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
+import org.gradle.api.internal.plugins.BindsProjectType;
+import org.gradle.api.internal.plugins.ProjectTypeBinding;
+import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -69,6 +75,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 /** Gradle plugin class for 'application' projects, applied on the base application module */
+@BindsProjectType(AppPlugin.Binding.class)
 public class AppPlugin
         extends AbstractAppPlugin<
                 com.android.build.api.dsl.ApplicationExtension,
@@ -90,15 +97,22 @@ public class AppPlugin
     protected void pluginSpecificApply(@NonNull Project project) {
     }
 
-    public BaseAppModuleExtensionInternal getAndroidApp() {
-        try {
-            return (BaseAppModuleExtensionInternal)
-                    Objects.requireNonNull(project).getExtensions().getByName("android");
-        } catch (ClassCastException ex) {
-            throw new RuntimeException(
-                    "To use declarative gradle, you need to set"
-                            + " android.experimental.declarative=true in properties.gradle file",
-                    ex);
+    static class Binding implements ProjectTypeBinding {
+        public void bind(ProjectTypeBindingBuilder builder) {
+            Class<? extends DeclarativeApplicationExtension> wrapperClass =
+                    new DeclarativeDslDecorator().decorate(ApplicationExtensionWrapper.class);
+            builder.bindProjectType(
+                            "androidApp",
+                            DeclarativeApplicationExtension.class,
+                            (context, definition, buildModel) -> {
+                                BaseAppModuleExtensionInternal extension =
+                                        (BaseAppModuleExtensionInternal)
+                                                Objects.requireNonNull(context.getProject())
+                                                        .getExtensions()
+                                                        .getByName("android");
+                                ((ApplicationExtensionWrapper) definition).setDelegate(extension);
+                            })
+                    .withUnsafeDefinitionImplementationType(wrapperClass);
         }
     }
 

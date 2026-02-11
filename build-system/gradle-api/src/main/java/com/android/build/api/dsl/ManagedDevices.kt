@@ -19,6 +19,7 @@ package com.android.build.api.dsl
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** Options for Managed Devices */
 interface ManagedDevices {
@@ -36,12 +37,12 @@ interface ManagedDevices {
    * This list is managed in sync with [allDevices]. [ManagedVirtualDevice] definitions added or removed in this container are
    * correspondingly handled in [allDevices], and vice versa.
    */
-  @get:Incubating val localDevices: NamedDomainObjectContainer<ManagedVirtualDevice>
+  @get:HiddenInDefinition @get:Incubating val localDevices: NamedDomainObjectContainer<ManagedVirtualDevice>
 
   /**
    * List of DeviceGroups to create tasks for.
    *
    * These APIs are experimental and may change without notice.
    */
-  val groups: NamedDomainObjectContainer<DeviceGroup>
+  @get:HiddenInDefinition val groups: NamedDomainObjectContainer<DeviceGroup>
 }

@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
+
 /**
  * DSL object to configure min SDK version.
  *
@@ -45,22 +47,23 @@ package com.android.build.api.dsl
 interface MinSdkSpec {
 
   /** The min SDK version. */
-  var version: MinSdkVersion?
+  @get:HiddenInDefinition @set:HiddenInDefinition var version: MinSdkVersion?
 
   /**
    * To set min SDK version with a released API level, use this function to compute the [MinSdkVersion] and assign it to
    * [MinSdkSpec.version] property.
    */
-  fun release(version: Int): MinSdkVersion
+  @HiddenInDefinition fun release(version: Int): MinSdkVersion
 
   /**
    * To set min SDK version with a preview API level, use this function to compute the [MinSdkVersion] and assign it to [MinSdkSpec.version]
    * property.
    */
-  fun preview(codeName: String): MinSdkVersion
+  @HiddenInDefinition fun preview(codeName: String): MinSdkVersion
 }
 
 /** DSL object to represent the min SDK version. */
+@HiddenInDefinition
 interface MinSdkVersion {
 
   /** The API level of the min SDK version. */
