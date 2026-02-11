@@ -138,7 +138,7 @@ internal constructor(
         ComponentDslInfo.DslDefinedHostTest(
           HostTestBuilder.SCREENSHOT_TEST_TYPE,
           codeCoverageEnabled = false,
-          isIncludeAndroidResources = false,
+          isIncludeAndroidResources = true,
         ),
       )
 
