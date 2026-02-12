@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.cxx.gradle.generator
 
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 
 /** Abstraction of C/C++ configure and gradle model generation. */
 interface CxxMetadataGenerator {
@@ -30,5 +30,5 @@ interface CxxMetadataGenerator {
    * If [forceConfigure] is true then configure regardless of whether it is otherwise considered to be up-to-date. This flag will be set
    * when the user chose Build/Refresh Linked C++ Projects.
    */
-  fun configure(ops: ExecOperations, forceConfigure: Boolean)
+  fun configure(providers: ProviderFactory, forceConfigure: Boolean)
 }

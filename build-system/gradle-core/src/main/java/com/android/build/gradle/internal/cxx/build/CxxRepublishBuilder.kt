@@ -22,7 +22,7 @@ import com.android.build.gradle.internal.cxx.json.AndroidBuildGradleJsons.getNat
 import com.android.build.gradle.internal.cxx.logging.infoln
 import com.android.build.gradle.internal.cxx.model.name
 import java.io.File
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /** A CxxBuilder that symlinks (or copies) files from [soFolder] to [soRepublishFolder]. */
 class CxxRepublishBuilder(val model: CxxConfigurationModel) : CxxBuilder {
@@ -34,7 +34,7 @@ class CxxRepublishBuilder(val model: CxxConfigurationModel) : CxxBuilder {
   val soFolder: File
     get() = (model.activeAbis + model.unusedAbis).first().intermediatesParentFolder
 
-  override fun build(ops: ExecOperations) {
+  override fun build(providers: ProviderFactory) {
     infoln("link or copy build outputs to republish point")
     val abis = model.activeAbis
     val miniConfigs = getNativeBuildMiniConfigs(abis, null)

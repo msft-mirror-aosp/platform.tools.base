@@ -38,9 +38,9 @@ import com.android.builder.errors.DefaultIssueReporter
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Destroys
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
 
 /**
@@ -50,7 +50,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.NATIVE)
-abstract class ExternalNativeCleanTask @Inject constructor(private val ops: ExecOperations) : NonIncrementalTask() {
+abstract class ExternalNativeCleanTask @Inject constructor(private val providers: ProviderFactory) : NonIncrementalTask() {
   @get:Internal abstract val sdkComponents: Property<SdkComponentsBuildService>
   @get:Internal internal lateinit var configurationModel: CxxConfigurationModel
 
@@ -113,7 +113,7 @@ abstract class ExternalNativeCleanTask @Inject constructor(private val ops: Exec
         val tokens = commands[commandIndex]
         logger.lifecycle("Clean $targets$number")
         val command = createExecuteProcessCommand(tokens[0]).addArgs(tokens.drop(1))
-        abi.executeProcess(processType = ExecuteProcessType.CLEAN_PROCESS, command = command, ops = ops)
+        abi.executeProcess(processType = ExecuteProcessType.CLEAN_PROCESS, command = command, providers = providers)
       }
     }
   }

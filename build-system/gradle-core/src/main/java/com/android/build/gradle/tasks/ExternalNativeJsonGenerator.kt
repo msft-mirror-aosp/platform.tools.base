@@ -80,8 +80,8 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import org.gradle.api.GradleException
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 
 const val ANDROID_GRADLE_BUILD_VERSION = "2"
 
@@ -91,7 +91,7 @@ internal constructor(
   @get:Internal("Temporary to suppress Gradle warnings (bug 135900510), may need more investigation") val abi: CxxAbiModel,
   @get:Internal override val variantBuilder: GradleBuildVariant.Builder?,
 ) : CxxMetadataGenerator {
-  override fun configure(ops: ExecOperations, forceConfigure: Boolean) {
+  override fun configure(providers: ProviderFactory, forceConfigure: Boolean) {
     requireExplicitLogger()
     // Check whether NDK folder symlinking is required.
     if (abi.variant.module.ndkFolderAfterSymLinking != null && !abi.variant.module.ndkFolder.isDirectory) {
@@ -104,7 +104,7 @@ internal constructor(
     abi.variant.prefabPackageDirectoryList
     abi.variant.prefabClassPath
     try {
-      configureOneAbi(ops, forceConfigure, abi)
+      configureOneAbi(providers, forceConfigure, abi)
     } catch (e: GradleException) {
       errorln(METADATA_GENERATION_GRADLE_EXCEPTION, "exception while building Json %s", "${e.message} : ${e.stackTraceToString()}")
     } catch (e: ProcessException) {
@@ -120,7 +120,7 @@ internal constructor(
 
   protected open fun checkPrefabConfig() {}
 
-  private fun configureOneAbi(ops: ExecOperations, forceConfigure: Boolean, abi: CxxAbiModel) {
+  private fun configureOneAbi(providers: ProviderFactory, forceConfigure: Boolean, abi: CxxAbiModel) {
     PassThroughPrefixingLoggingEnvironment(abi.variant.module.makeFile, abi.variant.variantName + "|" + abi.name).use { recorder ->
       TimingEnvironment(abi.metadataGenerationTimingFolder, "generate_cxx_metadata").use {
         val variantStats = NativeBuildConfigInfo.newBuilder()
@@ -196,7 +196,7 @@ internal constructor(
             if (abi.shouldGeneratePrefabPackages()) {
               time("generate-prefab-packages") {
                 checkPrefabConfig()
-                createPrefabBuildSystemGlue(ops, abi)
+                createPrefabBuildSystemGlue(providers, abi)
               }
             }
 
@@ -222,7 +222,7 @@ internal constructor(
             }
 
             infoln("executing %s %s", abi.variant.module.buildSystemTag, processBuilder)
-            time("execute-generate-process") { executeProcess(ops, abi) }
+            time("execute-generate-process") { executeProcess(providers, abi) }
             infoln("done executing %s", abi.variant.module.buildSystemTag)
 
             // Check that required outputs were produced
@@ -301,7 +301,7 @@ internal constructor(
   abstract fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand
 
   /** Executes the JSON generation process. Return the combination of STDIO and STDERR from running the process. */
-  abstract fun executeProcess(ops: ExecOperations, abi: CxxAbiModel)
+  abstract fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel)
 
   private fun getConfigureInputFiles(abi: CxxAbiModel): List<File> {
     val result = mutableSetOf<File>()

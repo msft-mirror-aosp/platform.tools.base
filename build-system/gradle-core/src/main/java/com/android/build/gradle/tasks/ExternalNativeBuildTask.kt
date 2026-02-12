@@ -36,10 +36,10 @@ import com.android.builder.errors.DefaultIssueReporter
 import com.android.utils.cxx.CxxDiagnosticCode.CONFIGURE_MORE_THAN_ONE_SO_FOLDER
 import javax.inject.Inject
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
 
 /** Task that performs a C/C++ build action or refers to a build from a different task. */
@@ -54,11 +54,11 @@ abstract class ExternalNativeBuildTask :
 
   @get:OutputDirectory abstract val soFolder: DirectoryProperty
 
-  @Inject protected abstract fun getExecOperations(): ExecOperations
+  @Inject protected abstract fun getProviders(): ProviderFactory
 
   override fun doTaskAction() {
     IssueReporterLoggingEnvironment(DefaultIssueReporter(LoggerWrapper(logger)), analyticsService.get(), variant).use {
-      builder.build(getExecOperations())
+      builder.build(getProviders())
     }
   }
 }

@@ -44,7 +44,7 @@ import com.google.common.collect.Sets
 import java.time.Clock
 import kotlin.streams.toList
 import org.gradle.api.GradleException
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /** Build a C/C++ project. */
 class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
@@ -62,7 +62,7 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
   /** Represents a single build step that, when executed, builds one or more libraries. */
   private class BuildStep(val buildCommandComponents: List<String>, val libraries: List<NativeLibraryValueMini>)
 
-  override fun build(ops: ExecOperations) {
+  override fun build(providers: ProviderFactory) {
     infoln("starting build")
     infoln("reading expected JSONs")
     val config = nativeBuildConfigValueMini
@@ -104,7 +104,7 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
       }
     }
 
-    executeProcessBatch(ops, buildSteps)
+    executeProcessBatch(providers, buildSteps)
 
     infoln("check expected build outputs")
     for (library in config.libraries.values) {
@@ -254,7 +254,7 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
   }
 
   /** Given a list of build steps, execute each. If there is a failure, processing is stopped at that point. */
-  private fun executeProcessBatch(ops: ExecOperations, buildSteps: List<BuildStep>) {
+  private fun executeProcessBatch(providers: ProviderFactory, buildSteps: List<BuildStep>) {
     for (buildStep in buildSteps) {
       val tokens = buildStep.buildCommandComponents
       val command =
@@ -280,7 +280,7 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
           abi.ninjaLogFile.useLines { it.count() }
         } else 0
 
-      abi.executeProcess(processType = BUILD_PROCESS, command = command, ops = ops, logFileSuffix = logFileSuffix)
+      abi.executeProcess(processType = BUILD_PROCESS, command = command, providers = providers, logFileSuffix = logFileSuffix)
 
       // Build attribution reporting based on .ninja_log
       // This is best-effort because it appears that ninja does not guarantee

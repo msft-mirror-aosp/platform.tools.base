@@ -32,8 +32,8 @@ import com.android.build.gradle.internal.cxx.process.executeProcess
 import com.android.utils.FileUtils.join
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 
 /** Invoke CMake to generate ninja project. Along the way, generate android_gradle_build.json from the result of CMake file API query. */
 internal class CmakeQueryMetadataGenerator(abi: CxxAbiModel, @get:Internal override val variantBuilder: GradleBuildVariant.Builder?) :
@@ -43,7 +43,7 @@ internal class CmakeQueryMetadataGenerator(abi: CxxAbiModel, @get:Internal overr
     cmakeMakefileChecks(abi.variant)
   }
 
-  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+  override fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel) {
     // Request File API responses from CMake by creating placeholder files
     // with specific query type names and versions
     abi.clientQueryFolder.mkdirs()
@@ -52,7 +52,7 @@ internal class CmakeQueryMetadataGenerator(abi: CxxAbiModel, @get:Internal overr
     join(abi.clientQueryFolder, "cmakeFiles-v1").writeText("")
 
     // Execute CMake
-    abi.executeProcess(processType = ExecuteProcessType.CONFIGURE_PROCESS, command = getProcessBuilder(abi), ops = ops)
+    abi.executeProcess(processType = ExecuteProcessType.CONFIGURE_PROCESS, command = getProcessBuilder(abi), providers = providers)
 
     // Build expected metadata
     parseCmakeFileApiReply(

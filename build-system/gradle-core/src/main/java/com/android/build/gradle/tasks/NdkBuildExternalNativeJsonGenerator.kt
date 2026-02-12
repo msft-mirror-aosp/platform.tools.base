@@ -40,7 +40,7 @@ import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /**
  * ndk-build JSON generation logic. This is separated from the corresponding ndk-build task so that JSON can be generated during
@@ -65,11 +65,11 @@ internal class NdkBuildExternalNativeJsonGenerator(abi: CxxAbiModel, variantBuil
       )
   }
 
-  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+  override fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel) {
     abi.executeProcess(
       processType = CONFIGURE_PROCESS,
       command = getProcessBuilder(abi),
-      ops = ops,
+      providers = providers,
       processStdout = { stdout -> parseDryRunOutput(abi, stdout) },
       processStderr = { /* ignore */ },
     )
