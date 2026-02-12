@@ -85,7 +85,6 @@ class CoreLibraryDesugarTest {
       .withAdditionalMavenRepo(mavenRepo)
       .withGradleBuildCacheDirectory(File("local-build-cache"))
       .fromTestApp(setUpTestProject())
-      .disableBuiltInKotlin()
       .create()
 
   private lateinit var app: GradleTestProject
@@ -412,24 +411,40 @@ class CoreLibraryDesugarTest {
     addFileDependencies(app)
     executor().run("app:assembleRelease")
     val out = InternalArtifactType.DESUGAR_LIB_KEEP_RULES.getOutputDir(app.buildDir)
-    val expectedKeepRules =
-      "-keep class j\$.time.LocalTime {$lineSeparator" +
-        "  j\$.time.LocalTime MIDNIGHT;$lineSeparator" +
-        "  j\$.time.LocalTime NOON;$lineSeparator" +
-        "}$lineSeparator" +
-        "-keep enum j\$.time.Month {$lineSeparator" +
-        "  j\$.time.Month JUNE;$lineSeparator" +
-        "}$lineSeparator" +
+    val keepRules = collectKeepRulesUnderDirectory(out)
+
+    // With built-in Kotlin enabled, kotlin-stdlib is desugared and its rules are
+    // interspersed with the app's rules in the output. We check for each class
+    // block individually to remain robust.
+    assertThat(keepRules)
+      .contains(
+        "-keep class j\$.time.LocalTime {$lineSeparator" +
+          "  j\$.time.LocalTime MIDNIGHT;$lineSeparator" +
+          "  j\$.time.LocalTime NOON;$lineSeparator" +
+          "}"
+      )
+    assertThat(keepRules).contains("-keep enum j\$.time.Month {$lineSeparator" + "  j\$.time.Month JUNE;$lineSeparator" + "}")
+    assertThat(keepRules)
+      .contains(
         "-keep class j\$.util.Collection\$-EL {$lineSeparator" +
-        "  public static j\$.util.stream.Stream stream(java.util.Collection);$lineSeparator" +
-        "}$lineSeparator" +
+          "  public static j\$.util.stream.Stream stream(java.util.Collection);$lineSeparator" +
+          "}"
+      )
+    assertThat(keepRules)
+      .contains(
         "-keep class j\$.util.Optional {$lineSeparator" +
-        "  public java.lang.Object get();$lineSeparator" +
-        "}$lineSeparator" +
+          "  public java.lang.Object get();$lineSeparator" +
+          "  public boolean isPresent();$lineSeparator" +
+          "  public java.lang.Object orElse(java.lang.Object);$lineSeparator" +
+          "}"
+      )
+    assertThat(keepRules)
+      .contains(
         "-keep interface j\$.util.stream.Stream {$lineSeparator" +
-        "  public j\$.util.Optional findFirst();$lineSeparator" +
-        "}$lineSeparator"
-    Truth.assertThat(collectKeepRulesUnderDirectory(out)).isEqualTo(expectedKeepRules)
+          "  public java.lang.Object collect(j\$.util.stream.Collector);$lineSeparator" +
+          "  public j\$.util.Optional findFirst();$lineSeparator" +
+          "}"
+      )
   }
 
   @Test
