@@ -276,7 +276,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
 
@@ -345,7 +345,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand_throwsIOException_whenInterrupted() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, deviceState) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
     // Introduce a delay to give a thread a chance to get interrupted
@@ -368,7 +368,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeShellCommand_mapsAdbDeviceFailResponseException_toAdbCommandRejectedException() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     exceptionRule.expect(AdbCommandRejectedException::class.java)
     exceptionRule.expectCause(CoreMatchers.isA(AdbDeviceFailResponseException::class.java))
@@ -383,7 +383,7 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun executeRemoteCommandCanHandleAbbExec() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.DEVICE)
+    val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
     val appId = "com.foo.bar.app"
@@ -1020,10 +1020,18 @@ class AdblibIDeviceWrapperTest {
     sdk: AndroidApiLevel = AndroidApiLevel(30),
     delayStdout: Duration = Duration.ZERO,
   ): Pair<ConnectedDevice, DeviceState> {
+    // Connect a fake device to the server and wait for it to come online.
     val fakeDevice = fakeAdb.connectDevice(serialNumber, "test1", "test2", "model", sdk, DeviceState.HostConnectionType.USB)
-    fakeDevice.deviceStatus = deviceStatus
     fakeDevice.delayStdout = delayStdout
-    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, deviceStatus)
+    // Ensure the initialization sequence OFFLINE -> ONLINE started in
+    // `fakeAdb.connectDevice` is complete, and we have a stable handle to the ConnectedDevice.
+    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, DeviceState.DeviceStatus.ONLINE)
+
+    if (deviceStatus != DeviceState.DeviceStatus.ONLINE) {
+      fakeDevice.deviceStatus = deviceStatus
+      connectedDevice.waitForDeviceState(deviceStatus)
+    }
+
     return Pair(connectedDevice, fakeDevice)
   }
 
@@ -1034,9 +1042,13 @@ class AdblibIDeviceWrapperTest {
   ): ConnectedDevice {
     val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
 
-    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
-    connectedDevice.waitUntilState(targetState)
+    connectedDevice.waitForDeviceState(deviceStatus)
     return connectedDevice
+  }
+
+  private suspend fun ConnectedDevice.waitForDeviceState(deviceStatus: DeviceState.DeviceStatus) {
+    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
+    waitUntilState(targetState)
   }
 
   private fun createAdblibIDeviceWrapper(connectedDevice: ConnectedDevice, bridge: AndroidDebugBridge): AdblibIDeviceWrapper {

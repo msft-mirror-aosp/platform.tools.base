@@ -57,21 +57,26 @@ internal class ConnectedDevicesTrackerImpl(override val session: AdbSession) : C
           if (connectionId != trackedDeviceList.connectionId) {
             // When we have a new connection ID, we clean up everything
             connectionId = trackedDeviceList.connectionId
-            // TODO: Determine if we need to distinguish between cleanup triggered by `StateFlowStatus.isRetrying` versus
-            //  a connectionId change where the `StateFlowStatus.isRetrying` state was skipped due to StateFlow conflation
-            updateCache(emptyMap(), trackedDeviceList.flowStatus)
+            // Note we don't update the state flow to avoid emitting an empty list, given we have a new list to emit right away
+            updateCache(emptyMap())
           }
 
-          updateCache(trackedDeviceList.associateBy { it.serialNumber }, trackedDeviceList.flowStatus)
+          updateCacheAndStateFlow(trackedDeviceList.associateBy { it.serialNumber }, trackedDeviceList.flowStatus)
         }
       } finally {
         logger.debug { "Shutting down connected devices tracker coroutine" }
-        connectedDevicesStateFlow.value = ConnectedDeviceList(emptyList(), StateFlowStatus.endOfFlow)
+        updateCacheAndStateFlow(emptyMap(), StateFlowStatus.endOfFlow)
       }
     }
   }
 
-  private fun updateCache(activeDevices: Map<String, DeviceInfo>, flowStatus: StateFlowStatus) {
+  private fun updateCacheAndStateFlow(activeDevices: Map<String, DeviceInfo>, flowStatus: StateFlowStatus) {
+    val connectedDeviceList = updateCache(activeDevices)
+    logger.debug { "Updating connected devices flow to ${connectedDeviceList.size} devices" }
+    connectedDevicesStateFlow.value = ConnectedDeviceList(connectedDeviceList, flowStatus)
+  }
+
+  private fun updateCache(activeDevices: Map<String, DeviceInfo>): List<ConnectedDeviceImpl> {
     val toClose = mutableListOf<ConnectedDeviceImpl>()
     val toUpdate = mutableListOf<Pair<ConnectedDeviceImpl, DeviceInfo>>()
     val connectedDeviceList =
@@ -104,8 +109,6 @@ internal class ConnectedDevicesTrackerImpl(override val session: AdbSession) : C
       device.updateDeviceInfo(deviceInfo)
     }
 
-    // Final step: Update the flow of connected devices
-    logger.debug { "Updating connected devices flow to ${connectedDeviceList.size} devices" }
-    connectedDevicesStateFlow.value = ConnectedDeviceList(connectedDeviceList, flowStatus)
+    return connectedDeviceList
   }
 }

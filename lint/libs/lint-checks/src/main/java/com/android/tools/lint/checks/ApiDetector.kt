@@ -1213,7 +1213,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       return requires.getSdk() == ANDROID_SDK_ID &&
         requires.min() == CUR_DEVELOPMENT &&
         context.isEnabled(FlaggedApiDetector.ISSUE) &&
-        FlaggedApiDetector.isAlreadyAnnotated(node)
+        FlaggedApiDetector.isAlreadyAnnotated(context.evaluator, node)
     }
 
     override fun visitAnnotation(node: UAnnotation) {

@@ -94,12 +94,13 @@ class CodeCoverageReportOrchestratorTest {
         .trimIndent()
     )
 
-    val result = CodeCoverageReportOrchestrator.orchestrate(
-      inputDirectories = listOf(inputDir),
-      htmlReportDir = mockReportDirProperty,
-      rootProjectName = "TestRootProject",
-      rootProjectDir = projectBaseDir,
-    )
+    val result =
+      CodeCoverageReportOrchestrator.orchestrate(
+        inputDirectories = listOf(inputDir),
+        htmlReportDir = mockReportDirProperty,
+        rootProjectName = "TestRootProject",
+        rootProjectDir = projectBaseDir,
+      )
     assertThat(result).isTrue()
 
     val reportDataFile = File(outputDir, "data/report-data.js")
@@ -114,8 +115,8 @@ class CodeCoverageReportOrchestratorTest {
     assertThat(report.modules).hasSize(1)
     val moduleReport = report.modules.first()
     assertThat(moduleReport.name).isEqualTo("app")
-    assertThat(moduleReport.testSuites).hasSize(1)
-    assertThat(moduleReport.testSuites.first().name).isEqualTo("UnitTest")
+    assertThat(moduleReport.testSuiteCoverages).hasSize(1)
+    assertThat(moduleReport.testSuiteCoverages.first().name).isEqualTo("UnitTest")
     assertThat(report.numberOfTestsSuites).isEqualTo(1)
     assertThat(report.timeStamp).isNotEmpty()
 
@@ -135,12 +136,13 @@ class CodeCoverageReportOrchestratorTest {
 
   @Test
   fun `orchestrate with empty input creates directories but no data files`() {
-    val result = CodeCoverageReportOrchestrator.orchestrate(
-      inputDirectories = listOf(inputDir),
-      htmlReportDir = mockReportDirProperty,
-      rootProjectName = "TestRootProject",
-      rootProjectDir = projectBaseDir,
-    )
+    val result =
+      CodeCoverageReportOrchestrator.orchestrate(
+        inputDirectories = listOf(inputDir),
+        htmlReportDir = mockReportDirProperty,
+        rootProjectName = "TestRootProject",
+        rootProjectDir = projectBaseDir,
+      )
 
     assertThat(result).isFalse()
 

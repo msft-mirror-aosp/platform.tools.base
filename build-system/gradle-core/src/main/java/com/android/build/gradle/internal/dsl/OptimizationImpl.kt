@@ -46,6 +46,9 @@ abstract class OptimizationImpl @Inject constructor(dslService: DslServices, int
     (keepRules as KeepRulesImpl).ignoreFrom.clear()
     (keepRules as KeepRulesImpl).ignoreFrom.addAll((that.keepRules as KeepRulesImpl).ignoreFrom)
 
+    // when merging includeDefault, prefer opt-out since it's an explicit choice
+    keepRules.includeDefault = keepRules.includeDefault && that.keepRules.includeDefault
+
     (baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies =
       (that.baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies
 

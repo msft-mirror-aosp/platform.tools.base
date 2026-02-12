@@ -16,12 +16,18 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.truth.PathSubject
+import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -398,5 +404,117 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
       .expectFailure()
       .run(":app:compileDebugJavaWithJavac")
       .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 11 and 17.")
+  }
+
+  @Test
+  fun testKotlinCompilerOptionsDsl() {
+    val build =
+      rule.build {
+        androidApplication {
+          // Add some kotlin code so that `compileDebugKotlin` task isn't skipped.
+          files.add(
+            "src/main/kotlin/KotlinAppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class KotlinAppFoo
+            """
+              .trimIndent(),
+          )
+          // Set some values in the built-in Kotlin DSL and check that the values flow to the task
+          kotlin {
+            compilerOptions {
+              moduleName.set("foo")
+              languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+            }
+          }
+
+          pluginCallbacks += KotlinTaskCallback::class.java
+        }
+      }
+
+    val result = build.executor.run(":app:compileDebugKotlin")
+    assertThat(result.didWorkTasks).contains(":app:compileDebugKotlin")
+  }
+
+  class KotlinTaskCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      project.afterEvaluate {
+        project.tasks.named("compileDebugKotlin") {
+          it.doLast { task ->
+            task as KotlinCompile
+            val moduleName = task.compilerOptions.moduleName.get()
+            if (moduleName != "foo") {
+              throw RuntimeException("Unexpected module name: $moduleName")
+            }
+            val languageVersion = task.compilerOptions.languageVersion.get()
+            if (languageVersion != org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9) {
+              throw RuntimeException("Unexpected app language version: $languageVersion")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun testKotlinSourceSets() {
+    val build =
+      rule.build {
+        androidApplication {
+          // Add some custom source directories.
+          files {
+            add(
+              "src/fooMain/kotlin/FooMain.kt",
+              // language=kotlin
+              """
+              package com.foo.application
+              class FooMain {}
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/fooDebug/kotlin/FooDebug.kt",
+              // language=kotlin
+              """
+              package com.foo.application
+              class FooDebug {}
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/fooAndroidTest/kotlin/FooAndroidTest.kt",
+              // language=kotlin
+              """
+              package com.foo.application
+              class FooAndroidTest {}
+              """
+                .trimIndent(),
+            )
+          }
+          // Add the custom source directories to the source sets.
+          android {
+            sourceSets.named("main") { it.kotlin.directories += "src/fooMain/kotlin" }
+            sourceSets.named("debug") { it.kotlin.directories += "src/fooDebug/kotlin" }
+            sourceSets.named("androidTest") { it.kotlin.directories += "src/fooAndroidTest/kotlin" }
+          }
+        }
+      }
+
+    // Run Kotlin compilation tasks and check that the expected class files are created.
+    build.executor.run(":app:compileDebugKotlin", ":app:compileDebugAndroidTestKotlin")
+
+    val kotlincOutputDir = build.androidApplication().resolve(InternalArtifactType.BUILT_IN_KOTLINC)
+    PathSubject.assertThat(kotlincOutputDir).exists()
+
+    val fooMainClassFile = kotlincOutputDir.resolve("debug/compileDebugKotlin/classes/com/foo/application/FooMain.class")
+    PathSubject.assertThat(fooMainClassFile).exists()
+
+    val fooDebugClassFile = kotlincOutputDir.resolve("debug/compileDebugKotlin/classes/com/foo/application/FooDebug.class")
+    PathSubject.assertThat(fooDebugClassFile).exists()
+
+    val fooAndroidTestClassFile =
+      kotlincOutputDir.resolve("debugAndroidTest/compileDebugAndroidTestKotlin/classes/com/foo/application/FooAndroidTest.class")
+    PathSubject.assertThat(fooAndroidTestClassFile).exists()
   }
 }

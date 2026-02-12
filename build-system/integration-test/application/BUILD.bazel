@@ -240,7 +240,7 @@ CONNECTED_TESTS = [
     "src/test/java/com/android/build/gradle/integration/testing/ConnectedCheckTest.java",
 ]
 
-CHECK_ALL_SOURCES = ["src/test/java/**/CheckAll.java"]
+CHECK_ALL_SOURCES = ["src/automaticTest/java/**/CheckAll.java"]
 
 # Creates separate target for each source
 single_gradle_integration_test_per_source(

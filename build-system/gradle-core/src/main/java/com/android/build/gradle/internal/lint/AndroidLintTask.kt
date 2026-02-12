@@ -453,6 +453,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       get() = "Create local lint report on the ${creationConfig.name} variant"
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
+      registerLintIntermediateArtifacts(taskProvider, creationConfig.artifacts, variantName = creationConfig.name)
       registerLintReportArtifacts(
         taskProvider,
         creationConfig.artifacts,

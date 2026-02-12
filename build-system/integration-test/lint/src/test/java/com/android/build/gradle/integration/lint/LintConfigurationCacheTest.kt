@@ -16,60 +16,102 @@
 
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.options.BooleanOption
+import java.io.File
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.ConfigurableFileTree
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintConfigurationCacheTest {
+@RunWith(Parameterized::class)
+class LintConfigurationCacheTest(private val mode: Mode) {
+
+  enum class Mode {
+    NEW_DSL,
+    OLD_DSL,
+  }
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "{0}") fun data() = listOf(Mode.NEW_DSL, Mode.OLD_DSL)
+  }
 
   @get:Rule
-  val project: GradleTestProject =
-    GradleTestProject.builder()
-      .fromTestApp(
-        MinimalSubProject.lib("com.example.lib")
-          .appendToBuild(
-            """
-            android {
-                libraryVariants.all { variant ->
-                    if (variant.name == "debug") {
-                        FileTree cTree =
-                            project.fileTree(
-                                new File(
-                                    project.buildDir,
-                                    "generated/source/kapt/debug"
-                                )
-                            )
-                        cTree.builtBy(tasks.findByName("generateSrcs"))
-                        cTree.include("**/*.java")
-                        registerExternalAptJavaOutput(cTree)
-                    }
-                }
-            }
-
-            tasks.register("generateSrcs") {
-                File myOutputDir =
-                    new File(project.buildDir, "generated/source/kapt/debug")
-                doFirst {
-                    myOutputDir.deleteDir()
-                    myOutputDir.mkdirs()
-                    new File(myOutputDir, "Foo.java").text = "public class Foo {}"
-                }
-            }
-
-            """
-              .trimIndent()
-          )
-      )
-      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-      .create()
+  val rule =
+    GradleRule.from {
+      if (mode == Mode.OLD_DSL) {
+        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      }
+      androidLibrary {
+        android { namespace = "com.example.lib" }
+        pluginCallbacks +=
+          if (mode == Mode.NEW_DSL) {
+            MyCallback::class.java
+          } else {
+            MyOldDslCallback::class.java
+          }
+      }
+    }
 
   /** Regression test for b/285320724. */
   @Test
   fun testLintConfigurationCache() {
-    project.executor().run("generateDebugLintModel")
-    project.executor().run("generateDebugLintModel")
-    project.buildResult.assertConfigurationCacheHit()
+    rule.build.executor.run("generateDebugLintModel")
+    rule.build.executor.run("generateDebugLintModel").assertConfigurationCacheHit()
+  }
+}
+
+abstract class GenerateSrcs : DefaultTask() {
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+  @TaskAction
+  fun run() {
+    val outputFile = outputDir.file("Foo.java").get().asFile
+    outputFile.parentFile.mkdirs()
+    outputFile.writeText("public class Foo {}")
+  }
+}
+
+class MyCallback : LibraryComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withName("debug")) { variant ->
+      val generateSrcs =
+        project.tasks.register("generateSrcs", GenerateSrcs::class.java) {
+          it.outputDir.set(project.layout.buildDirectory.dir("generated/source/kapt/debug"))
+        }
+      variant.sources.java?.addGeneratedSourceDirectory(generateSrcs, GenerateSrcs::outputDir)
+    }
+  }
+}
+
+class MyOldDslCallback : LegacyLibraryCallback {
+  override fun handleExtension(project: Project, extension: LibraryExtension) {
+    extension.libraryVariants.all { variant ->
+      if (variant.name == "debug") {
+        val cTree: ConfigurableFileTree = project.fileTree(File(project.layout.buildDirectory.asFile.get(), "generated/source/kapt/debug"))
+        cTree.builtBy(project.tasks.findByName("generateSrcs"))
+        cTree.include("**/*.java")
+        variant.registerExternalAptJavaOutput(cTree)
+      }
+    }
+
+    project.tasks.register("generateSrcs") { task ->
+      val myOutputDir = File(project.layout.buildDirectory.asFile.get(), "generated/source/kapt/debug")
+      task.doFirst {
+        myOutputDir.deleteRecursively()
+        myOutputDir.mkdirs()
+        File(myOutputDir, "Foo.java").writeText("public class Foo {}")
+      }
+    }
   }
 }

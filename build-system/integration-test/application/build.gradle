@@ -68,18 +68,10 @@ configurations {
 
 apply from: '../integration-tests.gradle'
 
-// These tasks will not depend on publishLocal, so they will run integration
-// tests against whatever version of the plugin is in ../../../out/repo. This
-// allows us to run integration tests with different versions of Java, without
-// rebuilding the plugin.
-task testPrebuilts(type: Test)
-task connectedIntegrationTestPrebuilts(type: Test)
-task connectedIntegrationTestPrebuiltsQuarantine(type: Test)
-
 File tempFile = new File(project.buildDir, 'tmp')
 tempFile.mkdirs()
 
-configure([test, testPrebuilts]) {
+test {
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
                     "source tree, under out/..., or an env var ANDROID_SDK_ROOT."
@@ -108,92 +100,35 @@ configure([test, testPrebuilts]) {
             categories = categories.collect { it.charAt(0).isUpperCase() ? defaultPackage + it : it }
             includeCategories categories as String[]
         }
-        excludeCategories "com.android.build.gradle.integration.common.category.OnlineTests"
     }
 
     exclude "com/android/build/gradle/integration/automatic/**"
     exclude "**/BazelIntegrationTestsSuite*"
+	environment["PROJECT_ROOT"] = project.projectDir
 }
 
-configure(test) {
-	environment["PROJECT_ROOT"] = project.projectDir
+sourceSets {
+    automaticTest {
+        java.srcDir file("src/integrationTest/java")
+        compileClasspath += sourceSets.main.output + configurations.testCompileClasspath
+        runtimeClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+    }
 }
 
 task automaticTest(type: Test) {
     include "com/android/build/gradle/integration/automatic/**"
 
+    testClassesDirs = sourceSets.automaticTest.output.classesDirs
+    classpath = sourceSets.automaticTest.runtimeClasspath
     // Always run the task, when requested.
     outputs.upToDateWhen { false }
     environment = testEnvironment
-}
-
-task onlineTest(type: Test) {
-    // Always run the task, when requested.
-    outputs.upToDateWhen { false }
-    environment = testEnvironment
-
-    useJUnit {
-        includeCategories "com.android.build.gradle.integration.common.category.OnlineTests"
-    }
 }
 
 check.dependsOn automaticTest
 
-task connectedIntegrationTest(type: Test) {
-    dependsOn ':base:build-system:integration-test:native:publishLocal'
-}
-task connectedIntegrationTestQuarantine(type: Test)
-
-def allConnectedTestTasks = [
-        connectedIntegrationTest,
-        connectedIntegrationTestPrebuilts,
-        connectedIntegrationTestQuarantine,
-        connectedIntegrationTestPrebuiltsQuarantine
-]
-
-
-configure(allConnectedTestTasks) {
-    def nativeTestTask = tasks.findByPath(':base:build-system:integration-test:native:test')
-    testClassesDirs = sourceSets.test.output.classesDirs.plus(nativeTestTask.testClassesDirs)
-    classpath = sourceSets.test.runtimeClasspath.plus(nativeTestTask.classpath)
-
-    description =
-            "Runs the project integration tests with device tests. This requires an SDK either " +
-                    "from the Android source tree, under out/..., or an env var ANDROID_SDK_ROOT " +
-                    "and a device."
-    group = "verification"
-    systemProperties['jar.path'] = jar.archiveFile.get().getAsFile().path
-    systemProperties['java.io.tmpdir'] = tempFile.absolutePath
-
-    environment testEnvironment
-
-    // Always run the task, when requested.
-    outputs.upToDateWhen { false }
-
-    def count = Math.ceil(Runtime.runtime.availableProcessors() / 4)
-    if (count > 8) {
-        count = 8
-    }
-    maxParallelForks = count
-
-    exclude "com/android/build/gradle/integration/automatic/**"
-}
-
-configure([test, testPrebuilts, onlineTest, connectedIntegrationTest,
-           connectedIntegrationTestPrebuilts]) {
-    testLogging {
-        events = ['FAILED', 'SKIPPED', 'STANDARD_ERROR']
-        displayGranularity = 2 // Show test class and method.
-        exceptionFormat = 'full'
-        showCauses = true
-    }
-}
-
 automaticTest.dependsOn ':publishLocal'
-onlineTest.dependsOn ':publishLocal'
 test.dependsOn ':publishAndroidGradleLocal'
-connectedIntegrationTest.dependsOn ':publishLocal'
-connectedIntegrationTestQuarantine.dependsOn ':publishLocal'
 
 if (tasks.findByName("jacocoTestReport") != null) {
     jacocoTestReport {

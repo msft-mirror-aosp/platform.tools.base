@@ -37,7 +37,7 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val config = context.configuration
 
-    val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt, config.deviceSerial, config.deviceApiLevel, config.installTimeoutMs)
+    val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt, config.deviceSerial, config.installTimeoutMs)
 
     val listener = Listener(this, dynamicTestExecutor)
 

@@ -18,13 +18,14 @@ package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import java.io.File
 import org.gradle.api.JavaVersion
+import org.gradle.api.Project
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
@@ -205,8 +206,6 @@ class CodeCoverageCollectionTest {
           kotlin { jvmToolchain(17) }
         }
       }
-
-      gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
     }
 
   @Test
@@ -471,6 +470,39 @@ class CodeCoverageCollectionTest {
     val xmlReports = taskOutputDir.listFiles().toList()
 
     Truth.assertThat(xmlReports.size).isEqualTo(3)
+  }
+
+  @Test
+  fun testCollectDebugCoverageWithCorruptedFile() {
+    val build = rule.build {
+      androidApplication(":app") {
+        pluginCallbacks += CodeCoverageCollectionTaskCallback::class.java
+      }
+    }
+
+    val result = build.executor
+      .expectFailure()
+      .run(":app:collectDebugCoverage")
+
+    result.assertErrorContains(
+      "Unable to generate Jacoco XML report"
+    )
+    result.assertTask(":app:collectDebugCoverage").failed()
+  }
+
+  class CodeCoverageCollectionTaskCallback: GenericCallback {
+    override fun handleProject(project: Project) {
+      project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
+        task.doLast {
+          val output = project.fileTree("${project.buildDir}/outputs/unit_test_code_coverage") { fileTree ->
+            fileTree.include("**/*.exec")
+          }
+          output.files.forEach { file ->
+            file.writeText("CORRUPTED")
+          }
+        }
+      }
+    }
   }
 
   /** Verifies that the report file has the expected name, and the report name inside the XML matches the expected report name. */

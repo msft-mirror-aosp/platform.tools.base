@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
@@ -165,7 +164,6 @@ class CodeCoverageReportTest {
           kotlin { jvmToolchain(17) }
         }
       }
-      gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
     }
 
   private val gson = Gson()
@@ -304,7 +302,9 @@ class CodeCoverageReportTest {
 
     val appModule = report.modules.find { it.name == ":app" }
     assertThat(appModule).isNotNull()
-    val appDebugCoverage = appModule!!.variantCoverages.find { it.name == "debug" }
+    val appAggregatedCoverage = appModule!!.testSuiteCoverages.find { it.name == "Aggregated" }
+    assertThat(appAggregatedCoverage).isNotNull()
+    val appDebugCoverage = appAggregatedCoverage!!.variantCoverages.find { it.name == "debug" }
     assertThat(appDebugCoverage).isNotNull()
     assertThat(appDebugCoverage!!.instruction.covered).isEqualTo(APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED)
     assertThat(appDebugCoverage.branch.covered).isEqualTo(APP_EXPECTED_COVERED_BRANCH_AGGREGATED)
@@ -340,7 +340,9 @@ class CodeCoverageReportTest {
     if (verifyLibModuleIsPresent) {
       val libModule = report.modules.find { it.name == ":lib" }
       assertThat(libModule).isNotNull()
-      val libDebugCoverage = libModule!!.variantCoverages.find { it.name == "debug" }
+      val libAggregatedCoverage = libModule!!.testSuiteCoverages.find { it.name == "Aggregated" }
+      assertThat(libAggregatedCoverage).isNotNull()
+      val libDebugCoverage = libAggregatedCoverage!!.variantCoverages.find { it.name == "debug" }
       assertThat(libDebugCoverage).isNotNull()
       assertThat(libDebugCoverage!!.instruction.covered).isEqualTo(LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED)
       assertThat(libDebugCoverage.branch.covered).isEqualTo(LIB_EXPECTED_COVERED_BRANCH_AGGREGATED)
@@ -394,7 +396,13 @@ class CodeCoverageReportTest {
     @SerializedName("numberOfTestsSuites") val numberOfTestsSuites: Int,
   )
 
-  data class TestModuleReport(val name: String, val variantCoverages: List<TestVariantCoverage>, val packages: List<TestPackageReport>)
+  data class TestModuleReport(
+    val name: String,
+    val testSuiteCoverages: List<TestTestSuiteReportCoverage>,
+    val packages: List<TestPackageReport>,
+  )
+
+  data class TestTestSuiteReportCoverage(val name: String, val variantCoverages: List<TestVariantCoverage>)
 
   data class TestPackageReport(val name: String, val classes: List<TestClassReport>)
 

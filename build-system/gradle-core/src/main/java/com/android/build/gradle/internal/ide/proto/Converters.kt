@@ -91,6 +91,8 @@ internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.Bo
     com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE ->
       AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE
     com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.R8_GRADUAL_API -> null
+    com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.BUILT_IN_KOTLIN_DEFAULT_ENABLED ->
+      AndroidGradlePluginProjectFlags.BooleanFlag.BUILT_IN_KOTLIN_DEFAULT_ENABLED
   }
 
 internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.convert() =

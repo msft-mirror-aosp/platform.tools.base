@@ -41,6 +41,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationActionImpl
 import com.android.build.gradle.internal.utils.fromDisallowChanges
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.ComponentType
@@ -60,6 +61,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
@@ -104,11 +106,13 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val configurationFiles: ConfigurableFileCollection
 
-  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesDirectories: ConfigurableFileCollection
-
   @get:Internal
   lateinit var libraryKeepRules: ArtifactCollection
     private set
+
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesFiles: ConfigurableFileCollection
+
+  @get:Internal abstract val keepRulesDirectories: ListProperty<Directory>
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val libraryKeepRulesFileCollection: ConfigurableFileCollection
 
@@ -432,7 +436,10 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
         from(optimizationCreationConfig.proguardFiles)
         from(task.libraryKeepRulesFileCollection)
       }
-      creationConfig.sources.keepRules { task.keepRulesDirectories.from(it.getAsFileTrees()) }
+      creationConfig.sources.keepRules {
+        task.keepRulesFiles.from(it.getAsFileTrees())
+        task.keepRulesDirectories.setDisallowChanges(it.all)
+      }
     }
 
     private fun applyProguardDefaultForNonTest(creationConfig: ConsumableCreationConfig) {

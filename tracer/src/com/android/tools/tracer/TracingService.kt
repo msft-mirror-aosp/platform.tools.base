@@ -45,14 +45,19 @@ class TracingService : Disposable {
 
   private fun initDriver() {
     sink = TracingSink(PathManager.getTempDir().toFile())
+    // TODO(b/467364934): Use the feature flag to control the feature, not enablement.
     val enabled = StudioFlags.STUDIO_TRACE_LIBRARY_ENABLED.get()
     driver = TracingDriver(sink, isEnabled = enabled)
     log.info("Tracing Driver initialized and ${if (enabled) "enabled" else "disabled"}. Saving traces to ${sink.getTraceFilePath()}.")
     tracer = driver.tracer
   }
 
-  /** Flush the current trace events to a file and start a new file by re-initializing the [TraceDriver]. */
-  internal fun flush(): String {
+  /**
+   * Flush the current trace events to a file and start a new file by re-initializing the [TraceDriver].
+   *
+   * TODO(b/479214523): Upstream this use-case to avoid synchronization issues that currently exist.
+   */
+  fun flush(): String {
     val file = sink.getTraceFilePath()
     driver.close()
     log.info("Perfetto Traces are flushed to ${file}.")

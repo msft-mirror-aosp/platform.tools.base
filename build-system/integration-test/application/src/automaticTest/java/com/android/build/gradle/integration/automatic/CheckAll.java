@@ -167,7 +167,7 @@ public class CheckAll {
                     "simpleCompositeBuild", // broken composite build project.
                     "multiCompositeBuild", // too complex composite build project to setup
                     "sourceDependency", // not set up fully, just used for sync tests
-                    "kotlinMultiplatform" // kotlin multiplatform project has its own assemble
+                    "kotlinMultiplatform" // java multiplatform project has its own assemble
                     // tests.
                     );
 

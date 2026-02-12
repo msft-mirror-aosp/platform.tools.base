@@ -29,6 +29,7 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.devices.Storage.Unit;
 
 import com.google.common.collect.ImmutableMap;
@@ -417,6 +418,43 @@ public class DeviceParserTest extends TestCase {
             device = DeviceParser.parse(stream).get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(0) != null);
             assertTrue(device.getSoftware(15) != null);
+        } finally {
+            stream.close();
+        }
+    }
+
+    public void testApiMinorRange() throws Exception {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("name", "Generic Device");
+        replacements.put("manufacturer", "Generic Manufacturer");
+        replacements.put("api-level", "36.1-");
+        InputStream stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+        try {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(1, devices.size());
+            Device device = devices.get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(35) == null);
+
+            replacements.put("api-level", "36.1-36.2");
+            stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+            device = DeviceParser.parse(stream).get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 2)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 3)) == null);
+
+            replacements.put("api-level", "36.1-38");
+            stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+            device = DeviceParser.parse(stream).get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(38)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(39)) == null);
         } finally {
             stream.close();
         }

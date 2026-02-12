@@ -294,6 +294,19 @@ class AdbHostServicesTest {
   }
 
   @Test
+  fun testMdnsCheckDisabled() {
+    // Prepare
+    fakeAdb.fakeAdbServer.mdnsEnabled = false
+
+    // Act
+    val result = runBlocking { hostServices.mdnsCheck() }
+
+    // Assert
+    Assert.assertEquals(MdnsStatus.Disabled, result.status)
+    Assert.assertTrue(result.rawText.contains("mdns discovery disabled"))
+  }
+
+  @Test
   fun testMdnsServices() {
     // Prepare
 

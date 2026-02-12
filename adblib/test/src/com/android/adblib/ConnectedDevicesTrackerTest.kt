@@ -21,6 +21,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -65,11 +66,24 @@ class ConnectedDevicesTrackerTest {
 
     // Act
     val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevicesFlowCollections = CopyOnWriteArrayList<ConnectedDeviceList>()
+    val job = launch { deviceCacheManager.connectedDevices.collect { connectedDevicesFlowCollections.add(it) } }
 
     // Assert
-    Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
-    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
+    // We expect exactly 2 emissions:
+    // 1. Initial state: Empty list, flowStatus=StartOfFlow
+    // 2. First update: List with 1 device, flowStatus=Active
+    yieldUntil { connectedDevicesFlowCollections.size == 2 }
+    // Wait a little longer to give `deviceCacheManager.connectedDevices` a chance to emit unexpected additional values
+    delay(100)
+
+    Assert.assertEquals(2, connectedDevicesFlowCollections.size)
+    Assert.assertTrue(connectedDevicesFlowCollections[0].isEmpty())
+    Assert.assertTrue(connectedDevicesFlowCollections[0].flowStatus.isStartOfFlow)
+    Assert.assertEquals(1, connectedDevicesFlowCollections[1].size)
+    Assert.assertTrue(connectedDevicesFlowCollections[1].flowStatus.isActive)
+
+    job.cancel()
   }
 
   @Test
@@ -81,10 +95,12 @@ class ConnectedDevicesTrackerTest {
     // Act
     val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
     yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevice = deviceCacheManager.connectedDevices.value.single()
     session.close()
     yieldUntil { deviceCacheManager.connectedDevices.value.isEmpty() }
 
     // Assert
+    Assert.assertEquals(com.android.adblib.DeviceState.DISCONNECTED, connectedDevice.deviceInfo.deviceState)
     Assert.assertTrue(deviceCacheManager.connectedDevices.value.isEmpty())
     Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow)
   }

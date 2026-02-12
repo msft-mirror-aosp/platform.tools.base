@@ -33,7 +33,6 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
     GradleTestProject.builder()
       .fromTestProject("testFixturesApp")
       .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
-      .disableBuiltInKotlin()
       .create()
 
   companion object {

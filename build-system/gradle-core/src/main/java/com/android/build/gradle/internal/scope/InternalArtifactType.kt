@@ -563,8 +563,7 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   // Optional recipe file (only used for libraries) which describes typedefs defined in the
   // library: InternalArtifactType<RegularFile>(FILE), Replaceable and how to process them
-  // (typically which typedefs to omit during
-  // packaging).
+  // (typically which typedefs to omit during packaging).
   object ANNOTATIONS_TYPEDEF_FILE : InternalArtifactType<RegularFile>(FILE), Replaceable
 
   // The classes.jar for the AAR
@@ -589,8 +588,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   object ASSET_PACK_BUNDLE : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
   // The main dex list for the bundle: InternalArtifactType<RegularFile>(FILE), Replaceable unlike
-  // the main dex list for a monolithic
-  // application: InternalArtifactType<RegularFile>(FILE), Replaceable this
+  // the main dex list for a monolithic application: InternalArtifactType<RegularFile>(FILE),
+  // Replaceable this
   // analyzes all of the dynamic feature classes too.
   object MAIN_DEX_LIST_FOR_BUNDLE : InternalArtifactType<RegularFile>(FILE), Replaceable
 
@@ -615,11 +614,9 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   object BUNDLE_MANIFEST : InternalArtifactType<RegularFile>(FILE), Replaceable
 
   // file containing the metadata for the full feature set. This contains the feature names:
-  // InternalArtifactType<RegularFile>(FILE),
-  // Replaceable
+  // InternalArtifactType<RegularFile>(FILE), Replaceable
   // the res ID offset: InternalArtifactType<RegularFile>(FILE), Replaceable both tied to the
-  // feature module path. Published by the base for
-  // the
+  // feature module path. Published by the base for the
   // other features to consume and find their own metadata.
   object FEATURE_SET_METADATA : InternalArtifactType<RegularFile>(FILE), Replaceable
 
@@ -672,8 +669,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   object SIGNING_CONFIG_VERSIONS : InternalArtifactType<RegularFile>(FILE), Replaceable
 
   // The validated signing config output: InternalArtifactType<RegularFile>(FILE), Replaceable to
-  // allow the task to be up to date:
-  // InternalArtifactType<RegularFile>(FILE), Replaceable and for allowing
+  // allow the task to be up to date: InternalArtifactType<RegularFile>(FILE), Replaceable and for
+  // allowing
   // other tasks to depend on the output.
   object VALIDATE_SIGNING_CONFIG : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
@@ -683,8 +680,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   object METADATA_FEATURE_MANIFEST : InternalArtifactType<RegularFile>(FILE), Replaceable
 
   // The library dependencies report: InternalArtifactType<RegularFile>(FILE), Replaceable direct
-  // and indirect:
-  // InternalArtifactType<RegularFile>(FILE), Replaceable published for the entire app to
+  // and indirect: InternalArtifactType<RegularFile>(FILE), Replaceable published for the entire app
+  // to
   // package in the bundle.
   object BUNDLE_DEPENDENCY_REPORT : InternalArtifactType<RegularFile>(FILE), Replaceable
 
@@ -796,6 +793,9 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   // This is the startup profile containing the profiles from all variant sources
   object MERGED_STARTUP_PROFILE : InternalArtifactType<RegularFile>(FILE, fileName = BaselineProfiles.StartupProfileFileName)
+
+  // Variant level combined test results.
+  object VARIANT_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
 
   override fun getFileSystemLocationName(): String {
     return fileName ?: super.getFileSystemLocationName()

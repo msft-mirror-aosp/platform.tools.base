@@ -17,6 +17,16 @@
 package com.android.dvlib;
 
 import com.android.utils.XmlUtils;
+
+import junit.framework.TestCase;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +35,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -35,13 +46,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import junit.framework.TestCase;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class DeviceSchemaTest extends TestCase {
 
@@ -59,7 +63,11 @@ public class DeviceSchemaTest extends TestCase {
         boolean result = DeviceSchema.validate(xml, baos, null);
         String output = baos.toString().trim();
         assertTrue(
-                String.format("Validation Assertion Failed, XML failed to validate when it was expected to pass\n%s\n", output),
+                String.format(
+                        "Validation Assertion Failed, XML failed to validate when it was expected"
+                                + " to pass\n"
+                                + "%s\n",
+                        output),
                 result);
         assertTrue(String.format(
                 "Regex Assertion Failed\nExpected No Output\nActual: %s\n",
@@ -79,7 +87,11 @@ public class DeviceSchemaTest extends TestCase {
         boolean result = DeviceSchema.validate(xml, baos, null);
         String output = baos.toString().trim();
         assertTrue(
-                String.format("Validation Assertion Failed, XML failed to validate when it was expected to pass\n%s\n", output),
+                String.format(
+                        "Validation Assertion Failed, XML failed to validate when it was expected"
+                                + " to pass\n"
+                                + "%s\n",
+                        output),
                 result);
         assertTrue(String.format(
                 "Regex Assertion Failed\nExpected No Output\nActual: %s\n",
@@ -99,12 +111,38 @@ public class DeviceSchemaTest extends TestCase {
         boolean result = DeviceSchema.validate(xml, baos, null);
         String output = baos.toString().trim();
         assertTrue(
-                String.format("Validation Assertion Failed, XML failed to validate when it was expected to pass\n%s\n", output),
+                String.format(
+                        "Validation Assertion Failed, XML failed to validate when it was expected"
+                                + " to pass\n"
+                                + "%s\n",
+                        output),
                 result);
         assertTrue(String.format(
                 "Regex Assertion Failed\nExpected No Output\nActual: %s\n",
                 baos.toString().trim()),
                 baos.toString().trim().isEmpty());
+    }
+
+    public void testValidXml_v9() throws Exception {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("name", "Generic Device");
+        replacements.put("manufacturer", "Generic Manufacturer");
+        replacements.put("api-level", "36.1-");
+        InputStream xml = getReplacedStream(replacements, 9);
+        xml.mark(500000);
+
+        assertEquals(9, DeviceSchema.getXmlSchemaVersion(xml));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        boolean result = DeviceSchema.validate(xml, baos, null);
+        String output = baos.toString().trim();
+        assertTrue(
+                String.format(
+                        "Validation Assertion Failed, XML failed to validate when it was expected"
+                                + " to pass\n"
+                                + "%s\n",
+                        output),
+                result);
     }
 
     public void testNoHardware() throws Exception {
@@ -216,7 +254,8 @@ public class DeviceSchemaTest extends TestCase {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         assertFalse(
-                "Validation Assertion Failed, XML failed to validate when it was expected to pass\n",
+                "Validation Assertion Failed, XML failed to validate when it was expected to"
+                        + " pass\n",
                 DeviceSchema.validate(xmlStream, baos, null));
         String actual = baos.toString().trim();
         actual = actual.replace("\r\n", "\n");  // Fix Windows CRLF
@@ -251,10 +290,18 @@ public class DeviceSchemaTest extends TestCase {
     }
 
     public static InputStream getReplacedStream(Map<String, String> replacements) throws Exception {
+        return getReplacedStream(replacements, 1);
+    }
+
+    public static InputStream getReplacedStream(Map<String, String> replacements, int version)
+            throws Exception {
         InputStream xml = DeviceSchema.class.getResourceAsStream("devices_minimal.xml");
         SAXParserFactory factory = SAXParserFactory.newInstance();
         XmlUtils.configureSaxFactory(factory, true, false);
         SAXParser parser = XmlUtils.createSaxParser(factory);
+        // Also replace the namespace to match the version
+        replacements.put(
+                "xmlns:d", "http://schemas.android.com/sdk/devices/" + Integer.toString(version));
         ReplacementHandler replacer = new ReplacementHandler(replacements);
         parser.parse(xml, replacer);
         Document doc = replacer.getGeneratedDocument();
@@ -299,10 +346,22 @@ public class DeviceSchemaTest extends TestCase {
         public void startElement(String uri, String localName, String name, Attributes attributes) {
             Element element = mDocument.createElement(name);
             for (int i = 0; i < attributes.getLength(); i++) {
-                element.setAttribute(attributes.getQName(i), attributes.getValue(i));
+                String qName = attributes.getQName(i);
+                if (mReplacements.containsKey(qName)) {
+                    element.setAttribute(qName, mReplacements.get(qName));
+                } else {
+                    element.setAttribute(qName, attributes.getValue(i));
+                }
             }
             for (String key : mPrefixes.keySet()) {
-                element.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + key, mPrefixes.get(key));
+                if (mReplacements.containsKey(XMLConstants.XMLNS_ATTRIBUTE + ":" + key)) {
+                    element.setAttribute(
+                            XMLConstants.XMLNS_ATTRIBUTE + ":" + key,
+                            mReplacements.get(XMLConstants.XMLNS_ATTRIBUTE + ":" + key));
+                } else {
+                    element.setAttribute(
+                            XMLConstants.XMLNS_ATTRIBUTE + ":" + key, mPrefixes.get(key));
+                }
             }
             mPrefixes.clear();
             if (mCurrElement != null) {

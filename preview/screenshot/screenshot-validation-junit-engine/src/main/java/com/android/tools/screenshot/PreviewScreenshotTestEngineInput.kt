@@ -62,8 +62,20 @@ object PreviewScreenshotTestEngineInput {
   }
 }
 
+private val properties: java.util.Properties =
+  java.util.Properties().apply {
+    val configFile = System.getProperty("PreviewScreenshotTestEngineInput.configFile")
+    if (!configFile.isNullOrEmpty()) {
+      val file = File(configFile)
+      if (file.exists()) {
+        file.inputStream().use { load(it) }
+      }
+    }
+  }
+
 private fun getSystemProperty(propertyName: String, defaultValue: String = ""): String {
-  return System.getProperty("PreviewScreenshotTestEngineInput.$propertyName", defaultValue)
+  val key = "PreviewScreenshotTestEngineInput.$propertyName"
+  return System.getProperty(key) ?: properties.getProperty(key) ?: defaultValue
 }
 
 private fun getFileFromSystemProperty(propertyName: String): File {

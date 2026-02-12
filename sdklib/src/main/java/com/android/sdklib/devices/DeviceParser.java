@@ -35,6 +35,7 @@ import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.utils.XmlUtils;
 import com.android.xml.sax.AttributeUtils;
 
@@ -355,32 +356,32 @@ public class DeviceParser {
                 int index;
                 if (val.charAt(0) == '-') {
                     if (val.length() == 1) { // -
-                        mSoftware.setMinSdkLevel(0);
-                        mSoftware.setMaxSdkLevel(Integer.MAX_VALUE);
+                        mSoftware.setMinAndroidApiLevel(new AndroidApiLevel(0));
+                        mSoftware.setMaxAndroidApiLevel(new AndroidApiLevel(Integer.MAX_VALUE));
                     } else { // -2
                         // Remove the front dash and any whitespace between it
                         // and the upper bound.
                         val = val.substring(1).trim();
-                        mSoftware.setMinSdkLevel(0);
-                        mSoftware.setMaxSdkLevel(Integer.parseInt(val));
+                        mSoftware.setMinAndroidApiLevel(new AndroidApiLevel(0));
+                        mSoftware.setMaxAndroidApiLevel(AndroidApiLevel.fromString(val));
                     }
                 } else if ((index = val.indexOf('-')) > 0) {
                     if (index == val.length() - 1) { // 1-
                         // Strip the last dash and any whitespace between it and
                         // the lower bound.
                         val = val.substring(0, val.length() - 1).trim();
-                        mSoftware.setMinSdkLevel(Integer.parseInt(val));
-                        mSoftware.setMaxSdkLevel(Integer.MAX_VALUE);
+                        mSoftware.setMinAndroidApiLevel(AndroidApiLevel.fromString(val));
+                        mSoftware.setMaxAndroidApiLevel(new AndroidApiLevel(Integer.MAX_VALUE));
                     } else { // 1-2
                         String min = val.substring(0, index).trim();
-                        String max = val.substring(index + 1);
-                        mSoftware.setMinSdkLevel(Integer.parseInt(min));
-                        mSoftware.setMaxSdkLevel(Integer.parseInt(max));
+                        String max = val.substring(index + 1).trim();
+                        mSoftware.setMinAndroidApiLevel(AndroidApiLevel.fromString(min));
+                        mSoftware.setMaxAndroidApiLevel(AndroidApiLevel.fromString(max));
                     }
                 } else { // 1
-                    int apiLevel = Integer.parseInt(val);
-                    mSoftware.setMinSdkLevel(apiLevel);
-                    mSoftware.setMaxSdkLevel(apiLevel);
+                    AndroidApiLevel version = AndroidApiLevel.fromString(val);
+                    mSoftware.setMinAndroidApiLevel(version);
+                    mSoftware.setMaxAndroidApiLevel(version);
                 }
             } else if (DeviceSchema.NODE_LIVE_WALLPAPER_SUPPORT.equals(localName)) {
                 mSoftware.setLiveWallpaperSupport(getBool(mStringAccumulator));

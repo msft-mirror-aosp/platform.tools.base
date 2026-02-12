@@ -1,10 +1,18 @@
 <libraries>
   <library
+      name=":@@:lib::release"
+      project=":lib"
+      provided="true"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:2.2.10"/>
+  <library
       name=":@@:javaLib"
       jars="${projectDir}/javaLib/build/libs/javaLib.jar"
       resolved="::"/>
   <library
-      name=":@@:lib::release"
-      project=":lib"
-      provided="true"/>
+      name="org.jetbrains:annotations:13.0@jar"
+      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+      resolved="org.jetbrains:annotations:13.0"/>
 </libraries>

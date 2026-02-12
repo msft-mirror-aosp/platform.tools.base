@@ -34,6 +34,7 @@ const SourceViewApp = {
             functionListContainer: document.querySelector('.func-list-container'),
             functionList: document.getElementById('function-list'),
             functionSearch: document.getElementById('function-search'),
+            functionSearchClearBtn: document.getElementById('function-search-clear-btn'),
             sourceBreadcrumbs: document.getElementById('source-breadcrumbs'),
             variantFilterBtn: document.getElementById('source-variant-filter-btn'),
             sourceVariantFilterText: document.getElementById('source-variant-filter-text'),
@@ -131,40 +132,84 @@ const SourceViewApp = {
         const { packageName, sourceFileName } = this.classData;
         const { moduleName, testSuiteName } = this.context;
 
-        let html = `<a href="#" id="back-to-report" class="breadcrumb-link flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:bg-gray-100 rounded-lg transition-colors -ml-2 px-2 py-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                                                        </svg>
-                        Back
-                      </a>
-                      <span>/</span>
-                     <a href="#" class="breadcrumb-link" data-level="root">Project</a>`;
+        let html = `
+            <a href="#" class="action-btn" data-action="go-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back</span>
+            </a>`;
 
-        if (moduleName) html += `<span> / </span><span class="text-gray-500">${moduleName}</span>`;
-        if (testSuiteName!=="Aggregated") html += `<span> / </span><span class="text-gray-500">${testSuiteName}</span>`;
-        if (packageName) html += `<span> / </span><span class="text-gray-500">${packageName}</span>`;
-        html += `<span> / </span><span class="font-semibold text-gray-800">${sourceFileName}</span>`;
+        html += `<div class="flex items-center gap-2 text-sm">
+            <span class="breadcrumb-separator">/</span>
+            <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+
+        if (moduleName) {
+            html += `
+                <span class="breadcrumb-separator">/</span>
+                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${moduleName}">${moduleName}</a>`;
+        }
+        if (packageName) {
+             html += `
+                <span class="breadcrumb-separator">/</span>
+                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
+        }
+        if (testSuiteName !== "Aggregated") {
+             html += `
+                <span class="breadcrumb-separator">/</span>
+                <span class="text-gray-500">${testSuiteName}</span>`;
+        }
+
+        html += `
+            <span class="breadcrumb-separator">/</span>
+            <span class="font-semibold text-gray-800">${sourceFileName}</span>
+        </div>`;
 
         this.elements.sourceBreadcrumbs.innerHTML = html;
-
-        this.elements.sourceBreadcrumbs.querySelector('#back-to-report').addEventListener('click', (e) => {
-            e.preventDefault();
-            App.showReportView();
-        });
-        this.elements.sourceBreadcrumbs.querySelector('[data-level="root"]').addEventListener('click', (e) => {
-            e.preventDefault();
-            App.showReportView();
-            CoverageReportApp.resetSelection();
-            CoverageReportApp.state.currentView = 'modules';
-            CoverageReportApp.render();
-        });
     },
 
     bindEvents() {
         this.elements.variantFilterBtn.addEventListener('click', this.toggleVariantDropdown.bind(this));
         this.elements.variantFilters.addEventListener('change', this.handleVariantToggle.bind(this));
         this.elements.functionSearch.addEventListener('input', this.handleFunctionSearch.bind(this));
+        this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
+        this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
+    },
+
+    handleBreadcrumbClick(e) {
+        const link = e.target.closest('a[data-action]');
+        if (!link) return;
+
+        e.preventDefault();
+        const { action, moduleName, packageName } = link.dataset;
+
+        switch (action) {
+            case 'go-back':
+                App.showReportView();
+                break;
+
+            case 'go-to-modules':
+                CoverageReportApp.resetSelection();
+                CoverageReportApp.state.currentView = 'modules';
+                App.showReportView();
+                CoverageReportApp.render();
+                break;
+            case 'go-to-packages':
+                CoverageReportApp.state.selectedModule = moduleName;
+                CoverageReportApp.state.selectedPackage = null;
+                CoverageReportApp.state.currentView = 'packages';
+                App.showReportView();
+                CoverageReportApp.render();
+                break;
+            case 'go-to-classes':
+                CoverageReportApp.state.selectedModule = moduleName;
+                CoverageReportApp.state.selectedPackage = packageName;
+                CoverageReportApp.state.currentView = 'classes';
+                App.showReportView();
+                CoverageReportApp.render();
+                break;
+        }
     },
 
     toggleVariantDropdown() {
@@ -224,6 +269,18 @@ const SourceViewApp = {
             const methodName = link.textContent.trim().toLowerCase();
             link.style.display = methodName.includes(searchTerm) ? 'block' : 'none';
         });
+
+        if (searchTerm.length > 0) {
+            this.elements.functionSearchClearBtn.classList.remove('hidden');
+        } else {
+            this.elements.functionSearchClearBtn.classList.add('hidden');
+        }
+    },
+
+    handleFunctionSearchClear() {
+        this.elements.functionSearch.value = '';
+        this.handleFunctionSearch({ target: this.elements.functionSearch });
+        this.elements.functionSearch.focus();
     },
 
     handleMethodClick(e) {

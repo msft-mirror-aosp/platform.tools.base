@@ -75,6 +75,7 @@ class PublishingSpecsTest {
         AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES,
         AndroidArtifacts.ArtifactType.UNIT_TEST_LINT_MODEL,
         AndroidArtifacts.ArtifactType.UNIT_TEST_LINT_PARTIAL_RESULTS,
+        AndroidArtifacts.ArtifactType.TEST_RESULTS,
         AndroidArtifacts.ArtifactType.CODE_COVERAGE_DATA,
       )
 

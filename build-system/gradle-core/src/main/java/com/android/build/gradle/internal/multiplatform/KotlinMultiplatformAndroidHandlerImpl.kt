@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.multiplatform
 
+import com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
@@ -201,9 +202,9 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
     (kotlinExtension as ExtensionAware)
       .extensions
       .add(
-        KotlinMultiplatformAndroidLibraryTarget::class.java,
+        DeprecatedKotlinMultiplatformAndroidLibraryTarget::class.java,
         KotlinMultiplatformAndroidPlugin.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
-        androidTarget,
+        androidTarget as DeprecatedKotlinMultiplatformAndroidLibraryTarget,
       )
 
     (kotlinExtension as ExtensionAware)

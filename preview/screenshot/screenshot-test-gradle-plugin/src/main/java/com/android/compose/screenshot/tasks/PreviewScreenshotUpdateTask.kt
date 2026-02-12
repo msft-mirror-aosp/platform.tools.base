@@ -56,7 +56,10 @@ abstract class PreviewScreenshotUpdateTask : Test() {
       if (testEngineInput.testProjectJars.get().isEmpty() && testEngineInput.testProjectClassDirs.get().isEmpty()) {
         return@recordTaskAction
       }
-      testEngineInput.copyJvmArgsTo(::jvmArgs)
+      val configFile = temporaryDir.resolve("preview_screenshot_config.properties")
+      testEngineInput.saveToPropertiesFile(configFile)
+      testEngineInput.configureCommonJvmArgs(::jvmArgs)
+      jvmArgs("-DPreviewScreenshotTestEngineInput.configFile=${configFile.absolutePath}")
       super.executeTests()
     }
 }

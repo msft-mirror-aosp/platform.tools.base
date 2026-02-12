@@ -1,6 +1,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.KeepRules
+import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
 import java.io.File
 import javax.inject.Inject
@@ -10,7 +11,14 @@ abstract class KeepRulesImpl @Inject constructor(dslService: DslServices) : Keep
 
   internal abstract val ignoreFrom: MutableSet<String>
   internal abstract var ignoreFromAllExternalDependencies: Boolean
+  abstract override var includeDefault: Boolean
   abstract override val files: SetProperty<File>
+
+  @WithLazyInitialization
+  @Suppress("unused")
+  protected fun lazyInit() {
+    includeDefault = true
+  }
 
   override fun ignoreExternalDependencies(vararg ids: String) {
     ignoreFrom.addAll(ids)

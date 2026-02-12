@@ -1,0 +1,13 @@
+diff --git a/src/trace_processor/importers/common/tracks_common.h b/src/trace_processor/importers/common/tracks_common.h
+index 2a5a9fc0e39..2b88bdaaf06 100644
+--- a/src/trace_processor/importers/common/tracks_common.h
++++ b/src/trace_processor/importers/common/tracks_common.h
+@@ -162,7 +162,7 @@ inline constexpr auto kCpuMinFrequencyLimitBlueprint = tracks::CounterBlueprint(
+ 
+ inline constexpr auto kGpuFrequencyBlueprint = tracks::CounterBlueprint(
+     "gpu_frequency",
+-    tracks::StaticUnitBlueprint("MHz"),
++    tracks::StaticUnitBlueprint("kHz"),
+     tracks::DimensionBlueprints(kGpuDimensionBlueprint),
+     tracks::StaticNameBlueprint("gpufreq"));
+ 

@@ -101,12 +101,11 @@ public class XmlTestRunListenerTest extends TestCase {
      * A simple test to ensure expected output is generated for test run with no tests.
      */
     public void testEmptyGeneration() {
-        final String expectedOutput = "<?xml version='1.0' encoding='UTF-8' ?>" +
-            "<testsuite name=\"test\" tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" " +
-            "time=\"#TIMEVALUE#\" " +
-            "timestamp=\"ignore\" hostname=\"localhost\"> " +
-            "<properties />" +
-            "</testsuite>";
+        final String expectedOutput =
+                "<?xml version='1.0' encoding='UTF-8' ?>"
+                        + "<testsuites tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" "
+                        + "time=\"#TIMEVALUE#\" "
+                        + "timestamp=\"ignore\" hostname=\"localhost\" />";
         mResultReporter.testRunStarted("test", 1);
         mResultReporter.testRunEnded(1, Collections.<String, String> emptyMap());
 
@@ -132,7 +131,10 @@ public class XmlTestRunListenerTest extends TestCase {
         mResultReporter.testRunEnded(3, emptyMap);
         String output =  getOutput();
         // TODO: consider doing xml based compare
-        assertTrue(output.contains("tests=\"1\" failures=\"0\" errors=\"0\""));
+        assertTrue(output.contains("<testsuites tests=\"1\" failures=\"0\" errors=\"0\""));
+        assertTrue(
+                output.contains(
+                        "<testsuite name=\"FooTest\" tests=\"1\" failures=\"0\" errors=\"0\""));
         final String testCaseTag = String.format("<testcase name=\"%s\" classname=\"%s\"",
                 testId.getTestName(), testId.getClassName());
         assertTrue(output.contains(testCaseTag));
@@ -150,9 +152,12 @@ public class XmlTestRunListenerTest extends TestCase {
         mResultReporter.testFailed(testId, trace);
         mResultReporter.testEnded(testId, emptyMap);
         mResultReporter.testRunEnded(3, emptyMap);
-        String output =  getOutput();
+        String output = getOutput();
         // TODO: consider doing xml based compare
-        assertTrue(output.contains("tests=\"1\" failures=\"1\" errors=\"0\""));
+        assertTrue(output.contains("<testsuites tests=\"1\" failures=\"1\" errors=\"0\""));
+        assertTrue(
+                output.contains(
+                        "<testsuite name=\"FooTest\" tests=\"1\" failures=\"1\" errors=\"0\""));
         final String testCaseTag = String.format("<testcase name=\"%s\" classname=\"%s\"",
                 testId.getTestName(), testId.getClassName());
         assertTrue(output.contains(testCaseTag));
@@ -193,7 +198,7 @@ public class XmlTestRunListenerTest extends TestCase {
     /**
      * Returns the value if the time attribute from the given XML content
      *
-     * Actual XPATH: /testsuite/@time
+     * <p>Actual XPATH: /testsuites/@time
      *
      * @param xml XML content.
      * @return
@@ -202,11 +207,57 @@ public class XmlTestRunListenerTest extends TestCase {
         XPath xpath = XPathFactory.newInstance().newXPath();
 
         try {
-            return xpath.evaluate("/testsuite/@time", new InputSource(new StringReader(xml)));
+            return xpath.evaluate("/testsuites/@time", new InputSource(new StringReader(xml)));
         } catch (XPathExpressionException e) {
             // won't happen.
         }
 
         return null;
+    }
+
+    public void testMultipleClassesGrouping() {
+        Map<String, String> emptyMap = Collections.emptyMap();
+        final String class1 = "androidx.media3.datasource.ContentDataSourceContractTest";
+        final String class2 = "androidx.media3.datasource.DataSourceBitmapLoaderTest";
+        final TestIdentifier test1 = new TestIdentifier(class1, "test1");
+        final TestIdentifier test2 = new TestIdentifier(class2, "test2");
+
+        mResultReporter.testRunStarted(class1, 2);
+        mResultReporter.testStarted(test1);
+        mResultReporter.testEnded(test1, emptyMap);
+        mResultReporter.testStarted(test2);
+        mResultReporter.testEnded(test2, emptyMap);
+        mResultReporter.testRunEnded(100, emptyMap);
+
+        String output = getOutput();
+
+        // Root should be <testsuites>
+        assertTrue(
+                output.contains(
+                        "<testsuites tests=\"2\" failures=\"0\" errors=\"0\" skipped=\"0\""));
+        assertTrue(output.contains("timestamp=\"ignore\""));
+
+        // Should have two <testsuite> elements
+        assertTrue(
+                output.contains(
+                        "<testsuite name=\""
+                                + class1
+                                + "\" tests=\"1\" failures=\"0\" errors=\"0\" skipped=\"0\""));
+        assertTrue(
+                output.contains(
+                        "<testsuite name=\""
+                                + class2
+                                + "\" tests=\"1\" failures=\"0\" errors=\"0\" skipped=\"0\""));
+
+        // Each test should be in its respective testsuite
+        assertTrue(
+                output.indexOf("<testsuite name=\"" + class1 + "\"")
+                        < output.indexOf("name=\"test1\" classname=\"" + class1 + "\""));
+        assertTrue(
+                output.indexOf("<testsuite name=\"" + class2 + "\"")
+                        < output.indexOf("name=\"test2\" classname=\"" + class2 + "\""));
+
+        // Root tag closure
+        assertTrue(output.contains("</testsuites>"));
     }
 }

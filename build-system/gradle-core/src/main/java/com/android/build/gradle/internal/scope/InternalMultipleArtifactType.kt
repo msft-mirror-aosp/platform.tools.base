@@ -79,4 +79,13 @@ sealed class InternalMultipleArtifactType<T : FileSystemLocation>(kind: Artifact
 
   // Code coverage data collected from all variants for current and dependant modules.
   object AGGREGATED_CODE_COVERAGE_DATA : InternalMultipleArtifactType<Directory>(DIRECTORY, Category.INTERMEDIATES)
+
+  // Test result data from all test suite tasks of a single variant.
+  object TEST_SUITE_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
+
+  // Test result data collected from all variants of the current module.
+  object PROJECT_LEVEL_TEST_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
+
+  // Test result data collection from all variants of the current and dependant modules.
+  object ALL_PROJECT_TEST_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
 }

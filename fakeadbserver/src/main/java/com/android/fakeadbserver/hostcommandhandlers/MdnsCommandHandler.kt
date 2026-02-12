@@ -29,7 +29,11 @@ class MdnsCommandHandler : SimpleHostCommandHandler("mdns") {
   override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
     try {
       if ("check" == args) {
-        writeOkayResponse(responseSocket.getOutputStream(), "mdns daemon version [FakeAdb implementation]\n")
+        if (fakeAdbServer.mdnsEnabled) {
+          writeOkayResponse(responseSocket.getOutputStream(), "mdns daemon version [FakeAdb implementation]\n")
+        } else {
+          writeOkayResponse(responseSocket.getOutputStream(), "ERROR: mdns discovery disabled [FakeAdb implementation]\n")
+        }
       } else if ("services" == args) {
         val result = formatMdnsServiceList(fakeAdbServer.mdnsServicesCopy.get())
         writeOkayResponse(responseSocket.getOutputStream(), result)

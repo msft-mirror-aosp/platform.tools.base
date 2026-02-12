@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.BooleanOption
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,6 +79,57 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
       )
     } else {
       result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+    }
+  }
+
+  @Test
+  fun testBuiltInKotlinSupportAndKagpUsedInDifferentModules() {
+    val build =
+      rule.build {
+        androidLibrary {
+          @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+          kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+          files.add(
+            "src/main/java/LibFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibFoo
+            """
+              .trimIndent(),
+          )
+        }
+        androidApplication {
+          dependencies { api(project(DEFAULT_LIB_PATH)) }
+
+          files.add(
+            "src/main/kotlin/AppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            val l = com.foo.library.LibFoo()
+            """
+              .trimIndent(),
+          )
+        }
+        gradleProperties {
+          add(BooleanOption.BUILT_IN_KOTLIN, false)
+          add(BooleanOption.USE_NEW_DSL, false)
+        }
+      }
+
+    build.executor.run(":app:assembleDebug")
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .containsAtLeast(
+          "com/foo/application/AppFooKt",
+          "com/foo/library/LibFoo",
+          "pkg/name/app/R",
+          "pkg/name/lib/R",
+          "kotlin/",
+          "org/intellij/",
+          "org/jetbrains/",
+        )
     }
   }
 }

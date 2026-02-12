@@ -121,7 +121,6 @@ class ListDevicesCommandHandler : HostCommandHandler() {
         DeviceState.DeviceStatus.OFFLINE -> DevicesProto.ConnectionState.OFFLINE
         DeviceState.DeviceStatus.ONLINE -> DevicesProto.ConnectionState.DEVICE
         DeviceState.DeviceStatus.BOOTLOADER -> DevicesProto.ConnectionState.BOOTLOADER
-        DeviceState.DeviceStatus.DEVICE -> DevicesProto.ConnectionState.DEVICE
         DeviceState.DeviceStatus.HOST -> DevicesProto.ConnectionState.HOST
         DeviceState.DeviceStatus.RECOVERY -> DevicesProto.ConnectionState.RECOVERY
         DeviceState.DeviceStatus.SIDELOAD -> DevicesProto.ConnectionState.SIDELOAD

@@ -18,10 +18,12 @@ package com.android.tools.lint.checks.optional
 
 import com.android.SdkConstants.ATTR_VALUE
 import com.android.sdklib.SdkVersionInfo.CUR_DEVELOPMENT
+import com.android.support.AndroidxName
 import com.android.tools.lint.checks.ApiLookup
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.TypedefDetector
 import com.android.tools.lint.client.api.JavaEvaluator
+import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationOrigin
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
@@ -90,8 +92,9 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         id = "FlaggedApi",
         explanation =
           """
-          This lint check looks for accesses of APIs marked with `@FlaggedApi(X)` without \
-          a guarding `if (Flags.X)` check. See go/android-flagged-apis.
+          This lint check looks for accesses of APIs marked with `@FlaggedApi(X)` or \
+          `@RequiresFlag(X)` without a guarding `if (Flags.X)` check. \
+          See go/android-flagged-apis.
           """,
         briefDescription = "FlaggedApi access without check",
         category = Category.CORRECTNESS,
@@ -101,32 +104,36 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
-    private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
+    private val FLAGGED_API_ANNOTATION = AndroidxName("android.annotation.FlaggedApi", "androidx.annotation.FlaggedApi")
+    private val REQUIRES_FLAG_ANNOTATION = AndroidxName("android.annotation.RequiresFlag", "androidx.annotation.RequiresFlag")
 
-    /** Is the given [element] referencing an annotated element */
-    fun isAlreadyAnnotated(element: UElement?): Boolean {
-      val resolved = element?.tryResolve() ?: return false
-      return isAlreadyAnnotated(resolved)
+    private fun isFlagAnnotation(qualifiedName: String?): Boolean {
+      return FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)
     }
 
-    /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` annotation? */
-    fun isAlreadyAnnotated(resolved: PsiElement?): Boolean {
-      if (resolved !is PsiMember) return false
+    /** Is the given [element] referencing an annotated element */
+    fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?): Boolean {
+      val resolved = element?.tryResolve() ?: return false
+      return isAlreadyAnnotated(evaluator, resolved)
+    }
 
-      val modifierList = resolved.modifierList
-      if (modifierList != null && modifierList.hasAnnotation(FLAGGED_API_ANNOTATION)) {
-        return true
+    /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` or `@RequiresFlag` annotation? */
+    fun isAlreadyAnnotated(evaluator: JavaEvaluator, resolved: PsiElement?): Boolean {
+      if (resolved !is PsiMember) return false
+      // Check both the annotation on the member itself and its surrounding class.
+      return listOfNotNull(resolved, resolved.containingClass).any { owner ->
+        evaluator.getAnnotations(owner).any { isFlagAnnotation(it.qualifiedName) }
       }
-      val classModifierList = resolved.containingClass?.modifierList
-      if (classModifierList != null && classModifierList.hasAnnotation(FLAGGED_API_ANNOTATION)) {
-        return true
-      }
-      return false
     }
   }
 
   override fun applicableAnnotations(): List<String> {
-    return listOf(FLAGGED_API_ANNOTATION)
+    return listOf(
+      FLAGGED_API_ANNOTATION.oldName(),
+      FLAGGED_API_ANNOTATION.newName(),
+      REQUIRES_FLAG_ANNOTATION.oldName(),
+      REQUIRES_FLAG_ANNOTATION.newName(),
+    )
   }
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
@@ -146,15 +153,24 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     return false
   }
 
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
+    if (issue !== ISSUE) return super.sameMessage(issue, new, old)
+    if (new == old) return true
+    val normalizedNew = new.replace("FlaggedApi", "RequiresFlag")
+    val normalizedOld = old.replace("FlaggedApi", "RequiresFlag")
+    return stringsEquivalent(normalizedNew, normalizedOld)
+  }
+
   override fun visitAnnotationUsage(
     context: JavaContext,
     element: UElement,
     annotationInfo: AnnotationInfo,
     usageInfo: AnnotationUsageInfo,
   ) {
+    val qualifiedName = annotationInfo.qualifiedName ?: return
     val annotation = annotationInfo.annotation
     if (usageInfo.type == AnnotationUsageType.DEFINITION) {
-      checkFlagApiDeclaration(annotation, context, usageInfo)
+      checkFlagApiDeclaration(annotation, context, usageInfo, qualifiedName)
       return
     }
 
@@ -189,13 +205,13 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         }
         flag
       } else {
-        getFlaggedApiFromSource(evaluator, annotation)
+        getFlagFieldsFromSource(evaluator, annotation)
       }
 
     val (flag, flag2) = flags ?: return
 
     if (annotationInfo.origin == AnnotationOrigin.SELF) {
-      if (annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION) {
+      if (FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
         return
       }
     } else if (isAlreadyAnnotated(evaluator, element, flag)) {
@@ -253,21 +269,26 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
 
   private fun getFlagMethodName(flagName: String): String = constantNameToCamelCase(flagName.removePrefix("FLAG_"))
 
-  private fun checkFlagApiDeclaration(annotation: UAnnotation, context: JavaContext, usageInfo: AnnotationUsageInfo) {
+  private fun checkFlagApiDeclaration(
+    annotation: UAnnotation,
+    context: JavaContext,
+    usageInfo: AnnotationUsageInfo,
+    qualifiedName: String,
+  ) {
     val expression = annotation.attributeValues.firstOrNull()?.expression
     if (expression is ULiteralExpression) {
       val flagString = ConstantEvaluator.evaluateString(context, expression, false)
       if (usageInfo.type == AnnotationUsageType.DEFINITION) {
+        val label = qualifiedName.substringAfterLast('.')
         if (flagString != null && flagString.indexOf('.') == -1) {
-          context.report(ISSUE, expression, context.getLocation(expression), "Invalid @FlaggedApi descriptor; should be `package.name`")
+          context.report(ISSUE, expression, context.getLocation(expression), "Invalid @$label descriptor; should be `package.name`")
         } else {
           val incident =
             Incident(
               ISSUE,
               expression,
               context.getLocation(expression),
-              "@FlaggedApi should specify an actual flag constant; " +
-                "raw strings are discouraged (and more importantly, **not enforced**)",
+              "@$label should specify an actual flag constant; " + "raw strings are discouraged (and more importantly, **not enforced**)",
             )
           incident.overrideSeverity(Severity.WARNING)
           context.report(incident)
@@ -291,12 +312,12 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     val name = element.getParentOfType<UMethod>()?.name ?: "?"
     val message =
       "$description is a flagged API and should be inside an `if (${flagClassName}.$flagMethodName())` check " +
-        "(or annotate the surrounding method `$name` with `@FlaggedApi(${flagClassName}.$flagName) to transfer requirement to caller`)"
+        "(or annotate the surrounding method `$name` with `@RequiresFlag(${flagClassName}.$flagName) to transfer requirement to caller`)"
     context.report(ISSUE, element, context.getLocation(element), message)
   }
 
   /**
-   * Represents one or two flag fields; this is primarily a result object from the [getFlaggedApiFromSource] and [getFlaggedApiFromString]
+   * Represents one or two flag fields; this is primarily a result object from the [getFlagFieldsFromSource] and [getFlaggedApiFromString]
    * methods which need to return a pair of flags.
    */
   private class OneOrTwoFlagFields(val flag1: PsiField, val flag2: PsiField?) {
@@ -305,8 +326,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     operator fun component2(): PsiField? = flag2
   }
 
-  /** Given a `@FlaggedApi` annotation, returns the resolved field. */
-  private fun getFlaggedApiFromSource(evaluator: JavaEvaluator, annotation: UAnnotation): OneOrTwoFlagFields? {
+  /** Given a `@FlaggedApi` or `@RequiresFlag` annotation, returns the resolved field. */
+  private fun getFlagFieldsFromSource(evaluator: JavaEvaluator, annotation: UAnnotation): OneOrTwoFlagFields? {
     val expression = annotation.attributeValues.firstOrNull()?.expression
     val flag = expression?.tryResolve() as? PsiField
     if (flag == null) {
@@ -363,7 +384,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       if (current is UAnnotated) {
         //noinspection AndroidLintExternalAnnotations
         for (annotation in current.uAnnotations) {
-          val (flag1, flag2) = getFlaggedApiFromSource(evaluator, annotation) ?: continue
+          val (flag1, flag2) = getFlagFieldsFromSource(evaluator, annotation) ?: continue
           if (flag1.isEquivalentTo(flag) || flag2 != null && flag2.isEquivalentTo(flag)) {
             return true
           }
@@ -379,7 +400,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         if (pkg != null) {
           for (psiAnnotation in pkg.annotations) {
             val annotation = UastFacade.convertElement(psiAnnotation, null) as? UAnnotation ?: continue
-            val (flag1, flag2) = getFlaggedApiFromSource(evaluator, annotation) ?: continue
+            val (flag1, flag2) = getFlagFieldsFromSource(evaluator, annotation) ?: continue
             if (flag1.isEquivalentTo(flag) || flag2 != null && flag2.isEquivalentTo(flag)) {
               return true
             }

@@ -40,7 +40,7 @@
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
+      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/built_in_kotlinc/release/compileReleaseKotlin/classes:build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
       type="MAIN"
       applicationId="com.example.app"
       generatedSourceFolders="build/generated/ap_generated_sources/release/out"
@@ -51,7 +51,7 @@
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </androidTestArtifact>
   <testFixturesArtifact
-      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes"
+      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes:build/intermediates/built_in_kotlinc/releaseTestFixtures/<digest>/classes"
       applicationId="com.example.app.testFixtures"
       generatedSourceFolders="build/generated/ap_generated_sources/releaseTestFixtures/out"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">

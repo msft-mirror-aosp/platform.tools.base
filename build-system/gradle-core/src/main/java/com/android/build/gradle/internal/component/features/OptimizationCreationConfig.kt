@@ -37,6 +37,9 @@ interface OptimizationCreationConfig {
   /** Returns the component ids of those library dependencies whose keep rules are ignored when building the project. */
   val ignoreFromInKeepRules: Provider<List<String>>
 
+  /** Whether to include the default proguard rules. */
+  val includeDefaultRules: Boolean
+
   /** Returns whether to ignore all keep rules from external library dependencies. */
   val ignoreFromAllExternalDependenciesInKeepRules: Boolean
 

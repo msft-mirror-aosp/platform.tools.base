@@ -32,12 +32,13 @@ public final class DeviceSystemImageMatcher {
             return false;
         }
 
-        int apiLevel = image.getAndroidVersion().getApiLevel();
+        AndroidApiLevel apiLevel = image.getAndroidVersion().getAndroidApiLevel();
         if (device.getAllSoftware().stream()
                 .noneMatch(
                         software ->
-                                software.getMinSdkLevel() <= apiLevel
-                                        && apiLevel <= software.getMaxSdkLevel())) {
+                                apiLevel.compareTo(software.getMinAndroidApiLevel()) >= 0
+                                        && apiLevel.compareTo(software.getMaxAndroidApiLevel())
+                                                <= 0)) {
             return false;
         }
 

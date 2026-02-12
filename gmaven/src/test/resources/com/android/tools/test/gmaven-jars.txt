@@ -470,7 +470,6 @@ com/android/tools/build/gradle
   META-INF/gradle-core.kotlin_module
   META-INF/gradle-plugins/
   META-INF/gradle-plugins/android-library.properties
-  META-INF/gradle-plugins/android-reporting.properties
   META-INF/gradle-plugins/android.properties
   META-INF/gradle-plugins/com.android.ai-pack.properties
   META-INF/gradle-plugins/com.android.application.properties
@@ -644,7 +643,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/test/report/style.css
   com/android/build/gradle/internal/testFixtures/
   com/android/build/gradle/internal/testing/
-  com/android/build/gradle/internal/testing/androidtest/
   com/android/build/gradle/internal/testing/utp/
   com/android/build/gradle/internal/testing/utp/emulatorcontrol/
   com/android/build/gradle/internal/testing/utp/worker/
@@ -907,6 +905,7 @@ com/android/tools/dvlib
   com/android/dvlib/devices-6.xsd
   com/android/dvlib/devices-7.xsd
   com/android/dvlib/devices-8.xsd
+  com/android/dvlib/devices-9.xsd
 
 com/android/tools/emulator/proto
   META-INF/

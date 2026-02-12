@@ -116,6 +116,11 @@ message AndroidGradlePluginProjectFlags {
 
         // Whether aligning compile to runtime constraints for all components is enabled
         ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT = 13;
+
+        // Whether built-in Kotlin is enabled by default in this Gradle build
+        // Doesn't directly affect KMP, but useful to have here for when Studio is adding a non-KMP
+        // Android application or library to a build with only KMP subprojects.
+        BUILT_IN_KOTLIN_DEFAULT_ENABLED = 14;
     }
 
     message BooleanFlagValue {

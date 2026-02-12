@@ -36,6 +36,7 @@ import javax.xml.transform.TransformerException
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
+import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
@@ -262,8 +263,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
           val targetFile = parameters.reportOutputDir.asFile.get().resolve(xmlFile.name)
           xmlFile.copyTo(targetFile, overwrite = true)
         }
-      } catch (e: IOException) {
-        throw UncheckedIOException("Unable to generate Jacoco report", e)
+      } catch (e: Exception) {
+        throw GradleException("Unable to generate Jacoco XML report", e)
       }
     }
 

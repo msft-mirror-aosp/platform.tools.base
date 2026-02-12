@@ -84,34 +84,30 @@ class XMLTransformerTest {
     val moduleBuilder = coverageBuilder.moduleReportBuilders["my-module"]!!
     assertThat(moduleBuilder.name).isEqualTo("my-module")
 
-    assertThat(moduleBuilder.variantCoverages).hasSize(1)
-    val moduleAggregatedCoverage = moduleBuilder.variantCoverages.first()
+    assertThat(moduleBuilder.testSuiteCoverages).hasSize(2)
+    val moduleAggregatedCoverage = moduleBuilder.testSuiteCoverages["Aggregated"]!!.variantCoverages.first()
     assertThat(moduleAggregatedCoverage.name).isEqualTo("debug")
     assertThat(moduleAggregatedCoverage.instruction.covered).isEqualTo(15)
     assertThat(moduleAggregatedCoverage.instruction.total).isEqualTo(20)
 
-    assertThat(moduleBuilder.testSuites).hasSize(1)
-    val testSuiteBuilder = moduleBuilder.testSuites["UnitTest"]!!
-    assertThat(testSuiteBuilder.name).isEqualTo("UnitTest")
+    val moduleUnitTestCoverage = moduleBuilder.testSuiteCoverages["UnitTest"]!!.variantCoverages.first()
+    assertThat(moduleUnitTestCoverage.name).isEqualTo("debug")
+    assertThat(moduleUnitTestCoverage.instruction.covered).isEqualTo(90)
+    assertThat(moduleUnitTestCoverage.instruction.total).isEqualTo(100)
 
-    assertThat(testSuiteBuilder.variantCoverages).hasSize(1)
-    val testSuiteCoverage = testSuiteBuilder.variantCoverages.first()
-    assertThat(testSuiteCoverage.name).isEqualTo("debug")
-    assertThat(testSuiteCoverage.instruction.covered).isEqualTo(90)
-    assertThat(testSuiteCoverage.instruction.total).isEqualTo(100)
+    assertThat(moduleBuilder.packages).hasSize(1)
+    val packageBuilder = moduleBuilder.packages["com.example.app"]!!
+    assertThat(packageBuilder.name).isEqualTo("com.example.app")
 
-    assertThat(testSuiteBuilder.packages).hasSize(1)
-    val packageBuilder = testSuiteBuilder.packages["com.example.app"]!!
-    assertThat(packageBuilder.fullyQualifiedName).isEqualTo("com.example.app")
-    assertThat(packageBuilder.testSuiteName).isEqualTo("UnitTest")
-    assertThat(packageBuilder.variantCoverages.first().instruction.covered).isEqualTo(90)
+    assertThat(packageBuilder.testSuiteCoverages).hasSize(1)
+    val packageTestSuiteCoverage = packageBuilder.testSuiteCoverages["UnitTest"]!!
+    assertThat(packageTestSuiteCoverage.variantCoverages.first().instruction.covered).isEqualTo(90)
 
     assertThat(packageBuilder.classes).hasSize(1)
     val classBuilder = packageBuilder.classes["MyActivity"]!!
     assertThat(classBuilder.name).isEqualTo("MyActivity")
     assertThat(classBuilder.packageName).isEqualTo("com.example.app")
     assertThat(classBuilder.sourceFileName).isEqualTo("MyActivity.kt")
-    assertThat(classBuilder.testSuiteName).isEqualTo("UnitTest")
 
     val generatedPath = classBuilder.variantSourceFilePaths.first().path
     assertThat(generatedPath).isEqualTo("src/main/java/com.example.app/MyActivity.kt")
@@ -161,20 +157,20 @@ class XMLTransformerTest {
     XMLTransformer.transform(aggregatedWithPackagesXml, projectBaseDir, coverageBuilder, sourceFileReportsBuilder)
     assertThat(coverageBuilder.allTestSuiteNames).containsExactly("DefaultPackageTestmy-module")
     val moduleBuilder = coverageBuilder.moduleReportBuilders["my-module"]!!
-    assertThat(moduleBuilder.packages).hasSize(1)
-    val modulePackageBuilder = moduleBuilder.packages["com.other.package"]!!
-    assertThat(modulePackageBuilder.fullyQualifiedName).isEqualTo("com.other.package")
-    assertThat(modulePackageBuilder.testSuiteName).isEqualTo("Aggregated")
-    assertThat(modulePackageBuilder.variantCoverages.first().instruction.covered).isEqualTo(5)
 
-    val testSuiteBuilder = moduleBuilder.testSuites["DefaultPackageTest"]!!
-    assertThat(testSuiteBuilder.packages).hasSize(1)
-    val defaultPackageBuilder = testSuiteBuilder.packages["default"]!!
-    assertThat(defaultPackageBuilder.fullyQualifiedName).isEqualTo("default")
+    assertThat(moduleBuilder.packages).hasSize(2)
+
+    val modulePackageBuilder = moduleBuilder.packages["com.other.package"]!!
+    assertThat(modulePackageBuilder.name).isEqualTo("com.other.package")
+    assertThat(modulePackageBuilder.testSuiteCoverages["Aggregated"]!!.variantCoverages.first().instruction.covered).isEqualTo(5)
+
+    val defaultPackageBuilder = moduleBuilder.packages["default"]!!
+    assertThat(defaultPackageBuilder.name).isEqualTo("default")
     assertThat(defaultPackageBuilder.classes).hasSize(1)
 
     val classBuilder = defaultPackageBuilder.classes["DefaultActivity"]!!
     assertThat(classBuilder.name).isEqualTo("DefaultActivity")
+    assertThat(classBuilder.packageName).isEqualTo("default")
 
     val generatedPath = classBuilder.variantSourceFilePaths.first().path
     val expectedLogicalPath = "src/main/java/default/DefaultActivity.kt"

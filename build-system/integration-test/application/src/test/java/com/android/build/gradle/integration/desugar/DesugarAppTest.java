@@ -66,7 +66,6 @@ public class DesugarAppTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                    .disableBuiltInKotlin()
                     .create();
 
     @Parameterized.Parameters(name = "tool={0}")
@@ -125,7 +124,8 @@ public class DesugarAppTest {
         Assume.assumeTrue(java8LangSupport != Java8LangSupport.R8);
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "android.compileOptions.sourceCompatibility 1.7\n"
+                "android.enableKotlin = false\n"
+                        + "android.compileOptions.sourceCompatibility 1.7\n"
                         + "android.compileOptions.targetCompatibility 1.7\n"
                         + "dependencies {\n"
                         + "    api fileTree(dir: 'libs', include: ['*.jar'])\n"

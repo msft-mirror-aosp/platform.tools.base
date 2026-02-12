@@ -27,9 +27,6 @@ object AndroidTestConfigurationKeys {
   /** The serial number of the device to run tests on. */
   const val DEVICE_SERIAL = "android-test.device-serial"
 
-  /** The API level of the target device. */
-  const val DEVICE_API_LEVEL = "android-test.device-api-level"
-
   /** Timeout in milliseconds for APK installation. */
   const val INSTALL_TIMEOUT_MS = "android-test.install-timeout-ms"
 

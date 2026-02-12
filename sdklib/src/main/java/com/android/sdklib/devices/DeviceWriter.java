@@ -19,6 +19,13 @@ package com.android.sdklib.devices;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.ScreenRound;
 import com.android.resources.UiMode;
+import com.android.sdklib.AndroidApiLevel;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.awt.Point;
 import java.io.File;
 import java.io.OutputStream;
@@ -26,6 +33,7 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,10 +44,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class DeviceWriter {
 
@@ -68,7 +72,8 @@ public class DeviceWriter {
         Element root = doc.createElement(PREFIX + DeviceSchema.NODE_DEVICES);
         root.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":xsi",
                 XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
-        root.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + LOCAL_NS, DeviceSchema.NS_DEVICES_URI);
+        root.setAttribute(
+                XMLConstants.XMLNS_ATTRIBUTE + ":" + LOCAL_NS, DeviceSchema.NS_DEVICES_URI);
         doc.appendChild(root);
 
         for (Device device : devices) {
@@ -278,12 +283,19 @@ public class DeviceWriter {
         Element software = doc.createElement(PREFIX + DeviceSchema.NODE_SOFTWARE);
 
         String apiVersion = "";
-        if (sw.getMinSdkLevel() != 0) {
-            apiVersion += Integer.toString(sw.getMinSdkLevel());
-        }
-        apiVersion += "-";
-        if (sw.getMaxSdkLevel() != Integer.MAX_VALUE) {
-            apiVersion += Integer.toString(sw.getMaxSdkLevel());
+        AndroidApiLevel min = sw.getMinAndroidApiLevel();
+        AndroidApiLevel max = sw.getMaxAndroidApiLevel();
+
+        if (min.equals(max)) {
+            apiVersion = min.toString();
+        } else {
+            if (min.getMajorVersion() != 0) {
+                apiVersion += min.toString();
+            }
+            apiVersion += "-";
+            if (max.getMajorVersion() != Integer.MAX_VALUE) {
+                apiVersion += max.toString();
+            }
         }
         addElement(doc, software, DeviceSchema.NODE_API_LEVEL, apiVersion);
         addElement(doc, software, DeviceSchema.NODE_LIVE_WALLPAPER_SUPPORT,

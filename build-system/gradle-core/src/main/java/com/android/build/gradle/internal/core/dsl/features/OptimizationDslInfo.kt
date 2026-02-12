@@ -48,9 +48,13 @@ interface OptimizationDslInfo {
   /** Return set of packages Return empty set for anything than application module */
   val includePackages: Set<String>
 
-  val keepRuleFiles: Set<File>
+  /** Returns true if R8 optimization */
+  val optimizationEnabled: Boolean
 
-  fun getProguardFiles(into: ListProperty<RegularFile>) {}
+  val keepRuleFiles: Set<File>
+  val includeDefaultRules: Boolean
+
+  fun getProguardFiles(into: ListProperty<RegularFile>, newR8ApiInUse: Boolean, includeDefault: Boolean) {}
 
   fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>)
 }

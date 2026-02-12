@@ -438,7 +438,6 @@ internal constructor(
     AUTHORIZING("authorizing"),
     NOPERMISSION("nopermission"),
     DETACHED("detached"),
-    DEVICE("device"),
     HOST("host"),
     RESCUE("rescue"),
     UNRECOGNIZED("unrecognized"),

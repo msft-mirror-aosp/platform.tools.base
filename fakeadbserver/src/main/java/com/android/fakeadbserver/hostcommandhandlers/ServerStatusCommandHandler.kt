@@ -37,7 +37,7 @@ class ServerStatusCommandHandler : SimpleHostCommandHandler("server-status") {
     status.os = System.getProperty("os.name")
     status.traceLevel = "all"
     status.burstMode = true
-    status.mdnsEnabled = true
+    status.mdnsEnabled = fakeAdbServer.mdnsEnabled
     status.keystorePath = "/path/to/keystore"
     status.knownHostsPath = "/path/to/knownhosts"
 

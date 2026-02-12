@@ -28,4 +28,15 @@ interface KeepRules {
 
   /** Keep rules files set */
   @get:Incubating val files: SetProperty<File>
+
+  /**
+   * This flag will include default keep rules that enables shrinking, obfuscation, and optimization of bytecode when `optimization.enable`
+   * is on.
+   *
+   * Default value is true. When merging the values from build types and product flavors, if any have this as false, it will be false in the
+   * eventual variant.
+   *
+   * It's the equivalent of using `getDefaultProguardFile("proguard-android-optimize.txt")`
+   */
+  @get:Incubating @set:Incubating var includeDefault: Boolean
 }

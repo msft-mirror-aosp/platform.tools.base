@@ -44,6 +44,9 @@ class MergedOptimization : MergedOptions<OptimizationImpl> {
   var keepRuleFiles: Set<File> = setOf()
     private set
 
+  var includeDefault: Boolean = true
+    private set
+
   override fun reset() {
     ignoreFromInKeepRules = mutableSetOf()
     ignoreFromAllExternalDependenciesInKeepRules = false
@@ -65,6 +68,7 @@ class MergedOptimization : MergedOptions<OptimizationImpl> {
 
     // set instead of append as we only need build type that is appended last
     enable = option.enable
+    includeDefault = option.keepRules.includeDefault
     packageScope = option.packageScope.get()
     if (option.keepRules.files.isPresent) keepRuleFiles = option.keepRules.files.get()
   }

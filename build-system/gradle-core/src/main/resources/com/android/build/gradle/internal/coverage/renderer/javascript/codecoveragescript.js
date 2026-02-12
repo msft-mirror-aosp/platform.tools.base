@@ -37,12 +37,15 @@ const App = {
                 const moduleName = link.dataset.moduleName;
                 const packageName = link.dataset.packageName;
                 const className = link.dataset.className;
-                const testSuiteName = link.dataset.testSuiteName;
 
-                const classObj = this.findClassObject(moduleName, packageName, className, testSuiteName);
+                const classObj = this.findClassObject(moduleName, packageName, className);
 
                 if (classObj) {
-                    this.showSourceView(classObj, { moduleName, testSuiteName });
+                    const context = {
+                        moduleName: moduleName,
+                        testSuiteName: CoverageReportApp.state.filters.testSuite
+                    };
+                    this.showSourceView(classObj, context);
                 } else {
                     console.error("Class data not found for source view.");
                 }
@@ -50,27 +53,23 @@ const App = {
         });
     },
 
-    findClassObject(moduleName, packageName, className, testSuiteName) {
+    findClassObject(moduleName, packageName, className) {
         if (typeof fullReport === 'undefined') return null;
 
         const module = fullReport.modules.find(m => m.name === moduleName);
         if (!module) return null;
 
-        let packages = module.packages || [];
-        if (testSuiteName) {
-            const suite = (module.testSuites || []).find(ts => ts.name === testSuiteName);
-            if (suite) packages = suite.packages || [];
-        }
-
-        const pkg = packages.find(p => p.name === packageName);
+        const pkg = (module.packages || []).find(p => p.name === packageName);
         if (!pkg) return null;
 
         return (pkg.classes || []).find(c => c.name === className);
     },
 
-    showSourceView(classData, context = {}) {
+    showSourceView(classData, context) {
         document.getElementById('report-view').style.display = 'none';
         document.getElementById('source-view').style.display = 'block';
+        document.getElementById('report-view-controls').classList.add('hidden');
+        document.getElementById('source-view-controls').classList.remove('hidden');
 
         SourceViewApp.loadAndRender(classData, context);
     },
@@ -78,6 +77,8 @@ const App = {
     showReportView() {
         document.getElementById('source-view').style.display = 'none';
         document.getElementById('report-view').style.display = 'block';
+        document.getElementById('source-view-controls').classList.add('hidden');
+        document.getElementById('report-view-controls').classList.remove('hidden');
     }
 }
 
@@ -86,14 +87,14 @@ const CoverageReportApp = {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
         selectedModule: null,
-        selectedTestSuite: null,
         selectedPackage: null,
-        filters: { module: 'all', testSuite: 'Aggregated', variants: [], search: '' },
+        filters: { module: 'all', testSuite: 'Aggregated', package: 'all', class: 'all', variants: [], search: '' },
         sort: { by: 'name', order: 'asc' },
-        searchableList: [],
     },
     elements: {},
     fullReport: null,
+    allPackages: [],
+    allClasses: [],
 
     init(fullReport) {
         this.fullReport = fullReport;
@@ -102,7 +103,6 @@ const CoverageReportApp = {
         this.populateGlobalStats();
         this.populateFilters();
         this.bindEvents();
-        this.setupSearchData();
         this.render();
         this.closeDropdownOnClickOutside();
     },
@@ -119,6 +119,14 @@ const CoverageReportApp = {
             moduleFilterText: document.getElementById('module-filter-text'),
             moduleFilterDropdown: document.getElementById('module-filter-dropdown'),
             moduleFilterList: document.getElementById('module-filter-list'),
+            packageFilterBtn: document.getElementById('package-filter-btn'),
+            packageFilterText: document.getElementById('package-filter-text'),
+            packageFilterDropdown: document.getElementById('package-filter-dropdown'),
+            packageFilterList: document.getElementById('package-filter-list'),
+            classFilterBtn: document.getElementById('class-filter-btn'),
+            classFilterText: document.getElementById('class-filter-text'),
+            classFilterDropdown: document.getElementById('class-filter-dropdown'),
+            classFilterList: document.getElementById('class-filter-list'),
             variantFilterBtn: document.getElementById('variant-filter-btn'),
             variantFilterText: document.getElementById('variant-filter-text'),
             variantFilterDropdown: document.getElementById('variant-filter-dropdown'),
@@ -128,7 +136,9 @@ const CoverageReportApp = {
             viewModeDropdown: document.getElementById('view-mode-dropdown'),
             viewModeList: document.getElementById('view-mode-list'),
             searchInput: document.getElementById('search-input'),
+            searchClearBtn: document.getElementById('search-clear-btn'),
             viewToggles: document.getElementById('view-toggles'),
+            flatBreadcrumbs: document.getElementById('flat-breadcrumbs'),
             flatViewControls: document.getElementById('flat-view-controls'),
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
@@ -136,6 +146,25 @@ const CoverageReportApp = {
             totalClasses: document.getElementById('total-classes'),
             totalTests: document.getElementById('total-tests'),
         };
+    },
+
+    toggleDropdown(dropdownToToggle) {
+        const allDropdowns = [
+            this.elements.moduleFilterDropdown,
+            this.elements.testSuiteFilterDropdown,
+            this.elements.packageFilterDropdown,
+            this.elements.classFilterDropdown,
+            this.elements.variantFilterDropdown,
+            this.elements.viewModeDropdown
+        ];
+
+        allDropdowns.forEach(dropdown => {
+            if (dropdown !== dropdownToToggle) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        dropdownToToggle.classList.toggle('hidden');
     },
 
     populateHeaderInfo() {
@@ -150,22 +179,12 @@ const CoverageReportApp = {
     },
 
     populateFilters() {
-        // Test Suites
-        const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuites || []).map(ts => ts.name));
-        const uniqueTestSuites = [...new Set(allTestSuites)];
-        const testSuiteOptions = [
-            { name: 'Aggregated', value: 'Aggregated' },
-            ...uniqueTestSuites.map(tsName => ({ name: tsName, value: tsName }))
-        ];
-        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        // Modules
-        const moduleOptions = [{name: 'All', value: 'all'}, ...this.fullReport.modules.map(m => ({name: m.name, value: m.name}))];
-        this.elements.moduleFilterList.innerHTML = moduleOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
+        this.allPackages = this.fullReport.modules.flatMap(m => (m.packages || []).map(p => ({ name: p.name, moduleName: m.name })) );
+        this.allClasses = this.fullReport.modules.flatMap(m =>
+            (m.packages || []).flatMap(p =>
+                (p.classes || []).map(c => ({ name: c.name, packageName: p.name, moduleName: m.name }))
+            )
+        );
 
         // Variants
         let allVariants = [];
@@ -199,18 +218,51 @@ const CoverageReportApp = {
             this.state.filters.search = this.elements.searchInput.value.trim().toLowerCase();
             this.render();
         });
+
+        const dropdownConfigs = [
+            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+            { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
+            { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
+            { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
+            { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
+            { btn: this.elements.viewModeBtn, dropdown: this.elements.viewModeDropdown }
+        ];
+
+        dropdownConfigs.forEach(({ btn, dropdown }) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleDropdown(dropdown);
+            });
+        });
+
         this.elements.flatViewControls.addEventListener('click', this.handleViewToggle.bind(this));
         this.elements.coverageData.addEventListener('click', this.handleRowClick.bind(this));
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
-
-        this.elements.testSuiteFilterBtn.addEventListener('click', () => this.elements.testSuiteFilterDropdown.classList.toggle('hidden'));        this.elements.moduleFilterBtn.addEventListener('click', () => this.elements.moduleFilterDropdown.classList.toggle('hidden'));
-        this.elements.variantFilterBtn.addEventListener('click', () => this.elements.variantFilterDropdown.classList.toggle('hidden'));
-        this.elements.viewModeBtn.addEventListener('click', () => this.elements.viewModeDropdown.classList.toggle('hidden'));
+        this.elements.flatBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
 
         this.elements.testSuiteFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'testSuite'));
         this.elements.moduleFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'module'));
+        this.elements.packageFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'package'));
+        this.elements.classFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'class'));
         this.elements.variantFilterList.addEventListener('change', this.handleVariantSelection.bind(this));
         this.elements.viewModeList.addEventListener('click', this.handleViewModeChange.bind(this));
+        this.elements.searchInput.addEventListener('input', () => {
+            const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+            this.state.filters.search = searchTerm;
+            if (searchTerm.length > 0) {
+                this.elements.searchClearBtn.classList.remove('hidden');
+            } else {
+                this.elements.searchClearBtn.classList.add('hidden');
+            }
+            this.render();
+        });
+        this.elements.searchClearBtn.addEventListener('click', () => {
+            this.elements.searchInput.value = '';
+            this.state.filters.search = '';
+            this.elements.searchClearBtn.classList.add('hidden');
+            this.render();
+            this.elements.searchInput.focus();
+        });
     },
 
     handleVariantSelection(e) {
@@ -241,6 +293,24 @@ const CoverageReportApp = {
         this.render();
     },
 
+    updateFilterButtons() {
+        this.elements.moduleFilterText.textContent = this.state.filters.module === 'all'
+            ? 'All'
+            : this.state.filters.module;
+
+        this.elements.packageFilterText.textContent = this.state.filters.package === 'all'
+            ? 'All'
+            : this.state.filters.package;
+
+        this.elements.classFilterText.textContent = this.state.filters.class === 'all'
+            ? 'All'
+            : this.state.filters.class;
+
+        this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite === 'Aggregated'
+            ? 'All'
+            : this.state.filters.testSuite;
+    },
+
     updateVariantButtonText() {
         const selectedCount = this.state.filters.variants.length;
         let allVariantsCount = 0;
@@ -257,34 +327,51 @@ const CoverageReportApp = {
         }
     },
 
-    handleHierarchyChange(e) {
-        e.preventDefault();
-        const target = e.target.closest('a');
-        if(!target) return;
-
-        this.state.currentHierarchy = target.dataset.value;
-        this.elements.hierarchyFilterText.textContent = target.textContent;
-        this.elements.hierarchyFilterDropdown.classList.add('hidden');
-        this.resetSelection();
-        if (this.state.viewMode === 'flat') {
-            this.state.currentView = 'modules';
+    renderBreadcrumbs() {
+        if(this.state.viewMode !== 'flat') {
+            this.elements.flatBreadcrumbs.innerHTML = '';
+            return;
         }
-        this.updateViewToggles();
-        this.setupSearchData();
-        this.render();
+        const { selectedModule, selectedPackage } = this.state; let html = '';
+        // "Project" is the root link
+        if(selectedModule) {
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+        } else {
+            html += `<span class="breadcrumb-current">Project</span>`;
+        }
+        // Module level
+        if(selectedModule) {
+            html += `<span class="breadcrumb-separator">/</span>`;
+            if(selectedPackage) {
+                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${selectedModule}</a>`;
+            } else {
+                html += `<span class="breadcrumb-current">${selectedModule}</span>`;
+            }
+        }
+        // Package level
+        if(selectedPackage) {
+            html += `<span class="breadcrumb-separator">/</span>`;
+            html += `<span class="breadcrumb-current">${selectedPackage}</span>`;
+        }
+        this.elements.flatBreadcrumbs.innerHTML = html;
     },
 
-    updateViewToggles() {
-        const { currentHierarchy, viewMode } = this.state;
-        const testSuitesButton = this.elements.flatViewControls.querySelector('[data-view="testSuites"]');
-
-        if (currentHierarchy === 'tests' && viewMode === 'flat') {
-            testSuitesButton.style.display = 'inline-block';
-        } else {
-            testSuitesButton.style.display = 'none';
-            if (this.state.currentView === 'testSuites') {
-                this.state.currentView = 'packages'; // Fallback view
-            }
+    handleBreadcrumbClick(e) {
+        const link = e.target.closest('a[data-action]');
+        if(!link) return;
+        e.preventDefault();
+        const action = link.dataset.action;
+        switch(action) {
+            case 'go-to-modules':
+                this.state.currentView = 'modules';
+                this.resetSelection();
+                this.render();
+                break;
+            case 'go-to-packages':
+                this.state.currentView = 'packages';
+                this.state.selectedPackage = null;
+                this.render();
+                break;
         }
     },
 
@@ -308,36 +395,53 @@ const CoverageReportApp = {
         if(!target) return;
 
         const { value } = target.dataset;
-        this.state.filters[filterType] = value;
 
-        const textElementKey = filterType === 'testSuite' ? 'testSuiteFilterText' : `${filterType}FilterText`;
-        this.elements[textElementKey].textContent = target.textContent;
+        switch (filterType) {
+            case 'module':
+                this.state.filters.module = value;
+                this.state.filters.package = 'all';
+                this.state.filters.class = 'all';
+                break;
+            case 'package':
+                this.state.filters.package = value;
+                this.state.filters.class = 'all';
+                break;
+            case 'class':
+                this.state.filters.class = value;
+                break;
+            case 'testSuite':
+                 this.state.filters.testSuite = value;
+                 break;
+            default:
+                break;
+        }
 
-        const dropdownElementKey = filterType === 'testSuite' ? 'testSuiteFilterDropdown' : `${filterType}FilterDropdown`;
-        this.elements[dropdownElementKey].classList.add('hidden');
+        this.updateFilterButtons();
 
-        if (filterType === 'testSuite') {
-            this.resetSelection();
-            this.setupSearchData();
+        const dropdownElementKey = `${filterType}FilterDropdown`;
+        if(this.elements[dropdownElementKey]) {
+            this.elements[dropdownElementKey].classList.add('hidden');
         }
 
         this.render();
     },
 
     closeDropdownOnClickOutside() {
+        const dropdownConfigs = [
+            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+            { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
+            { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
+            { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
+            { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
+            { btn: this.elements.viewModeBtn, dropdown: this.elements.viewModeDropdown }
+        ];
+
         document.addEventListener('click', (event) => {
-            if (!this.elements.testSuiteFilterBtn.contains(event.target) && !this.elements.testSuiteFilterDropdown.contains(event.target)) {
-                this.elements.testSuiteFilterDropdown.classList.add('hidden');
-            }
-            if (!this.elements.moduleFilterBtn.contains(event.target) && !this.elements.moduleFilterDropdown.contains(event.target)) {
-                this.elements.moduleFilterDropdown.classList.add('hidden');
-            }
-            if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFilterDropdown.contains(event.target)) {
-                 this.elements.variantFilterDropdown.classList.add('hidden');
-            }
-            if (!this.elements.viewModeBtn.contains(event.target) && !this.elements.viewModeDropdown.contains(event.target)) {
-                this.elements.viewModeDropdown.classList.add('hidden');
-            }
+            dropdownConfigs.forEach(({ btn, dropdown }) => {
+                if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
         });
     },
 
@@ -346,7 +450,6 @@ const CoverageReportApp = {
         if (!button) return;
         this.state.currentView = button.dataset.view;
         this.resetSelection();
-        this.setupSearchData();
         this.render();
     },
 
@@ -360,7 +463,6 @@ const CoverageReportApp = {
         this.elements.viewModeDropdown.classList.add('hidden');
         this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
         this.resetSelection();
-        this.setupSearchData();
         this.render();
     },
 
@@ -374,7 +476,7 @@ const CoverageReportApp = {
     },
 
     handleFlatRowClick(td) {
-        const { name, type, moduleName, testSuiteName } = td.dataset;
+        const { name, type, moduleName } = td.dataset;
         if (type === 'module') {
             this.state.selectedModule = name;
             this.state.currentView = 'packages';
@@ -413,50 +515,12 @@ const CoverageReportApp = {
 
     resetSelection() {
         this.state.selectedModule = null;
-        this.state.selectedTestSuite = null;
         this.state.selectedPackage = null;
-    },
-
-    setupSearchData() {
-        const { testSuite } = this.state.filters;
-        const allItems = this.fullReport.modules.flatMap(m => {
-            const moduleItem = {...m, type: 'module'};
-            let packagesAndClasses;
-
-            if (testSuite === 'Aggregated') {
-                packagesAndClasses = (m.packages || []).flatMap(p =>
-                    [{...p, type:'package', moduleName: m.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, packageName: p.name}))]
-                );
-                return [moduleItem, ...packagesAndClasses];
-            } else {
-                const testSuiteItems = (m.testSuites || [])
-                    .filter(ts => ts.name === testSuite)
-                    .flatMap(ts => {
-                        const packages = (ts.packages || []).flatMap(p =>
-                            [{...p, type:'package', moduleName: m.name, testSuiteName: ts.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, testSuiteName: ts.name, packageName: p.name}))]
-                        );
-                        return packages; // No need to add test suite as a searchable item anymore
-                    });
-                return [moduleItem, ...testSuiteItems];
-            }
-        });
-
-        if (this.state.viewMode === 'tree') {
-            this.state.searchableList = allItems;
-        } else {
-             switch(this.state.currentView) {
-                case 'packages': this.state.searchableList = allItems.filter(i => i.type === 'package'); break;
-                case 'classes': this.state.searchableList = allItems.filter(i => i.type === 'class'); break;
-                default: this.state.searchableList = allItems.filter(i => i.type === 'module'); break;
-            }
-        }
     },
 
     getSortedData(data) {
         const { by, order } = this.state.sort;
         if (!by) return data;
-
-        const getNestedValue = (obj, path) => path.split('.').reduce((acc, part) => acc && acc[part], obj);
 
         return [...data].sort((a, b) => {
             let valueA, valueB;
@@ -487,11 +551,13 @@ const CoverageReportApp = {
     },
 
     render() {
+        this.updateDynamicFilters();
         this.updateActiveTabs();
+        this.renderBreadcrumbs();
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
-        this.updateSummaryCards(dataToRender);
+        this.updateHeaderStats(dataToRender);
         this.renderTable(dataToRender);
 
         this.updateTooltipsForOverflow();
@@ -507,126 +573,122 @@ const CoverageReportApp = {
         }
     },
 
-    filterTreeData(modules, term) {
+    filterHierarchicalData(modules, term) {
         if (!term) return modules;
 
-        const filterClasses = (classes = []) => {
-            return classes.filter(c => c.name.toLowerCase().includes(term));
-        };
+        term = term.toLowerCase();
 
-        const filterPackages = (packages = []) => {
-            return packages.map(pkg => {
+        return modules.map(module => {
+            if (module.name.toLowerCase().includes(term)) {
+                return { ...module };
+            }
+            const filteredPackages = (module.packages || []).map(pkg => {
                 if (pkg.name.toLowerCase().includes(term)) {
-                    return { ...pkg }; // Keep package and all its children if package name matches
+                    return { ...pkg };
                 }
-                const filteredClasses = filterClasses(pkg.classes);
+
+                const filteredClasses = (pkg.classes || []).filter(cls =>
+                    cls.name.toLowerCase().includes(term)
+                );
+
                 if (filteredClasses.length > 0) {
-                    return { ...pkg, classes: filteredClasses }; // Keep package if a child class matches
+                    return { ...pkg, classes: filteredClasses };
                 }
+
                 return null;
             }).filter(Boolean);
-        };
 
-        const filterTestSuites = (suites = []) => {
-            return suites.map(ts => {
-                if (ts.name.toLowerCase().includes(term)) {
-                    return { ...ts }; // Keep test suite and all its descendants
-                }
-                const filteredPackages = filterPackages(ts.packages);
-                if (filteredPackages.length > 0) {
-                    return { ...ts, packages: filteredPackages }; // Keep suite if a child package/class matches
-                }
-                return null;
-            }).filter(Boolean);
-        };
-
-        return modules.map(mod => {
-            if (mod.name.toLowerCase().includes(term)) {
-                return { ...mod }; // Keep module and all its descendants
+            if (filteredPackages.length > 0) {
+                return { ...module, packages: filteredPackages };
             }
 
-            if (this.state.currentHierarchy === 'source') {
-                const filteredPackages = filterPackages(mod.packages || []);
-                if (filteredPackages.length > 0) {
-                    return { ...mod, packages: filteredPackages };
-                }
-            } else {
-                const filteredTestSuites = filterTestSuites(mod.testSuites || []);
-                if (filteredTestSuites.length > 0) {
-                    return { ...mod, testSuites: filteredTestSuites };
-                }
-            }
             return null;
         }).filter(Boolean);
     },
 
     getFilteredData() {
-        const { viewMode, currentView, currentHierarchy, selectedModule, selectedTestSuite, selectedPackage, filters } = this.state;
-        let data;
-        let modulesSource = this.fullReport.modules;
+        const { viewMode, currentView, selectedModule, selectedPackage, filters } = this.state;
 
-        if (filters.module !== 'all') {
-            modulesSource = modulesSource.filter(m => m.name === filters.module);
+        const getEffectiveCoverage = (item) => {
+            if (!item.testSuiteCoverages) return [];
+
+            const suite = item.testSuiteCoverages.find(ts => ts.name === filters.testSuite);
+            // If a suite is not found for a given item (e.g., a test didn't cover this class),
+            // return an empty array.
+            return suite ? suite.variantCoverages : [];
+        };
+
+        const addEffectiveCoverage = (item, type, context = {}) => {
+            const newItem = { ...item, type, ...context, testSuiteName: this.state.filters.testSuite  };
+            newItem.variantCoverages = getEffectiveCoverage(item);
+            return newItem;
+        };
+
+        let hierarchicalData = this.fullReport.modules.map(m => {
+            const moduleWithCoverage = addEffectiveCoverage(m, 'module');
+            moduleWithCoverage.packages = (m.packages || []).map(p => {
+                const pkgWithCoverage = addEffectiveCoverage(p, 'package');
+                pkgWithCoverage.classes = (p.classes || []).map(c => addEffectiveCoverage(c, 'class'));
+                return pkgWithCoverage;
+            });
+            return moduleWithCoverage;
+        });
+
+        if (filters.search) {
+            hierarchicalData = this.filterHierarchicalData(hierarchicalData, filters.search);
         }
 
-        const allModules = this.fullReport.modules.map(m => ({ ...m, type: 'module' }));
-
+        if (filters.module !== 'all') {
+            hierarchicalData = hierarchicalData.filter(m => m.name === filters.module);
+        }
+        if (filters.package !== 'all') {
+            hierarchicalData = hierarchicalData.map(m => ({
+                ...m,
+                packages: m.packages.filter(p => p.name === filters.package)
+            })).filter(m => m.packages.length > 0);
+        }
+        if (filters.class !== 'all') {
+            hierarchicalData = hierarchicalData.map(m => ({
+                ...m,
+                packages: m.packages.map(p => ({
+                    ...p,
+                    classes: p.classes.filter(c => c.name === filters.class)
+                })).filter(p => p.classes.length > 0)
+            })).filter(m => m.packages.length > 0);
+        }
         if (viewMode === 'tree') {
-            if (filters.testSuite === 'Aggregated') {
-                data = modulesSource;
-            } else {
-                const suiteName = filters.testSuite;
-                data = modulesSource.map(m => {
-                    const relevantSuites = (m.testSuites || []).filter(ts => ts.name === suiteName);
-                    if (relevantSuites.length === 0) return null;
-                    const newPackages = relevantSuites.flatMap(ts => (ts.packages || []));
-                    return { ...m, packages: newPackages, testSuites: relevantSuites };
-                }).filter(Boolean);
-            }
+            return hierarchicalData;
+        }
+
+        let flatData;
+
+        if (selectedPackage) {
+            const module = hierarchicalData.find(m => m.name === selectedModule);
+            const pkg = module?.packages.find(p => p.name === selectedPackage);
+            flatData = (pkg?.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: pkg.name, moduleName: module.name }));
+        } else if (selectedModule) {
+            const module = hierarchicalData.find(m => m.name === selectedModule);
+            flatData = (module?.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: module.name }));
         } else {
-            let allPackages, allClasses;
-            if (filters.testSuite === 'Aggregated') {
-                allPackages = modulesSource.flatMap(m =>
-                    (m.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name }))
+            if (currentView === 'packages') {
+                flatData = hierarchicalData.flatMap(m =>
+                    (m.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: m.name }))
                 );
-                allClasses = modulesSource.flatMap(m =>
+            } else if (currentView === 'classes') {
+                flatData = hierarchicalData.flatMap(m =>
                     (m.packages || []).flatMap(p =>
-                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name }))
+                        (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: m.name }))
                     )
                 );
             } else {
-                const suiteName = filters.testSuite;
-                const modulesWithSuite = modulesSource.filter(m => (m.testSuites || []).some(ts => ts.name === suiteName));
-                allPackages = modulesWithSuite.flatMap(m =>
-                    (m.testSuites || []).filter(ts => ts.name === suiteName)
-                    .flatMap(ts => (ts.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name, testSuiteName: ts.name })))
-                );
-                allClasses = modulesWithSuite.flatMap(m =>
-                    (m.testSuites || []).filter(ts => ts.name === suiteName)
-                    .flatMap(ts => (ts.packages || []).flatMap(p =>
-                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name, testSuiteName: ts.name }))
-                    ))
-                );
+                flatData = hierarchicalData;
             }
-            const allModules = modulesSource.map(m => ({ ...m, type: 'module' }));
-            if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule);
-            else if (selectedModule) data = allPackages.filter(p => p.moduleName === selectedModule);
-            else if (currentView === 'packages') data = allPackages;
-            else if (currentView === 'classes') data = allClasses;
-            else data = allModules;
         }
 
-        if (filters.search) {
-             if (viewMode === 'tree') {
-                 data = this.filterTreeData(data, filters.search.toLowerCase());
-             } else {
-                 data = data.filter(item => item.name.toLowerCase().includes(filters.search));
-             }
-        }
-        return data;
+        return flatData;
     },
 
-    updateSummaryCards(dataToRender) {
+    updateHeaderStats(dataToRender) {
         const { viewMode, currentView } = this.state;
         let relevantClasses;
         let moduleCount = 0;
@@ -651,8 +713,65 @@ const CoverageReportApp = {
         this.elements.totalClasses.textContent = relevantClasses.length;
     },
 
+    updateDynamicFilters() {
+        const { selectedModule, selectedPackage } = this.state;
+        let contextModules = this.fullReport.modules;
+
+        if (selectedModule) {
+            contextModules = contextModules.filter(m => m.name === selectedModule);
+        }
+
+        let contextPackages = contextModules.flatMap(m => m.packages || []);
+        if (selectedPackage) {
+            contextPackages = contextPackages.filter(p => p.name === selectedPackage);
+        }
+
+        const moduleOptions = [
+            { name: 'All', value: 'all' },
+            ...contextModules.map(m => ({ name: m.name, value: m.name }))
+        ];
+
+        const testSuiteOptions = [
+            { name: 'All', value: 'Aggregated' },
+            ...[...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name))
+                .filter(name => name !== 'Aggregated'))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        const packageOptions = [
+            { name: 'All', value: 'all' },
+            ...[...new Set(contextPackages.map(p => p.name))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        const classOptions = [
+            { name: 'All', value: 'all' },
+            ...[...new Set(contextPackages.flatMap(p => p.classes || []).map(c => c.name))]
+                .sort()
+                .map(name => ({ name, value: name }))
+        ];
+
+        this.elements.moduleFilterList.innerHTML = moduleOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.packageFilterList.innerHTML = packageOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+
+        this.elements.classFilterList.innerHTML = classOptions.map(opt =>
+            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
+        ).join('');
+    },
+
     renderTable(dataToRender) {
-        this.renderHeaders(dataToRender);
+        this.renderHeaders();
         if (this.state.viewMode === 'tree') {
             this.renderTreeRows(dataToRender);
         } else {
@@ -703,7 +822,7 @@ const CoverageReportApp = {
         };
     },
 
-    renderHeaders(data) {
+    renderHeaders() {
         const { viewMode, currentView, filters, sort } = this.state;
         const topHeader = document.createElement('tr');
         topHeader.className = "border-b border-gray-200";
@@ -717,15 +836,13 @@ const CoverageReportApp = {
         subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
 
         if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes')) {
-            const contextTitle = (currentView === 'packages')
-                ? (filters.testSuite !== 'Aggregated' ? 'Test Suite' : 'Module')
-                : 'Package';
+            const contextTitle = (currentView === 'packages') ? 'Module' : 'Package';
             topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
             subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">${contextTitle}</th>`;
 
-            if (currentView === 'classes' && filters.testSuite !== 'Aggregated') {
+            if (currentView === 'classes') {
                 topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Test Suite</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Module</th>`;
             }
         }
 
@@ -748,6 +865,7 @@ const CoverageReportApp = {
         this.elements.tableHeaders.appendChild(topHeader);
         this.elements.tableHeaders.appendChild(subHeader);
     },
+
     renderTreeRows(modules) {
         const isSearching = !!this.state.filters.search;
 
@@ -783,11 +901,7 @@ const CoverageReportApp = {
         let html = modules.map(module => {
             let moduleContext = { moduleName: module.name };
             let childrenHtml = (module.packages || []).map(pkg => {
-                let testSuiteNameForCtx = '';
-                if (this.state.filters.testSuite !== 'Aggregated' && module.testSuites && module.testSuites.length > 0) {
-                     testSuiteNameForCtx = module.testSuites[0].name;
-                }
-                let packageContext = { ...moduleContext, packageName: pkg.name, testSuiteName: testSuiteNameForCtx };
+                let packageContext = { ...moduleContext, packageName: pkg.name };
                 return renderRow(pkg, 1, 'package', module.name, packageContext) +
                     (pkg.classes || []).map(cls => renderRow(cls, 2, 'class', pkg.name, packageContext)).join('');
             }).join('');
@@ -814,20 +928,14 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    const contextCellContent = this.state.filters.testSuite === 'Aggregated'
-                        ? item.moduleName
-                        : item.testSuiteName;
-
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${contextCellContent}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
-                    if (this.state.filters.testSuite !== 'Aggregated') {
-                        nameCell += `<td class="py-3 px-6">${item.testSuiteName || ''}</td>`;
-                    }
+                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
+                    nameCell += `<td class="py-3 px-6">${item.moduleName || ''}</td>`;
                     break;
-                default:
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                default: // modules
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.name}">${item.name}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');

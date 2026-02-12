@@ -29,6 +29,7 @@ internal data class TemplateImpl(
   override val recipe: Recipe,
   override val uiContexts: Collection<WizardUiContext>,
   override val constraints: Collection<TemplateConstraint>,
+  override val flags: Collection<TemplateFlag>,
   override val useGenericInstrumentedTests: Boolean,
   override val useGenericLocalTests: Boolean,
 ) : Template {
@@ -53,6 +54,7 @@ class TemplateBuilder {
   var screens: Collection<WizardUiContext> = listOf()
   var widgets = listOf<Widget<*>>()
   var constraints = listOf<TemplateConstraint>()
+  var flags = listOf<TemplateFlag>()
   var useGenericAndroidTests: Boolean = true
   var useGenericLocalTests: Boolean = true
 
@@ -87,6 +89,7 @@ class TemplateBuilder {
       recipe!!,
       screens,
       constraints,
+      flags,
       useGenericAndroidTests,
       useGenericLocalTests,
     )
