@@ -21,6 +21,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.AndroidResourcesCreationConfigImpl
 import com.android.build.api.component.impl.features.InstrumentationCreationConfigImpl
+import com.android.build.api.component.impl.features.ManifestPlaceholdersCreationConfigImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.Component
@@ -221,10 +222,18 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
       }
     }
 
+  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig by
+    lazy(LazyThreadSafetyMode.NONE) {
+      ManifestPlaceholdersCreationConfigImpl(
+        // no dsl for this
+        emptyMap(),
+        internalServices,
+      )
+    }
+
   // Unsupported features
   override val resValuesCreationConfig: ResValuesCreationConfig? = null
   override val buildConfigCreationConfig: BuildConfigCreationConfig? = null
-  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig? = null
   override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? = null
 
   override val javaCompilation: JavaCompilation

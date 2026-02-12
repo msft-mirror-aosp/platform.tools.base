@@ -20,7 +20,6 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.AndroidResourcesCreationConfigImpl
 import com.android.build.api.component.impl.features.DexingImpl
-import com.android.build.api.component.impl.features.ManifestPlaceholdersCreationConfigImpl
 import com.android.build.api.component.impl.features.OptimizationCreationConfigImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
@@ -48,7 +47,6 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.component.features.FeatureNames
-import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
 import com.android.build.gradle.internal.component.features.NativeBuildCreationConfig
 import com.android.build.gradle.internal.component.features.OptimizationCreationConfig
 import com.android.build.gradle.internal.component.features.RenderscriptCreationConfig
@@ -182,15 +180,6 @@ constructor(
 
   override val optimizationCreationConfig: OptimizationCreationConfig by
     lazy(LazyThreadSafetyMode.NONE) { OptimizationCreationConfigImpl(this, dslInfo.optimizationDslInfo, null, null, internalServices) }
-
-  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig by
-    lazy(LazyThreadSafetyMode.NONE) {
-      ManifestPlaceholdersCreationConfigImpl(
-        // no dsl for this
-        emptyMap(),
-        internalServices,
-      )
-    }
 
   override fun finalizeAndLock() {
     dexing.finalizeAndLock()

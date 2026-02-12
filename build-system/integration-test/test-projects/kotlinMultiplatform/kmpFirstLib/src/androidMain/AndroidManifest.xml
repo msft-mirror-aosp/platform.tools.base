@@ -4,5 +4,7 @@
         <activity android:name="KmpAndroidActivity"
                   android:label="KmpAndroidActivity">
         </activity>
+
+        <meta-data android:name="androidMain_example" android:value="${exampleAndroidMainPlaceholder}" />
     </application>
 </manifest>
