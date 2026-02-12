@@ -29,6 +29,56 @@ class KotlinMultiplatformAndroidVitalsTest {
   @get:Rule val rule = GradleRule.from { androidKotlinMultiplatformLibrary(":shared") {} }
 
   @Test
+  fun testComponentsNotEnabledWarning() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":shared") {
+          files {
+            add(
+              "src/androidHostTest/kotlin/pkg/name/shared/HostTest.kt",
+              """
+            package pkg.name.shared
+            class HostTest { }
+            """,
+            )
+
+            add(
+              "src/androidDeviceTest/kotlin/pkg/name/shared/DeviceTest.kt",
+              """
+            package pkg.name.shared
+            class DeviceTest { }
+            """,
+            )
+
+            add(
+              "src/commonTest/kotlin/pkg/name/shared/CommonTest.kt",
+              """
+            package pkg.name.shared
+            class CommonTest { }
+            """,
+            )
+          }
+        }
+      }
+
+    val result = build.executor.run("help")
+    result.assertOutputContains(
+      "The 'androidHostTest' source directory exists, but android host tests are not enabled. " +
+        "To enable android host tests, add `withHostTest {}` to your android target configuration in the Gradle build file."
+    )
+
+    result.assertOutputContains(
+      "The 'commonTest' source directory exists, but android host tests are not enabled. " +
+        "To enable android host tests, add `withHostTest {}` to your android target configuration in the Gradle build file."
+    )
+
+    result.assertOutputContains(
+      "The 'androidDeviceTest' source directory exists, but android device tests are not enabled. " +
+        "To enable android device tests, add `withDeviceTest {}` to your android target configuration in the Gradle build file."
+    )
+  }
+
+  @Test
   fun testMissingCompileSdkException() {
     val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdk = null } } }
     val result = build.executor.expectFailure().run(":shared:assembleAndroidMain")

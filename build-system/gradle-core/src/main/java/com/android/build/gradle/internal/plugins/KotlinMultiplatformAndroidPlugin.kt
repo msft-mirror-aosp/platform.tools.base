@@ -67,6 +67,7 @@ import com.android.build.gradle.internal.dependency.SingleVariantProductFlavorRu
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.dsl.DependencySelectionImpl
+import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidCompilationBuilderImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.MinSdkVersionImpl
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
@@ -114,6 +115,7 @@ import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.errors.IssueReporter
 import com.android.builder.model.v2.ide.ProjectType
 import com.android.repository.Revision
 import com.android.utils.FileUtils
@@ -367,6 +369,48 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
     updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))
     finalizeAllComponents(listOfNotNull(mainVariant, unitTest, androidTest))
     kotlinMultiplatformHandler.finalize(mainVariant)
+    checkForMissingTestConfigurations(androidExtension.androidTestOnJvmBuilder, androidExtension.androidTestOnDeviceBuilder, project)
+  }
+
+  private fun checkForMissingTestConfigurations(
+    androidHostTest: KotlinMultiplatformAndroidCompilationBuilderImpl?,
+    androidDeviceTest: KotlinMultiplatformAndroidCompilationBuilderImpl?,
+    project: Project,
+  ) {
+    fun checkAndReport(
+      compilation: KotlinMultiplatformAndroidCompilationBuilderImpl?,
+      sourceSetNames: List<String>,
+      testTypeDesc: String,
+      configBlock: String,
+    ) {
+      if (compilation != null) return
+
+      sourceSetNames.forEach { sourceSetName ->
+        val srcDir = FileUtils.join(project.projectDir, "src", sourceSetName)
+
+        if (srcDir.exists()) {
+          dslServices.issueReporter.reportWarning(
+            IssueReporter.Type.GENERIC,
+            "The '$sourceSetName' source directory exists, but $testTypeDesc tests are not enabled. " +
+              "To enable $testTypeDesc tests, add `$configBlock` to your android target configuration in the Gradle build file.",
+          )
+        }
+      }
+    }
+
+    checkAndReport(
+      compilation = androidHostTest,
+      sourceSetNames = listOf(KmpAndroidCompilationType.HOST_TEST.defaultSourceSetName, "commonTest"),
+      testTypeDesc = "android host",
+      configBlock = "withHostTest {}",
+    )
+
+    checkAndReport(
+      compilation = androidDeviceTest,
+      sourceSetNames = listOf(KmpAndroidCompilationType.DEVICE_TEST.defaultSourceSetName),
+      testTypeDesc = "android device",
+      configBlock = "withDeviceTest {}",
+    )
   }
 
   private fun updateTestComponentFriendPaths(components: List<KmpComponentImpl<out KmpComponentDslInfo>>) {
