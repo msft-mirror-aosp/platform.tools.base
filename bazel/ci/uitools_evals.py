@@ -14,6 +14,8 @@ _FLAGS = [
     '--nocache_test_results',
     '--config=remote-exec',
     '--test_env=SECRET_MANAGER_KEY=DEFAULT_GEMINI_KEY',
+    '--bes_keywords=cinder',
+    '--build_metadata=cinder_pipelines=studio-evals',
 ]
 
 def _get_generate_compose_preview_tests(build_env: bazel.BuildEnv) -> List[str]:
