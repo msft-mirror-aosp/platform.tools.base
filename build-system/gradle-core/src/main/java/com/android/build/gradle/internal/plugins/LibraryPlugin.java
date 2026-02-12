@@ -58,7 +58,6 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.internal.plugins.software.SoftwareType;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -78,9 +77,6 @@ public class LibraryPlugin
                 LibraryCreationConfig,
                 LibraryVariant> {
 
-    @SoftwareType(
-            name = "androidLibrary",
-            modelPublicType = com.android.build.gradle.LibraryExtensionInternal.class)
     public com.android.build.gradle.LibraryExtensionInternal getAndroidLibrary() {
         try {
             return ((com.android.build.gradle.LibraryExtensionInternal)

@@ -177,7 +177,7 @@ ARTIFACTS = [
     "org.eclipse.emf:org.eclipse.emf.ecore:2.12.0",
     "org.glassfish.jaxb:jaxb-runtime:2.3.2",
     "org.glassfish.jaxb:jaxb-xjc:2.3.2",
-    "org.gradle:gradle-tooling-api:9.3.1",
+    "org.gradle:gradle-tooling-api:9.4.0-rc-1",
     "org.hamcrest:hamcrest:2.2",
     "org.hamcrest:hamcrest-core:1.3",
     "org.hamcrest:hamcrest-library:1.3",

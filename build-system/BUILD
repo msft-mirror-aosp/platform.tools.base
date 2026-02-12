@@ -19,7 +19,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.3.1"
+GRADLE_VERSION = "9.4.0-rc-1"
+
+GRADLE_BASE_VERSION = "9.4.0"
 
 filegroup(
     name = "gradle-distrib",
@@ -44,9 +46,15 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.0",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.4.0-rc-1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.4.0-rc-1"],
     visibility = ["//visibility:public"],
 )
 
@@ -315,8 +323,8 @@ java_library(
 
 GRADLE_API_JARS = {
     "gradle-api-" + GRADLE_VERSION + ".jar": "build/gradle-api-" + GRADLE_VERSION + ".jar",
-    "gradle-installation-beacon-" + GRADLE_VERSION + ".jar": "build/lib/gradle-installation-beacon-" + GRADLE_VERSION + ".jar",
-    "gradle-runtime-api-info-" + GRADLE_VERSION + ".jar": "build/lib/gradle-runtime-api-info-" + GRADLE_VERSION + ".jar",
+    "gradle-installation-beacon-" + GRADLE_VERSION + ".jar": "build/lib/gradle-installation-beacon-" + GRADLE_BASE_VERSION + ".jar",
+    "gradle-runtime-api-info-" + GRADLE_VERSION + ".jar": "build/lib/gradle-runtime-api-info-" + GRADLE_BASE_VERSION + ".jar",
 }
 
 gradle_build(

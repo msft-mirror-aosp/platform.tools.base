@@ -179,13 +179,12 @@ public class AidlTest {
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
                     "android.aidlPackagedList = [\"com/example/helloworld/Packaged.aidl\"]\n"
-                        + "\n"
-                        + "// Check that AIDL is published as intermediate artifact for library.\n"
-                        + "afterEvaluate {\n"
-                        + "    assert !configurations.debugApiElements.outgoing.variants.findAll {"
-                        + " it.name == \""
+                            + "\n"
+                            + "// Check that AIDL is published as intermediate artifact for library.\n"
+                            + "afterEvaluate {\n"
+                            + "    assert configurations.debugApiElements.outgoing.variants.findByName(\""
                             + AndroidArtifacts.ArtifactType.AIDL.getType()
-                            + "\" }.isEmpty()\n"
+                            + "\") != null\n"
                             + "}\n");
         }
 

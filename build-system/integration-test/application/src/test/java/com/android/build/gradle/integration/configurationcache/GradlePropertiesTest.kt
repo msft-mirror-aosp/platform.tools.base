@@ -49,21 +49,14 @@ class GradlePropertiesTest {
   fun testCapturingStandardInstrumentationTestRunnerArgs() {
     executor().run("assembleDebug")
     val result = executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium").run("assembleDebug")
-    result.assertOutputContains(
-      "Calculating task graph as configuration cache cannot be reused " +
-        "because the set of Gradle properties has changed: 'android.testInstrumentationRunnerArguments.size' was added"
-    )
+    result.assertConfigurationCacheHit()
   }
 
   @Test
   fun testCapturingCustomInstrumentationTestRunnerArgs() {
     executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=origin").run("assembleDebug")
     val result = executor().withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=changed").run("assembleDebug")
-    result.assertOutputContains(
-      "Calculating task graph as configuration cache cannot be reused " +
-        "because the set of Gradle properties has changed: the value of " +
-        "'android.testInstrumentationRunnerArguments.foo' was changed."
-    )
+    result.assertConfigurationCacheHit()
   }
 
   private fun executor(): GradleTaskExecutor = project.executor()

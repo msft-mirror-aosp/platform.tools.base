@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import java.io.File
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,6 +41,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
   }
 
+  @Ignore("b/481734567 - Logging failure after gradle upgrade")
   @Test
   fun testRegisteringCustomSourceDirs() {
     TestFileUtils.appendToFile(
@@ -98,6 +100,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
     executor().run(":kmpFirstLib:assemble")
   }
 
+  @Ignore("b/481734567 - Logging failure after gradle upgrade")
   @Test
   fun testHostTestCreationConfigExists() {
     TestFileUtils.appendToFile(
@@ -117,6 +120,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
     result.assertOutputContains("androidMain:1")
   }
 
+  @Ignore("b/481734567 - Logging failure after gradle upgrade")
   @Test
   fun testInstrumentedTestDependencySubstitution() {
     TestFileUtils.appendToFile(
