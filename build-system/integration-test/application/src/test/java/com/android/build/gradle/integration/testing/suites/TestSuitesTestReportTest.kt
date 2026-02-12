@@ -95,6 +95,7 @@ class TestSuitesTestReportTest {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
     val result = build.executor.run(":app:createTestReport")
     assertThat(result.didWorkTasks).doesNotContain(":app:testResultsCollectionDebug")
+    result.assertOutputContains("Aggregated Test reporting feature is disabled, TestReportTask's execution is skipped.")
   }
 
   @Test
