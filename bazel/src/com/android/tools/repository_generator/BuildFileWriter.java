@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.function.Predicate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -118,8 +119,14 @@ public class BuildFileWriter {
                 String parentRuleName = getMavenArtifactRuleName(dep.parentCoord);
                 fileWriter.append(String.format("    parent = \"%s\",\n", parentRuleName));
             }
+            // b/483933712: chop out circular dependency.
+            Boolean isGradleApi = "com.android.tools.build".equals(coord_parts.get("group")) &
+                    "gradle-api".equals(coord_parts.get("artifact"));
             Stream<String> originalDepRuleNamesStream =
                     Arrays.stream(dep.originalDependencies)
+                            .filter((d) ->
+                                    !isGradleApi || !d.startsWith("com.android.tools.build:gradle:")
+                            )
                             .map(BuildFileWriter::getMavenArtifactRuleName);
 
             if (!isConflictLoser) {
