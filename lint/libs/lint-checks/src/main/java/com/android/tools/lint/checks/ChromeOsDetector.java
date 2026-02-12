@@ -92,7 +92,7 @@ public class ChromeOsDetector extends Detector implements XmlScanner {
                                     + "unsupported large screen hardware feature. Google Play assumes that certain "
                                     + "hardware related permissions indicate that the underlying hardware features "
                                     + "are required by default. To fix the issue, consider declaring the corresponding "
-                                    + "<uses-feature> element with `required=\"false\"` attribute.",
+                                    + "<uses-feature> element with `android:required=\"false\"` attribute.",
                             Category.CHROME_OS,
                             3,
                             Severity.ERROR,
@@ -306,7 +306,7 @@ public class ChromeOsDetector extends Detector implements XmlScanner {
                         String message =
                                 String.format(
                                         "Permission exists without corresponding hardware `<uses-feature "
-                                                + "android:name=\"%1$s\" android:required=\"false\">` tag",
+                                                + "android:name=\"%1$s\" android:required=\"false\" />` tag",
                                         unsupportedHardwareName);
                         LintFix fix = fix().data(KEY_FEATURE_NAME, unsupportedHardwareName);
                         Incident incident =
