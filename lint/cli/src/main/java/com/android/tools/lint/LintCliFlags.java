@@ -910,15 +910,6 @@ public class LintCliFlags {
     }
 
     /**
-     * Sets whether lint needs to use K2 UAST.
-     *
-     * @param useK2Uast whether to use K2 UAST
-     */
-    public void setUseK2Uast(boolean useK2Uast) {
-        this.useK2Uast = useK2Uast;
-    }
-
-    /**
      * Returns whether to use the new light provider for klibs (for UAST).
      */
     public boolean useKlibLightElementProvider() {
