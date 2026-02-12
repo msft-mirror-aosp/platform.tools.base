@@ -121,7 +121,7 @@ class AndroidTestEngineConnectedTest {
             //  automatically passed to the JUnit Engine by the AGP Test Suite task instead
             //  of being manually configured here via system properties.
             task.systemProperty("android-test.adb-path", adbPath.get())
-            task.systemProperty("android-test.aapt-path", aapt2Path.get())
+            task.systemProperty("android-test.aapt2-path", aapt2Path.get())
             task.systemProperty("android-test.device-serial", "emulator-5554")
             task.systemProperty("android-test.device-api-level", "33")
 

@@ -215,6 +215,9 @@ constructor(private val objectFactory: ObjectFactory, private val providerFactor
     val aidlFrameworkProvider: Provider<RegularFile> =
       objectFactory.fileProperty().fileProvider(providerFactory.provider { sdkLoadStrategy.getAidlFramework() })
 
+    val aapt2ExecutableProvider: Provider<RegularFile> =
+      objectFactory.fileProperty().fileProvider(buildToolInfoProvider.map { File(it.getPath(BuildToolInfo.PathId.AAPT2)) })
+
     /**
      * The API versions file from the platform being compiled against.
      *
@@ -391,6 +394,8 @@ abstract class BuildToolsExecutableInput : UsesSdkComponentsBuildService {
     sdkComponentsBuildService.map { it.sdkLoader(compileSdkVersion, buildToolsRevision) }
 
   fun adbExecutable(): Provider<RegularFile> = sdkLoader().flatMap { it.adbExecutableProvider }
+
+  fun aapt2ExecutableProvider(): Provider<RegularFile> = sdkLoader().flatMap { it.aapt2ExecutableProvider }
 
   fun supportBlasLibFolderProvider(): Provider<File> =
     sdkLoader().map {

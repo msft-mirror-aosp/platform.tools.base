@@ -384,7 +384,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverage() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -401,7 +401,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithTestFailures() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -442,8 +442,28 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   @Throws(Exception::class)
+  fun androidTest() {
+    selectModule("app")
+
+    executor.run(testTaskName)
+
+    assertThat(project.resolve(testReportPath).resolveSibling("index.html")).exists()
+
+    // TODO(b/476442048): Support test report and result proto validation for the built-in test platform.
+    //   For now, we skip these assertions because the new JUnit engine implementation does not
+    //   yet produce these artifacts in the expected locations.
+    if (runWithBuiltInPlatform) {
+      return
+    }
+
+    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(project.resolve(testResultPbPath)).exists()
+  }
+
+  @Test
+  @Throws(Exception::class)
   fun androidTestWithOrchestrator() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -459,7 +479,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverage() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -480,7 +500,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithLogcat() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -497,7 +517,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestFromTestOnlyModule() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")
@@ -511,7 +531,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithTestStorageService() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -569,7 +589,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithoutTestStorageService() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -614,7 +634,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithBenchmarkFiles() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -690,7 +710,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithBenchmarkV3Files() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -769,7 +789,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -804,7 +824,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -821,7 +841,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithLogcatWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -840,7 +860,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -899,7 +919,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithForceCompilation() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
@@ -919,7 +939,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -945,7 +965,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverageWithDynamicFeature() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("feature")
@@ -965,7 +985,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runAndroidTestWithNoTestClasses() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("emptyAppProject")
@@ -981,7 +1001,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   /** Regression test for b/466374462. */
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")

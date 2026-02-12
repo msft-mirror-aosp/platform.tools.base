@@ -21,8 +21,8 @@ object AndroidTestConfigurationKeys {
   /** Path to the ADB executable. */
   const val ADB_PATH = "android-test.adb-path"
 
-  /** Path to the AAPT executable. */
-  const val AAPT_PATH = "android-test.aapt-path"
+  /** Path to the AAPT2 executable. */
+  const val AAPT2_PATH = "android-test.aapt2-path"
 
   /** The serial number of the device to run tests on. */
   const val DEVICE_SERIAL = "android-test.device-serial"

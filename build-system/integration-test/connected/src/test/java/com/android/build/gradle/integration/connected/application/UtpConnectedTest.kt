@@ -75,7 +75,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithUtpTestResultListener() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     val benchmark: Benchmark =
@@ -134,7 +134,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     val benchmark: Benchmark =
@@ -163,7 +163,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("lib")
@@ -180,7 +180,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     SecondaryUser().use { additionalTestOutputWithTestStorageService() }
@@ -188,7 +188,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun additionalTestOutputWithoutTestStorageServiceInSecondaryUser() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     SecondaryUser().use { additionalTestOutputWithoutTestStorageService() }
@@ -196,7 +196,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun additionalTestOutputWithBenchmarkFilesInSecondaryUser() {
-    // TODO(b/434015775): Implement built-in test platform.
+    // TODO(b/476442048): Implement built-in test platform.
     Assume.assumeFalse(runWithBuiltInPlatform)
 
     SecondaryUser().use { additionalTestOutputWithBenchmarkFiles() }

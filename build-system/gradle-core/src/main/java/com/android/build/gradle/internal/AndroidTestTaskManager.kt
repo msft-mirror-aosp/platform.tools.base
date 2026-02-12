@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
+import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.BuilderConstants.FD_MANAGED_DEVICE_SETUP_RESULTS
 import com.android.builder.core.ComponentType
 import com.android.utils.FileUtils
@@ -263,7 +264,11 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     val connectedCheckSerials: Provider<List<String>> =
       taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
     val connectedTask =
-      taskFactory.register(DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, testData, connectedCheckSerials))
+      if (androidTestProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+        taskFactory.register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(androidTestProperties, testData, connectedCheckSerials))
+      } else {
+        taskFactory.register(DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, testData, connectedCheckSerials))
+      }
     taskFactory.configure(CONNECTED_ANDROID_TEST) { connectedAndroidTest: Task -> connectedAndroidTest.dependsOn(connectedTask) }
     if (androidTestProperties.codeCoverageEnabled) {
       val jacocoAntConfiguration =

@@ -16,7 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
-import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT_PATH
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT2_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ADB_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.APK_INSTALL_OPTIONS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIAL
@@ -44,23 +44,38 @@ data class AndroidTestExecutionContext(val request: ExecutionRequest) : EngineEx
 class AndroidTestConfiguration(request: ExecutionRequest) {
   private val config = request.configurationParameters
 
-  private fun get(key: String): java.util.Optional<String> {
-    return config.get(key).or { java.util.Optional.ofNullable(System.getProperty(key)) }
+  private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null): String? {
+    return config.get(key).orElse(null) ?: System.getProperty(key) ?: agpTestInput?.get() ?: AgpTestSuiteInput.get(key)
   }
 
-  val adb: File = get(ADB_PATH).map { File(it) }.orElseThrow { RuntimeException("$ADB_PATH configuration is required") }
-  val aapt: File = get(AAPT_PATH).map { File(it) }.orElseThrow { RuntimeException("$AAPT_PATH configuration is required") }
-  val deviceSerial: String = get(DEVICE_SERIAL).orElseThrow { RuntimeException("$DEVICE_SERIAL configuration is required") }
-  val installTimeoutMs: Long = get(INSTALL_TIMEOUT_MS).map { it.toLong() }.orElse(0L)
+  val adb: File =
+    get(ADB_PATH, AgpTestSuiteInput.ADB_EXECUTABLE)?.let { File(it) } ?: throw RuntimeException("$ADB_PATH configuration is required")
+  val aapt2: File =
+    get(AAPT2_PATH, AgpTestSuiteInput.AAPT2_EXECUTABLE)?.let { File(it) } ?: throw RuntimeException("$AAPT2_PATH configuration is required")
+  val deviceSerial: String =
+    get(DEVICE_SERIAL, AgpTestSuiteInput.SERIAL_IDS) ?: throw RuntimeException("$DEVICE_SERIAL configuration is required")
+  val installTimeoutMs: Long = get(INSTALL_TIMEOUT_MS)?.toLong() ?: 0L
 
-  val testedApks: List<File> = get(TESTED_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val testApks: List<File> = get(TEST_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val testUtilApks: List<File> = get(TEST_UTIL_APKS).map { it.split(",").map { path -> File(path.trim()) } }.orElse(listOf())
-  val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS).map { it.split(",").map { opt -> opt.trim() } }.orElse(listOf())
-  val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS).map { it.toBoolean() }.orElse(true)
+  val testedApks: List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS))
+  val testApks: List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TESTING_APK))
+  val testUtilApks: List<File> = resolveApks(get(TEST_UTIL_APKS))
+  val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS)?.split(",")?.map { opt -> opt.trim() } ?: listOf()
+  val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS)?.toBoolean() ?: true
 
   val instrumentationRunnerClass: String =
-    get(INSTRUMENTATION_RUNNER_CLASS).orElseThrow { RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required") }
+    get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")
   val instrumentationTargetPackageId: String =
-    get(INSTRUMENTATION_TARGET_PACKAGE_ID).orElseThrow { RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required") }
+    get(INSTRUMENTATION_TARGET_PACKAGE_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID)
+      ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
+
+  private fun resolveApks(value: String?): List<File> {
+    return value?.split(",")?.flatMap { path ->
+      val file = File(path.trim())
+      if (file.isDirectory) {
+        file.walk().filter { f -> f.extension == "apk" }.toList()
+      } else {
+        listOf(file)
+      }
+    } ?: listOf()
+  }
 }

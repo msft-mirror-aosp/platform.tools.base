@@ -342,6 +342,7 @@ package com.android.build.api.dsl {
   public enum AgpTestSuiteInputParameters {
     method @InaccessibleFromKotlin public String getPropertyName();
     property public String propertyName;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters AAPT2_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ADB_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MERGED_MANIFEST;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters STATIC_FILES;

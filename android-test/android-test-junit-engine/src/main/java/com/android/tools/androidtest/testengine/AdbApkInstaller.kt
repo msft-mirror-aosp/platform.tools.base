@@ -29,7 +29,7 @@ import java.util.logging.Logger
  * Platform) `AndroidTestApkInstallerPlugin` for consistent behavior, but without any UTP dependencies.
  *
  * @property adb The [File] pointing to the ADB executable.
- * @property aapt The [File] pointing to the AAPT executable, used for parsing APKs.
+ * @property aapt2 The [File] pointing to the AAPT2 executable, used for parsing APKs.
  * @property deviceSerial The serial number of the target Android device.
  * @property installTimeoutMs The maximum time to wait for an installation to complete, in milliseconds. A value of 0 means wait
  *   indefinitely.
@@ -38,7 +38,7 @@ import java.util.logging.Logger
  */
 class AdbApkInstaller(
   private val adb: File,
-  private val aapt: File,
+  private val aapt2: File,
   private val deviceSerial: String,
   private val installTimeoutMs: Long,
   private val logger: Logger = Logger.getLogger(AdbApkInstaller::class.java.name),
@@ -304,9 +304,9 @@ class AdbApkInstaller(
     return cmd
   }
 
-  /** Parses an APK file using AAPT to find its package name. */
+  /** Parses an APK file using AAPT2 to find its package name. */
   private fun getPackageNameFromApk(apkPath: String): String? {
-    val result = runCommand(listOf(aapt.absolutePath, "dump", "badging", apkPath), null)
+    val result = runCommand(listOf(aapt2.absolutePath, "dump", "badging", apkPath), null)
     return result.output.lineSequence().mapNotNull { line -> packageNameRegex.find(line)?.groupValues?.get(1) }.firstOrNull()
   }
 
