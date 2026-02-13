@@ -17,12 +17,15 @@
 package com.android.build.gradle.tasks
 
 import com.android.Version
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -59,7 +62,6 @@ import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFileProperty
@@ -94,9 +96,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Input abstract val engineInputProperties: MapProperty<String, String>
 
-  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sourceFolders: ListProperty<Directory>
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sourceFolders: ConfigurableFileCollection
 
-  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val binaryFolders: ListProperty<Directory>
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val binaryFolders: ConfigurableFileCollection
 
   /**
    * The app bundle file used for dynamic feature testing.
@@ -236,20 +238,20 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         ),
       )
 
-    if (sourceFolders.isPresent) {
+    if (!sourceFolders.isEmpty) {
       standardInputs.add(
         TestEngineInputProperty(
           TestEngineInputProperty.SOURCE_FOLDERS,
-          sourceFolders.get().joinToString(separator = File.separator) { it.asFile.absolutePath },
+          sourceFolders.files.joinToString(separator = File.pathSeparator) { it.absolutePath },
         )
       )
     }
 
-    if (binaryFolders.isPresent) {
+    if (!binaryFolders.isEmpty) {
       standardInputs.add(
         TestEngineInputProperty(
           TestEngineInputProperty.BINARY_FOLDERS,
-          binaryFolders.get().joinToString(separator = File.separator) { it.asFile.absolutePath },
+          binaryFolders.files.joinToString(separator = File.pathSeparator) { it.absolutePath },
         )
       )
     }
@@ -351,11 +353,29 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       val classesDir = task.project.layout.buildDirectory.file(task.name)
       UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
-      task.testClassesDirs = creationConfig.services.fileCollection().also { it.from(classesDir) }
+      task.testClassesDirs =
+        creationConfig.services.fileCollection().also { fileCollection ->
+          fileCollection.from(classesDir)
+          creationConfig.sourceContainers.forEach { sourceContainer ->
+            fileCollection.from(
+              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
+          }
+        }
       task.classpath =
-        creationConfig.services.fileCollection().also {
-          it.from(classesDir)
-          creationConfig.sourceContainers.forEach { sourceContainer -> it.from(sourceContainer.suiteSourceClasspath.runtimeClasspath) }
+        creationConfig.services.fileCollection().also { fileCollection ->
+          fileCollection.from(classesDir)
+          fileCollection.from(
+            creationConfig.testedVariant.artifacts
+              .forScope(ScopedArtifacts.Scope.PROJECT)
+              .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+          )
+          creationConfig.sourceContainers.forEach { sourceContainer ->
+            fileCollection.from(sourceContainer.suiteSourceClasspath.runtimeClasspath)
+            fileCollection.from(
+              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
+          }
         }
 
       // Get all project properties, and system properties (possibly overriding project
@@ -418,15 +438,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
         testFramework.excludeEngines("junit-jupiter")
       }
-      creationConfig.sources.forEach { sourceSet: TestSuiteSourceSet ->
-        when (sourceSet) {
+      creationConfig.sourceContainers.forEach { sourceContainer: TestSuiteSourceContainer ->
+        when (val sourceSet = sourceContainer.source) {
           is TestSuiteSourceSet.Assets -> {
-            task.sourceFolders.addAll(sourceSet.get().all)
+            task.sourceFolders.from(sourceSet.get().all)
             task.failOnNoDiscoveredTests.setDisallowChanges(false)
           }
           is TestSuiteSourceSet.HostJar -> {
-            task.binaryFolders.add(creationConfig.artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC))
-            task.binaryFolders.add(creationConfig.artifacts.get(InternalArtifactType.JAVAC))
+            task.binaryFolders.from(
+              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
           }
           is TestSuiteSourceSet.TestApk -> throw RuntimeException("Not implemented")
         }

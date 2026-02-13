@@ -17,10 +17,12 @@
 package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.Version
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
@@ -99,6 +101,11 @@ internal constructor(
       // Instead, we manually carry over the dependencies and add the app's classes as a file dependency.
       compileClasspath.dependencies.addAll(testedVariant.variantDependencies.compileClasspath.allDependencies)
       runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
+
+      val appClasses =
+        testedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+      project.dependencies.add(compileClasspath.name, appClasses)
+      project.dependencies.add(runtimeClasspath.name, appClasses)
     }
 
     return TestSuiteSourceClasspath(

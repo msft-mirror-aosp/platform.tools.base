@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.test.report;
 import static org.gradle.api.tasks.testing.TestResult.ResultType;
 
 import com.android.builder.core.BuilderConstants;
+
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +47,7 @@ public abstract class CompositeTestResults extends TestResultModel {
     }
 
     public String getFilename(ReportType reportType) {
-        return getName();
+        return getName().replaceAll("[\\s:]", "-");
     }
 
     public abstract String getName();

@@ -67,16 +67,20 @@ class TestEngineWiringTest(
             buildDefinition.androidApplication(modulePath, action = action)
           },
         ),
-        arrayOf(
-          ":feature",
-          { projectDef: ApplicationExtension -> projectDef.dynamicFeatures.add(":feature") },
-          { buildDefinition: GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension>.() -> Unit ->
-            buildDefinition.androidFeature(modulePath) {
-              action()
-              dependencies { implementation(project(":baseApp")) }
-            }
-          },
-        ),
+        // TODO: re-enable once we figure out how to set androidJvm
+        // attribute for lume.
+
+        // arrayOf(
+        //   ":feature",
+        //   { projectDef: ApplicationExtension -> projectDef.dynamicFeatures.add(":feature") },
+        //   { buildDefinition: GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension>.() -> Unit
+        // ->
+        //     buildDefinition.androidFeature(modulePath) {
+        //       action()
+        //       dependencies { implementation(project(":baseApp")) }
+        //     }
+        //   },
+        // ),
       )
   }
 

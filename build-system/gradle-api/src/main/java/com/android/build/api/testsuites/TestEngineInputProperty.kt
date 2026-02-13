@@ -20,10 +20,10 @@ package com.android.build.api.testsuites
 data class TestEngineInputProperty(val name: String, val value: String) {
   companion object {
 
-    /** List of source folders to find tests in, separated by [java.io.File.separator] */
+    /** List of source folders to find tests in, separated by [java.io.File.pathSeparator] */
     const val SOURCE_FOLDERS = "com.android.junit.engine.source.folders"
 
-    /** List of binary folders to find tests in, separated by [java.io.File.separator] */
+    /** List of binary folders to find tests in, separated by [java.io.File.pathSeparator] */
     const val BINARY_FOLDERS = "com.android.junit.engine.binary.folders"
 
     /** Path to a file location to use as the logging output. */
