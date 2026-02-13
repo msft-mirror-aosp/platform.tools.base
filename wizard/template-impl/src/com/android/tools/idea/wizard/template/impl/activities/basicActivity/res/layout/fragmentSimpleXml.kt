@@ -29,7 +29,7 @@ fun fragmentSimpleXml(navGraphName: String, navHostFragmentId: String, useAndroi
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-    <fragment
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/${navHostFragmentId}"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"

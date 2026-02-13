@@ -82,6 +82,7 @@ import ${getMaterialComponentName("android.support.design.widget.FloatingActionB
 import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)}
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -101,7 +102,9 @@ ${renderIf(isViewBindingSupported) {"""
         ${contentViewBlock}
         setSupportActionBar(${findViewById(Language.Kotlin, isViewBindingSupported, id = "toolbar")})
 
-        val navController = findNavController(R.id.${navHostFragmentId})
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.${navHostFragmentId}) as NavHostFragment
+        val navController = navHostFragment.navController
+
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
