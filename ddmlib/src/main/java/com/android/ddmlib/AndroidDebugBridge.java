@@ -158,17 +158,19 @@ public class AndroidDebugBridge {
     /**
      * Call this method if the default implementation needs to be overridden. This method is
      * introduced to enable a full migration of functionality in this class to from ddmlib to
-     * adblib.
+     * adblib. This method returns the previous {@link AndroidDebugBridgeDelegate} that was set.
      */
-    public static void preInit(AndroidDebugBridgeDelegate delegate) {
+    public static AndroidDebugBridgeDelegate preInit(AndroidDebugBridgeDelegate delegate) {
+        AndroidDebugBridgeDelegate previousDelegate = AndroidDebugBridge.delegate;
         if (delegateIsUsed) {
             Log.w("ddmlib", "AndroidDebugBridgeDelegate assignment after its use");
         }
-        if (AndroidDebugBridge.delegate.getBridge() != null) {
+        if (previousDelegate.getBridge() != null) {
             throw new IllegalStateException(
                     "preInit() called after `AndroidDebugBridge` instance was created");
         }
         AndroidDebugBridge.delegate = delegate;
+        return previousDelegate;
     }
 
     /**
