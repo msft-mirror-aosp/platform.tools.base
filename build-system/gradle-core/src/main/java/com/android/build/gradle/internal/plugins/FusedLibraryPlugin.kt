@@ -326,15 +326,10 @@ constructor(
         sourcesConfig.extendsFrom(include.get())
       }
 
-    val consumerConfigurations: List<Configuration> =
-      listOf(
-        include.get(),
-        includeTransitiveApiResolved,
-        includeTransitiveRuntimeResolved,
-        fusedApi.get(),
-        fusedRuntime.get(),
-        sourcesConfiguration.get(),
-      )
+    val nonSourcesConsumerConfigurations: List<Configuration> =
+      listOf(include.get(), includeTransitiveApiResolved, includeTransitiveRuntimeResolved, fusedApi.get(), fusedRuntime.get())
+    applyCommonNonSourceVariantAttributes(project, nonSourcesConsumerConfigurations)
+    val consumerConfigurations: List<Configuration> = nonSourcesConsumerConfigurations + listOf(sourcesConfiguration.get())
     applyCommonConsumptionAttributes(project, consumerConfigurations)
 
     if (projectServices.projectOptions[BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE]) {
@@ -376,6 +371,11 @@ constructor(
     variantScope.artifacts
       .forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)
       .setInitialContent(ScopedArtifact.CLASSES, variantScope.getLocalJars())
+  }
+
+  private fun applyCommonNonSourceVariantAttributes(project: Project, configurations: List<Configuration>) {
+    val libraryVariantAttr = project.objects.named(Category::class.java, Category.LIBRARY)
+    configurations.forEach { it.attributes.attribute(CATEGORY_ATTRIBUTE, libraryVariantAttr) }
   }
 
   private fun applyCommonConsumptionAttributes(project: Project, configurations: List<Configuration>) {
