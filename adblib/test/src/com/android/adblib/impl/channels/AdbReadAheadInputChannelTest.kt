@@ -64,11 +64,9 @@ class AdbReadAheadInputChannelTest {
         .toList()
 
     // Assert
-    yieldUntil {
-      // There should be only 2 `read` invocations: 1 read of 1_000 bytes, 1 read for EOF
-      input.readCounter == 2
-    }
-    Assert.assertTrue(input.eofReached)
+    yieldUntil { input.eofReached }
+    // There should be only 2 `read` invocations: 1 read of 1_000 bytes, 1 read for EOF
+    Assert.assertEquals(2, input.readCounter)
     Assert.assertEquals(10, counts.size)
     repeat(counts.size) { index -> Assert.assertEquals(100, counts[index]) }
   }
