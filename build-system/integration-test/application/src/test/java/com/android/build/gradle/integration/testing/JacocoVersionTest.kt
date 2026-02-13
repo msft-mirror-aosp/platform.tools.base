@@ -16,86 +16,203 @@
 
 package com.android.build.gradle.integration.testing
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
+import org.gradle.api.JavaVersion
+import org.gradle.api.Project
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
-import org.junit.Ignore
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.junit.Rule
 import org.junit.Test
 
 class JacocoVersionTest {
 
-  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("unitTesting").create()
+  companion object {
+    const val EXPECTED_JACOCO_VERSION_1 = "0.8.7"
+    const val EXPECTED_JACOCO_VERSION_2 = "0.8.12"
+    const val EXPECTED_JACOCO_VERSION_DEFAULT = JacocoOptions.DEFAULT_VERSION
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+
+          installation { timeOutInMs = 30000 }
+
+          defaultConfig {
+            minSdk { version = release(24) }
+            targetSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+          }
+
+          buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
+
+          compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+          }
+        }
+
+        dependencies {
+          testImplementation("junit:junit:4.13.2")
+          testImplementation("org.mockito:mockito-core:5.12.0")
+          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+          testImplementation("commons-logging:commons-logging:1.1.1")
+        }
+
+        files {
+          add(
+            "src/main/java/com/android/tests/Foo.java",
+            // language=kotlin
+            """
+            package com.android.tests;
+
+            public class Foo {
+              public String foo() {
+                return "production code";
+              }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/android/tests/someKotlinCode.kt",
+            // language=kotlin
+            """
+            package com.android.tests
+
+            data class KotlinDataClass(val name: String = "kotlin data class")
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/test/java/com/android/tests/TestInKotlin.kt",
+            // language=kotlin
+            """
+            package com.android.tests
+
+            import org.junit.Test
+            import org.junit.Assert.*
+
+            class TestInKotlin {
+                @Test
+                fun passesInKotlin() {
+                    // Use Java classes:
+                    assertEquals("production code", Foo().foo())
+
+                    // Use Kotlin classes:
+                    assertEquals("kotlin data class", KotlinDataClass().name)
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+        pluginCallbacks += JacocoReportTaskCallback::class.java
+      }
+    }
+
+  open class JacocoReportTaskCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.tasks.register("jacocoTestReport", JacocoReport::class.java) { task ->
+        task.dependsOn("testDebugUnitTest", "createDebugUnitTestCoverageReport")
+        task.executionData.setFrom(
+          project.files("${project.buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+        )
+      }
+    }
+  }
+
+  open class JacocoPluginExtensionCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.plugins.apply(JacocoPlugin::class.java)
+      project.extensions.configure(org.gradle.testing.jacoco.plugins.JacocoPluginExtension::class.java) { it ->
+        it.toolVersion = EXPECTED_JACOCO_VERSION_1
+      }
+    }
+  }
+
+  private fun verifyJacocoVersion(indexHtml: File, expectedJacocoVersion: String) {
+    val indexHtmlString = indexHtml.readLines().joinToString("\n")
+    Truth.assertThat(indexHtmlString).contains("JaCoCo</a> $expectedJacocoVersion")
+  }
 
   @Test
-  @Ignore("b/481025948")
-  fun setJacocoPluginExtensionVersionForUnitTest() {
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-      apply plugin: 'jacoco'
-      android.buildTypes.debug.enableUnitTestCoverage = true
+  fun testDefaultJacocoVersionForUnitTest() {
+    val build = rule.build
+    build.executor.run(":app:jacocoTestReport")
 
-      task jacocoTestReport(
-          type: JacocoReport,
-          dependsOn: ['testDebugUnitTest', 'createDebugUnitTestCoverageReport']
-      ) {
-          executionData.setFrom(
-              files([
-                  "${'$'}{buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
-              ])
-          )
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
+
+    val generatedJacocoReport = FileUtils.join(appBuildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
+
+    val generatedCoverageReport = FileUtils.join(appBuildDir, "reports", "coverage", "test", "debug", "index.html")
+
+    verifyJacocoVersion(generatedJacocoReport, EXPECTED_JACOCO_VERSION_DEFAULT)
+    verifyJacocoVersion(generatedCoverageReport, EXPECTED_JACOCO_VERSION_DEFAULT)
+  }
+
+  @Test
+  fun testPluginExtensionJacocoVersionForUnitTest() {
+    val build = rule.build { androidApplication { pluginCallbacks += JacocoPluginExtensionCallback::class.java } }
+    build.executor.run(":app:jacocoTestReport")
+
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
+
+    val generatedJacocoReport = FileUtils.join(appBuildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
+
+    val generatedCoverageReport = FileUtils.join(appBuildDir, "reports", "coverage", "test", "debug", "index.html")
+
+    verifyJacocoVersion(generatedJacocoReport, EXPECTED_JACOCO_VERSION_1)
+    verifyJacocoVersion(generatedCoverageReport, EXPECTED_JACOCO_VERSION_1)
+  }
+
+  @Test
+  fun testAndroidDslJacocoVersionForUnitTest() {
+    val build =
+      rule.build {
+        androidApplication {
+          android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_2 }
+          pluginCallbacks += JacocoPluginExtensionCallback::class.java
+        }
       }
-      """
-        .trimIndent(),
-    )
+    build.executor.run(":app:jacocoTestReport")
 
-    // AGP default Jacoco plugin version
-    project.executor().run("jacocoTestReport")
-    val generatedJacocoReport = FileUtils.join(project.buildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
-    val generatedCoverageReport = FileUtils.join(project.buildDir, "reports", "coverage", "test", "debug", "index.html")
-    var generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-    var generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-    val jacocoVersion = JacocoPlugin.DEFAULT_JACOCO_VERSION // from Gradle
-    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
-    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
 
-    // Test Jacoco DSL
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-      jacoco.toolVersion = "0.8.7"
-      """
-        .trimIndent(),
-    )
-    project.execute("jacocoTestReport")
-    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
-    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
+    val generatedJacocoReport = FileUtils.join(appBuildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
 
-    // Test Android DSL
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-                android.testCoverage.jacocoVersion = "$jacocoVersion"
-            """
-        .trimIndent(),
-    )
-    project.execute("jacocoTestReport")
-    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
-    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
+    val generatedCoverageReport = FileUtils.join(appBuildDir, "reports", "coverage", "test", "debug", "index.html")
 
-    // Test StringOption
-    project.executor().with(StringOption.JACOCO_TOOL_VERSION, "0.8.7").run("jacocoTestReport")
-    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
-    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
+    verifyJacocoVersion(generatedJacocoReport, EXPECTED_JACOCO_VERSION_2)
+    verifyJacocoVersion(generatedCoverageReport, EXPECTED_JACOCO_VERSION_2)
+  }
+
+  @Test
+  fun testGradlePropertyJacocoVersionForUnitTest() {
+    val build =
+      rule.build {
+        androidApplication { android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_1 } }
+        gradleProperties { add(StringOption.JACOCO_TOOL_VERSION, EXPECTED_JACOCO_VERSION_2) }
+      }
+    build.executor.run(":app:jacocoTestReport")
+
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
+
+    val generatedJacocoReport = FileUtils.join(appBuildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
+
+    val generatedCoverageReport = FileUtils.join(appBuildDir, "reports", "coverage", "test", "debug", "index.html")
+
+    verifyJacocoVersion(generatedJacocoReport, EXPECTED_JACOCO_VERSION_2)
+    verifyJacocoVersion(generatedCoverageReport, EXPECTED_JACOCO_VERSION_2)
   }
 }

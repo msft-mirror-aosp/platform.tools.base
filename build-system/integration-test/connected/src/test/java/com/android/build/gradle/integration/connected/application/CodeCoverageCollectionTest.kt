@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -474,32 +475,30 @@ class CodeCoverageCollectionTest {
 
   @Test
   fun testCollectDebugCoverageWithCorruptedFile() {
-    val build = rule.build {
-      androidApplication(":app") {
-        pluginCallbacks += CodeCoverageCollectionTaskCallback::class.java
-      }
-    }
+    val build = rule.build { androidApplication(":app") { pluginCallbacks += CodeCoverageCollectionTaskCallback::class.java } }
 
-    val result = build.executor
-      .expectFailure()
-      .run(":app:collectDebugCoverage")
+    val result = build.executor.expectFailure().run(":app:collectDebugCoverage")
 
-    result.assertErrorContains(
-      "Unable to generate Jacoco XML report"
-    )
+    result.assertErrorContains("Unable to generate Jacoco XML report")
     result.assertTask(":app:collectDebugCoverage").failed()
   }
 
-  class CodeCoverageCollectionTaskCallback: GenericCallback {
+  @Test
+  fun testCollectDebugCoverageFailsWhenJacocoVersionMismatch() {
+    val build = rule.build { gradleProperties { add(StringOption.JACOCO_TOOL_VERSION, "0.8.12") } }
+
+    val result = build.executor.expectFailure().run(":app:collectDebugCoverage")
+
+    result.assertErrorContains("Cannot generate report. Please ensure a single Jacoco version is configured.")
+    result.assertTask(":app:collectDebugCoverage").failed()
+  }
+
+  class CodeCoverageCollectionTaskCallback : GenericCallback {
     override fun handleProject(project: Project) {
       project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
         task.doLast {
-          val output = project.fileTree("${project.buildDir}/outputs/unit_test_code_coverage") { fileTree ->
-            fileTree.include("**/*.exec")
-          }
-          output.files.forEach { file ->
-            file.writeText("CORRUPTED")
-          }
+          val output = project.fileTree("${project.buildDir}/outputs/unit_test_code_coverage") { fileTree -> fileTree.include("**/*.exec") }
+          output.files.forEach { file -> file.writeText("CORRUPTED") }
         }
       }
     }

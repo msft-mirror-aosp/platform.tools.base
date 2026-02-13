@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
@@ -250,11 +249,9 @@ class LibraryTaskManager(
     if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
       taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
 
-      val jacocoAntConfiguration =
-        JacocoConfigurations.getJacocoAntTaskConfiguration(project, variantInfo.variant.global.testCoverage.jacocoVersion)
       taskFactory.register(
         CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-          jacocoAntConfiguration,
+          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
           CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
         )
       )

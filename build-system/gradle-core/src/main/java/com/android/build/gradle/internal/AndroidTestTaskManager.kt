@@ -267,7 +267,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     taskFactory.configure(CONNECTED_ANDROID_TEST) { connectedAndroidTest: Task -> connectedAndroidTest.dependsOn(connectedTask) }
     if (androidTestProperties.codeCoverageEnabled) {
       val jacocoAntConfiguration =
-        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getJacocoVersion(androidTestProperties))
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(androidTestProperties))
       val reportTask = taskFactory.register(JacocoReportTask.CreationActionConnectedTest(androidTestProperties, jacocoAntConfiguration))
       testedVariant.taskContainer.coverageReportTask.dependsOn(reportTask)
       taskFactory.configure(CONNECTED_ANDROID_TEST) { connectedAndroidTest: Task -> connectedAndroidTest.dependsOn(reportTask) }

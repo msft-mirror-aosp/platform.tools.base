@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
@@ -646,11 +645,9 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   protected open fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<VariantBuilderT, VariantT>) {
     taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
 
-    val jacocoAntConfiguration =
-      JacocoConfigurations.getJacocoAntTaskConfiguration(project, variantInfo.variant.global.testCoverage.jacocoVersion)
     taskFactory.register(
       CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-        jacocoAntConfiguration,
+        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
         CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
       )
     )

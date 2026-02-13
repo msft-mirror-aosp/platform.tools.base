@@ -1160,7 +1160,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Register a test coverage report generation task to every managedDeviceCheck
     // task.
     if (creationConfig is TestComponentCreationConfig && creationConfig.codeCoverageEnabled) {
-      val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getJacocoVersion(creationConfig))
+      val jacocoAntConfiguration =
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(creationConfig))
       val reportTask = taskFactory.register(JacocoReportTask.CreationActionManagedDeviceTest(creationConfig, jacocoAntConfiguration))
       creationConfig.mainVariant.taskContainer.coverageReportTask?.dependsOn(reportTask)
       // Run the report task after all tests are finished on all devices.
@@ -1517,7 +1518,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   private fun handleJacocoDependencies(creationConfig: ComponentCreationConfig) {
     if (creationConfig is ApkCreationConfig && creationConfig.packageJacocoRuntime) {
-      val jacocoAgentRuntimeDependency = JacocoConfigurations.getAgentRuntimeDependency(JacocoTask.getJacocoVersion(creationConfig))
+      val jacocoAgentRuntimeDependency =
+        JacocoConfigurations.getAgentRuntimeDependency(JacocoTask.getAndroidTestJacocoVersion(creationConfig))
       project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, jacocoAgentRuntimeDependency)
 
       // we need to force the same version of Jacoco we use for instrumentation

@@ -592,7 +592,6 @@ com.android.build.gradle.integration.sources.SourcesJarTest
 com.android.build.gradle.integration.testing.AndroidTestDependsOnKotlinProjectTest
 com.android.build.gradle.integration.testing.AndroidTestUtilTest
 com.android.build.gradle.integration.testing.DynamicFeatureUnitTestSanityTest
-com.android.build.gradle.integration.testing.JacocoVersionTest
 com.android.build.gradle.integration.testing.LibraryInstrumentationTestSigningTest
 com.android.build.gradle.integration.testing.SeparateTestAccessToTestedApks
 com.android.build.gradle.integration.testing.SeparateTestModuleTest

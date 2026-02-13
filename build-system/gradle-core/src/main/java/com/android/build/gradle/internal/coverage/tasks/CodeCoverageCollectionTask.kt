@@ -18,18 +18,21 @@ package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.generateReport
+import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
 import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
-import java.io.UncheckedIOException
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import javax.xml.transform.TransformerException
@@ -37,6 +40,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
@@ -86,13 +90,16 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val dependentModuleCoverageData: ConfigurableFileCollection
 
-  @get:Classpath abstract val jacocoClasspath: ConfigurableFileCollection
+  @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
   @get:Internal abstract val projectName: Property<String>
 
   @get:Internal abstract val projectRoot: DirectoryProperty
 
   override fun doTaskAction() {
+    if (jacocoClasspath.isEmpty) {
+      throw GradleException("Cannot generate report. Please ensure a single Jacoco version is configured.")
+    }
     val sourceFolders: List<File> =
       sources.get().map { it.get().map(ConfigurableFileTree::getDir) }.flatten().distinctBy { it.absolutePath }
 
@@ -118,7 +125,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   }
 
   abstract class BaseCoverageCollectionCreationAction(
-    val jacocoAntConfiguration: Configuration,
+    val jacocoAntConfiguration: Configuration? = null,
     creationConfig: CodeCoverageReportCreationConfig,
   ) : VariantTaskCreationAction<CodeCoverageCollectionTask, CodeCoverageReportCreationConfig>(creationConfig) {
 
@@ -130,7 +137,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
       task.projectName.set(creationConfig.services.projectInfo.path)
       task.projectRoot.set(task.project.rootDir)
-      task.jacocoClasspath.setFrom(jacocoAntConfiguration)
+      jacocoAntConfiguration?.let { task.jacocoClasspath.setFrom(it) }
 
       creationConfig.unitTestCoverageFile?.let { task.unitTestCoverageFile.fromDisallowChanges(it) }
 
@@ -148,7 +155,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     }
   }
 
-  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration, creationConfig: CodeCoverageReportCreationConfig) :
+  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: CodeCoverageReportCreationConfig) :
     BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -169,7 +176,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   }
 
   class AggregatedCoverageCollectionCreationAction(
-    jacocoAntConfiguration: Configuration,
+    jacocoAntConfiguration: Configuration? = null,
     creationConfig: CodeCoverageReportCreationConfig,
   ) : BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
@@ -354,6 +361,30 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
           throw Exception("Error transforming XML Report", e)
         }
       }
+    }
+  }
+
+  companion object {
+    /**
+     * Returns the Jacoco Ant task configuration if the Jacoco version used for unit tests and Android tests is the same.
+     *
+     * This check is necessary because using different Jacoco versions for different test types can lead to inconsistencies or failures in
+     * coverage report generation.
+     *
+     * @param project The Gradle project.
+     * @param creationConfig The component creation configuration.
+     * @return A [Configuration] for the Jacoco Ant task if the versions match, otherwise null.
+     */
+    fun getJacocoAntTaskConfiguration(project: Project, creationConfig: ComponentCreationConfig): Configuration? {
+      return if (isJacocoVersionSame(project, creationConfig)) {
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(creationConfig))
+      } else {
+        null
+      }
+    }
+
+    private fun isJacocoVersionSame(project: Project, creationConfig: ComponentCreationConfig): Boolean {
+      return getUnitTestJacocoVersion(project, creationConfig) == JacocoTask.getAndroidTestJacocoVersion(creationConfig)
     }
   }
 }
