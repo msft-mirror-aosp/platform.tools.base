@@ -25,7 +25,7 @@ import org.junit.rules.ExternalResource
  *
  * This rule is needed if the test directly or indirectly relies on a call to `AndroidDebugBridge.createBridge`.
  *
- * Use `portSuppier` to feed a server port from an outer rule like `FakeAdbServerProviderRule`.
+ * Use `portSupplier` to feed a server port from an outer rule like `FakeAdbServerProviderRule`.
  */
 class InitAndroidDebugBridgeRule(private val alsoCreateBridge: Boolean = false, private val portSupplier: () -> Int) : ExternalResource() {
 
