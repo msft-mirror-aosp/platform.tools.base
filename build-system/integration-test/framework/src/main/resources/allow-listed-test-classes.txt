@@ -92,7 +92,6 @@ com.android.build.gradle.integration.application.InitWithThisTest
 com.android.build.gradle.integration.application.InjectedAbiSplitTest
 com.android.build.gradle.integration.application.InvalidNdkTest
 com.android.build.gradle.integration.application.InvalidResourceDirectoryTest
-com.android.build.gradle.integration.application.JacocoLibraryProjectTest
 com.android.build.gradle.integration.application.JacocoOnlySubprojectBuildScriptDependency
 com.android.build.gradle.integration.application.JacocoScopedArtifactsTest
 com.android.build.gradle.integration.application.JacocoTest
