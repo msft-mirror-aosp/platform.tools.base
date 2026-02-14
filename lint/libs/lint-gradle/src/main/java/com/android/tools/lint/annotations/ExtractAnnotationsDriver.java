@@ -316,8 +316,7 @@ public class ExtractAnnotationsDriver {
         extractor.setListIgnored(listFiltered);
 
         UastEnvironment.Configuration config =
-                UastEnvironment.Configuration.create(
-                        /* enableKotlinScripting */ false, /* useFirUast */ useK2Uast);
+                UastEnvironment.Configuration.create(/* enableKotlinScripting */ false);
         if (sourceRoots == null) {
             sourceRoots = findSourceRoots(sources);
             if (sourceRoots == null) {

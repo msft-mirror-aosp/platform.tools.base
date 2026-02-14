@@ -156,7 +156,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
       val tmp = temporaryFolder.root.canonicalFile
       klibFile.createFile(tmp)
 
-      val config = UastEnvironment.Configuration.create(useFirUast = true)
+      val config = UastEnvironment.Configuration.create()
       val lintProject =
         ManualProject(
           client = LintCliClient("TestClient"),

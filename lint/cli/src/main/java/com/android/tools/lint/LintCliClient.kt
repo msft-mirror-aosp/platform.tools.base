@@ -1250,7 +1250,7 @@ open class LintCliClient : LintClient {
   public override fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) {
     if (driver?.mode == LintDriver.DriverMode.MERGE) {
       // The costly parsing environment is not required (or supported!) when merging
-      val config = UastEnvironment.Configuration.create(enableKotlinScripting = false, useFirUast = flags.useK2Uast() && useFirUast())
+      val config = UastEnvironment.Configuration.create(enableKotlinScripting = false)
       val env = UastEnvironment.create(config)
       uastEnvironment = env
       return
@@ -1278,11 +1278,7 @@ open class LintCliClient : LintClient {
         require(file.isAbsolute) { "Relative Path found: $file. All paths should be absolute." }
       }
     }
-    val config =
-      UastEnvironment.Configuration.create(
-        enableKotlinScripting = mayNeedKotlinScripting(allProjects),
-        useFirUast = flags.useK2Uast() && useFirUast(),
-      )
+    val config = UastEnvironment.Configuration.create(enableKotlinScripting = mayNeedKotlinScripting(allProjects))
     config.javaLanguageLevel = maxLevel
     config.addModules(allModules, bootClassPaths)
     kotlinPerformanceManager?.let { config.kotlinCompilerConfig.perfManager = it }
