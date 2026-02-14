@@ -17,6 +17,7 @@ maven_library(
     deps = [
         "//tools/base/common:tools.common",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.junit.platform.junit-platform-engine",
     ],
 )
