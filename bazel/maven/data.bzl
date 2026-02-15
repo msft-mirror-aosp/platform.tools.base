@@ -783,7 +783,7 @@ DATA = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android:zipflinger:8.7.0",
-    "com.anthropic:anthropic-java:2.8.1",
+    "com.anthropic:anthropic-java:2.14.0",
     "com.beust:jcommander:1.82",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
     "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2",
@@ -974,7 +974,7 @@ DATA = [
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples
     "com.jetbrains.intellij.java:java-compiler-ant-tasks:243.22562.145",
     "com.linkedin.testbutler:test-butler-app:1.3.1",
-    "com.openai:openai-java:4.0.0",
+    "com.openai:openai-java:4.21.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.1.0",
@@ -1370,8 +1370,8 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
-    "com.anthropic:anthropic-java-core:jar:sources:2.8.1",
-    "com.openai:openai-java-core:jar:sources:4.0.0",
+    "com.anthropic:anthropic-java-core:jar:sources:2.14.0",
+    "com.openai:openai-java-core:jar:sources:4.21.0",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",
