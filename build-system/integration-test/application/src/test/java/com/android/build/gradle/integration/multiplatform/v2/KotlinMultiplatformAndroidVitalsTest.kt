@@ -79,6 +79,56 @@ class KotlinMultiplatformAndroidVitalsTest {
   }
 
   @Test
+  fun testJavaCompilationNotEnabledWarning() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":shared") {
+          files {
+            add(
+              "src/androidHostTest/java/pkg/name/shared/HostTest.java",
+              """
+            package pkg.name.shared;
+            public class HostTest { }
+            """,
+            )
+
+            add(
+              "src/androidDeviceTest/java/pkg/name/shared/DeviceTest.java",
+              """
+            package pkg.name.shared;
+            public class DeviceTest { }
+            """,
+            )
+
+            add(
+              "src/androidMain/java/pkg/name/shared/Main.java",
+              """
+            package pkg.name.shared;
+            public class Main { }
+            """,
+            )
+          }
+        }
+      }
+
+    val result = build.executor.run("help")
+    result.assertOutputContains(
+      "The 'androidHostTest/java' source directory exists, but java support is not enabled. To enable java support, add `withJava()` " +
+        "to your android target configuration in the Gradle build file."
+    )
+
+    result.assertOutputContains(
+      "The 'androidDeviceTest/java' source directory exists, but java support is not enabled. To enable java support, add `withJava()` " +
+        "to your android target configuration in the Gradle build file."
+    )
+
+    result.assertOutputContains(
+      "The 'androidMain/java' source directory exists, but java support is not enabled. To enable java support, add `withJava()` " +
+        "to your android target configuration in the Gradle build file."
+    )
+  }
+
+  @Test
   fun testMissingCompileSdkException() {
     val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdk = null } } }
     val result = build.executor.expectFailure().run(":shared:assembleAndroidMain")

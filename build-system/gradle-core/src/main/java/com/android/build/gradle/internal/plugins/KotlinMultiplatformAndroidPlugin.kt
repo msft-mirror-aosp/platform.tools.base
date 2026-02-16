@@ -369,15 +369,21 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
     updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))
     finalizeAllComponents(listOfNotNull(mainVariant, unitTest, androidTest))
     kotlinMultiplatformHandler.finalize(mainVariant)
-    checkForMissingTestConfigurations(androidExtension.androidTestOnJvmBuilder, androidExtension.androidTestOnDeviceBuilder, project)
+    checkForMissingConfigurations(
+      (kotlinMultiplatformHandler.getAndroidTarget() as KotlinMultiplatformAndroidLibraryTargetImpl).enableJavaSources,
+      androidExtension.androidTestOnJvmBuilder,
+      androidExtension.androidTestOnDeviceBuilder,
+      project,
+    )
   }
 
-  private fun checkForMissingTestConfigurations(
+  private fun checkForMissingConfigurations(
+    withJava: Boolean,
     androidHostTest: KotlinMultiplatformAndroidCompilationBuilderImpl?,
     androidDeviceTest: KotlinMultiplatformAndroidCompilationBuilderImpl?,
     project: Project,
   ) {
-    fun checkAndReport(
+    fun warnIfTestDirExistsWithoutConfig(
       compilation: KotlinMultiplatformAndroidCompilationBuilderImpl?,
       sourceSetNames: List<String>,
       testTypeDesc: String,
@@ -398,19 +404,34 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
       }
     }
 
-    checkAndReport(
+    fun warnIfJavaDirExistsWithoutJavaSupport(sourceSetName: String) {
+      val javaSrcDir = FileUtils.join(project.projectDir, "src", sourceSetName, "java")
+      if (withJava.not() && javaSrcDir.exists()) {
+        dslServices.issueReporter.reportWarning(
+          IssueReporter.Type.GENERIC,
+          "The '$sourceSetName/java' source directory exists, but java support is not enabled. " +
+            "To enable java support, add `withJava()` to your android target configuration in the Gradle build file.",
+        )
+      }
+    }
+
+    warnIfTestDirExistsWithoutConfig(
       compilation = androidHostTest,
       sourceSetNames = listOf(KmpAndroidCompilationType.HOST_TEST.defaultSourceSetName, "commonTest"),
       testTypeDesc = "android host",
       configBlock = "withHostTest {}",
     )
 
-    checkAndReport(
+    warnIfTestDirExistsWithoutConfig(
       compilation = androidDeviceTest,
       sourceSetNames = listOf(KmpAndroidCompilationType.DEVICE_TEST.defaultSourceSetName),
       testTypeDesc = "android device",
       configBlock = "withDeviceTest {}",
     )
+
+    warnIfJavaDirExistsWithoutJavaSupport(KmpAndroidCompilationType.MAIN.defaultSourceSetName)
+    warnIfJavaDirExistsWithoutJavaSupport(KmpAndroidCompilationType.HOST_TEST.defaultSourceSetName)
+    warnIfJavaDirExistsWithoutJavaSupport(KmpAndroidCompilationType.DEVICE_TEST.defaultSourceSetName)
   }
 
   private fun updateTestComponentFriendPaths(components: List<KmpComponentImpl<out KmpComponentDslInfo>>) {
