@@ -19,7 +19,6 @@ package com.android.tools.lint.detector.api
 import com.android.tools.lint.checks.infrastructure.TestFiles.base64gzip
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
-import com.android.tools.lint.useFirUast
 import com.intellij.openapi.util.Disposer
 import junit.framework.TestCase
 import org.jetbrains.uast.UElement
@@ -101,7 +100,6 @@ class ResolveTest : TestCase() {
           .indented()
       )
 
-    val lcClassName = if (useFirUast()) "SymbolLightClassForClassOrObject" else "KtUltraLightClass"
     val pair = LintUtilsTest.parse(*tests)
     val file = pair.first.uastFile
     assertEquals(
@@ -113,21 +111,11 @@ class ResolveTest : TestCase() {
                         UBlockExpression [{...}]
                             UQualifiedReferenceExpression [KotlinTest.members] => PsiMethod:getMembers
                                 UClassLiteralExpression [KotlinTest]
-                                    UThisExpression (label = null) [this] => ${lcClassName}:class KotlinTest {
-                fun test() {
-                    this::class.members
-                    this::class.declaredMemberFunctions
-                }
-            }
+                                    UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
                                 USimpleNameReferenceExpression (identifier = members) [members] => PsiMethod:getMembers
                             UQualifiedReferenceExpression [KotlinTest.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
                                 UClassLiteralExpression [KotlinTest]
-                                    UThisExpression (label = null) [this] => ${lcClassName}:class KotlinTest {
-                fun test() {
-                    this::class.members
-                    this::class.declaredMemberFunctions
-                }
-            }
+                                    UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
                                 USimpleNameReferenceExpression (identifier = declaredMemberFunctions) [declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
                     UMethod (name = KotlinTest) [public fun KotlinTest() = UastEmptyExpression]
             """
@@ -258,7 +246,6 @@ class ResolveTest : TestCase() {
 
     val pair = LintUtilsTest.parse(source)
 
-    val lcAccessorName = if (useFirUast()) "SymbolLightAccessorMethod" else "KtUltraLightMethodForSourceDeclaration"
     val uastFile = pair.first.uastFile
     assertEquals(
       """
@@ -273,7 +260,7 @@ class ResolveTest : TestCase() {
                     UMethod (name = mutate) [public final fun mutate() : void {...}]
                         UBlockExpression [{...}]
                             UBinaryExpression (operator = =) [myField = 42]
-                                USimpleNameReferenceExpression (identifier = myField) [myField] => $lcAccessorName:setMyField
+                                USimpleNameReferenceExpression (identifier = myField) [myField] => SymbolLightAccessorMethod of SymbolLightClassForClassOrObject
                                 ULiteralExpression (value = 42) [42]
                     UMethod (name = A) [public fun A() = UastEmptyExpression]
             """

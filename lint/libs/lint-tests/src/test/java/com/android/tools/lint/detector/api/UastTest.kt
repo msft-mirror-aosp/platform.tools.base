@@ -23,7 +23,6 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.klib
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.dos2unix
 import com.android.tools.lint.helpers.DefaultJavaEvaluator
-import com.android.tools.lint.useFirUast
 import com.intellij.codeInsight.AnnotationTargetUtil
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.openapi.util.Disposer
@@ -46,7 +45,6 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
 import junit.framework.TestCase
 import kotlin.test.assertContains
-import org.jetbrains.annotations.NotNull
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
@@ -352,11 +350,7 @@ class UastTest : TestCase() {
               val applicable = AnnotationTargetUtil.findAnnotationTarget(node.javaPsi!!, *targets)
               // https://youtrack.jetbrains.com/issue/KTIJ-24597
               // annotation target found for K2 only
-              if (useFirUast()) {
-                assertEquals(TargetType.METHOD, applicable)
-              } else {
-                assertNull(applicable)
-              }
+              assertEquals(TargetType.METHOD, applicable)
             }
 
             return super.visitAnnotation(node)
@@ -558,10 +552,7 @@ class UastTest : TestCase() {
 
   fun testExpressionTypeOfContractLambda() {
     // b/463436546
-    // TODO: after https://youtrack.jetbrains.com/issue/KT-82846
-    if (useFirUast()) {
-      return
-    }
+    // after https://youtrack.jetbrains.com/issue/KT-82846
     val source =
       kotlin(
           """
@@ -928,8 +919,6 @@ class UastTest : TestCase() {
         )
         .indented()
 
-    val expType = if (useFirUast()) " : PsiType:ScheduledFuture<Boolean>" else " : PsiType:ScheduledFuture<? extends Object>"
-
     check(source) { file ->
       assertEquals(
         "" +
@@ -949,12 +938,10 @@ class UastTest : TestCase() {
           "                            UIdentifier (Identifier (newSingleThreadScheduledExecutor)) [UIdentifier (Identifier (newSingleThreadScheduledExecutor))]\n" +
           "        UMethod (name = foo) [public fun foo() : void {...}] : PsiType:void\n" +
           "            UBlockExpression [{...}]\n" +
-          "                UQualifiedReferenceExpression [mExecutorService.schedule(this::initBar, 10, TimeUnit.SECONDS)]" +
-          expType +
+          "                UQualifiedReferenceExpression [mExecutorService.schedule(this::initBar, 10, TimeUnit.SECONDS)] : PsiType:ScheduledFuture<Boolean>" +
           "\n" +
           "                    USimpleNameReferenceExpression (identifier = mExecutorService) [mExecutorService] : PsiType:ScheduledExecutorService\n" +
-          "                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 3)) [schedule(this::initBar, 10, TimeUnit.SECONDS)]" +
-          expType +
+          "                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 3)) [schedule(this::initBar, 10, TimeUnit.SECONDS)] : PsiType:ScheduledFuture<Boolean>" +
           "\n" +
           "                        UIdentifier (Identifier (schedule)) [UIdentifier (Identifier (schedule))]\n" +
           "                        UCallableReferenceExpression (name = initBar) [this::initBar] : PsiType:<method reference>\n" +
@@ -1259,55 +1246,10 @@ class UastTest : TestCase() {
         .indented()
     ) { file ->
       // val ubyte: UByte = 255u
-      val uByteValue = if (useFirUast()) 255 else -1
       // K2/SLC puts synthetic members---values, valueOf, and entries---together,
       // followed by enum constructor.
       // It seems K1/ULC puts [entries] at the end in an ad-hoc manner:
       //  values, valueOf, members, constructor, and then entries.
-      val enumEntriesBeforeValues =
-        if (useFirUast()) ""
-        else
-          """
-                            UMethod (name = Direction) [private fun Direction() = UastEmptyExpression]
-                            UMethod (name = getEntries) [public static fun getEntries() : kotlin.enums.EnumEntries<test.pkg.FooAnnotation.Direction> = UastEmptyExpression] : PsiType:EnumEntries<Direction>"""
-      val enumEntriesAfterValueOf =
-        if (useFirUast())
-          """
-                            UMethod (name = getEntries) [public static fun getEntries() : kotlin.enums.EnumEntries<test.pkg.FooAnnotation.Direction> = UastEmptyExpression] : PsiType:EnumEntries<Direction>
-                            UMethod (name = Direction) [private fun Direction() = UastEmptyExpression]"""
-        else ""
-      val inlineClassDiff =
-        if (useFirUast())
-          """
-                        UField (name = s) [@org.jetbrains.annotations.NotNull private final var s: java.lang.String] : PsiType:String
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
-                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
-                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]"""
-        else ""
-      val valueClassDiff =
-        if (useFirUast())
-          """
-                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
-                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
-                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]"""
-        else ""
-      val valueClassConstructor =
-        if (useFirUast()) ""
-        else
-          """
-                        UMethod (name = Name2) [public fun Name2(@org.jetbrains.annotations.NotNull n: java.lang.String) = UastEmptyExpression]
-                            UParameter (name = n) [@org.jetbrains.annotations.NotNull var n: java.lang.String] : PsiType:String
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]"""
-      val defaultMethod =
-        if (useFirUast())
-          """UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
-                            UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]"""
-        else """UMethod (name = foo) [public default fun foo() : int {...}] : PsiType:int"""
       assertEquals(
         """
                 UFile (package = test.pkg) [package test.pkg...]
@@ -1318,9 +1260,9 @@ class UastTest : TestCase() {
                         UField (name = ulong) [@org.jetbrains.annotations.NotNull private static final var ulong: long = 42] : PsiType:long
                             UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
                             ULiteralExpression (value = 42) [42] : PsiType:long
-                        UField (name = ubyte) [@org.jetbrains.annotations.NotNull private static final var ubyte: byte = $uByteValue] : PsiType:byte
+                        UField (name = ubyte) [@org.jetbrains.annotations.NotNull private static final var ubyte: byte = 255] : PsiType:byte
                             UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            ULiteralExpression (value = $uByteValue) [$uByteValue] : PsiType:byte
+                            ULiteralExpression (value = 255) [255] : PsiType:byte
                         UMethod (name = test) [public static final fun test(@org.jetbrains.annotations.NotNull s: java.lang.String) : java.lang.Object {...}] : PsiType:Object
                             UParameter (name = s) [@org.jetbrains.annotations.NotNull var s: java.lang.String] : PsiType:String
                                 UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
@@ -1388,10 +1330,12 @@ class UastTest : TestCase() {
                                 USimpleNameReferenceExpression (identifier = Direction) [Direction]
                             UEnumConstant (name = RIGHT) [@null RIGHT]
                                 UAnnotation (fqName = null) [@null]
-                                USimpleNameReferenceExpression (identifier = Direction) [Direction]$enumEntriesBeforeValues
+                                USimpleNameReferenceExpression (identifier = Direction) [Direction]
                             UMethod (name = values) [public static fun values() : test.pkg.FooAnnotation.Direction[] = UastEmptyExpression] : PsiType:Direction[]
                             UMethod (name = valueOf) [public static fun valueOf(value: java.lang.String) : test.pkg.FooAnnotation.Direction = UastEmptyExpression] : PsiType:Direction
-                                UParameter (name = value) [var value: java.lang.String] : PsiType:String$enumEntriesAfterValueOf
+                                UParameter (name = value) [var value: java.lang.String] : PsiType:String
+                            UMethod (name = getEntries) [public static fun getEntries() : kotlin.enums.EnumEntries<test.pkg.FooAnnotation.Direction> = UastEmptyExpression] : PsiType:EnumEntries<Direction>
+                            UMethod (name = Direction) [private fun Direction() = UastEmptyExpression]
                         UClass (name = Bar) [public static abstract annotation Bar {...}]
                         UClass (name = Companion) [public static final class Companion {...}]
                             UField (name = bar) [@org.jetbrains.annotations.NotNull private static final var bar: int = 42] : PsiType:int
@@ -1403,15 +1347,28 @@ class UastTest : TestCase() {
                                         ULiteralExpression (value = 42) [42] : PsiType:int
                             UMethod (name = getBar) [public final fun getBar() : int = UastEmptyExpression] : PsiType:int
                             UMethod (name = Companion) [private fun Companion() = UastEmptyExpression]
-                    UClass (name = Name) [public final class Name {...}]$inlineClassDiff
+                    UClass (name = Name) [public final class Name {...}]
+                        UField (name = s) [@org.jetbrains.annotations.NotNull private final var s: java.lang.String] : PsiType:String
+                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
                         UMethod (name = getS) [public final fun getS() : java.lang.String = UastEmptyExpression] : PsiType:String
+                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
+                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
+                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
+                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
+                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
                     UClass (name = Name2) [public final class Name2 {...}]
                         UAnnotation (fqName = kotlin.jvm.JvmInline) [@kotlin.jvm.JvmInline]
                         UField (name = n) [@org.jetbrains.annotations.NotNull private final var n: java.lang.String] : PsiType:String
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]$valueClassDiff
-                        UMethod (name = getN) [public final fun getN() : java.lang.String = UastEmptyExpression] : PsiType:String$valueClassConstructor
+                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                        UMethod (name = getN) [public final fun getN() : java.lang.String = UastEmptyExpression] : PsiType:String
+                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
+                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
+                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
+                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
+                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
                     UClass (name = FooInterface2) [public abstract interface FooInterface2 {...}]
-                        $defaultMethod
+                        UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
+                            UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]
                             UBlockExpression [{...}]
                                 UReturnExpression [return 42]
                                     ULiteralExpression (value = 42) [42] : PsiType:int
@@ -1512,7 +1469,6 @@ class UastTest : TestCase() {
         .indented()
 
     // With the upper bound `T : Activity`, T is not null.
-    val nonNull = if (useFirUast()) "@${NotNull::class.java.name} " else ""
     check(source) { file ->
       assertEquals(
         """
@@ -1532,7 +1488,7 @@ class UastTest : TestCase() {
                     public static final fun function5(t: T) : int {
                         return 42
                     }
-                    public static final fun function6($nonNull${"$"}this${"$"}function6: T, ${nonNull}t: T) : T {
+                    public static final fun function6(@org.jetbrains.annotations.NotNull ${"$"}this${"$"}function6: T, @org.jetbrains.annotations.NotNull t: T) : T {
                         return t
                     }
                     public static final fun function7(t: T) : T {
@@ -1565,7 +1521,6 @@ class UastTest : TestCase() {
     // Regression test for
     // https://youtrack.jetbrains.com/issue/KT-35610:
     // UAST: Some reified methods have null returnType
-    val moduleName = if (useFirUast()) "app" else "lint_module"
     val source =
       kotlin(
           """
@@ -1808,7 +1763,7 @@ class UastTest : TestCase() {
                     method isOpen(): open
                     method me(): tailrec
                     method multiarg(vararg arg):
-                    method myInternal＄$moduleName(): internal
+                    method myInternal＄app(): internal
                     method notInlined(): noinline
                     method randomUUID(): actual
                     method randomUUID(): expect
@@ -1842,21 +1797,17 @@ class UastTest : TestCase() {
         )
         .indented()
 
-    val inlineClassDiff =
-      if (useFirUast())
-        """
-                    @org.jetbrains.annotations.NotNull private final var set: java.util.Set<test.pkg.GraphVariable<?>>
-                    public fun toString() : java.lang.String = UastEmptyExpression
-                    public fun hashCode() : int = UastEmptyExpression
-                    public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression"""
-      else ""
     check(source) { file ->
       assertEquals(
         """
                 package test.pkg
 
-                public final class GraphVariables {$inlineClassDiff
+                public final class GraphVariables {
+                    @org.jetbrains.annotations.NotNull private final var set: java.util.Set<test.pkg.GraphVariable<?>>
                     public final fun getSet() : java.util.Set<test.pkg.GraphVariable<?>> = UastEmptyExpression
+                    public fun toString() : java.lang.String = UastEmptyExpression
+                    public fun hashCode() : int = UastEmptyExpression
+                    public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression
                     public final fun variable(@org.jetbrains.annotations.NotNull name: java.lang.String, @org.jetbrains.annotations.NotNull graphType: java.lang.String, value: T) : void {
                         this.set.add(GraphVariable(name, graphType, value))
                     }
@@ -2103,8 +2054,6 @@ class UastTest : TestCase() {
 
     // [Unit] as a function return type should be mapped to void.
     // Otherwise, e.g., lambda return, can be still [Unit].
-    val lambdaBlockReturnType = if (useFirUast()) " : PsiType:Unit" else ""
-
     check(source) { file ->
       assertEquals(
         """
@@ -2118,7 +2067,7 @@ class UastTest : TestCase() {
                               UIdentifier (Identifier (Thread)) [UIdentifier (Identifier (Thread))]
                               USimpleNameReferenceExpression (identifier = Thread, resolvesTo = PsiClass: Thread) [Thread]
                               ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
-                                UBlockExpression [{...}]$lambdaBlockReturnType
+                                UBlockExpression [{...}] : PsiType:Unit
                                   UReturnExpression [return println("hello")]
                                     UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
                                       UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
@@ -2135,7 +2084,7 @@ class UastTest : TestCase() {
                                 UIdentifier (Identifier (Runnable)) [UIdentifier (Identifier (Runnable))]
                                 USimpleNameReferenceExpression (identifier = Runnable, resolvesTo = PsiClass: Runnable) [Runnable]
                                 ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
-                                  UBlockExpression [{...}]$lambdaBlockReturnType
+                                  UBlockExpression [{...}] : PsiType:Unit
                                     UReturnExpression [return println("hello")]
                                       UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
                                         UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
@@ -2411,11 +2360,8 @@ class UastTest : TestCase() {
 
   fun testSealedClassPermit_kt() {
     // b/428697839
-    if (!useFirUast()) {
-      // TODO: https://youtrack.jetbrains.com/issue/KT-78773
-      // ULC (K1) raises UnsupportedOperationException
-      return
-    }
+    // TODO: https://youtrack.jetbrains.com/issue/KT-78773
+    //   ULC (K1) raises UnsupportedOperationException
     val source =
       kotlin(
         """
@@ -2985,7 +2931,7 @@ class UastTest : TestCase() {
             // Bar should have default arg constructor as per default value in parameter
             // E.g., Bar() // == Bar(true)
             // K2 creates that constructor properly, whereas K1 missed that.
-            val expectedTypes = if (useFirUast()) listOf("Boo", "Bar") else listOf("Boo")
+            val expectedTypes = listOf("Boo", "Bar")
             assertTrue(
               node.sourcePsi is KtConstructor<*> ||
                 (node.sourcePsi is KtClassOrObject && node.uastParameters.isEmpty() && node.name in expectedTypes)
@@ -3039,10 +2985,9 @@ class UastTest : TestCase() {
             // The point is that `RememberDetector` should not rely on `Unit` as the call type,
             // and should rather manually investigate the last expression of the lambda argument.
             val callExpressionType = node.getExpressionType()
-            val coerced = if (useFirUast()) "T" else "kotlin.Unit"
             assertTrue(
               node.sourcePsi?.text + " returns " + callExpressionType?.canonicalText,
-              callExpressionType?.canonicalText in listOf(coerced, "int"),
+              callExpressionType?.canonicalText in listOf("T", "int"),
             )
 
             // We can go deeper into the last expression of the lambda argument.
@@ -3558,8 +3503,6 @@ class UastTest : TestCase() {
           .indented(),
       )
 
-    val expected = if (useFirUast()) "CustomLoggingApi" else "<ErrorType>"
-
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
@@ -3567,7 +3510,7 @@ class UastTest : TestCase() {
             val resolved = node.resolve()
             assertNotNull(resolved)
             assertEquals("mock", resolved!!.name)
-            assertEquals(expected, resolved.returnType?.canonicalText)
+            assertEquals("CustomLoggingApi", resolved.returnType?.canonicalText)
             return super.visitCallExpression(node)
           }
         }
@@ -3685,13 +3628,12 @@ class UastTest : TestCase() {
             assertNotNull(txt, resolved)
             resolved!!
 
-            val facadeOrPart = if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
+            val facadeOrPart = if (resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
             assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
 
             assertEquals(txt, 1, resolved.parameterList.parametersCount)
             val rcv = resolved.parameterList.parameters.single()
-            val rcvType = if (!useFirUast() && resolved.name == "reifiedFun") "java.lang.Object" else "T"
-            assertEquals(txt, rcvType, rcv.type.canonicalText)
+            assertEquals(txt, "T", rcv.type.canonicalText)
 
             assertEquals(txt, 2, resolved.annotations.size)
             assertTrue(txt, resolved.hasAnnotation("test.MyAnnotation"))
@@ -3707,7 +3649,7 @@ class UastTest : TestCase() {
             assertNotNull(txt, resolved)
             resolved!!
 
-            val facadeOrPart = if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
+            val facadeOrPart = if (resolved.name == "reifiedFun") "test.UtilKt" else "test.UtilKt__UtilKt"
             assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
 
             return super.visitCallableReferenceExpression(node)
@@ -4095,7 +4037,7 @@ class UastTest : TestCase() {
           override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
             count++
             val type = node.functionalInterfaceType ?: node.getExpressionType()
-            val expectedType = expectedTypes[method!!.name]?.let { if (useFirUast()) it.second else it.first }
+            val expectedType = expectedTypes[method!!.name]?.second
             assertEquals(expectedType, type?.canonicalText)
             return super.visitLambdaExpression(node)
           }
@@ -5044,14 +4986,11 @@ class UastTest : TestCase() {
             val resolved = node.resolve()
             assertNotNull(resolved)
             var expectedMethod = if (getOrNullCheck) "getOrNull" else "isNull"
-            if (useFirUast()) {
-              expectedMethod += "-impl"
-            }
+            expectedMethod += "-impl"
             assertEquals(expectedMethod, resolved?.name)
 
             val containingClass = resolved?.containingClass
-            val expectedClass = if (useFirUast()) "V" else "Object"
-            assertEquals(expectedClass, containingClass?.name)
+            assertEquals("V", containingClass?.name)
 
             getOrNullCheck = false
             return super.visitCallExpression(node)
@@ -5078,17 +5017,11 @@ class UastTest : TestCase() {
           override fun visitCallExpression(node: UCallExpression): Boolean {
             val resolved = node.resolve()
             assertNotNull(resolved)
-            val expectedMethod =
-              if (getOrNullCheck) {
-                if (useFirUast()) "getOrNull-impl" else "getOrNull"
-              } else "getOrThrow"
+            val expectedMethod = if (getOrNullCheck) "getOrNull-impl" else "getOrThrow"
             assertEquals(expectedMethod, resolved?.name)
 
             val containingClass = resolved?.containingClass
-            val expectedClass =
-              if (getOrNullCheck) {
-                if (useFirUast()) "Result" else "Object"
-              } else "ResultKt"
+            val expectedClass = if (getOrNullCheck) "Result" else "ResultKt"
             assertEquals(expectedClass, containingClass?.name)
 
             getOrNullCheck = false
@@ -5514,10 +5447,6 @@ class UastTest : TestCase() {
         object : AbstractUastVisitor() {
           override fun visitCallExpression(node: UCallExpression): Boolean {
             val txt = node.sourcePsi?.text
-            if (!useFirUast() && txt?.contains("myInc") == true) {
-              // K1 UAST: passing -Xfriend-paths seems not enough...
-              return super.visitCallExpression(node)
-            }
             val resolved = node.resolve()
             assertNotNull(txt, resolved)
             assertTrue(resolved is PsiMethod)
@@ -6310,7 +6239,7 @@ class UastTest : TestCase() {
             //   int
             // );
             val parameters = resolved!!.parameterList.parameters
-            assertEquals(if (useFirUast()) 4 else 2, parameters.size)
+            assertEquals(4, parameters.size)
             val key1 = parameters[0]
             assertEquals("key1", key1.name)
             assertEquals("java.lang.Object", key1.type.canonicalText)
@@ -6322,14 +6251,12 @@ class UastTest : TestCase() {
             )
             // K1 UAST creates a fake [PsiMethod] from deserialized descriptor.
             // K2 UAST finds a matching [ClsMethod] from the jar/class files.
-            if (useFirUast()) {
-              val composer = parameters[2]
-              assertEquals("\$composer", composer.name)
-              assertEquals("androidx.compose.runtime.Composer", composer.type.canonicalText)
-              val changed = parameters[3]
-              assertEquals("\$changed", changed.name)
-              assertEquals("int", changed.type.canonicalText)
-            }
+            val composer = parameters[2]
+            assertEquals("\$composer", composer.name)
+            assertEquals("androidx.compose.runtime.Composer", composer.type.canonicalText)
+            val changed = parameters[3]
+            assertEquals("\$changed", changed.name)
+            assertEquals("int", changed.type.canonicalText)
             encountered = true
             return super.visitCallExpression(node)
           }
@@ -7374,9 +7301,6 @@ public object ProtoObjectKt {
   //  This test only works when source and klib are put into "common" module
   fun disabledTestBasicKlibResolution() {
     // Klib resolution only works for K2 UAST.
-    if (!useFirUast()) {
-      return
-    }
     val testFiles =
       arrayOf(
         kotlin(

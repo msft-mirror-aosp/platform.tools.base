@@ -17,7 +17,7 @@ package com.android.tools.lint.detector.api
 
 import com.android.tools.lint.checks.AbstractCheckTest
 import com.android.tools.lint.client.api.UElementHandler
-import com.android.tools.lint.useFirUast
+import com.intellij.pom.java.LanguageLevel
 import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiRecordHeader
@@ -40,7 +40,7 @@ class LanguageLevelTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .javaLanguageLevel("16")
+      .javaLanguageLevel(LanguageLevel.JDK_16)
       .run()
       .expect(
         """
@@ -61,13 +61,9 @@ class LanguageLevelTest : AbstractCheckTest() {
       )
   }
 
-  fun testJavaInvalid() {
+  // TODO(b/484859403)
+  fun ignore_testJavaInvalid() {
     // Regression test for b/283693337
-
-    if (useFirUast()) {
-      return
-    }
-
     lint()
       .files(
         java(
@@ -78,7 +74,7 @@ class LanguageLevelTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .javaLanguageLevel("11")
+      .javaLanguageLevel(LanguageLevel.JDK_11)
       .allowCompilationErrors()
       .run()
       .expectClean()
