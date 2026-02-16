@@ -92,6 +92,19 @@ data class ApiTemplateData(
   val appCompatVersion: Int,
 )
 
+enum class TemplateKotlinSupport {
+  NO_KOTLIN,
+  /** Before AGP 9.0, use the legacy KGP. */
+  LEGACY_KOTLIN_GRADLE_PLUGIN_BEFORE_AGP9,
+  /**
+   * When upgrading a Gradle build to 9.0, the AGP Upgrade Assistant will disable built-in Kotlin by default to not require Kotlin plugin
+   * migration at the same time. Adding new modules can still opt back in though.
+   */
+  EXPLICIT_BUILT_IN_KOTLIN,
+  /** Typical form of a project upgraded to AGP 9.0 may have built-in-kotlin disabled by default, but new modules should still use it */
+  IMPLICIT_BUILT_IN_KOTLIN,
+}
+
 // TODO: pack version data in separate class, possibly similar to AndroidVersionsInfo.VersionItem
 data class ProjectTemplateData(
   val androidXSupport: Boolean,
@@ -107,6 +120,7 @@ data class ProjectTemplateData(
   val debugKeystoreSha1: String?,
   val overridePathCheck: Boolean? = false, // To disable android plugin checking for ascii in paths (windows tests)
   val isNewProject: Boolean,
+  val kotlinSupport: TemplateKotlinSupport = TemplateKotlinSupport.IMPLICIT_BUILT_IN_KOTLIN,
 ) : TemplateData() {
   @Deprecated("Replaced with agpVersion", replaceWith = ReplaceWith("agpVersion"))
   val gradlePluginVersion: GradlePluginVersion

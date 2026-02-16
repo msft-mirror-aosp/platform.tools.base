@@ -16,10 +16,11 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMediaService
 
-import com.android.ide.common.repository.AgpVersion
 import com.android.sdklib.AndroidMajorVersion
 import com.android.sdklib.AndroidVersion
-import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
+import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.ProjectTemplateData
+import com.android.tools.idea.wizard.template.TemplateKotlinSupport
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.compileSdk
 import com.android.tools.idea.wizard.template.impl.minSdk
@@ -27,18 +28,19 @@ import com.android.tools.idea.wizard.template.impl.targetSdk
 import com.android.tools.idea.wizard.template.renderIf
 
 fun buildGradle(
-  agpVersion: AgpVersion,
+  projectData: ProjectTemplateData,
   packageName: String,
   buildApi: AndroidVersion,
-  generateKotlin: Boolean,
   minApi: AndroidMajorVersion,
   targetApi: AndroidMajorVersion,
-  useAndroidX: Boolean,
 ): String {
+  val agpVersion = projectData.agpVersion
+  val useAndroidX = projectData.androidXSupport
   return """
 plugins {
     id 'com.android.library'
-    ${renderIf(generateKotlin && agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN) {"    id 'org.jetbrains.kotlin.android'"}}
+    ${renderIf(projectData.language == Language.Kotlin && projectData.kotlinSupport == TemplateKotlinSupport.LEGACY_KOTLIN_GRADLE_PLUGIN_BEFORE_AGP9) {"    id 'org.jetbrains.kotlin.android'"}}
+    ${renderIf(projectData.language == Language.Kotlin && projectData.kotlinSupport == TemplateKotlinSupport.EXPLICIT_BUILT_IN_KOTLIN) { "    id 'com.android.built-in-kotlin'" }}
 }
 android {
     namespace '$packageName'
