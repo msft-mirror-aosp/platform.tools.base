@@ -169,6 +169,7 @@ public class ManifestMerger2Test {
                 "109e_uses_sdk_feature_flag_node_validation.xml",
                 "109f_dup_uses_sdk_feature_flag_node_validation.xml",
                 "109g_dup_uses_sdk_node_validation.xml",
+                "110_allow_component_access.xml",
             };
 
     private static final Multimap<Predicate<String>, ManifestMerger2.Invoker.Feature>
@@ -177,7 +178,8 @@ public class ManifestMerger2Test {
                             .<Predicate<String>, ManifestMerger2.Invoker.Feature>builder()
                             .put(
                                     testCaseIsNot("31_uses_sdk_disallowed"),
-                                    ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING)
+                                    ManifestMerger2.Invoker.Feature
+                                            .USES_SDK_IN_MANIFEST_LENIENT_HANDLING)
                             .put(
                                     testCaseIsNot("91_tools_in_lib_but_not_main.xml"),
                                     ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)

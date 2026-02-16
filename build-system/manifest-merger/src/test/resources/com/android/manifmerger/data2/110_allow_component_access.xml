@@ -1,0 +1,73 @@
+#
+# Test allow-component-access: add a allow-component-access from an app and validate merge.
+#
+
+@main
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app">
+    <application android:name="com.example.TheApp">
+        <allow-component-access android:accessDefaultComponents="false">
+            <package android:name="com.example.app" android:certDigest="signingCertificateOfTargetPackage"/>
+
+            <intent>
+                <action android:name="android.intent.action.SEND" />
+                <data android:mimeType="image/jpeg" />
+            </intent>
+
+            <provider android:authorities="com.example.settings.files" />
+
+        </allow-component-access>
+    </application>
+</manifest>
+
+@lib1
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.lib1">
+    <application>
+        <allow-component-access android:accessDefaultComponents="false">
+            <package android:name="com.example.lib1" android:certDigest="signingCertificateOfTargetPackage"/>
+
+            <intent>
+                <action android:name="android.intent.action.SEND" />
+                <data android:mimeType="image/jpeg" />
+            </intent>
+
+            <provider android:authorities="com.example.settings.files" />
+
+        </allow-component-access>
+    </application>
+</manifest>
+
+@result
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app" >
+
+    <application android:name="com.example.TheApp" >
+        <allow-component-access android:accessDefaultComponents="false" >
+            <package
+                android:name="com.example.app"
+                android:certDigest="signingCertificateOfTargetPackage" />
+
+            <intent>
+                <action android:name="android.intent.action.SEND" />
+
+                <data android:mimeType="image/jpeg" />
+            </intent>
+
+            <provider android:authorities="com.example.settings.files" />
+
+            <package
+                android:name="com.example.lib1"
+                android:certDigest="signingCertificateOfTargetPackage" />
+        </allow-component-access>
+    </application>
+
+</manifest>
+
+@errors

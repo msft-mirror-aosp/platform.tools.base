@@ -1146,6 +1146,7 @@ public final class SdkConstants {
     public static final String TAG_INTENT = "intent";
     public static final String TAG_SDK_LIBRARY = "sdk-library";
     public static final String TAG_URI_RELATIVE_FILTER_GROUP = "uri-relative-filter-group";
+    public static final String TAG_ALLOW_COMPONENT_ACCESS = "allow-component-access";
 
     // Tags: Resources
     public static final String TAG_RESOURCES = "resources";
@@ -1389,6 +1390,8 @@ public final class SdkConstants {
     // Attributes: Resources
     public static final String ATTR_ATTR = "attr";
     public static final String ATTR_NAME = "name";
+    public static final String ATTR_CERT_DIGEST = "certDigest";
+    public static final String ATTR_ACCESS_DEFAULT_COMPONENTS = "accessDefaultComponents";
     public static final String ATTR_FRAGMENT = "fragment";
     public static final String ATTR_TYPE = "type";
     public static final String ATTR_PARENT = "parent";
