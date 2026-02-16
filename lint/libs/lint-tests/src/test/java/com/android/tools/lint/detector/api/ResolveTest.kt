@@ -104,21 +104,21 @@ class ResolveTest : TestCase() {
     val file = pair.first.uastFile
     assertEquals(
       """
-            UFile (package = ) [import kotlin.reflect.full.declaredMemberFunctions...]
-                UImportStatement (isOnDemand = false) [import kotlin.reflect.full.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
-                UClass (name = KotlinTest) [public final class KotlinTest {...}]
-                    UMethod (name = test) [public final fun test() : void {...}]
-                        UBlockExpression [{...}]
-                            UQualifiedReferenceExpression [KotlinTest.members] => PsiMethod:getMembers
-                                UClassLiteralExpression [KotlinTest]
-                                    UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
-                                USimpleNameReferenceExpression (identifier = members) [members] => PsiMethod:getMembers
-                            UQualifiedReferenceExpression [KotlinTest.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
-                                UClassLiteralExpression [KotlinTest]
-                                    UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
-                                USimpleNameReferenceExpression (identifier = declaredMemberFunctions) [declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
-                    UMethod (name = KotlinTest) [public fun KotlinTest() = UastEmptyExpression]
-            """
+      UFile (package = ) [import kotlin.reflect.full.declaredMemberFunctions...]
+          UImportStatement (isOnDemand = false) [import kotlin.reflect.full.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
+          UClass (name = KotlinTest) [public final class KotlinTest {...}]
+              UMethod (name = test) [public final fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UQualifiedReferenceExpression [KotlinTest.members] => PsiMethod:getMembers
+                          UClassLiteralExpression [KotlinTest]
+                              UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
+                          USimpleNameReferenceExpression (identifier = members) [members] => PsiMethod:getMembers
+                      UQualifiedReferenceExpression [KotlinTest.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
+                          UClassLiteralExpression [KotlinTest]
+                              UThisExpression (label = null) [this] => SymbolLightClassForClassOrObject
+                          USimpleNameReferenceExpression (identifier = declaredMemberFunctions) [declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
+              UMethod (name = KotlinTest) [public fun KotlinTest() = UastEmptyExpression]
+      """
         .trimIndent()
         .trim(),
       file?.asResolveString()?.trim(),
@@ -249,21 +249,21 @@ class ResolveTest : TestCase() {
     val uastFile = pair.first.uastFile
     assertEquals(
       """
-            UFile (package = test.pkg) [package test.pkg...]
-                UClass (name = A) [public final class A {...}]
-                    UField (name = myField) [@org.jetbrains.annotations.NotNull private var myField: int = 0]
-                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull] => <FAILED>
-                        ULiteralExpression (value = 0) [0]
-                    UMethod (name = getMyField) [public final fun getMyField() : int = UastEmptyExpression]
-                    UMethod (name = setMyField) [public final fun setMyField(<set-?>: int) : void = UastEmptyExpression]
-                        UParameter (name = <set-?>) [var <set-?>: int]
-                    UMethod (name = mutate) [public final fun mutate() : void {...}]
-                        UBlockExpression [{...}]
-                            UBinaryExpression (operator = =) [myField = 42]
-                                USimpleNameReferenceExpression (identifier = myField) [myField] => SymbolLightAccessorMethod of SymbolLightClassForClassOrObject
-                                ULiteralExpression (value = 42) [42]
-                    UMethod (name = A) [public fun A() = UastEmptyExpression]
-            """
+      UFile (package = test.pkg) [package test.pkg...]
+          UClass (name = A) [public final class A {...}]
+              UField (name = myField) [@org.jetbrains.annotations.NotNull private var myField: int = 0]
+                  UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull] => <FAILED>
+                  ULiteralExpression (value = 0) [0]
+              UMethod (name = getMyField) [public final fun getMyField() : int = UastEmptyExpression]
+              UMethod (name = setMyField) [public final fun setMyField(<set-?>: int) : void = UastEmptyExpression]
+                  UParameter (name = <set-?>) [var <set-?>: int]
+              UMethod (name = mutate) [public final fun mutate() : void {...}]
+                  UBlockExpression [{...}]
+                      UBinaryExpression (operator = =) [myField = 42]
+                          USimpleNameReferenceExpression (identifier = myField) [myField] => SymbolLightAccessorMethod of SymbolLightClassForClassOrObject
+                          ULiteralExpression (value = 42) [42]
+              UMethod (name = A) [public fun A() = UastEmptyExpression]
+      """
         .trimIndent()
         .trim(),
       uastFile?.asResolveString()?.trim(),

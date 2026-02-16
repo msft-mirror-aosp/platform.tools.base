@@ -1252,128 +1252,128 @@ class UastTest : TestCase() {
       //  values, valueOf, members, constructor, and then entries.
       assertEquals(
         """
-                UFile (package = test.pkg) [package test.pkg...]
-                    UClass (name = FooInterfaceKt) [public final class FooInterfaceKt {...}]
-                        UField (name = uint) [@org.jetbrains.annotations.NotNull private static final var uint: int = 42] : PsiType:int
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            ULiteralExpression (value = 42) [42] : PsiType:int
-                        UField (name = ulong) [@org.jetbrains.annotations.NotNull private static final var ulong: long = 42] : PsiType:long
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            ULiteralExpression (value = 42) [42] : PsiType:long
-                        UField (name = ubyte) [@org.jetbrains.annotations.NotNull private static final var ubyte: byte = 255] : PsiType:byte
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            ULiteralExpression (value = 255) [255] : PsiType:byte
-                        UMethod (name = test) [public static final fun test(@org.jetbrains.annotations.NotNull s: java.lang.String) : java.lang.Object {...}] : PsiType:Object
-                            UParameter (name = s) [@org.jetbrains.annotations.NotNull var s: java.lang.String] : PsiType:String
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            UBlockExpression [{...}]
-                                UReturnExpression [return switch (var something: int = s.hashCode())  {...]
-                                    USwitchExpression [switch (var something: int = s.hashCode())  {...] : PsiType:Object
-                                        UDeclarationsExpression [var something: int = s.hashCode()]
-                                            ULocalVariable (name = something) [var something: int = s.hashCode()] : PsiType:int
-                                                UQualifiedReferenceExpression [s.hashCode()] : PsiType:int
-                                                    USimpleNameReferenceExpression (identifier = s) [s] : PsiType:String
-                                                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [hashCode()] : PsiType:int
-                                                        UIdentifier (Identifier (hashCode)) [UIdentifier (Identifier (hashCode))]
-                                        UExpressionList (when) [    it is java.lang.Integer -> {...    ] : PsiType:Object
-                                            USwitchClauseExpressionWithBody [it is java.lang.Integer -> {...]
-                                                UBinaryExpressionWithType [it is java.lang.Integer]
-                                                    USimpleNameReferenceExpression (identifier = it) [it]
-                                                    UTypeReferenceExpression (name = java.lang.Integer) [java.lang.Integer]
-                                                UExpressionList (when_entry) [{...]
-                                                    UYieldExpression [yield println(something)]
-                                                        UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(something)] : PsiType:Unit
-                                                            UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                                            USimpleNameReferenceExpression (identifier = something) [something] : PsiType:int
-                                            USwitchClauseExpressionWithBody [ -> {...]
-                                                UExpressionList (when_entry) [{...]
-                                                    UYieldExpression [yield ""]
-                                                        UPolyadicExpression (operator = +) [""] : PsiType:String
-                                                            ULiteralExpression (value = "") [""] : PsiType:String
-                        UMethod (name = getUint) [public static final fun getUint() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = getUlong) [public static final fun getUlong() : long = UastEmptyExpression] : PsiType:long
-                        UMethod (name = getUbyte) [public static final fun getUbyte() : byte = UastEmptyExpression] : PsiType:byte
-                    UClass (name = FooInterface) [public abstract interface FooInterface {...}]
-                        UField (name = Companion) [@null public static final var Companion: test.pkg.FooInterface.Companion] : PsiType:Companion
-                            UAnnotation (fqName = null) [@null]
-                        UField (name = answer) [@org.jetbrains.annotations.NotNull @kotlin.jvm.JvmField public static final var answer: int = 42] : PsiType:int
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                            UAnnotation (fqName = kotlin.jvm.JvmField) [@kotlin.jvm.JvmField]
-                            ULiteralExpression (value = 42) [42] : PsiType:int
-                        UMethod (name = sayHello) [public static fun sayHello() : void {...}] : PsiType:void
-                            UBlockExpression [{...}] : PsiType:void
-                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("Hello, world!")] : PsiType:Unit
-                                    UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                    UPolyadicExpression (operator = +) ["Hello, world!"] : PsiType:String
-                                        ULiteralExpression (value = "Hello, world!") ["Hello, world!"] : PsiType:String
-                        UClass (name = Companion) [public static final class Companion {...}]
-                            UMethod (name = sayHello) [@kotlin.jvm.JvmStatic...}] : PsiType:void
-                                UAnnotation (fqName = kotlin.jvm.JvmStatic) [@kotlin.jvm.JvmStatic]
-                                UBlockExpression [{...}] : PsiType:void
-                                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("Hello, world!")] : PsiType:Unit
-                                        UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                        UPolyadicExpression (operator = +) ["Hello, world!"] : PsiType:String
-                                            ULiteralExpression (value = "Hello, world!") ["Hello, world!"] : PsiType:String
-                            UMethod (name = Companion) [private fun Companion() = UastEmptyExpression]
-                    UClass (name = FooAnnotation) [public abstract annotation FooAnnotation {...}]
-                        UField (name = Companion) [@null public static final var Companion: test.pkg.FooAnnotation.Companion] : PsiType:Companion
-                            UAnnotation (fqName = null) [@null]
-                        UClass (name = Direction) [public static final enum Direction {...}]
-                            UEnumConstant (name = UP) [@null UP]
-                                UAnnotation (fqName = null) [@null]
-                                USimpleNameReferenceExpression (identifier = Direction) [Direction]
-                            UEnumConstant (name = DOWN) [@null DOWN]
-                                UAnnotation (fqName = null) [@null]
-                                USimpleNameReferenceExpression (identifier = Direction) [Direction]
-                            UEnumConstant (name = LEFT) [@null LEFT]
-                                UAnnotation (fqName = null) [@null]
-                                USimpleNameReferenceExpression (identifier = Direction) [Direction]
-                            UEnumConstant (name = RIGHT) [@null RIGHT]
-                                UAnnotation (fqName = null) [@null]
-                                USimpleNameReferenceExpression (identifier = Direction) [Direction]
-                            UMethod (name = values) [public static fun values() : test.pkg.FooAnnotation.Direction[] = UastEmptyExpression] : PsiType:Direction[]
-                            UMethod (name = valueOf) [public static fun valueOf(value: java.lang.String) : test.pkg.FooAnnotation.Direction = UastEmptyExpression] : PsiType:Direction
-                                UParameter (name = value) [var value: java.lang.String] : PsiType:String
-                            UMethod (name = getEntries) [public static fun getEntries() : kotlin.enums.EnumEntries<test.pkg.FooAnnotation.Direction> = UastEmptyExpression] : PsiType:EnumEntries<Direction>
-                            UMethod (name = Direction) [private fun Direction() = UastEmptyExpression]
-                        UClass (name = Bar) [public static abstract annotation Bar {...}]
-                        UClass (name = Companion) [public static final class Companion {...}]
-                            UField (name = bar) [@org.jetbrains.annotations.NotNull private static final var bar: int = 42] : PsiType:int
-                                UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+        UFile (package = test.pkg) [package test.pkg...]
+            UClass (name = FooInterfaceKt) [public final class FooInterfaceKt {...}]
+                UField (name = uint) [@org.jetbrains.annotations.NotNull private static final var uint: int = 42] : PsiType:int
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    ULiteralExpression (value = 42) [42] : PsiType:int
+                UField (name = ulong) [@org.jetbrains.annotations.NotNull private static final var ulong: long = 42] : PsiType:long
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    ULiteralExpression (value = 42) [42] : PsiType:long
+                UField (name = ubyte) [@org.jetbrains.annotations.NotNull private static final var ubyte: byte = 255] : PsiType:byte
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    ULiteralExpression (value = 255) [255] : PsiType:byte
+                UMethod (name = test) [public static final fun test(@org.jetbrains.annotations.NotNull s: java.lang.String) : java.lang.Object {...}] : PsiType:Object
+                    UParameter (name = s) [@org.jetbrains.annotations.NotNull var s: java.lang.String] : PsiType:String
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    UBlockExpression [{...}]
+                        UReturnExpression [return switch (var something: int = s.hashCode())  {...]
+                            USwitchExpression [switch (var something: int = s.hashCode())  {...] : PsiType:Object
+                                UDeclarationsExpression [var something: int = s.hashCode()]
+                                    ULocalVariable (name = something) [var something: int = s.hashCode()] : PsiType:int
+                                        UQualifiedReferenceExpression [s.hashCode()] : PsiType:int
+                                            USimpleNameReferenceExpression (identifier = s) [s] : PsiType:String
+                                            UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [hashCode()] : PsiType:int
+                                                UIdentifier (Identifier (hashCode)) [UIdentifier (Identifier (hashCode))]
+                                UExpressionList (when) [    it is java.lang.Integer -> {...    ] : PsiType:Object
+                                    USwitchClauseExpressionWithBody [it is java.lang.Integer -> {...]
+                                        UBinaryExpressionWithType [it is java.lang.Integer]
+                                            USimpleNameReferenceExpression (identifier = it) [it]
+                                            UTypeReferenceExpression (name = java.lang.Integer) [java.lang.Integer]
+                                        UExpressionList (when_entry) [{...]
+                                            UYieldExpression [yield println(something)]
+                                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println(something)] : PsiType:Unit
+                                                    UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                                                    USimpleNameReferenceExpression (identifier = something) [something] : PsiType:int
+                                    USwitchClauseExpressionWithBody [ -> {...]
+                                        UExpressionList (when_entry) [{...]
+                                            UYieldExpression [yield ""]
+                                                UPolyadicExpression (operator = +) [""] : PsiType:String
+                                                    ULiteralExpression (value = "") [""] : PsiType:String
+                UMethod (name = getUint) [public static final fun getUint() : int = UastEmptyExpression] : PsiType:int
+                UMethod (name = getUlong) [public static final fun getUlong() : long = UastEmptyExpression] : PsiType:long
+                UMethod (name = getUbyte) [public static final fun getUbyte() : byte = UastEmptyExpression] : PsiType:byte
+            UClass (name = FooInterface) [public abstract interface FooInterface {...}]
+                UField (name = Companion) [@null public static final var Companion: test.pkg.FooInterface.Companion] : PsiType:Companion
+                    UAnnotation (fqName = null) [@null]
+                UField (name = answer) [@org.jetbrains.annotations.NotNull @kotlin.jvm.JvmField public static final var answer: int = 42] : PsiType:int
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                    UAnnotation (fqName = kotlin.jvm.JvmField) [@kotlin.jvm.JvmField]
+                    ULiteralExpression (value = 42) [42] : PsiType:int
+                UMethod (name = sayHello) [public static fun sayHello() : void {...}] : PsiType:void
+                    UBlockExpression [{...}] : PsiType:void
+                        UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("Hello, world!")] : PsiType:Unit
+                            UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                            UPolyadicExpression (operator = +) ["Hello, world!"] : PsiType:String
+                                ULiteralExpression (value = "Hello, world!") ["Hello, world!"] : PsiType:String
+                UClass (name = Companion) [public static final class Companion {...}]
+                    UMethod (name = sayHello) [@kotlin.jvm.JvmStatic...}] : PsiType:void
+                        UAnnotation (fqName = kotlin.jvm.JvmStatic) [@kotlin.jvm.JvmStatic]
+                        UBlockExpression [{...}] : PsiType:void
+                            UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("Hello, world!")] : PsiType:Unit
+                                UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                                UPolyadicExpression (operator = +) ["Hello, world!"] : PsiType:String
+                                    ULiteralExpression (value = "Hello, world!") ["Hello, world!"] : PsiType:String
+                    UMethod (name = Companion) [private fun Companion() = UastEmptyExpression]
+            UClass (name = FooAnnotation) [public abstract annotation FooAnnotation {...}]
+                UField (name = Companion) [@null public static final var Companion: test.pkg.FooAnnotation.Companion] : PsiType:Companion
+                    UAnnotation (fqName = null) [@null]
+                UClass (name = Direction) [public static final enum Direction {...}]
+                    UEnumConstant (name = UP) [@null UP]
+                        UAnnotation (fqName = null) [@null]
+                        USimpleNameReferenceExpression (identifier = Direction) [Direction]
+                    UEnumConstant (name = DOWN) [@null DOWN]
+                        UAnnotation (fqName = null) [@null]
+                        USimpleNameReferenceExpression (identifier = Direction) [Direction]
+                    UEnumConstant (name = LEFT) [@null LEFT]
+                        UAnnotation (fqName = null) [@null]
+                        USimpleNameReferenceExpression (identifier = Direction) [Direction]
+                    UEnumConstant (name = RIGHT) [@null RIGHT]
+                        UAnnotation (fqName = null) [@null]
+                        USimpleNameReferenceExpression (identifier = Direction) [Direction]
+                    UMethod (name = values) [public static fun values() : test.pkg.FooAnnotation.Direction[] = UastEmptyExpression] : PsiType:Direction[]
+                    UMethod (name = valueOf) [public static fun valueOf(value: java.lang.String) : test.pkg.FooAnnotation.Direction = UastEmptyExpression] : PsiType:Direction
+                        UParameter (name = value) [var value: java.lang.String] : PsiType:String
+                    UMethod (name = getEntries) [public static fun getEntries() : kotlin.enums.EnumEntries<test.pkg.FooAnnotation.Direction> = UastEmptyExpression] : PsiType:EnumEntries<Direction>
+                    UMethod (name = Direction) [private fun Direction() = UastEmptyExpression]
+                UClass (name = Bar) [public static abstract annotation Bar {...}]
+                UClass (name = Companion) [public static final class Companion {...}]
+                    UField (name = bar) [@org.jetbrains.annotations.NotNull private static final var bar: int = 42] : PsiType:int
+                        UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                        ULiteralExpression (value = 42) [42] : PsiType:int
+                    UMethod (name = foo) [public final fun foo() : int {...}] : PsiType:int
+                        UBlockExpression [{...}]
+                            UReturnExpression [return 42]
                                 ULiteralExpression (value = 42) [42] : PsiType:int
-                            UMethod (name = foo) [public final fun foo() : int {...}] : PsiType:int
-                                UBlockExpression [{...}]
-                                    UReturnExpression [return 42]
-                                        ULiteralExpression (value = 42) [42] : PsiType:int
-                            UMethod (name = getBar) [public final fun getBar() : int = UastEmptyExpression] : PsiType:int
-                            UMethod (name = Companion) [private fun Companion() = UastEmptyExpression]
-                    UClass (name = Name) [public final class Name {...}]
-                        UField (name = s) [@org.jetbrains.annotations.NotNull private final var s: java.lang.String] : PsiType:String
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                        UMethod (name = getS) [public final fun getS() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
-                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
-                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
-                    UClass (name = Name2) [public final class Name2 {...}]
-                        UAnnotation (fqName = kotlin.jvm.JvmInline) [@kotlin.jvm.JvmInline]
-                        UField (name = n) [@org.jetbrains.annotations.NotNull private final var n: java.lang.String] : PsiType:String
-                            UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
-                        UMethod (name = getN) [public final fun getN() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
-                        UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
-                        UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
-                            UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
-                                UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
-                    UClass (name = FooInterface2) [public abstract interface FooInterface2 {...}]
-                        UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
-                            UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]
-                            UBlockExpression [{...}]
-                                UReturnExpression [return 42]
-                                    ULiteralExpression (value = 42) [42] : PsiType:int
+                    UMethod (name = getBar) [public final fun getBar() : int = UastEmptyExpression] : PsiType:int
+                    UMethod (name = Companion) [private fun Companion() = UastEmptyExpression]
+            UClass (name = Name) [public final class Name {...}]
+                UField (name = s) [@org.jetbrains.annotations.NotNull private final var s: java.lang.String] : PsiType:String
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                UMethod (name = getS) [public final fun getS() : java.lang.String = UastEmptyExpression] : PsiType:String
+                UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
+                UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
+                UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
+                    UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
+                        UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
+            UClass (name = Name2) [public final class Name2 {...}]
+                UAnnotation (fqName = kotlin.jvm.JvmInline) [@kotlin.jvm.JvmInline]
+                UField (name = n) [@org.jetbrains.annotations.NotNull private final var n: java.lang.String] : PsiType:String
+                    UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]
+                UMethod (name = getN) [public final fun getN() : java.lang.String = UastEmptyExpression] : PsiType:String
+                UMethod (name = toString) [public fun toString() : java.lang.String = UastEmptyExpression] : PsiType:String
+                UMethod (name = hashCode) [public fun hashCode() : int = UastEmptyExpression] : PsiType:int
+                UMethod (name = equals) [public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression] : PsiType:boolean
+                    UParameter (name = other) [@org.jetbrains.annotations.Nullable var other: java.lang.Object] : PsiType:Object
+                        UAnnotation (fqName = org.jetbrains.annotations.Nullable) [@org.jetbrains.annotations.Nullable]
+            UClass (name = FooInterface2) [public abstract interface FooInterface2 {...}]
+                UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
+                    UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]
+                    UBlockExpression [{...}]
+                        UReturnExpression [return 42]
+                            ULiteralExpression (value = 42) [42] : PsiType:int
 
-                """
+        """
           .trimIndent(),
         file.asLogTypes(),
       )
@@ -1472,45 +1472,45 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                package test.pkg
+        package test.pkg
 
-                public final class TestKt {
-                    public static final fun function1(t: T) : void {
-                    }
-                    public static final fun function2(t: T) : T {
-                        return t
-                    }
-                    public static final fun function3(t: T) : void {
-                    }
-                    public static final fun function4(t: T) : T {
-                        return t
-                    }
-                    public static final fun function5(t: T) : int {
-                        return 42
-                    }
-                    public static final fun function6(@org.jetbrains.annotations.NotNull ${"$"}this${"$"}function6: T, @org.jetbrains.annotations.NotNull t: T) : T {
-                        return t
-                    }
-                    public static final fun function7(t: T) : T {
-                        return t
-                    }
-                    private static final fun function8(t: T) : T {
-                        return t
-                    }
-                    public static final fun function9(t: T) : T {
-                        return t
-                    }
-                    public static final fun function10(t: T) : T {
-                        return t
-                    }
-                    public static final fun function11(${"$"}this${"$"}function11: T, t: T) : T {
-                        return t
-                    }
-                    public static final fun function12(t: T) : void {
-                    }
-                }
+        public final class TestKt {
+            public static final fun function1(t: T) : void {
+            }
+            public static final fun function2(t: T) : T {
+                return t
+            }
+            public static final fun function3(t: T) : void {
+            }
+            public static final fun function4(t: T) : T {
+                return t
+            }
+            public static final fun function5(t: T) : int {
+                return 42
+            }
+            public static final fun function6(@org.jetbrains.annotations.NotNull ${"$"}this${"$"}function6: T, @org.jetbrains.annotations.NotNull t: T) : T {
+                return t
+            }
+            public static final fun function7(t: T) : T {
+                return t
+            }
+            private static final fun function8(t: T) : T {
+                return t
+            }
+            public static final fun function9(t: T) : T {
+                return t
+            }
+            public static final fun function10(t: T) : T {
+                return t
+            }
+            public static final fun function11(${"$"}this${"$"}function11: T, t: T) : T {
+                return t
+            }
+            public static final fun function12(t: T) : void {
+            }
+        }
 
-                """
+        """
           .trimIndent(),
         file.asSourceString().dos2unix(),
       )
@@ -1737,41 +1737,41 @@ class UastTest : TestCase() {
       // the rest do
       assertEquals(
         """
-                class Comparator: in T
-                    method compare(e1,e2):
-                class Data: data
-                class List: out E
-                class Sealed: sealed
-                nested class NamedCompanion: companion
-                class Test:
-                    method combine(a): infix
-                    method f(crossinline body): inline
-                    method fromElsewhere(): external
-                    method function1(t): inline T
-                    method function2(t): inline T
-                    method function3(t): inline reified T
-                    method function4(t): inline reified T
-                    method function5(t): inline reified T
-                    method function6(＄this＄function6,t): inline reified T
-                    method function7(t): inline reified T
-                    method function8(t): inline reified T
-                    method function9(t): inline internal reified T
-                    method functionA(t): inline reified T
-                    method functionB(＄this＄functionB,t): inline reified T
-                    method functionC(t): reified T
-                    method get(index): operator
-                    method isOpen(): open
-                    method me(): tailrec
-                    method multiarg(vararg arg):
-                    method myInternal＄app(): internal
-                    method notInlined(): noinline
-                    method randomUUID(): actual
-                    method randomUUID(): expect
-                    method suspendMethod(＄completion): suspend
-                    field NamedCompanion:
-                    field constant: const
-                    field delayed: lateinit
-                """
+        class Comparator: in T
+            method compare(e1,e2):
+        class Data: data
+        class List: out E
+        class Sealed: sealed
+        nested class NamedCompanion: companion
+        class Test:
+            method combine(a): infix
+            method f(crossinline body): inline
+            method fromElsewhere(): external
+            method function1(t): inline T
+            method function2(t): inline T
+            method function3(t): inline reified T
+            method function4(t): inline reified T
+            method function5(t): inline reified T
+            method function6(＄this＄function6,t): inline reified T
+            method function7(t): inline reified T
+            method function8(t): inline reified T
+            method function9(t): inline internal reified T
+            method functionA(t): inline reified T
+            method functionB(＄this＄functionB,t): inline reified T
+            method functionC(t): reified T
+            method get(index): operator
+            method isOpen(): open
+            method me(): tailrec
+            method multiarg(vararg arg):
+            method myInternal＄app(): internal
+            method notInlined(): noinline
+            method randomUUID(): actual
+            method randomUUID(): expect
+            method suspendMethod(＄completion): suspend
+            field NamedCompanion:
+            field constant: const
+            field delayed: lateinit
+        """
           .trimIndent()
           .trim(),
         sb.toString().trim(),
@@ -1800,24 +1800,24 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                package test.pkg
+        package test.pkg
 
-                public final class GraphVariables {
-                    @org.jetbrains.annotations.NotNull private final var set: java.util.Set<test.pkg.GraphVariable<?>>
-                    public final fun getSet() : java.util.Set<test.pkg.GraphVariable<?>> = UastEmptyExpression
-                    public fun toString() : java.lang.String = UastEmptyExpression
-                    public fun hashCode() : int = UastEmptyExpression
-                    public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression
-                    public final fun variable(@org.jetbrains.annotations.NotNull name: java.lang.String, @org.jetbrains.annotations.NotNull graphType: java.lang.String, value: T) : void {
-                        this.set.add(GraphVariable(name, graphType, value))
-                    }
-                }
+        public final class GraphVariables {
+            @org.jetbrains.annotations.NotNull private final var set: java.util.Set<test.pkg.GraphVariable<?>>
+            public final fun getSet() : java.util.Set<test.pkg.GraphVariable<?>> = UastEmptyExpression
+            public fun toString() : java.lang.String = UastEmptyExpression
+            public fun hashCode() : int = UastEmptyExpression
+            public fun equals(@org.jetbrains.annotations.Nullable other: java.lang.Object) : boolean = UastEmptyExpression
+            public final fun variable(@org.jetbrains.annotations.NotNull name: java.lang.String, @org.jetbrains.annotations.NotNull graphType: java.lang.String, value: T) : void {
+                this.set.add(GraphVariable(name, graphType, value))
+            }
+        }
 
-                public final class GraphVariable {
-                    public fun GraphVariable(@org.jetbrains.annotations.NotNull name: java.lang.String, @org.jetbrains.annotations.NotNull graphType: java.lang.String, value: T) = UastEmptyExpression
-                }
+        public final class GraphVariable {
+            public fun GraphVariable(@org.jetbrains.annotations.NotNull name: java.lang.String, @org.jetbrains.annotations.NotNull graphType: java.lang.String, value: T) = UastEmptyExpression
+        }
 
-                """
+        """
           .trimIndent(),
         file.asSourceString().dos2unix(),
       )
@@ -2057,40 +2057,40 @@ class UastTest : TestCase() {
     check(source) { file ->
       assertEquals(
         """
-                UFile (package = test.pkg) [package test.pkg...]
-                  UClass (name = TestKt) [public final class TestKt {...}]
-                    UMethod (name = test1) [public static final fun test1() : void {...}] : PsiType:void
-                      UBlockExpression [{...}] : PsiType:void
-                        UDeclarationsExpression [var thread1: java.lang.Thread = Thread({ ...})]
-                          ULocalVariable (name = thread1) [var thread1: java.lang.Thread = Thread({ ...})] : PsiType:Thread
-                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Thread({ ...})] : PsiType:Thread
-                              UIdentifier (Identifier (Thread)) [UIdentifier (Identifier (Thread))]
-                              USimpleNameReferenceExpression (identifier = Thread, resolvesTo = PsiClass: Thread) [Thread]
-                              ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
-                                UBlockExpression [{...}] : PsiType:Unit
-                                  UReturnExpression [return println("hello")]
-                                    UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
-                                      UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                      UPolyadicExpression (operator = +) ["hello"] : PsiType:String
-                                        ULiteralExpression (value = "hello") ["hello"] : PsiType:String
-                    UMethod (name = test2) [public static final fun test2() : void {...}] : PsiType:void
-                      UBlockExpression [{...}] : PsiType:void
-                        UDeclarationsExpression [var thread2: java.lang.Thread = Thread(Runnable({ ...}))]
-                          ULocalVariable (name = thread2) [var thread2: java.lang.Thread = Thread(Runnable({ ...}))] : PsiType:Thread
-                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Thread(Runnable({ ...}))] : PsiType:Thread
-                              UIdentifier (Identifier (Thread)) [UIdentifier (Identifier (Thread))]
-                              USimpleNameReferenceExpression (identifier = Thread, resolvesTo = PsiClass: Thread) [Thread]
-                              UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Runnable({ ...})] : PsiType:Runnable
-                                UIdentifier (Identifier (Runnable)) [UIdentifier (Identifier (Runnable))]
-                                USimpleNameReferenceExpression (identifier = Runnable, resolvesTo = PsiClass: Runnable) [Runnable]
-                                ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
-                                  UBlockExpression [{...}] : PsiType:Unit
-                                    UReturnExpression [return println("hello")]
-                                      UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
-                                        UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
-                                        UPolyadicExpression (operator = +) ["hello"] : PsiType:String
-                                          ULiteralExpression (value = "hello") ["hello"] : PsiType:String
-                """
+        UFile (package = test.pkg) [package test.pkg...]
+          UClass (name = TestKt) [public final class TestKt {...}]
+            UMethod (name = test1) [public static final fun test1() : void {...}] : PsiType:void
+              UBlockExpression [{...}] : PsiType:void
+                UDeclarationsExpression [var thread1: java.lang.Thread = Thread({ ...})]
+                  ULocalVariable (name = thread1) [var thread1: java.lang.Thread = Thread({ ...})] : PsiType:Thread
+                    UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Thread({ ...})] : PsiType:Thread
+                      UIdentifier (Identifier (Thread)) [UIdentifier (Identifier (Thread))]
+                      USimpleNameReferenceExpression (identifier = Thread, resolvesTo = PsiClass: Thread) [Thread]
+                      ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
+                        UBlockExpression [{...}] : PsiType:Unit
+                          UReturnExpression [return println("hello")]
+                            UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
+                              UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                              UPolyadicExpression (operator = +) ["hello"] : PsiType:String
+                                ULiteralExpression (value = "hello") ["hello"] : PsiType:String
+            UMethod (name = test2) [public static final fun test2() : void {...}] : PsiType:void
+              UBlockExpression [{...}] : PsiType:void
+                UDeclarationsExpression [var thread2: java.lang.Thread = Thread(Runnable({ ...}))]
+                  ULocalVariable (name = thread2) [var thread2: java.lang.Thread = Thread(Runnable({ ...}))] : PsiType:Thread
+                    UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Thread(Runnable({ ...}))] : PsiType:Thread
+                      UIdentifier (Identifier (Thread)) [UIdentifier (Identifier (Thread))]
+                      USimpleNameReferenceExpression (identifier = Thread, resolvesTo = PsiClass: Thread) [Thread]
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Runnable({ ...})] : PsiType:Runnable
+                        UIdentifier (Identifier (Runnable)) [UIdentifier (Identifier (Runnable))]
+                        USimpleNameReferenceExpression (identifier = Runnable, resolvesTo = PsiClass: Runnable) [Runnable]
+                        ULambdaExpression [{ ...}] : PsiType:Function0<? extends Unit>
+                          UBlockExpression [{...}] : PsiType:Unit
+                            UReturnExpression [return println("hello")]
+                              UCallExpression (kind = UastCallKind(name='method_call'), argCount = 1)) [println("hello")] : PsiType:Unit
+                                UIdentifier (Identifier (println)) [UIdentifier (Identifier (println))]
+                                UPolyadicExpression (operator = +) ["hello"] : PsiType:String
+                                  ULiteralExpression (value = "hello") ["hello"] : PsiType:String
+        """
           .trimIndent(),
         file.asLogTypes(indent = "  ").trim(),
       )
