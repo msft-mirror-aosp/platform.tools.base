@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.r8
 
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -239,6 +240,20 @@ class GradualR8ApiTest {
       classes().subPackage("com/example/javalib").containsExactly(listOf())
     }
     checkMappingFiles(build)
+  }
+
+  @Test
+  fun `test gradual r8 full optimization does not work for libraries`() {
+    val build =
+      rule.build {
+        androidLibrary(":androidLib") { android { buildTypes { named("release") { it.optimization { packageScope.add("**") } } } } }
+          .files { add("src/main/aarKeepRules/rules.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
+      }
+    build.executor.run(":androidLib:assembleRelease")
+    build.androidLibrary(":androidLib").assertAar(AarSelector.RELEASE) {
+      // keep this class
+      classes().subPackage("com/example/androidlib").containsExactly("ClassInAndroidLib", "internal/ClassInAndroidLib2")
+    }
   }
 
   @Test

@@ -20,6 +20,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
+import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
@@ -114,8 +115,10 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
     private set
 
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesFiles: ConfigurableFileCollection
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val aarKeepRulesFiles: ConfigurableFileCollection
 
   @get:Internal abstract val keepRulesDirectories: ListProperty<Directory>
+  @get:Internal abstract val aarKeepRulesDirectories: ListProperty<Directory>
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val libraryKeepRulesFileCollection: ConfigurableFileCollection
 
@@ -444,6 +447,10 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
       creationConfig.sources.keepRules {
         task.keepRulesFiles.from(it.getAsFileTrees())
         task.keepRulesDirectories.setDisallowChanges(it.all)
+      }
+      (creationConfig.sources as? InternalLibrarySources)?.aarKeepRules {
+        task.aarKeepRulesFiles.from(it.getAsFileTrees())
+        task.aarKeepRulesDirectories.setDisallowChanges(it.all)
       }
     }
 

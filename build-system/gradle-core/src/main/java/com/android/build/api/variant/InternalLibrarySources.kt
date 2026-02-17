@@ -21,5 +21,8 @@ import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 
 interface InternalLibrarySources : InternalSources, LibrarySources {
   override val aarKeepRules: FlatSourceDirectoriesImpl?
+
+  fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
+
   override val variantSourceProvider: DefaultAndroidLibrarySourceSet?
 }

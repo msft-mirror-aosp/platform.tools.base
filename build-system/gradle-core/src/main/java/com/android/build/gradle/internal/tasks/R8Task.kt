@@ -66,6 +66,7 @@ import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.ProjectLayout
@@ -468,9 +469,19 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         .trimMargin()
     )
 
-    checkKeepRulesDirectories()
+    val keepRulesTree =
+      when {
+        componentType.orNull?.isAar == true -> {
+          checkKeepRulesDirectories(aarKeepRulesDirectories)
+          aarKeepRulesFiles.asFileTree
+        }
+        else -> {
+          checkKeepRulesDirectories(keepRulesDirectories)
+          keepRulesFiles.asFileTree
+        }
+      }
 
-    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesFiles.asFileTree)
+    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesTree)
 
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.
@@ -591,10 +602,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     return PartialShrinkingConfig(packages)
   }
 
-  private fun checkKeepRulesDirectories() {
+  private fun checkKeepRulesDirectories(directories: ListProperty<Directory>) {
     val banList = setOf("pro", "pgcfg")
     val proFiles = mutableMapOf<File, MutableList<File>>()
-    keepRulesDirectories.orNull?.forEach { directory ->
+    directories.orNull?.forEach { directory ->
       directory
         .takeIf { it.asFile.exists() }
         ?.asFileTree

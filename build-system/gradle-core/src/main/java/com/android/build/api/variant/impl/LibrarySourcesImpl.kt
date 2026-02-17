@@ -35,4 +35,8 @@ class LibrarySourcesImpl(
       defaultSourceProvider.getAarKeepRules(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
       updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.aarKeepRules as DefaultAndroidSourceDirectorySet?)
     }
+
+  override fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    action(aarKeepRules)
+  }
 }
