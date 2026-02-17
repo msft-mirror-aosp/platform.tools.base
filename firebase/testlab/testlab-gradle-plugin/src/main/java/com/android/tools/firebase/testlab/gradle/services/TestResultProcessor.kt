@@ -277,11 +277,8 @@ class TestResultProcessor(private val directoriesToPull: List<String>) {
     }
 
   private fun testStatusFromTestCase(caseStatus: String?): TestStatus {
-    if (caseStatus == null) {
-      return TestStatus.PASSED
-    }
     return when (caseStatus) {
-      null -> TestStatus.PASSED
+      null,
       "passed" -> TestStatus.PASSED
       "failed" -> TestStatus.FAILED
       "error" -> TestStatus.ERROR
