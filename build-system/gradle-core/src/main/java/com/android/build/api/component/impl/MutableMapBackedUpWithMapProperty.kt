@@ -25,7 +25,7 @@ import org.gradle.api.provider.MapProperty
  * Because some methods like [MutableMap.entries] will require reading from the [MapProperty], instantiation of this class should probably
  * be guarded by [com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_API]
  */
-class MutableMapBackedUpWithMapProperty<K, V>(private val mapProperty: MapProperty<K, V>, private val propertyName: String) :
+class MutableMapBackedUpWithMapProperty<K : Any, V : Any>(private val mapProperty: MapProperty<K, V>, private val propertyName: String) :
   java.util.AbstractMap<K, V>(), MutableMap<K, V> {
 
   private val logger = LoggerWrapper.getLogger(MutableMapBackedUpWithMapProperty::class.java)

@@ -25,7 +25,7 @@ import org.gradle.api.provider.ListProperty
  * Because some methods like [MutableList.get] will require reading from the [ListProperty], instantiation of this class should probably be
  * guarded by [com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_API]
  */
-class MutableListBackedUpWithListProperty<E>(private val propertyList: ListProperty<E>, private val propertyName: String) :
+class MutableListBackedUpWithListProperty<E : Any>(private val propertyList: ListProperty<E>, private val propertyName: String) :
   java.util.AbstractList<E>(), MutableList<E> {
 
   private val logger = LoggerWrapper.getLogger(MutableListBackedUpWithListProperty::class.java)
