@@ -740,7 +740,7 @@ DATA = [
     "com.android.tools.lint:lint-gradle:31.8.0",
     "com.android.tools.lint:lint-gradle:31.9.0",
     "com.android.tools.lint:lint-gradle:32.0.0",
-    "com.android.tools.metalava:metalava:1.0.0-alpha12",
+    "com.android.tools.metalava:metalava:1.0.0-alpha14",
     "com.android.tools:r8:8.5.35",
     "com.android.tools.utp:android-device-provider-ddmlib:30.2.0",
     "com.android.tools.utp:android-device-provider-ddmlib:31.1.0",

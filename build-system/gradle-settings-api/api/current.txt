@@ -2,16 +2,16 @@
 package com.android.build.api.dsl {
 
   public interface Execution {
-    method public String? getDefaultProfile();
-    method public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ExecutionProfile> getProfiles();
+    method @InaccessibleFromKotlin public String? getDefaultProfile();
+    method @InaccessibleFromKotlin public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ExecutionProfile> getProfiles();
     method public void profiles(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ExecutionProfile>,kotlin.Unit> action);
-    method public void setDefaultProfile(String?);
+    method @InaccessibleFromKotlin public void setDefaultProfile(String?);
     property public abstract String? defaultProfile;
     property public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ExecutionProfile> profiles;
   }
 
   public interface ExecutionProfile extends org.gradle.api.Named {
-    method public com.android.build.api.dsl.ToolOptions getR8();
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.ToolOptions getR8();
     method public void r8(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ToolOptions,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.ToolOptions r8;
   }
@@ -20,31 +20,31 @@ package com.android.build.api.dsl {
     method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
     method public void execution(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Execution,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public String? getAddOnName();
-    method @org.gradle.api.Incubating public String? getAddOnVendor();
-    method @org.gradle.api.Incubating public Integer? getAddOnVersion();
-    method public String getBuildToolsVersion();
-    method public Integer? getCompileSdk();
-    method public Integer? getCompileSdkExtension();
-    method public String? getCompileSdkPreview();
-    method public com.android.build.api.dsl.Execution getExecution();
-    method public Integer? getMinSdk();
-    method public String? getMinSdkPreview();
-    method public String? getNdkPath();
-    method public String getNdkVersion();
-    method @org.gradle.api.Incubating public Integer? getTargetSdk();
-    method @org.gradle.api.Incubating public String? getTargetSdkPreview();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getAddOnName();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getAddOnVendor();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public Integer? getAddOnVersion();
+    method @InaccessibleFromKotlin public String getBuildToolsVersion();
+    method @InaccessibleFromKotlin public Integer? getCompileSdk();
+    method @InaccessibleFromKotlin public Integer? getCompileSdkExtension();
+    method @InaccessibleFromKotlin public String? getCompileSdkPreview();
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.Execution getExecution();
+    method @InaccessibleFromKotlin public Integer? getMinSdk();
+    method @InaccessibleFromKotlin public String? getMinSdkPreview();
+    method @InaccessibleFromKotlin public String? getNdkPath();
+    method @InaccessibleFromKotlin public String getNdkVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public Integer? getTargetSdk();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getTargetSdkPreview();
     method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
-    method public void setBuildToolsVersion(String);
-    method public void setCompileSdk(Integer?);
-    method public void setCompileSdkExtension(Integer?);
-    method public void setCompileSdkPreview(String?);
-    method public void setMinSdk(Integer?);
-    method public void setMinSdkPreview(String?);
-    method public void setNdkPath(String?);
-    method public void setNdkVersion(String);
-    method @org.gradle.api.Incubating public void setTargetSdk(Integer?);
-    method @org.gradle.api.Incubating public void setTargetSdkPreview(String?);
+    method @InaccessibleFromKotlin public void setBuildToolsVersion(String);
+    method @InaccessibleFromKotlin public void setCompileSdk(Integer?);
+    method @InaccessibleFromKotlin public void setCompileSdkExtension(Integer?);
+    method @InaccessibleFromKotlin public void setCompileSdkPreview(String?);
+    method @InaccessibleFromKotlin public void setMinSdk(Integer?);
+    method @InaccessibleFromKotlin public void setMinSdkPreview(String?);
+    method @InaccessibleFromKotlin public void setNdkPath(String?);
+    method @InaccessibleFromKotlin public void setNdkVersion(String);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setTargetSdk(Integer?);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setTargetSdkPreview(String?);
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract String? addOnName;
     property @org.gradle.api.Incubating public abstract String? addOnVendor;
@@ -63,9 +63,9 @@ package com.android.build.api.dsl {
   }
 
   public interface ToolOptions {
-    method public java.util.List<java.lang.String> getJvmOptions();
-    method public boolean getRunInSeparateProcess();
-    method public void setRunInSeparateProcess(boolean);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getJvmOptions();
+    method @InaccessibleFromKotlin public boolean getRunInSeparateProcess();
+    method @InaccessibleFromKotlin public void setRunInSeparateProcess(boolean);
     property public abstract java.util.List<java.lang.String> jvmOptions;
     property public abstract boolean runInSeparateProcess;
   }
@@ -77,8 +77,8 @@ package com.android.build.gradle {
   public final class SettingsPlugin implements org.gradle.api.Plugin<org.gradle.api.initialization.Settings> {
     ctor public SettingsPlugin();
     method public void apply(org.gradle.api.initialization.Settings settings);
-    method public com.android.build.api.dsl.SettingsExtension getAndroid();
-    property public final com.android.build.api.dsl.SettingsExtension android;
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.SettingsExtension getAndroid();
+    property public com.android.build.api.dsl.SettingsExtension android;
   }
 
 }
