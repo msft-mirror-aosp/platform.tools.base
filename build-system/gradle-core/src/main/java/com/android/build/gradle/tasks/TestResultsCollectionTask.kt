@@ -23,11 +23,7 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_RESULT_METADATA_FILE
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_RESULT_METADATA_MODULE_KEY
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_RESULT_METADATA_SUITE_KEY
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_RESULT_METADATA_TARGET_KEY
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_RESULT_METADATA_VARIANT_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.math.BigInteger
@@ -68,10 +64,10 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
     fun processXml(directory: File) {
       if (directory.exists()) {
-        val metadataFiles = directory.listFiles { file -> file.name == TEST_RESULT_METADATA_FILE }
+        val metadataFiles = directory.listFiles { file -> file.name == TEST_SUITE_METADATA_FILE }
         if (metadataFiles != null) {
           check(metadataFiles.isNotEmpty()) { "No metadata.txt found in ${directory.path} for test results XML processing" }
-          val metadata = parseMetadata(metadataFiles[0])
+          val metadata = TestSuiteTestTask.parseMetadata(metadataFiles[0])
 
           val metadataBytes = metadataFiles[0].readBytes()
           val digest = MessageDigest.getInstance("MD5").digest(metadataBytes)
@@ -150,24 +146,6 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
       task.testResults.set(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_RESULTS))
     }
-  }
-
-  fun parseMetadata(metadataFile: File): Map<String, String> {
-    val metadata =
-      metadataFile
-        .readLines()
-        .mapNotNull { line ->
-          val parts = line.split("=", limit = 2)
-          if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
-        }
-        .toMap()
-
-    return mapOf(
-      TEST_RESULT_METADATA_MODULE_KEY to (metadata[TEST_RESULT_METADATA_MODULE_KEY] ?: "unknown_module"),
-      TEST_RESULT_METADATA_VARIANT_KEY to (metadata[TEST_RESULT_METADATA_VARIANT_KEY] ?: "unknown_variant"),
-      TEST_RESULT_METADATA_SUITE_KEY to (metadata[TEST_RESULT_METADATA_SUITE_KEY] ?: "unknown_suite"),
-      TEST_RESULT_METADATA_TARGET_KEY to (metadata[TEST_RESULT_METADATA_TARGET_KEY] ?: "unknown_target"),
-    )
   }
 
   fun injectProperties(xmlFile: File, properties: Map<String, String>, targetFile: File) {

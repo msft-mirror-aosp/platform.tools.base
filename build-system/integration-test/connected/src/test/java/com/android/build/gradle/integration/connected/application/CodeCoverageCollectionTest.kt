@@ -16,20 +16,33 @@
 
 package com.android.build.gradle.integration.connected.application
 
+import com.android.Version
+import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import java.io.File
+import kotlin.jvm.java
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.platform.engine.EngineDiscoveryRequest
+import org.junit.platform.engine.EngineExecutionListener
+import org.junit.platform.engine.ExecutionRequest
+import org.junit.platform.engine.TestDescriptor
+import org.junit.platform.engine.TestEngine
+import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.rules.ExternalResource
 
 /** Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask]. */
@@ -79,77 +92,63 @@ class CodeCoverageCollectionTest {
 
   @get:Rule
   val rule =
-    GradleRule.fromProject("reportAggregation") {
-      androidApplication(":app") {
-        android {
-          namespace = "com.example.app"
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-
-          installation { timeOutInMs = 30000 }
-
-          defaultConfig {
-            minSdk { version = release(24) }
-            targetSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-
-          buildTypes {
-            named("debug") {
-              it.enableUnitTestCoverage = true
-              it.enableAndroidTestCoverage = true
-            }
-          }
-
-          kotlin { jvmToolchain(17) }
-
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
-        }
-
-        dependencies {
-          implementation(project(":lib"))
-
-          testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
-          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-          testImplementation("commons-logging:commons-logging:1.1.1")
-
-          androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-          androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-          androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-          androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-          androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-        }
+    GradleRule.configure()
+      .withMavenRepository {
+        jar("com.google.truth:truth:0.44")
+        jar("org.junit.platform:junit-platform-engine:1.10.1")
+        jar("org.junit.platform:junit-platform-launcher:1.10.1")
+        jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+        jar("com.test:custom-junit-engine:1.0")
+          .addClasses(CustomJunitEngineForTesting::class.java, CustomTestDescriptor::class.java, CustomEngineDescriptor::class.java)
+          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", CustomJunitEngineForTesting::class.java.name)
       }
+      .fromProject("reportAggregation") {
+        androidApplication(":app") {
+          android {
+            namespace = "com.example.app"
+            compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
 
-      androidLibrary(":lib") {
-        android {
-          namespace = "com.example.lib"
+            installation { timeOutInMs = 30000 }
 
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-
-          installation { timeOutInMs = 30000 }
-
-          defaultConfig {
-            minSdk { version = release(24) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-
-          buildTypes {
-            named("debug") {
-              it.enableUnitTestCoverage = true
-              it.enableAndroidTestCoverage = true
+            defaultConfig {
+              minSdk { version = release(24) }
+              targetSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+              testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
-          }
 
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+            buildTypes {
+              named("debug") {
+                it.enableUnitTestCoverage = true
+                it.enableAndroidTestCoverage = true
+              }
+            }
+
+            kotlin { jvmToolchain(17) }
+
+            compileOptions {
+              sourceCompatibility = JavaVersion.VERSION_17
+              targetCompatibility = JavaVersion.VERSION_17
+            }
+
+            testOptions.suites.create("first", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+                includeEngines.add("[engine:custom-junit-engine-for-tests]")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:custom-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+              }
+              it.assets {}
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
+              it.targets.create("t2") {}
+            }
           }
 
           dependencies {
+            implementation(project(":lib"))
+
             testImplementation("junit:junit:4.13.2")
             testImplementation("org.mockito:mockito-core:5.12.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
@@ -161,53 +160,93 @@ class CodeCoverageCollectionTest {
             androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
             androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
           }
-          kotlin { jvmToolchain(17) }
         }
-      }
 
-      androidLibrary(":lib2") {
-        android {
-          namespace = "com.example.lib"
+        androidLibrary(":lib") {
+          android {
+            namespace = "com.example.lib"
 
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+            compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
 
-          installation { timeOutInMs = 30000 }
+            installation { timeOutInMs = 30000 }
 
-          defaultConfig {
-            minSdk { version = release(24) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-
-          buildTypes {
-            named("debug") {
-              it.enableUnitTestCoverage = true
-              it.enableAndroidTestCoverage = true
+            defaultConfig {
+              minSdk { version = release(24) }
+              testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
+
+            buildTypes {
+              named("debug") {
+                it.enableUnitTestCoverage = true
+                it.enableAndroidTestCoverage = true
+              }
+            }
+
+            compileOptions {
+              sourceCompatibility = JavaVersion.VERSION_17
+              targetCompatibility = JavaVersion.VERSION_17
+            }
+
+            dependencies {
+              testImplementation("junit:junit:4.13.2")
+              testImplementation("org.mockito:mockito-core:5.12.0")
+              testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+              testImplementation("commons-logging:commons-logging:1.1.1")
+
+              androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+              androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+              androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+              androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+              androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+            }
+            kotlin { jvmToolchain(17) }
           }
-
-          publishing { singleVariant("debug") }
-
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
-
-          dependencies {
-            testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
-            testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-            testImplementation("commons-logging:commons-logging:1.1.1")
-
-            androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-            androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-            androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-          }
-          kotlin { jvmToolchain(17) }
         }
+
+        androidLibrary(":lib2") {
+          android {
+            namespace = "com.example.lib2"
+
+            compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+
+            installation { timeOutInMs = 30000 }
+
+            defaultConfig {
+              minSdk { version = release(24) }
+              testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            }
+
+            buildTypes {
+              named("debug") {
+                it.enableUnitTestCoverage = true
+                it.enableAndroidTestCoverage = true
+              }
+            }
+
+            publishing { singleVariant("debug") }
+
+            compileOptions {
+              sourceCompatibility = JavaVersion.VERSION_17
+              targetCompatibility = JavaVersion.VERSION_17
+            }
+
+            dependencies {
+              testImplementation("junit:junit:4.13.2")
+              testImplementation("org.mockito:mockito-core:5.12.0")
+              testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+              testImplementation("commons-logging:commons-logging:1.1.1")
+
+              androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+              androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+              androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+              androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+              androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+            }
+            kotlin { jvmToolchain(17) }
+          }
+        }
+        gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
       }
-    }
 
   @Test
   fun testCollectDebugCoverage() {
@@ -493,6 +532,16 @@ class CodeCoverageCollectionTest {
     result.assertTask(":app:collectDebugCoverage").failed()
   }
 
+  @Test
+  fun testCollectDebugCoverageWithTestSuites() {
+    val build = rule.build
+
+    val result = build.executor.run(":app:collectDebugCoverage")
+
+    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT2DebugTestSuite")
+  }
+
   class CodeCoverageCollectionTaskCallback : GenericCallback {
     override fun handleProject(project: Project) {
       project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
@@ -559,5 +608,55 @@ class CodeCoverageCollectionTest {
         "</sources>"
 
     Truth.assertThat(xmlReportString.contains(expectedSources)).isTrue()
+  }
+
+  class CustomEngineDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "Custom Engine Root") {
+    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+  }
+
+  class CustomTestDescriptor(uniqueId: UniqueId, testDescriptor: String) : AbstractTestDescriptor(uniqueId, testDescriptor) {
+    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+  }
+
+  class CustomJunitEngineForTesting : TestEngine {
+
+    override fun getId(): String {
+      return "[engine:custom-junit-engine-for-tests]"
+    }
+
+    override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
+      val engineDescriptor = CustomEngineDescriptor(uniqueId)
+
+      val testId = uniqueId.append("test", "some-test")
+      val testDescriptor = CustomTestDescriptor(testId, "testFunctionName")
+      engineDescriptor.addChild(testDescriptor)
+
+      return engineDescriptor
+    }
+
+    override fun execute(request: ExecutionRequest) {
+      val listener: EngineExecutionListener = request.engineExecutionListener
+      val rootDescriptor = request.rootTestDescriptor
+
+      listener.executionStarted(rootDescriptor)
+
+      for (testDescriptor in rootDescriptor.children) {
+        listener.executionStarted(testDescriptor)
+        val testResult =
+          try {
+            val testSucceeded = System.getenv("CUSTOM_ENGINE_SUCCEED")?.toBoolean() ?: true
+            if (testSucceeded) {
+              TestExecutionResult.successful()
+            } else {
+              TestExecutionResult.failed(Exception("Test failed"))
+            }
+          } catch (t: Throwable) {
+            TestExecutionResult.failed(t)
+          }
+        listener.executionFinished(testDescriptor, testResult)
+      }
+
+      listener.executionFinished(rootDescriptor, TestExecutionResult.successful())
+    }
   }
 }

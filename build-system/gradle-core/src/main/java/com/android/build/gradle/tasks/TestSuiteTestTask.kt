@@ -254,17 +254,22 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     super.executeTests()
 
     val metadataDir = this.xmlResultsDir.get().asFile.also { it.mkdirs() }
-    val metadataFile = File(metadataDir, TEST_RESULT_METADATA_FILE)
+    val metadataFile = File(metadataDir, TEST_SUITE_METADATA_FILE)
 
-    metadataFile.writeText(
+    val metadataContent =
       """
-            $TEST_RESULT_METADATA_MODULE_KEY=${this.modulePath.get()}
-            $TEST_RESULT_METADATA_VARIANT_KEY=${this.testedVariantName.get()}
-            $TEST_RESULT_METADATA_SUITE_KEY=${this.testSuiteName.get()}
-            $TEST_RESULT_METADATA_TARGET_KEY=${this.testSuiteTarget.get()}
+            $TEST_SUITE_METADATA_MODULE_KEY=${this.modulePath.get()}
+            $TEST_SUITE_METADATA_VARIANT_KEY=${this.testedVariantName.get()}
+            $TEST_SUITE_METADATA_SUITE_KEY=${this.testSuiteName.get()}
+            $TEST_SUITE_METADATA_TARGET_KEY=${this.testSuiteTarget.get()}
         """
         .trimIndent()
-    )
+    metadataFile.writeText(metadataContent)
+
+    // Also write metadata to coverage directory so that the coverage collection task can identify the suite
+    val coverageMetadataDir = this.coverageDir.get().asFile.also { it.mkdirs() }
+    val coverageMetadataFile = File(coverageMetadataDir, TEST_SUITE_METADATA_FILE)
+    coverageMetadataFile.writeText(metadataContent)
   }
 
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
@@ -407,6 +412,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         .use(taskProvider)
         .wiredWith(TestSuiteTestTask::xmlResultsDir)
         .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+
+      creationConfig.testedVariant.artifacts
+        .use(taskProvider)
+        .wiredWith(TestSuiteTestTask::coverageDir)
+        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
     }
   }
 
@@ -429,10 +439,28 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   }
 
   companion object {
-    const val TEST_RESULT_METADATA_FILE = "metadata.txt"
-    const val TEST_RESULT_METADATA_MODULE_KEY = "modulePath"
-    const val TEST_RESULT_METADATA_VARIANT_KEY = "testedVariantName"
-    const val TEST_RESULT_METADATA_SUITE_KEY = "testSuiteName"
-    const val TEST_RESULT_METADATA_TARGET_KEY = "testTarget"
+    const val TEST_SUITE_METADATA_FILE = "metadata.txt"
+    const val TEST_SUITE_METADATA_MODULE_KEY = "modulePath"
+    const val TEST_SUITE_METADATA_VARIANT_KEY = "testedVariantName"
+    const val TEST_SUITE_METADATA_SUITE_KEY = "testSuiteName"
+    const val TEST_SUITE_METADATA_TARGET_KEY = "testTarget"
+
+    fun parseMetadata(metadataFile: File): Map<String, String> {
+      val metadata =
+        metadataFile
+          .readLines()
+          .mapNotNull { line ->
+            val parts = line.split("=", limit = 2)
+            if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
+          }
+          .toMap()
+
+      return mapOf(
+        TEST_SUITE_METADATA_MODULE_KEY to (metadata[TEST_SUITE_METADATA_MODULE_KEY] ?: "unknown_module"),
+        TEST_SUITE_METADATA_VARIANT_KEY to (metadata[TEST_SUITE_METADATA_VARIANT_KEY] ?: "unknown_variant"),
+        TEST_SUITE_METADATA_SUITE_KEY to (metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"),
+        TEST_SUITE_METADATA_TARGET_KEY to (metadata[TEST_SUITE_METADATA_TARGET_KEY] ?: "unknown_target"),
+      )
+    }
   }
 }

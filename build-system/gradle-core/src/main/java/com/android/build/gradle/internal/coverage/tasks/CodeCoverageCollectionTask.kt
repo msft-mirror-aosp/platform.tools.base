@@ -30,6 +30,9 @@ import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
+import com.android.build.gradle.tasks.TestSuiteTestTask
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
@@ -81,6 +84,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:Optional
   abstract val connectedTestCoverageDirectory: ConfigurableFileCollection
 
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val testSuiteCoverageData: ConfigurableFileCollection
+
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val classFileCollection: ConfigurableFileCollection
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sources: ListProperty<Provider<List<ConfigurableFileTree>>>
@@ -103,8 +108,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     val sourceFolders: List<File> =
       sources.get().map { it.get().map(ConfigurableFileTree::getDir) }.flatten().distinctBy { it.absolutePath }
 
-    // TODO: Add test suites implementation for XML reports generation.
-
     // ClassLoaderIsolation is used to ensure that the Jacoco classes and dependencies
     // are loaded in a separate classloader. This prevents potential conflicts with
     // other versions of Jacoco or related libraries that might be present in the
@@ -115,6 +118,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.reportOutputDir.set(reportOutputDir)
         it.unitTestCoverageFile.setFrom(unitTestCoverageFile)
         it.connectedTestCoverageDirectory.setFrom(connectedTestCoverageDirectory)
+        it.testSuiteCoverageData.setFrom(testSuiteCoverageData)
         it.classFolders.setFrom(classFileCollection)
         it.sourceFolders.setFrom(sourceFolders)
         it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
@@ -142,6 +146,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
       creationConfig.unitTestCoverageFile?.let { task.unitTestCoverageFile.fromDisallowChanges(it) }
 
       creationConfig.connectedTestCoverageDirectory?.let { task.connectedTestCoverageDirectory.fromDisallowChanges(it) }
+
+      task.testSuiteCoverageData.fromDisallowChanges(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE))
 
       creationConfig.java { javaSources -> task.sources.addAll(javaSources.getAsFileTrees()) }
       creationConfig.kotlin { kotlinSources -> task.sources.addAll(kotlinSources.getAsFileTrees()) }
@@ -203,6 +209,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     val reportOutputDir: DirectoryProperty
     val unitTestCoverageFile: ConfigurableFileCollection
     val connectedTestCoverageDirectory: ConfigurableFileCollection
+    val testSuiteCoverageData: ConfigurableFileCollection
     val classFolders: ConfigurableFileCollection
     val sourceFolders: ConfigurableFileCollection
     val dependentModuleCoverageData: ConfigurableFileCollection
@@ -263,7 +270,22 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val connectedTestCoverageFile = parameters.connectedTestCoverageDirectory.asFileTree.files.filter(File::isFile)
         generateXmlReport(connectedTestCoverageFile, "AndroidTest")
 
-        val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile
+        val testSuiteCoverageFiles = mutableListOf<File>()
+        parameters.testSuiteCoverageData.files.forEach { directory ->
+          if (directory.exists()) {
+            val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
+            if (metadataFile.exists()) {
+              val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
+              val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
+              val coverageFiles =
+                directory.listFiles { file -> file.extension == "ec" || file.extension == "exec" }?.toList() ?: emptyList()
+              generateXmlReport(coverageFiles, testSuiteName)
+              testSuiteCoverageFiles.addAll(coverageFiles)
+            }
+          }
+        }
+
+        val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile + testSuiteCoverageFiles
         generateXmlReport(mergedCoverageFiles, "Aggregated")
 
         parameters.dependentModuleCoverageData.asFileTree.forEach { xmlFile ->
