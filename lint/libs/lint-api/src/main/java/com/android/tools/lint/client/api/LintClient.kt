@@ -1069,7 +1069,7 @@ abstract class LintClient {
       }
     }
 
-    return if (project.isAndroidProject) JDK_1_7 else LanguageLevel.JDK_11
+    return if (project.isAndroidProject) JDK_1_7 else LanguageLevel.HIGHEST
   }
 
   /** Returns the expected language level for Kotlin source files in the given project. */

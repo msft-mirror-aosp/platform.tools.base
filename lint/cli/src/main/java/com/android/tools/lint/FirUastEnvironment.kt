@@ -24,6 +24,7 @@ import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.pom.java.LanguageLevel
@@ -139,6 +140,19 @@ private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastE
       registerProjectService(ClsJavaStubByVirtualFileCache::class.java, ClsJavaStubByVirtualFileCache())
 
       buildKtModuleProvider(configureAnalysisApiProjectStructure(config))
+
+      // When this outer block (@buildStandaloneAnalysisAPISession) returns, the analysis session will
+      // then be built, and Java source files will be parsed. Thus, if we want to change the Java
+      // language level, we need to do it now (rather than in configureFirProjectEnvironment,
+      // below).
+      // TODO: It would probably be better to configure the Java language level per file, as each
+      //  module could presumably have a different Java language level. However, for running Lint
+      //  in production, it maybe doesn't really matter that much. For Lint tests, one Java language
+      //  level is usually OK.
+      val javaLanguageLevel = config.javaLanguageLevel
+      if (javaLanguageLevel != null) {
+        LanguageLevelProjectExtension.getInstance(project).languageLevel = javaLanguageLevel
+      }
     }
   appLock.withLock {
     configureFirApplicationEnvironment(analysisSession.coreApplicationEnvironment, config)

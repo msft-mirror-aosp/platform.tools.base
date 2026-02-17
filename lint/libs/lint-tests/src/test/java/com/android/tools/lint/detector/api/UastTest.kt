@@ -919,7 +919,8 @@ class UastTest : TestCase() {
         )
         .indented()
 
-    check(source) { file ->
+    // Java 11 and above will use the Inference Session API (and some inferred types are slightly more precise vs. Java 7).
+    check(source, javaLanguageLevel = LanguageLevel.JDK_11) { file ->
       assertEquals(
         "" +
           "UFile (package = test.pkg) [package test.pkg...]\n" +
