@@ -26,6 +26,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.any
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -104,6 +105,37 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.launchCompanionApp() {
     val command = "monkey -p $COMPANION_PKG -c android.intent.category.LAUNCHER 1"
     shell.executeAsText(command)
+  }
+
+  /**
+   * Checks if the Glasses companion app is in the foreground.
+   *
+   * @return true if the companion app is in the foreground, false otherwise.
+   * @throws IOException if a communication error occurs with the device.
+   */
+  suspend fun ConnectedDevice.checkCompanionAppInForeground(): Boolean {
+    return checkAppInForeground(COMPANION_PKG)
+  }
+
+  private suspend fun ConnectedDevice.checkAppInForeground(pkg: String): Boolean {
+    val command = "dumpsys window windows"
+    val regex = "mCurrentFocus=.*$pkg".toRegex()
+
+    return shell
+      .executeAsLines(command)
+      .mapNotNull {
+        when (it) {
+          is ShellCommandOutputElement.StdoutLine -> it.contents
+          is ShellCommandOutputElement.StderrLine -> {
+            if (it.contents.isNotBlank()) {
+              logger.warn("checkAppInForeground error output: ${it.contents}")
+            }
+            null
+          }
+          else -> null
+        }
+      }
+      .any { regex.containsMatchIn(it) }
   }
 
   private suspend fun ConnectedDevice.clearPackage(pkg: String) {
