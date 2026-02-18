@@ -1322,6 +1322,9 @@ public final class SdkConstants {
     public static final String ATTR_MAX_SDK_VERSION = "maxSdkVersion";
     public static final String ATTR_TARGET_SDK_VERSION = "targetSdkVersion";
     public static final String ATTR_ICON = "icon";
+    public static final String ATTR_SUPPORTS_RTL = "supportsRtl";
+    public static final String ATTR_PARENT_ACTIVITY_NAME = "parentActivityName";
+    public static final String ATTR_UI_OPTIONS = "uiOptions";
     public static final String ATTR_RESOURCE = "resource";
     public static final String ATTR_ROUND_ICON = "roundIcon";
     public static final String ATTR_PACKAGE = "package";
