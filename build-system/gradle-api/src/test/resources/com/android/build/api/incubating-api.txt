@@ -8,8 +8,6 @@ https://issuetracker.google.com/328747467
 https://issuetracker.google.com/328747468
   * com.android.build.api.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
   * com.android.build.api.dsl.TestOptions.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
-https://issuetracker.google.com/328747927
-  * com.android.build.api.artifact.SingleArtifact$ASSETS extends com.android.build.api.artifact.SingleArtifact implements com.android.build.api.artifact.Artifact$Replaceable, com.android.build.api.artifact.Artifact$Transformable
 https://issuetracker.google.com/328747928
   * com.android.build.api.dsl.BundleTexture.getDefaultFormat: java.lang.String ()
   * com.android.build.api.dsl.BundleTexture.setDefaultFormat: void (java.lang.String)
