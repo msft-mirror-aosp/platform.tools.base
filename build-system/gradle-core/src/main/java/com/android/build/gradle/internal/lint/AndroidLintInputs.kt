@@ -261,6 +261,7 @@ abstract class LintTool {
           // for build authors.
           it.forkOptions.maxHeapSize =
             LintParallelBuildService.calculateLintHeapSize(workerHeapSize.orNull, Runtime.getRuntime().maxMemory())
+          it.forkOptions.systemProperty("java.awt.headless", "true")
         }
       }
     workQueue.submit(AndroidLintWorkAction::class.java) { parameters ->
