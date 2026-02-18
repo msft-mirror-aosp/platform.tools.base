@@ -2331,8 +2331,31 @@ public class TestLintClient extends LintCliClient {
             }
           }
         }
-
         return keepRulesFolders;
+      }
+
+      @NonNull
+      @Override
+      public List<File> getAarKeepRulesSourceFolders() {
+        if (aarKeepRulesFolders == null) {
+          if (mocker != null) {
+            aarKeepRulesFolders =
+                mocker.getAarKeepRulesSourceFolders().stream()
+                    .filter(File::exists)
+                    .collect(Collectors.toList());
+          }
+          if (aarKeepRulesFolders == null || aarKeepRulesFolders.isEmpty()) {
+            aarKeepRulesFolders = super.getGeneratedSourceFolders();
+            if (aarKeepRulesFolders.isEmpty()) {
+              File generated = new File(dir, "aarKeepRules");
+              if (generated.isDirectory()) {
+                aarKeepRulesFolders = singletonList(generated);
+              }
+            }
+          }
+        }
+
+        return aarKeepRulesFolders;
       }
 
         @NonNull

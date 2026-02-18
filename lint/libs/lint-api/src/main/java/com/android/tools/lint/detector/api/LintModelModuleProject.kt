@@ -166,6 +166,16 @@ open class LintModelModuleProject(
     return keepRulesFolders
   }
 
+  override fun getAarKeepRulesSourceFolders(): List<File> {
+    if (aarKeepRulesFolders == null) {
+      aarKeepRulesFolders = Lists.newArrayList()
+      sourceProviders.forEach { provider ->
+        provider.aarKeepRulesDirectories.asSequence().filter { it.exists() }.forEach { aarKeepRulesFolders.add(it) }
+      }
+    }
+    return aarKeepRulesFolders
+  }
+
   override fun getResourceFolders(): List<File> {
     if (resourceFolders == null) {
       resourceFolders = Lists.newArrayList()
