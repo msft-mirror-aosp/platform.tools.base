@@ -17,6 +17,7 @@ package com.android.tools.apk.analyzer
 
 import com.google.common.primitives.Bytes
 import com.google.common.primitives.Ints
+import com.google.common.truth.Truth.assertThat
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.DIMENSION
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.FLOAT
@@ -27,7 +28,6 @@ import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.INT_COLOR_RGB
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.INT_COLOR_RGB8
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.REFERENCE
 import java.nio.ByteBuffer
-import org.junit.Assert
 import org.junit.Test
 
 class BinaryXmlParserTest {
@@ -39,8 +39,8 @@ class BinaryXmlParserTest {
     val value425 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, FLOAT.code()), Ints.toByteArray(42.5f.toBits()))))
 
-    Assert.assertEquals("42", BinaryXmlParser.formatValue(value42, null))
-    Assert.assertEquals("42.5", BinaryXmlParser.formatValue(value425, null))
+    assertThat(BinaryXmlParser.formatValue(value42, null)).isEqualTo("42")
+    assertThat(BinaryXmlParser.formatValue(value425, null)).isEqualTo("42.5")
   }
 
   @Test
@@ -51,8 +51,8 @@ class BinaryXmlParserTest {
     val value2 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, DIMENSION.code()), Ints.toByteArray(0x11400024))))
 
-    Assert.assertEquals("384dp", BinaryXmlParser.formatValue(value1, null))
-    Assert.assertEquals("34.5in", BinaryXmlParser.formatValue(value2, null))
+    assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("384dp")
+    assertThat(BinaryXmlParser.formatValue(value2, null)).isEqualTo("34.5in")
   }
 
   @Test
@@ -69,10 +69,10 @@ class BinaryXmlParserTest {
     val value4 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, FRACTION.code()), Ints.toByteArray(0x40000031))))
 
-    Assert.assertEquals("0.78125%", BinaryXmlParser.formatValue(value1, null))
-    Assert.assertEquals("25%", BinaryXmlParser.formatValue(value2, null))
-    Assert.assertEquals("50%", BinaryXmlParser.formatValue(value3, null))
-    Assert.assertEquals("50%p", BinaryXmlParser.formatValue(value4, null))
+    assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("0.78125%")
+    assertThat(BinaryXmlParser.formatValue(value2, null)).isEqualTo("25%")
+    assertThat(BinaryXmlParser.formatValue(value3, null)).isEqualTo("50%")
+    assertThat(BinaryXmlParser.formatValue(value4, null)).isEqualTo("50%p")
   }
 
   @Test
@@ -89,10 +89,10 @@ class BinaryXmlParserTest {
     val value4 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_RGB4.code()), Ints.toByteArray(0x1234F567))))
 
-    Assert.assertEquals("#FF556677", BinaryXmlParser.formatValue(value1, null))
-    Assert.assertEquals("#556677", BinaryXmlParser.formatValue(value2, null))
-    Assert.assertEquals("#F567", BinaryXmlParser.formatValue(value3, null))
-    Assert.assertEquals("#567", BinaryXmlParser.formatValue(value4, null))
+    assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("#FF556677")
+    assertThat(BinaryXmlParser.formatValue(value2, null)).isEqualTo("#556677")
+    assertThat(BinaryXmlParser.formatValue(value3, null)).isEqualTo("#F567")
+    assertThat(BinaryXmlParser.formatValue(value4, null)).isEqualTo("#567")
   }
 
   @Test
@@ -108,7 +108,7 @@ class BinaryXmlParserTest {
     val value1 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, REFERENCE.code()), Ints.toByteArray(0x12345678))))
 
-    Assert.assertEquals("@ref/0x12345678", BinaryXmlParser.formatValue(value1, null))
-    Assert.assertEquals("@package:restype/res_name", BinaryXmlParser.formatValue(value1, null, resolver))
+    assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("@ref/0x12345678")
+    assertThat(BinaryXmlParser.formatValue(value1, null, resolver)).isEqualTo("@package:restype/res_name")
   }
 }
