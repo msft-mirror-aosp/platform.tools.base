@@ -15,7 +15,89 @@
  */
 package com.android.tools.tracer
 
+import androidx.tracing.TraceDriver
 import androidx.tracing.Tracer
+import androidx.tracing.wire.TraceDriver
+import androidx.tracing.wire.TraceSink
+import com.android.tools.tracer.Tracing.initialize
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.Dispatchers
+import okio.appendingSink
+import okio.buffer
+import org.jetbrains.annotations.VisibleForTesting
+
+object Tracing {
+  private val state = AtomicReference<TracingState?>(null)
+
+  internal val tracer: Tracer?
+    get() = state.get()?.driver?.tracer
+
+  /** Initialize the tracer with the provided [config]. */
+  @JvmStatic
+  fun initialize(config: TracingConfigProvider) {
+    initialize(config) { dir -> dir.perfettoTraceFile() }
+  }
+
+  @VisibleForTesting
+  internal fun initialize(config: TracingConfigProvider, fileProvider: (File) -> File) {
+    if (!config.isTracingEnabled()) {
+      // Avoid creating a sink and driver, given they start a file.
+      // TODO(b/484409653): Add a RingBuffer implementation in the library to avoid this.
+
+      // Close any existing state if strictly disabling
+      close()
+      return
+    }
+    val traceFile = fileProvider(config.getTraceDirectory())
+    val sink = TraceSink(1, traceFile.appendingSink().buffer(), Dispatchers.IO)
+    val driver = TraceDriver(sink, true)
+
+    // Atomically set the new state and close the old one if it existed.
+    val oldState = state.getAndSet(TracingState(config, traceFile, driver, fileProvider))
+    oldState?.close()
+  }
+
+  /**
+   * Flush any current trace events to the file and return the path.
+   *
+   * Upon flushing, a new file will be started. [initialize] must first be called before this can take any action
+   */
+  @JvmStatic
+  fun flush(): String? {
+    val currentState = state.get() ?: return null
+    // TODO(b/479214523): Upstream the use-case of file rotation to avoid re-initialization that
+    //   leads to threading issues. Also have a mechanism for getting the file path from the sink.
+    val file = currentState.traceFile.absolutePath
+    initialize(currentState.config, currentState.fileProvider)
+    return file
+  }
+
+  /** Close tracing and ignore any future [trace] calls. [initialize] must be called again. */
+  @JvmStatic
+  fun close() {
+    // TODO(b/484409653): Add an implementation that allows closing without writing to a file.
+    state.getAndSet(null)?.close()
+  }
+
+  private data class TracingState(
+    val config: TracingConfigProvider,
+    val traceFile: File,
+    val driver: TraceDriver,
+    val fileProvider: (File) -> File,
+  ) : AutoCloseable by driver
+}
+
+private fun File.perfettoTraceFile(): File {
+  val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
+  formatter.timeZone = TimeZone.getTimeZone("UTC")
+  val traceFile = File(this, "perfetto-${formatter.format(Date())}.perfetto")
+  return traceFile
+}
 
 // TODO(b/467364934): Finalize the tracing APIs below for use within Studio and other tools.
 
@@ -30,10 +112,10 @@ import androidx.tracing.Tracer
  * least one top level root span.
  */
 fun <T> trace(category: String? = null, name: String? = null, isRoot: Boolean = false, block: () -> T): T {
-  val instance = TracingService.getInstance() ?: return block.invoke()
+  val tracer = Tracing.tracer ?: return block.invoke()
   val traceName = name ?: block.toString()
   val traceCategory = category ?: "default"
-  return instance.tracer.trace(category = traceCategory, name = traceName, isRoot = isRoot, block = block)
+  return tracer.trace(traceCategory, traceName, isRoot = isRoot, block = block)
 }
 
 /**
@@ -41,14 +123,9 @@ fun <T> trace(category: String? = null, name: String? = null, isRoot: Boolean = 
  * should use [trace] instead since Kotlin cannot overload the function with the same name. See [trace] for further details, as they are
  * otherwise identical.
  */
-internal suspend fun <T> traceCoroutine(
-  category: String? = null,
-  name: String? = null,
-  isRoot: Boolean = false,
-  block: suspend () -> T,
-): T {
-  val instance = TracingService.getInstance() ?: return block.invoke()
+suspend fun <T> traceCoroutine(category: String? = null, name: String? = null, isRoot: Boolean = false, block: suspend () -> T): T {
+  val tracer = Tracing.tracer ?: return block.invoke()
   val traceName = name ?: block.toString()
   val traceCategory = category ?: "default"
-  return instance.tracer.traceCoroutine(category = traceCategory, name = traceName, isRoot = isRoot, block = block)
+  return tracer.traceCoroutine(traceCategory, traceName, isRoot = isRoot, block = block)
 }
