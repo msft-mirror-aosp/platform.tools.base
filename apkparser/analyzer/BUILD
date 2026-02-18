@@ -83,14 +83,33 @@ maven_library(
     ],
 )
 
+kotlin_library(
+    name = "tools.tests.lib",
+    srcs = glob([
+        "src/test/java/**/*.kt",
+    ]),
+    deps = [
+        ":tools.analyzer",
+        "//tools/base/apkparser:tools.binary-resources",
+        "//tools/base/common:tools.common",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.android.tools.smali.smali-dexlib2",
+        "@maven//:com.google.jimfs.jimfs",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.annotations",
+    ],
+)
+
 coverage_java_test(
     name = "tools.tests",
-    srcs = glob(["src/test/java/**"]),
+    srcs = glob(["src/test/java/**/*.java"]),
     jvm_flags = ["-Dtest.suite.jar=tools.tests.jar"],
     resources = glob(["src/test/resources/**"]),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.analyzer",
+        ":tools.tests.lib",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
