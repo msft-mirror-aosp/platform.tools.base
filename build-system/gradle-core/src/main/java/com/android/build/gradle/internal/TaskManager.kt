@@ -123,6 +123,7 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
+import com.android.build.gradle.internal.tasks.creationconfig.GenerateResValuesCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createDexMergingCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createJavaCompileConfig
@@ -536,7 +537,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   fun createGenerateResValuesTask(creationConfig: ComponentCreationConfig) {
     if (creationConfig.buildFeatures.resValues) {
-      val generateResValuesTask = taskFactory.register(GenerateResValues.CreationAction(creationConfig))
+      val generateResValuesTask =
+        taskFactory.register(GenerateResValues.CreationAction(GenerateResValuesCreationConfig.forTestComponent(creationConfig)))
       creationConfig.taskContainer.resourceGenTask.dependsOn(generateResValuesTask)
     }
   }

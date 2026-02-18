@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal.tasks.factory.features
 
-import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.GenerateResValuesCreationConfig
 
 /**
  * Creation action for tasks that requires assets support.
@@ -41,7 +41,7 @@ interface ResValuesTaskCreationAction {
   val resValuesCreationConfig: ResValuesCreationConfig
 }
 
-class ResValuesTaskCreationActionImpl(creationConfig: ComponentCreationConfig) : ResValuesTaskCreationAction {
+class ResValuesTaskCreationActionImpl(creationConfig: GenerateResValuesCreationConfig) : ResValuesTaskCreationAction {
 
   override val resValuesCreationConfig: ResValuesCreationConfig = creationConfig.resValuesCreationConfig!!
 }

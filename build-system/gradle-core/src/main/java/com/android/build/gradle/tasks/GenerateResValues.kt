@@ -16,11 +16,11 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.api.variant.ResValue
-import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.generators.ResValueGenerator
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
+import com.android.build.gradle.internal.tasks.creationconfig.GenerateResValuesCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.ResValuesTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.ResValuesTaskCreationActionImpl
@@ -63,8 +63,8 @@ abstract class GenerateResValues : NonIncrementalTask() {
     }
   }
 
-  class CreationAction(creationConfig: ComponentCreationConfig) :
-    VariantTaskCreationAction<GenerateResValues, ComponentCreationConfig>(creationConfig),
+  class CreationAction(creationConfig: GenerateResValuesCreationConfig) :
+    VariantTaskCreationAction<GenerateResValues, GenerateResValuesCreationConfig>(creationConfig),
     ResValuesTaskCreationAction by ResValuesTaskCreationActionImpl(creationConfig) {
 
     override val name = computeTaskName("generate", "ResValues")
