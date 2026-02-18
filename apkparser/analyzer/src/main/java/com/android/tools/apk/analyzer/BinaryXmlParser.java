@@ -17,18 +17,21 @@ package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
 import com.android.xml.XmlBuilder;
+
 import com.google.common.collect.Lists;
 import com.google.devrel.gmscore.tools.apk.arsc.Chunk;
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.StringPoolChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlAttribute;
+import com.google.devrel.gmscore.tools.apk.arsc.XmlCdataChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlEndElementChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceEndChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceStartChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlResourceMapChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,8 +43,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class BinaryXmlParser {
+
     @NotNull
     public static byte[] decodeXml(
             @NotNull byte[] bytes, @NotNull ResourceIdResolver resIdResolver) {
@@ -77,9 +82,12 @@ public class BinaryXmlParser {
             @NotNull Map<Integer, Chunk> chunks, @NotNull XmlChunkHandler handler) {
         // sort the chunks by their offset in the file in order to traverse them in the right order
         List<Chunk> contentChunks = sortByOffset(chunks);
-
+        Logger logger = Logger.getLogger("BinaryXmlParser");
         for (Chunk chunk : contentChunks) {
-            if (chunk instanceof StringPoolChunk) {
+            //noinspection IfCanBeSwitch
+            if (chunk == null) {
+                logger.warning("Got a null chunk");
+            } else if (chunk instanceof StringPoolChunk) {
                 handler.stringPool((StringPoolChunk) chunk);
             } else if (chunk instanceof XmlResourceMapChunk) {
                 handler.xmlResourceMap((XmlResourceMapChunk) chunk);
@@ -91,8 +99,10 @@ public class BinaryXmlParser {
                 handler.startElement((XmlStartElementChunk) chunk);
             } else if (chunk instanceof XmlEndElementChunk) {
                 handler.endElement((XmlEndElementChunk) chunk);
+            } else if (chunk instanceof XmlCdataChunk) {
+                handler.cdata((XmlCdataChunk) chunk);
             } else {
-                //Logger.getInstance(BinaryXmlParser.class).warn("XmlNode of type " + chunk.getClass().getCanonicalName() + " not handled.");
+                logger.warning(String.format("Node %s not handled.", chunk.getClass().getName()));
             }
         }
     }
@@ -110,6 +120,7 @@ public class BinaryXmlParser {
     }
 
     private interface XmlChunkHandler {
+
         default void stringPool(@NotNull StringPoolChunk chunk) {}
 
         default void xmlResourceMap(@NotNull XmlResourceMapChunk chunk) {}
@@ -121,13 +132,20 @@ public class BinaryXmlParser {
         default void startElement(@NotNull XmlStartElementChunk chunk) {}
 
         default void endElement(@NotNull XmlEndElementChunk chunk) {}
+
+        default void cdata(@NotNull XmlCdataChunk chunk) {}
     }
 
     private static class XmlPrinter implements XmlChunkHandler {
+
         private final XmlBuilder builder;
+
         private Map<String, String> namespaces = new HashMap<>();
+
         private boolean namespacesAdded;
+
         private StringPoolChunk stringPool;
+
         private final ResourceIdResolver resIdResolver;
 
         public XmlPrinter(@NotNull ResourceIdResolver resourceIdResolver) {
@@ -171,6 +189,11 @@ public class BinaryXmlParser {
         @Override
         public void endElement(@NotNull XmlEndElementChunk chunk) {
             builder.endTag(chunk.getName());
+        }
+
+        @Override
+        public void cdata(@NotNull XmlCdataChunk chunk) {
+            builder.characterData(chunk.getRawValue());
         }
 
         @NotNull
@@ -243,15 +266,25 @@ public class BinaryXmlParser {
     }
 
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.######");
+
     private static final String[] DIMENSION_UNITS = {"px", "dp", "sp", "pt", "in", "mm"};
+
     private static final String[] FACTION_UNITS = {"%", "%p"};
+
     private static final String UNKNOWN_UNIT = "???";
+
     private static final int[] RADIX_SHIFTS = {23, 16, 8, 0};
+
     private static final int COMPLEX_RADIX_SHIFT = 4;
+
     private static final int COMPLEX_RADIX_MASK = 0x3;
+
     private static final int COMPLEX_MANTISSA_SHIFT = 8;
+
     private static final int COMPLEX_MANTISSA_MASK = 0xFFFFFF;
+
     private static final int COMPLEX_UNIT_SHIFT = 0;
+
     private static final int COMPLEX_UNIT_MASK = 0xF;
 
     // Java implementation of frameworks/base/tools/aapt2/ResourceValues.cpp ComplexToString

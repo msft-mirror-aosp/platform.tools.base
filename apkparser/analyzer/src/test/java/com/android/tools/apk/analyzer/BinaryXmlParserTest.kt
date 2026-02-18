@@ -15,6 +15,7 @@
  */
 package com.android.tools.apk.analyzer
 
+import com.android.testutils.TestResources
 import com.google.common.primitives.Bytes
 import com.google.common.primitives.Ints
 import com.google.common.truth.Truth.assertThat
@@ -28,6 +29,7 @@ import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.INT_COLOR_RGB
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.INT_COLOR_RGB8
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue.Type.REFERENCE
 import java.nio.ByteBuffer
+import kotlin.io.path.readBytes
 import org.junit.Test
 
 class BinaryXmlParserTest {
@@ -110,5 +112,23 @@ class BinaryXmlParserTest {
 
     assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("@ref/0x12345678")
     assertThat(BinaryXmlParser.formatValue(value1, null, resolver)).isEqualTo("@package:restype/res_name")
+  }
+
+  @Test
+  fun testXmlWithText() {
+    val bytes = TestResources.getFile("/xml-with-text.xml").toPath().readBytes()
+    val xml = String(BinaryXmlParser.decodeXml(bytes))
+    assertThat(xml)
+      .isEqualTo(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <domain
+            includeSubdomains="false">
+            1.2.3.4
+        </domain>
+
+        """
+          .trimIndent()
+      )
   }
 }
